@@ -1,0 +1,52 @@
+{
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "date_gel": "2026-12-01T06:00:00+01:00",
+  "graine_tirage": {
+    "valeur": 20261201,
+    "algorithme": "PCG64",
+    "bibliotheque": "numpy.random.Generator",
+    "version": "2.1.3"
+  },
+  "entrees": [
+    {
+      "question_id": "q_9eeeb68b8df88bee0fc88a5772576c59",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-ATT",
+      "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+            "item_version": 1,
+            "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        },
+        {
+          "reference": {
+            "item_id": "R6Y2NGVGPBZ3SCVGAFH669X8VD",
+            "item_version": 2,
+            "item_empreinte": "fb8514e27b71b1130d448752c40c6bcc37078efa8f1e2e08bd7a4872d901be99"
+          },
+          "role": "attendu_dans_liste",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "liste_candidats",
+        "candidats_attendus": [
+          "cand-a",
+          "cand-c"
+        ],
+        "resolution_temporelle": {
+          "date_gel": "2026-12-01T06:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "reprise": false
+    }
+  ]
+}

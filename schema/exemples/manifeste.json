@@ -203,7 +203,40 @@
       "objet": "run",
       "fichier": "run/valide-01-mensuel-publie.json",
       "attendu": "valide",
-      "motif": "Run publié : cinq graines avec leur algorithme, périmètre gelé avec preuves d'inclusion, candidat retiré non interrogé, candidat sous seuil, symétrie avec un écart thématique toléré et imprimé, contestation postérieure au gel conservée pour la robustesse §8(b)."
+      "motif": "Run publié : cinq graines avec leur algorithme, périmètre gelé avec preuves d'inclusion, candidat retiré non interrogé, candidat sous seuil, symétrie avec un écart thématique toléré et imprimé, tirage référencé par empreinte, volume déposé sur Zenodo avec DOI, contestation postérieure au gel conservée pour la robustesse §8(b)."
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/valide-01-tirage-nominal.json",
+      "attendu": "valide",
+      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). Chaque entrée fige les statuts d'items au gel et la réponse attendue résolue à cette date."
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/valide-02-attribution-sans-candidat.json",
+      "attendu": "valide",
+      "motif": "Entrée d'attribution : aucun candidat nommé (§5), plusieurs items de rôles distincts, et la liste exacte des candidats attendus résolue au gel."
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-01-attribution-nommant-un-candidat.json",
+      "attendu": "invalide",
+      "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure.",
+      "regle_protocole": "§5, garanties de symétrie"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-02-deux-items-principaux.json",
+      "attendu": "invalide",
+      "motif": "Deux items principaux dans une entrée : la grappe du bootstrap (§8) devient indéterminée, et tous les intervalles de confiance publiés avec elle.",
+      "regle_protocole": "§8, bootstrap en grappes"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-03-reprise-sans-origine.json",
+      "attendu": "invalide",
+      "motif": "Question déclarée reprise sans run d'origine ni empreinte du texte précédent. §8 compare premier et dernier run « sur les questions communes » : sans ces deux champs, « commune » n'est pas décidable et la tendance mesurerait nos propres corrections.",
+      "regle_protocole": "§5, reprise 80/20 ; §8, tendance"
     },
     {
       "objet": "run",

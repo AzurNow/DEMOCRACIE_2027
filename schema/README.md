@@ -17,15 +17,18 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `notation.schema.json` | notation individuelle | §7 |
 | `verdict.schema.json` | note retenue | §7, règle de décision |
 | `mesure.schema.json` | référent partagé | §5 Q-ATT, §7 mauvaise attribution, §6 QR9 |
-| `run.schema.json` | run | §9 publication, §5 tirage et symétrie, §12 go/no-go |
+| `run.schema.json` | run | §9 publication, §5 symétrie, §12 go/no-go |
+| `tirage.schema.json` | questions tirées d'un run | §5 tirage, §9 publication des questions |
 | `lecture-comparateur.schema.json` | lecture d'un comparateur | §6, QR9 |
 
-Quatre objets étaient demandés ; il en a fallu huit. Les quatre ajoutés ne sont pas des commodités :
+Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
 le périmètre gelé n'ont pas de domicile et finiraient en dur dans un script, hors publication ; sans
 `verdict`, l'analyse de robustesse §8(a) ne peut pas isoler la notation humaine ; sans
 `lecture-comparateur`, la famille des comparateurs remplirait l'objet `reponse` de champs nuls et
-imposerait un embranchement par famille d'outil dans le code de notation.
+imposerait un embranchement par famille d'outil dans le code de notation. `tirage` est sorti de
+`run` dans un second temps : environ 400 entrées que tout contrôle go/no-go aurait dû charger
+entières, alors qu'une référence par chemin et empreinte suffit.
 
 ## Le flux, et où chaque objet est écrit
 
@@ -71,6 +74,16 @@ explicitement **avec perte**, produite par une fonction dont la version est stoc
 Un schéma commun typé sur les charges utiles des éditeurs aurait été un reformatage, donc une
 violation de la règle 7.
 
+**Ce que Git stocke, et ce qu'il ne stocke pas.** Un run produit de l'ordre de 24 000 réponses et
+48 000 notations individuelles, soit plusieurs centaines de mégaoctets ; sur une saison d'environ
+vingt runs, plusieurs gigaoctets. Dans Git, le dépôt cesserait d'être clonable, donc vérifiable —
+exactement ce que le §9 exige qu'il reste. Git garde `data/`, `config/`, `prompts/`, le code, et par
+run les questions, le tirage, les verdicts et les métriques. Le volume part en archive sur Zenodo,
+avec le DOI que le §9 impose déjà, référencée depuis `run.depot` par DOI, empreinte SHA-256, taille
+et nombre d'entrées. Aucun amendement n'est nécessaire : le protocole exige que les réponses brutes
+soient **publiées**, jamais qu'elles soient dans Git. Effet de bord favorable sur la règle 7 — une
+archive à DOI ne se réécrit pas.
+
 **Ce qui n'alimente pas les métriques.** `contexte` vaut `run`, `pilote`, `jeu_or`,
 `contrefactuel_candidat` ou `contrefactuel_outil`. Les 200 réponses permutées du test contrefactuel
 (§7) sont des textes qu'aucun outil n'a produits. Le filtre `contexte == "run"` est la seule barrière
@@ -97,7 +110,7 @@ l'item ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 40 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 45 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -110,10 +123,11 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | notation | juge attribuant « indéterminée » · drapeau sur une réponse exacte · note non exacte sans extrait justificatif |
 | verdict | fabrication retenue sans revue humaine · verdict sans notation source · désaccord avec une seule source |
 | run | graine sans algorithme nommé · symétrie rouge publiée sans mention provisoire · candidat à 8 items P déclaré au-dessus du seuil |
+| tirage | entrée d'attribution nommant un candidat · deux items principaux dans une entrée · question reprise sans run d'origine |
 | lecture-comparateur | absence d'affichage portant un extrait · affichage sans extrait · cadence supérieure à une page par seconde |
 
-Vérification faite avec `jsonschema` 4.26 (draft 2020-12) : 9/9 schémas conformes au méta-schéma,
-40/40 exemples conformes au manifeste. Le runner n'est pas encore dans le dépôt : le brancher sur
+Vérification faite avec `jsonschema` 4.26 (draft 2020-12) : 10/10 schémas conformes au méta-schéma,
+45/45 exemples conformes au manifeste. Le runner n'est pas encore dans le dépôt : le brancher sur
 `pnpm check` suppose de choisir un validateur côté TypeScript, ce qui est un ajout de dépendance et
 relève donc d'une décision à prendre, pas d'un raccourci à prendre seul.
 

@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:tirage",
+  "title": "Tirage d'un run",
+  "description": "Les questions effectivement tirées pour un run, avec ce qu'elles valaient AU GEL : versions d'items, statuts d'items, réponse attendue résolue à la date de gel. Fichier autonome, référencé par run.tirage avec son empreinte — il compte environ 400 entrées, et l'intégrer à l'objet run obligerait tout contrôle go/no-go à le charger entier. C'est ce gel qui rend le critère du §12 décidable après coup et l'analyse de robustesse §8(b) reproductible.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "date_gel", "graine_tirage", "entrees"],
+
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "date_gel": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Recopié depuis le run. Doit lui être identique : le fichier doit rester lisible seul, sans jointure, puisqu'il est publié tel quel (§9)."
+    },
+
+    "graine_tirage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valeur", "algorithme", "bibliotheque", "version"],
+      "description": "Recopiée depuis run.graines.tirage. §9 publie « les questions du run et la graine du tirage » ensemble : les séparer obligerait un tiers à rassembler deux fichiers pour rejouer le tirage.",
+      "properties": {
+        "valeur": { "type": "integer", "minimum": 0 },
+        "algorithme": { "type": "string", "minLength": 1 },
+        "bibliotheque": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "entrees": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entree_tirage" }
+    }
+  },
+
+  "$defs": {
+    "entree_tirage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question_id", "gabarit", "items_au_gel", "reponse_attendue", "reprise"],
+      "properties": {
+        "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
+        "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "theme": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme" },
+        "gabarit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
+        "grappe_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+        "items_au_gel": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["reference", "role", "statut_validation_au_gel", "statut_contestation_au_gel"],
+            "properties": {
+              "reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/reference_item" },
+              "role": {
+                "type": "string",
+                "enum": ["principal", "attendu_dans_liste", "distracteur", "contexte"]
+              },
+              "statut_validation_au_gel": {
+                "type": "string",
+                "enum": ["en_attente", "a_confirmer", "verifie", "rejete", "non_evaluable", "retire_par_panel"]
+              },
+              "statut_contestation_au_gel": {
+                "type": "string",
+                "enum": ["aucune", "contestee", "arbitree"],
+                "description": "§5 et §12 exigent qu'aucun item contesté ne figure dans le tirage. Le critère s'évalue sur CE champ, figé, et non sur l'état courant de data/ : une contestation reçue pendant la fenêtre ne rend pas rétroactivement le tirage fautif."
+              }
+            }
+          },
+          "contains": {
+            "type": "object",
+            "required": ["role"],
+            "properties": { "role": { "const": "principal" } }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+
+        "reponse_attendue": { "$ref": "#/$defs/reponse_attendue" },
+
+        "reprise": {
+          "type": "boolean",
+          "description": "§5 : 80 % des questions sont reprises du run précédent, 20 % neuves. Calculé par candidat présent aux deux runs ; un candidat nouveau est hors du calcul."
+        },
+        "run_origine_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+        "empreinte_texte_precedente": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Empreinte du texte au run précédent. « Question commune » (§8) exige même identifiant ET même empreinte : une correction d'item qui change le texte casse la reprise explicitement."
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "§5 : les questions d'attribution ne nomment que la mesure.",
+          "if": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["gabarit"] },
+          "then": { "not": { "required": ["candidat_id"] } },
+          "else": { "required": ["candidat_id"] }
+        },
+        {
+          "if": { "properties": { "reprise": { "const": true } }, "required": ["reprise"] },
+          "then": { "required": ["run_origine_id", "empreinte_texte_precedente"] }
+        }
+      ]
+    },
+
+    "reponse_attendue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nature", "resolution_temporelle"],
+      "description": "Résolue AU GEL, jamais stockée sur la question : pour un item O, la réponse attendue dépend de la date du run (§4).",
+      "properties": {
+        "nature": {
+          "type": "string",
+          "enum": [
+            "position",
+            "absence_de_position",
+            "oui",
+            "non",
+            "liste_candidats",
+            "aucun_candidat",
+            "changement_de_position",
+            "position_anterieure",
+            "non_avec_correction"
+          ]
+        },
+        "position": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position" },
+        "etat_attendu": {
+          "type": "string",
+          "enum": ["anterieur", "posterieur"],
+          "description": "Pour un item O : quel des deux états sourcés fait foi à date_gel, selon la règle semi-ouverte."
+        },
+        "candidats_attendus": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "uniqueItems": true,
+          "description": "Q-ATT : la liste exacte des candidats du périmètre proposant la mesure. Vide pour un item fictif."
+        },
+        "resolution_temporelle": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["date_gel", "regle"],
+          "properties": {
+            "date_gel": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "date_changement": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+            "regle": {
+              "type": "string",
+              "const": "semi_ouvert",
+              "description": "valide_du <= date_gel < valide_au. Consignée dans les données pour qu'un lecteur n'ait pas à deviner la convention employée."
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "nature": { "const": "liste_candidats" } }, "required": ["nature"] },
+          "then": { "required": ["candidats_attendus"] }
+        },
+        {
+          "if": {
+            "properties": { "nature": { "enum": ["changement_de_position", "position_anterieure"] } },
+            "required": ["nature"]
+          },
+          "then": {
+            "required": ["etat_attendu"],
+            "properties": { "resolution_temporelle": { "required": ["date_changement"] } }
+          }
+        },
+        {
+          "if": { "properties": { "nature": { "const": "position" } }, "required": ["nature"] },
+          "then": { "required": ["position"] }
+        }
+      ]
+    }
+  }
+}

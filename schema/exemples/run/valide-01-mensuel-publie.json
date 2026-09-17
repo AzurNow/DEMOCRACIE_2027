@@ -201,67 +201,35 @@
       }
     ]
   },
-  "tirage": [
-    {
-      "question_id": "q_3aee55a036e1bc56fa8a62d2ada903d5",
-      "candidat_id": "cand-a",
-      "theme": "fiscalite_pouvoir_achat",
-      "gabarit": "Q-DIR",
-      "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
-      "items_au_gel": [
-        {
-          "reference": {
-            "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
-            "item_version": 1,
-            "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
-          },
-          "role": "principal",
-          "statut_validation_au_gel": "verifie",
-          "statut_contestation_au_gel": "aucune"
-        }
-      ],
-      "reponse_attendue": {
-        "nature": "position",
-        "position": "pour",
-        "resolution_temporelle": {
-          "date_gel": "2026-12-01T06:00:00+01:00",
-          "regle": "semi_ouvert"
-        }
+  "tirage": {
+    "chemin": "runs/2026-12-01/tirage.json",
+    "sha256": "b2eb21e020f78c4b491c48455d87fcbaffcb6ef195a93c119d2d91ea3c08abba",
+    "nombre_questions": 402,
+    "part_reprise": 0.8,
+    "part_items_a_f": 0.23
+  },
+  "depot": {
+    "doi": "10.5281/zenodo.0000001",
+    "url": "https://zenodo.org/records/0000001",
+    "date": "2026-12-06T09:00:00+01:00",
+    "licence": "ODbL-1.0",
+    "archives": [
+      {
+        "nom": "reponses-brutes-2026-12-01.tar.zst",
+        "contenu": "reponses_brutes",
+        "sha256": "c246566657891dc7282178a368ac5ed6f069d3a35ba2233764291676684dad57",
+        "taille_octets": 412508160,
+        "nombre_entrees": 24120
       },
-      "reprise": false
-    },
-    {
-      "question_id": "q_bd684c557d461d16291b5b64142a251f",
-      "candidat_id": "cand-b",
-      "theme": "retraites",
-      "gabarit": "Q-ACT",
-      "grappe_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
-      "items_au_gel": [
-        {
-          "reference": {
-            "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
-            "item_version": 3,
-            "item_empreinte": "4467e3ae7290d1b583e60a8cce0b128213242f7124ebe5f10755eca49822460f"
-          },
-          "role": "principal",
-          "statut_validation_au_gel": "verifie",
-          "statut_contestation_au_gel": "arbitree"
-        }
-      ],
-      "reponse_attendue": {
-        "nature": "changement_de_position",
-        "etat_attendu": "posterieur",
-        "resolution_temporelle": {
-          "date_gel": "2026-12-01T06:00:00+01:00",
-          "date_changement": "2026-11-03",
-          "regle": "semi_ouvert"
-        }
-      },
-      "reprise": true,
-      "run_origine_id": "44CX8VSV75Q6ZAHDEJ8VA81YQE",
-      "empreinte_texte_precedente": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb"
-    }
-  ],
+      {
+        "nom": "notations-individuelles-2026-12-01.tar.zst",
+        "contenu": "notations_individuelles",
+        "sha256": "1830348703de0481347d9f47b9b63f9285a1ff331ad963def613be2be05c1b66",
+        "taille_octets": 39845888,
+        "nombre_entrees": 48240
+      }
+    ]
+  },
   "contestations_posterieures": [
     {
       "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",

@@ -1,0 +1,40 @@
+{
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "date_gel": "2026-12-01T06:00:00+01:00",
+  "graine_tirage": {
+    "valeur": 20261201,
+    "algorithme": "PCG64",
+    "bibliotheque": "numpy.random.Generator",
+    "version": "2.1.3"
+  },
+  "entrees": [
+    {
+      "question_id": "q_3aee55a036e1bc56fa8a62d2ada903d5",
+      "candidat_id": "cand-a",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-DIR",
+      "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+            "item_version": 1,
+            "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "position",
+        "position": "pour",
+        "resolution_temporelle": {
+          "date_gel": "2026-12-01T06:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "reprise": true
+    }
+  ]
+}
