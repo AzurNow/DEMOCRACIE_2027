@@ -13,6 +13,48 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-17 — Stockage hors Git du volume des runs (`schema/run.schema.json`, `schema/tirage.schema.json`)
+
+### 1. La reproductibilité dépend désormais d'un service tiers — *moyenne*
+
+Les réponses brutes et les notations individuelles quittent Git pour une archive Zenodo, référencée
+par DOI et SHA-256 depuis `run.depot`. Sans ce changement le dépôt aurait atteint plusieurs
+gigaoctets et cessé d'être clonable ; avec lui, la commande unique de reproductibilité du §9 dépend
+de la disponibilité de Zenodo.
+
+**Pourquoi ça casse.** Si un dépôt Zenodo devient inaccessible, les métriques d'un run publié ne
+sont plus rejouables, alors que Git continue d'affirmer qu'elles le sont. L'empreinte permet de
+détecter une archive altérée, pas d'en retrouver une disparue.
+
+**Ce qu'il faut faire.** Décider d'un second exemplaire — miroir sur un autre dépôt à DOI, ou copie
+froide hors ligne — et le dire dans le rapport de run. Zenodo est adossé au CERN et annonce une
+conservation longue, ce qui rend le risque faible mais pas nul pour un projet dont l'auditabilité
+est l'unique actif.
+
+### ~~2. `run.tirage[]` en tableau intégré~~ — réglé le 2026-09-17 par la sortie du tirage dans `tirage.schema.json`, référencé par chemin et empreinte
+
+---
+
+## 2026-09-17 — Règle de complexité (`CLAUDE.md`, `.claude/skills/complexite-maitrisee/`)
+
+### 1. Aucun outil ne mesure la complexité, et la règle porte sur du code qui n'existe pas — *basse*
+
+Les seuils — 9 en cyclomatique, 15 en cognitive — sont écrits dans `CLAUDE.md`, et la façon de s'y
+conformer dans la compétence `complexite-maitrisee`. Rien ne le mesure : il n'y a ni `package.json`, ni ESLint, ni Ruff dans le
+dépôt, et `pnpm check` n'existe pas encore. Les configurations sont prêtes à coller dans
+`.claude/skills/complexite-maitrisee/references/outillage.md`, non installées.
+
+**Pourquoi ça casse.** Pas de nombre faux : une fonction trop branchue ne ment pas, elle coûte. Le
+risque réel est le report — la règle s'appliquera à des milliers de lignes écrites sans contrôle, et
+la mise en conformité tombera d'un coup sur le code de notation et de métriques, c'est-à-dire là où
+un refactoring est le plus risqué.
+
+**Ce qu'il faut faire.** Brancher `complexity` (ESLint), `sonarjs/cognitive-complexity` et `C901`
+(Ruff) sur `pnpm check` en même temps que le validateur de schémas du point 3 ci-dessous : même
+décision, même lot de dépendances. D'ici là, mesurer à la main sur les fonctions de calcul.
+
+---
+
 ## 2026-09-17 — Mécanisme de clôture de session (`.claude/skills/cloture-de-session/`)
 
 ### 1. Rien ne vérifie que la clôture a eu lieu — *basse*
@@ -65,7 +107,7 @@ confirmer explicitement — le protocole ne le dit nulle part.
 
 ### 3. Les exemples ne sont pas encore exécutés en intégration continue — *moyenne*
 
-`schema/exemples/manifeste.json` est une table de vérité complète (40 exemples, résultat attendu et
+`schema/exemples/manifeste.json` est une table de vérité complète (45 exemples, résultat attendu et
 règle du protocole testée), vérifiée une fois à la main avec `jsonschema` 4.26. Aucun runner n'est
 branché sur `pnpm check`.
 
@@ -77,8 +119,8 @@ côté TypeScript, donc une dépendance : décision à prendre, pas un raccourci
 
 ### 4. `commun.schema.json` crée un couplage fort — *basse*
 
-Les huit schémas référencent une bibliothèque `$defs` commune par URN. Tout validateur doit charger
-les neuf fichiers dans un registre ; un schéma pris isolément ne se résout pas.
+Les neuf schémas référencent une bibliothèque `$defs` commune par URN. Tout validateur doit charger
+les dix fichiers dans un registre ; un schéma pris isolément ne se résout pas.
 
 **Pourquoi ça casse.** Un outil tiers qui charge `item.schema.json` seul échouera sans message
 clair. En contrepartie, les dix thèmes et les six gabarits ne peuvent pas diverger entre fichiers —

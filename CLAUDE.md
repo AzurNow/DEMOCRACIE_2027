@@ -75,7 +75,7 @@ pipeline/
   notation/            Juges, désaccords, échantillonnage, test contrefactuel.
 staging/               Sortie du pipeline. Jamais lu par le site.
 data/                  Items validés par des humains. Le seul jeu de données de production.
-runs/<date>/           Questions, graine, réponses brutes, notations, métriques d'un run.
+runs/<date>/           Questions, tirage, graines, verdicts, métriques. Le volume est en dépôt Zenodo.
 validation/            Interface locale de validation humaine.
 analysis/              Métriques §8, bootstrap, tests de permutation, robustesse.
 site/                  Site statique généré. Aucune logique métier.
@@ -95,6 +95,15 @@ bibliothèque l'impose. Site statique (Astro ou Next en export statique), déplo
 Pages. Stockage : fichiers JSON dans Git, pas de base de données — l'historique Git **est** le
 journal des modifications public exigé par le protocole. Tests : Vitest côté TS, pytest côté
 Python. Validation de schéma à chaque frontière, à l'entrée comme à la sortie.
+
+**Ce que Git stocke, et ce qu'il ne stocke pas.** Git garde `data/`, `config/`, `prompts/`, le code,
+et par run les questions, le tirage, les verdicts et les métriques : c'est le journal des
+modifications public exigé par le protocole, et il doit rester clonable par n'importe qui. Le volume
+d'un run — réponses brutes et notations individuelles, de l'ordre de 24 000 et 48 000 objets — part
+dans une archive déposée sur Zenodo avec le DOI que le §9 impose déjà, référencée depuis Git par son
+DOI et son empreinte SHA-256. Le protocole exige que les réponses brutes soient **publiées**, jamais
+qu'elles soient dans Git ; les y mettre rendrait le dépôt inclonable, donc invérifiable, ce qui
+supprimerait la seule raison d'être du projet.
 
 Pas de nouvelle dépendance sans justification explicite. Une dépendance de plus, c'est une surface
 d'audit de plus dans un projet dont la crédibilité repose sur l'auditabilité.
@@ -132,6 +141,13 @@ ne demandes pas si tu dois les lancer.
 - **Les cas limites sont le sujet, pas le détail.** Item obsolète exactement à la date du run,
   candidat sous le seuil de couverture, réponse manquante, lien mort, citation avec guillemets
   typographiques, réponse tronquée. Écris le test avant de me demander quoi faire.
+- **Complexité sous les seuils.** Toute fonction reste strictement en dessous de 10 en complexité
+  cyclomatique (McCabe), soit 9 au plus, et sous 15 en complexité cognitive. Les deux mesurent des
+  défauts disjoints : la première compte les chemins, la seconde punit l'imbrication et laisse
+  passer une répartition plate exhaustive, qui est l'idiome voulu ici. Une fonction qui dépasserait
+  se découpe en fonctions nommées plus petites — jamais en relevant un seuil, jamais avec un
+  commentaire de désactivation du linter. Comment découper sans casser les deux règles ci-dessous :
+  compétence `complexite-maitrisee`.
 - **Dis quand tu ne sais pas.** Une question posée coûte deux minutes ; une hypothèse inventée
   dans un pipeline de mesure coûte la crédibilité du projet.
 - **Signale les trous du protocole.** S'il est ambigu ou insuffisant sur un point que tu dois

@@ -59,7 +59,7 @@ règle visée ne produisait que la deuxième erreur du lot.
 
 ## Outillage
 
-**Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 40 exemples
+**Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
 vérifiés sans ajouter une seule dépendance au projet. Une dépendance de plus est une surface d'audit
 de plus dans un projet dont la crédibilité repose sur l'auditabilité.
 
@@ -85,6 +85,23 @@ pas, et je signale si un amendement (§9) est nécessaire.
 n'existe pas dans la grille), ajouter un champ descriptif — `motif_inexactitude`,
 `attribution{attendus, cites}` — plutôt que toucher à la catégorie primaire. Les métriques
 préenregistrées ne bougent pas, et la nuance reste reconstructible en analyse exploratoire.
+
+**Une contrainte qui s'applique en écrivant va dans `CLAUDE.md` ; une compétence ne porte que le
+comment.** Le seuil de complexité doit être présent à chaque fonction écrite : le mettre dans une
+compétence chargée à la demande, c'est garantir qu'il ne sera pas là au moment où il compte. Quatre
+lignes dans `CLAUDE.md` pour la règle, la compétence `complexite-maitrisee` pour la façon de
+découper sans violer les deux règles voisines du dépôt. Le critère de partage : *cette information
+doit-elle être présente avant de savoir qu'on en a besoin ?*
+
+**Chiffrer le volume avant de choisir le stockage.** « Fichiers JSON dans Git » se tenait jusqu'à
+ce qu'on multiplie : 24 000 réponses par run, 20 runs, 4 à 12 Go. Le dépôt cessait d'être clonable,
+donc vérifiable, ce qui supprimait la raison d'être du projet — et personne ne l'aurait vu avant la
+première semaine de runs hebdomadaires. Trois multiplications valaient mieux qu'une intuition.
+
+**Relire le texte qui fait autorité plutôt que le résumé qu'on en a fait.** Le protocole exige que
+les réponses brutes soient *publiées* et que Git soit le journal des *modifications* : deux exigences
+distinctes, fusionnées à tort en « tout dans Git ». La solution était déjà dans le §9, sous la forme
+du DOI Zenodo imposé à chaque publication. Aucun amendement n'a été nécessaire.
 
 **Un trou du protocole se signale, il ne se comble pas en silence.** Trois contradictions relevées
 cette session (candidat retiré, symétrie et Q-ATT, ajout fabriqué non contraire) sont documentées
