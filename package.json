@@ -1,0 +1,25 @@
+{
+  "name": "banc-essai-2027",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build:client": "tsc -p validation/client/tsconfig.json",
+    "validate": "pnpm run build:client && node --experimental-strip-types validation/serveur/principal.ts",
+    "lots": "node --experimental-strip-types outils/lots.ts",
+    "promote": "node --experimental-strip-types outils/promote.ts",
+    "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
