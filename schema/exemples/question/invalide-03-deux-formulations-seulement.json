@@ -1,0 +1,50 @@
+{
+  "id": "q_eb66a3779911e10156fdfc2227589af6",
+  "gabarit": "Q-DIR",
+  "candidat_id": "cand-a",
+  "items": [
+    {
+      "reference": {
+        "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+        "item_version": 1,
+        "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+      },
+      "role": "principal"
+    }
+  ],
+  "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+  "formulations": [
+    {
+      "id": "GGCFCYDA9QYB0SMSK4MX6BTM0W",
+      "registre": "neutre",
+      "texte": "Quelle est la position de [candidat] sur la TVA des produits énergétiques ?",
+      "empreinte_texte": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.2.0"
+      },
+      "relecture": {
+        "annotateur_id": "a2",
+        "date": "2026-11-18T15:00:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "9RVVC2P20KRNNRY69ZPFCS99F5",
+      "registre": "familier",
+      "texte": "Il veut faire quoi [candidat] sur la TVA de l'énergie ?",
+      "empreinte_texte": "0ed1648ef9d8c1245d5c4a333baac9aa0411504741e7d68caa1d139d6ef3cfb0",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.2.0"
+      },
+      "relecture": {
+        "annotateur_id": "a2",
+        "date": "2026-11-18T15:00:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ],
+  "engendree_le": "2026-11-18T14:00:00+01:00",
+  "version_gabarits": "prompts/gabarits-1.0.0"
+}

@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:reponse",
+  "title": "Réponse d'outil",
+  "description": "Ce qu'un outil a répondu, tel quel. Deux tensions résolues ici. (1) Règle 7 de CLAUDE.md : la réponse brute est immuable, mais chaque éditeur renvoie une structure différente ; un schéma commun typé EST un reformatage. D'où deux champs disjoints : brut, opaque et haché, jamais lu par la notation ; normalise, projection explicitement avec perte, produite par une fonction versionnée. (2) §7 interdit au juge de connaître l'outil noté : l'identifiant est donc opaque et un alias_aveugle stocké rend l'aveuglement auditable après coup au lieu d'être promis.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "run_id",
+    "contexte",
+    "canal",
+    "outil_id",
+    "question_id",
+    "formulation_id",
+    "echantillon",
+    "statut_reponse"
+  ],
+
+  "properties": {
+    "id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Opaque : un id du type run-2026-12-01-chatgpt-0042 ferait fuiter l'identité de l'outil vers un juge aveugle par la seule clé."
+    },
+
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "contexte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/contexte_mesure" },
+
+    "canal": {
+      "type": "string",
+      "enum": ["api", "application"],
+      "description": "api : mesure principale (§6). application : sous-échantillon saisi à la main par deux testeurs, QR8, exploratoire. Les comparateurs ne sont pas ici : ils ne sont pas interrogés mais lus (schéma lecture-comparateur)."
+    },
+
+    "alias_aveugle": {
+      "type": "string",
+      "pattern": "^[A-Z]{1,3}[0-9]{2,4}$",
+      "description": "Alias attribué par run et par outil, présenté aux juges à la place de outil_id. Stocké pour que l'aveuglement soit vérifiable après publication."
+    },
+
+    "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+
+    "mode": {
+      "type": "string",
+      "enum": ["web_activee", "web_desactivee"],
+      "description": "§6 : obligatoire pour le canal api (QR6, H2). Interdit pour le canal application, dont le réglage est celui du produit et est consigné dans metadonnees.parametres_effectifs — pas de valeur par défaut silencieuse."
+    },
+
+    "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
+    "formulation_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "echantillon": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "§6 : 2 échantillons par question et par mode. Le levier de coût préenregistré du §12 est ce nombre (2 → 1), jamais le nombre de candidats."
+    },
+
+    "statut_reponse": {
+      "type": "string",
+      "enum": ["obtenue", "manquante"],
+      "description": "§6 : après trois tentatives en échec, la réponse est manquante, \"comptée comme telle et jamais comme une erreur\". Distinct d'un refus, qui est une réponse OBTENUE notée non-réponse (§7). Le seuil de 20 % de manquantes par outil (§8, §12) n'est auditable que si les tentatives sont conservées."
+    },
+
+    "requete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["corps", "sha256", "endpoint", "horodatage"],
+      "description": "§6 : la requête complète est enregistrée. Aucune clé d'accès ne figure ici (§9 : les clés ne sont pas publiées) ; les en-têtes d'authentification sont retirés avant écriture, ce qui est le seul retrait autorisé.",
+      "properties": {
+        "corps": { "type": "object" },
+        "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "endpoint": { "type": "string", "minLength": 1 },
+        "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+      }
+    },
+
+    "brut": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "La charge utile de l'éditeur, telle quelle, forme libre assumée. JAMAIS lue par la notation, jamais nettoyée, jamais tronquée. Toute transformation vit en aval, dans normalise."
+    },
+
+    "brut_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte des octets canoniques de brut. Rend l'immuabilité vérifiable plutôt que promise."
+    },
+
+    "normalise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["texte", "liens", "troncature"],
+      "description": "Projection AVEC PERTE de brut, seule entrée de la notation.",
+      "properties": {
+        "texte": { "type": "string" },
+        "liens": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^https?://" },
+          "description": "Liens cités par l'outil, dans l'ordre d'apparition. Leur test HTTP vit dans la notation, pas ici."
+        },
+        "citations": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "Objets de citation renvoyés par l'API quand elle en produit, forme propre à l'éditeur."
+        },
+        "appels_outils": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "troncature": {
+          "type": "boolean",
+          "description": "Dérivé du stop_reason, jamais deviné. §6 fixe 2 048 tokens \"pour éviter toute troncature\" : la troncature arrivera quand même. Décision retenue : une réponse tronquée est OBTENUE et notée telle quelle (règle 7) ; le drapeau reste disponible pour une analyse de robustesse."
+        }
+      }
+    },
+
+    "normalisation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fonction", "version"],
+      "description": "Sans version stockée, une renormalisation ultérieure serait indétectable et la reproductibilité du §9 serait fausse.",
+      "properties": {
+        "fonction": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "metadonnees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["horodatage_requete", "horodatage_reponse"],
+      "description": "§6 : identifiant de version renvoyé par l'API, horodatage, latence, paramètres effectifs.",
+      "properties": {
+        "modele_demande": { "type": "string", "minLength": 1 },
+        "modele_renvoye": {
+          "type": ["string", "null"],
+          "description": "null si l'API n'en renvoie pas. Jamais recopié depuis modele_demande : une valeur absente doit rester absente et visible."
+        },
+        "horodatage_requete": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "horodatage_reponse": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "latence_ms": { "type": "integer", "minimum": 0 },
+        "stop_reason": { "type": ["string", "null"] },
+        "parametres_effectifs": {
+          "type": "object",
+          "description": "§6 : les valeurs par défaut de l'éditeur sont utilisées, mais les valeurs EFFECTIVES sont enregistrées."
+        },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entree": { "type": "integer", "minimum": 0 },
+            "sortie": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "tentatives": {
+      "type": "array",
+      "description": "§6 : trois tentatives avec délai croissant avant de déclarer la réponse manquante.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["numero", "horodatage", "erreur"],
+        "properties": {
+          "numero": { "type": "integer", "minimum": 1 },
+          "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+          "erreur": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "message"],
+            "properties": {
+              "type": { "type": "string", "enum": ["reseau", "http", "quota", "refus_api", "timeout", "autre"] },
+              "message": { "type": "string", "minLength": 1 },
+              "code_http": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+
+    "saisie_manuelle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["testeur_id", "horodatage_saisie", "captures"],
+      "description": "§6, QR8 : deux testeurs saisissent à la main 60 questions par mois dans l'application grand public ; les captures sont archivées. Aucune interface grand public n'est automatisée (§10).",
+      "properties": {
+        "testeur_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "horodatage_saisie": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "compte_dedie": { "type": "boolean" },
+        "captures": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sha256", "chemin_local"],
+            "properties": {
+              "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+              "chemin_local": { "type": "string", "minLength": 1 },
+              "archive_url": { "type": "string", "pattern": "^https?://" }
+            }
+          }
+        }
+      }
+    },
+
+    "derive_de_reponse_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Réponse réelle dont cet objet est une permutation (§7, test contrefactuel)."
+    },
+
+    "permutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "correspondances"],
+      "description": "§7 : les noms de candidats (ou d'outils) sont permutés, la structure logique reste identique. Ces textes n'ont été produits par aucun outil : ils ne doivent jamais entrer dans les métriques du §8, ce que garantit contexte != run.",
+      "properties": {
+        "type": { "type": "string", "enum": ["noms_candidats", "noms_outils"] },
+        "correspondances": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "Une réponse obtenue porte son brut, son empreinte, sa projection et ses métadonnées ; elle n'a pas de tentatives en échec.",
+      "if": { "properties": { "statut_reponse": { "const": "obtenue" } }, "required": ["statut_reponse"] },
+      "then": {
+        "required": ["brut", "brut_sha256", "normalise", "normalisation", "metadonnees"]
+      }
+    },
+    {
+      "$comment": "Une réponse manquante n'a RIEN à montrer : le contraire signifierait qu'on a inventé un contenu.",
+      "if": { "properties": { "statut_reponse": { "const": "manquante" } }, "required": ["statut_reponse"] },
+      "then": {
+        "required": ["tentatives"],
+        "properties": { "tentatives": { "minItems": 3 } },
+        "allOf": [
+          { "not": { "required": ["brut"] } },
+          { "not": { "required": ["normalise"] } },
+          { "not": { "required": ["brut_sha256"] } }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "canal": { "const": "api" } }, "required": ["canal"] },
+      "then": { "required": ["mode", "requete"] },
+      "else": { "not": { "required": ["mode"] } }
+    },
+    {
+      "if": { "properties": { "canal": { "const": "application" } }, "required": ["canal"] },
+      "then": { "required": ["saisie_manuelle"] },
+      "else": { "not": { "required": ["saisie_manuelle"] } }
+    },
+    {
+      "$comment": "Un artefact contrefactuel doit dire de quoi il dérive, sinon il est indistinguable d'une vraie réponse.",
+      "if": {
+        "properties": { "contexte": { "enum": ["contrefactuel_candidat", "contrefactuel_outil"] } },
+        "required": ["contexte"]
+      },
+      "then": { "required": ["derive_de_reponse_id", "permutation"] },
+      "else": {
+        "allOf": [
+          { "not": { "required": ["derive_de_reponse_id"] } },
+          { "not": { "required": ["permutation"] } }
+        ]
+      }
+    }
+  ]
+}

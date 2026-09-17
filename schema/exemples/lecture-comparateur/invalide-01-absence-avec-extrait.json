@@ -1,0 +1,22 @@
+{
+  "id": "N3A8BSA91SKY7ETQYTCERFATDP",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "outil_id": "comparateur-gamma",
+  "reference_item": {
+    "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+    "item_version": 3,
+    "item_empreinte": "4467e3ae7290d1b583e60a8cce0b128213242f7124ebe5f10755eca49822460f"
+  },
+  "methode_acces": "lecture_pages",
+  "robots_respecte": true,
+  "cadence_max_pages_par_seconde": 1,
+  "date_lecture": "2026-12-01T08:20:00+01:00",
+  "source_archivee": {
+    "url": "https://comparateur-gamma.fr/candidat/cand-b/retraites",
+    "sha256": "4fc11f4b1948a06daa760dcad03d185440c98693ef78510525bc846b8be04b15",
+    "archive_url": "https://web.archive.org/web/20261201/https://comparateur-gamma.fr/candidat/cand-b/retraites"
+  },
+  "affiche": false,
+  "extrait": "Position reconstituée à partir du thème."
+}

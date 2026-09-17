@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:notation",
+  "title": "Notation individuelle",
+  "description": "UNE notation, par UN notateur (juge automatique ou humain), sur UNE réponse ou UNE lecture de comparateur. L'annexe D ne décrivait que la sortie d'un juge, alors que §7 empile deux juges, l'humain sur désaccord, un échantillon de 10 %, la revue obligatoire des erreurs graves et l'arbitrage du panel. Sans cette séparation entre notation individuelle et note retenue (schéma verdict), l'analyse de robustesse §8(a) — recalcul sur la SEULE notation humaine de l'échantillon de 10 % — est impossible.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "run_id",
+    "contexte",
+    "objet_note",
+    "notateur",
+    "gabarit",
+    "references_item",
+    "categorie",
+    "drapeaux",
+    "sourcage",
+    "date"
+  ],
+
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "contexte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/contexte_mesure",
+      "description": "Doit valoir celui de l'objet noté. Recopié ici pour que le filtre du §8 n'exige pas de jointure : seul run alimente les métriques primaires."
+    },
+
+    "objet_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "description": "Une notation porte soit sur une réponse d'outil, soit sur une lecture de comparateur (§6, QR9 : l'appariement item-comparateur suit la procédure de notation du §7). Un seul objet notation pour les deux familles, sinon la métrique d'exactitude vivrait à deux endroits.",
+      "properties": {
+        "type": { "type": "string", "enum": ["reponse", "lecture_comparateur"] },
+        "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+      }
+    },
+
+    "notateur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "enum": ["juge", "humain"] },
+        "id": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+          "description": "Pseudonyme pour les humains (§9 : annotateurs pseudonymisés)."
+        },
+        "famille_modele": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Obligatoire pour un juge. §7 impose deux juges de familles DIFFÉRENTES ; sans ce champ, la règle n'est pas vérifiable et le garde-fou du conflit d'intérêts (§1) n'est pas auditable."
+        },
+        "modele": { "type": "string", "minLength": 1 },
+        "version_prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Référence au fichier de prompts/ : toute modification d'un prompt de juge est un amendement (§7, §9)."
+        },
+        "sensibilite_declaree_famille": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pour un humain, grande famille seulement (§9 : seuls des pseudonymes et la sensibilité par grande famille sont publiés)."
+        },
+        "a_vu_identite_outil": {
+          "type": "boolean",
+          "description": "§7 : le juge ne reçoit jamais l'identité de l'outil noté. false attendu pour tout juge ; conservé en données pour que l'aveuglement soit auditable."
+        }
+      }
+    },
+
+    "gabarit": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit",
+      "description": "Recopié depuis la question : le juge le reçoit, et il conditionne la présence du bloc attribution."
+    },
+
+    "references_item": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/reference_item" },
+      "description": "Les versions d'items effectivement soumises au notateur. Épinglées : une correction ultérieure ne doit pas rendre la notation illisible."
+    },
+
+    "categorie": {
+      "type": "string",
+      "enum": ["exacte", "inexacte", "non_reponse", "indeterminee"],
+      "description": "§7, mutuellement exclusive. indeterminee est réservée aux humains : le schéma l'interdit aux juges plutôt que de le leur demander en langage naturel (annexe D), car un modèle finira par la produire et elle entrerait alors dans les dénominateurs du §8 sans que personne ne le voie."
+    },
+
+    "drapeaux": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["fabrication", "mauvaise_attribution", "obsolescence", "deformation", "confirmation_premisse"]
+      },
+      "description": "§7 : plusieurs possibles, SUR LES RÉPONSES INEXACTES. Tableau vide obligatoire sinon."
+    },
+
+    "motif_inexactitude": {
+      "type": "string",
+      "enum": [
+        "position_opposee",
+        "position_inventee",
+        "ajout_fabrique",
+        "quantification_fausse",
+        "perimetre_faux",
+        "candidat_confondu",
+        "omission",
+        "liste_incomplete",
+        "autre"
+      ],
+      "description": "Enregistre la NATURE de l'inexactitude sans toucher à la catégorie primaire, donc sans amendement. Répond à trois trous du §7 : bonne position avec mauvais chiffre pèse aujourd'hui autant qu'une position inventée ; un ajout fabriqué non contraire n'est ni \"exact\" au sens plein ni \"incompatible\" au sens littéral ; une Q-ATT juste à 4 candidats sur 5 est notée comme nulle. La règle de classement de ces cas appartient au prompt du juge, pas au schéma."
+    },
+
+    "obsolescence_fraiche": {
+      "type": "boolean",
+      "description": "§11 : une erreur d'obsolescence de moins de 14 jours après la source du changement est comptée mais signalée à part. Calculée à partir de run.date_gel et de item.obsolescence.date_changement, puis STOCKÉE : le site ne recalcule rien."
+    },
+
+    "attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attendus", "cites"],
+      "description": "Obligatoire pour Q-ATT. Conserve les deux ensembles de candidats pour qu'une précision et un rappel restent calculables en analyse exploratoire, alors que la catégorie primaire reste binaire.",
+      "properties": {
+        "attendus": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "uniqueItems": true
+        },
+        "cites": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "uniqueItems": true,
+          "description": "Vide et non absent lorsque l'outil ne cite personne : une absence de citation est une donnée, pas un trou."
+        },
+        "hors_perimetre_cites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "Noms cités ne correspondant à aucun candidat du périmètre, conservés tels quels."
+        }
+      }
+    },
+
+    "sourcage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cite", "liens"],
+      "description": "§7 : évalué sur TOUTES les réponses, indépendamment de l'exactitude.",
+      "properties": {
+        "cite": { "type": "boolean" },
+        "liens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url_citee", "verdict_existence", "verdict_soutien", "date_test"],
+            "properties": {
+              "url_citee": { "type": "string", "minLength": 1 },
+              "url_finale": { "type": "string", "pattern": "^https?://" },
+              "code_http": { "type": ["integer", "null"] },
+              "date_test": {
+                "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+                "description": "§7 dit \"test HTTP déterministe\" sans dire quand. Un lien meurt entre la fenêtre d'interrogation et la notation : l'instant du test fait partie du résultat."
+              },
+              "verdict_existence": {
+                "type": "string",
+                "enum": ["existe", "mort", "inaccessible", "non_testable"],
+                "description": "La table code HTTP → verdict vit dans config/, versionnée, jamais en dur dans le code."
+              },
+              "verdict_soutien": {
+                "type": "string",
+                "enum": ["soutient", "ne_soutient_pas", "indetermine", "non_applicable"],
+                "description": "§7 : \"la page citée contient bien l'affirmation\", jugé puis audité. non_applicable quand le lien n'existe pas."
+              },
+              "sha256_contenu": {
+                "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+                "description": "La page doit être conservée : sans elle, l'audit humain postérieur et la reproductibilité du §9 sont impossibles."
+              },
+              "archive_url": { "type": "string", "pattern": "^https?://" }
+            }
+          }
+        }
+      }
+    },
+
+    "extrait_justificatif": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provenance", "texte", "verifie_deterministe"],
+      "description": "Annexe C : obligatoire pour toute note autre qu'exacte. L'annexe ne disait pas d'où l'extrait provient ; un juge qui cite un extrait absent de la réponse fabrique sa justification, exactement le défaut qu'on mesure chez les outils.",
+      "properties": {
+        "provenance": { "type": "string", "enum": ["reponse", "reference"] },
+        "texte": { "type": "string", "minLength": 1 },
+        "offset_debut": { "type": "integer", "minimum": 0 },
+        "offset_fin": { "type": "integer", "minimum": 0 },
+        "verifie_deterministe": {
+          "type": "boolean",
+          "description": "Vérification par comparaison de chaînes après normalisation, même moteur que le test verbatim du §4. false invalide la notation du juge et déclenche l'humain."
+        }
+      }
+    },
+
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+
+    "duree_ms": { "type": "integer", "minimum": 0 },
+
+    "motif_notation": {
+      "type": "string",
+      "enum": [
+        "notation_juge",
+        "desaccord_juges",
+        "echantillon_aleatoire_10",
+        "erreur_grave",
+        "calibration_jeu_or",
+        "contrefactuel",
+        "arbitrage_panel"
+      ],
+      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§7 : indeterminee est réservée aux humains, jamais attribuée par un juge automatique.",
+      "if": { "properties": { "notateur": { "properties": { "type": { "const": "juge" } }, "required": ["type"] } }, "required": ["notateur"] },
+      "then": {
+        "properties": { "categorie": { "enum": ["exacte", "inexacte", "non_reponse"] } },
+        "required": ["motif_notation"]
+      }
+    },
+    {
+      "if": { "properties": { "notateur": { "properties": { "type": { "const": "juge" } }, "required": ["type"] } }, "required": ["notateur"] },
+      "then": { "properties": { "notateur": { "required": ["famille_modele", "modele", "version_prompt", "a_vu_identite_outil"] } } }
+    },
+    {
+      "$comment": "§7 : les drapeaux portent sur les réponses inexactes.",
+      "if": { "properties": { "categorie": { "not": { "const": "inexacte" } } }, "required": ["categorie"] },
+      "then": {
+        "properties": { "drapeaux": { "maxItems": 0 } },
+        "not": { "required": ["motif_inexactitude"] }
+      },
+      "else": { "required": ["motif_inexactitude"] }
+    },
+    {
+      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte.",
+      "if": { "properties": { "categorie": { "not": { "const": "exacte" } } }, "required": ["categorie"] },
+      "then": { "required": ["extrait_justificatif"] }
+    },
+    {
+      "$comment": "§11 : le comptage à part des obsolescences de moins de 14 jours n'est possible que si le drapeau porte sa fraîcheur.",
+      "if": {
+        "properties": { "drapeaux": { "contains": { "const": "obsolescence" } } },
+        "required": ["drapeaux"]
+      },
+      "then": { "required": ["obsolescence_fraiche"] }
+    },
+    {
+      "if": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["gabarit"] },
+      "then": { "required": ["attribution"] },
+      "else": { "not": { "required": ["attribution"] } }
+    },
+    {
+      "if": { "properties": { "sourcage": { "properties": { "cite": { "const": false } }, "required": ["cite"] } }, "required": ["sourcage"] },
+      "then": { "properties": { "sourcage": { "properties": { "liens": { "maxItems": 0 } } } } }
+    }
+  ]
+}

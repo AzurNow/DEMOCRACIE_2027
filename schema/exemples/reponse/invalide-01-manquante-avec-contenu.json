@@ -1,0 +1,68 @@
+{
+  "id": "C4WV9W4DWMD9XFBK9E0CG3DDE1",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "canal": "api",
+  "alias_aveugle": "O07",
+  "outil_id": "outil-alpha",
+  "mode": "web_activee",
+  "question_id": "q_3aee55a036e1bc56fa8a62d2ada903d5",
+  "formulation_id": "9RVVC2P20KRNNRY69ZPFCS99F5",
+  "echantillon": 2,
+  "statut_reponse": "manquante",
+  "requete": {
+    "corps": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Il veut faire quoi … ?"
+        }
+      ],
+      "max_tokens": 2048
+    },
+    "sha256": "5fb0efa1b8cc46a2fc97c2701377e1154eb63548a0fa1f8fdba5272b9623fa3b",
+    "endpoint": "https://api.exemple-editeur.fr/v1/messages",
+    "horodatage": "2026-12-01T07:10:00+01:00"
+  },
+  "tentatives": [
+    {
+      "numero": 1,
+      "horodatage": "2026-12-01T07:10:00+01:00",
+      "erreur": {
+        "type": "http",
+        "message": "503 Service Unavailable",
+        "code_http": 503
+      }
+    },
+    {
+      "numero": 2,
+      "horodatage": "2026-12-01T07:10:30+01:00",
+      "erreur": {
+        "type": "http",
+        "message": "503 Service Unavailable",
+        "code_http": 503
+      }
+    },
+    {
+      "numero": 3,
+      "horodatage": "2026-12-01T07:11:30+01:00",
+      "erreur": {
+        "type": "timeout",
+        "message": "Délai dépassé après 60 s"
+      }
+    }
+  ],
+  "brut": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Réponse reconstituée."
+      }
+    ]
+  },
+  "normalise": {
+    "texte": "Réponse reconstituée.",
+    "liens": [],
+    "troncature": false
+  }
+}

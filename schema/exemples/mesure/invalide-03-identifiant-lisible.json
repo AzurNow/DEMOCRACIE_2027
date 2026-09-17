@@ -1,0 +1,21 @@
+{
+  "id": "tva-energie-5-5",
+  "version": 1,
+  "empreinte": "4b502fd1225fcfe3e99e3466bea4f871aba6bee8acd0896a1844868bd1552d8a",
+  "libelle": "TVA réduite sur les produits énergétiques",
+  "theme": "fiscalite_pouvoir_achat",
+  "formulation_canonique": "ramener la TVA sur les produits énergétiques à 5,5 %",
+  "alias": [
+    "tva energie 5,5",
+    "baisse de la TVA sur l'énergie"
+  ],
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    }
+  ]
+}

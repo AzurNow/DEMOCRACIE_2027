@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:verdict",
+  "title": "Verdict (note retenue)",
+  "description": "La note effectivement retenue pour un objet noté, et la trace de la façon dont elle a été obtenue (§7, règle de décision). Séparé de la notation individuelle pour trois raisons : §8(a) recalcule sur la seule notation humaine, donc il faut pouvoir écarter les juges sans réécrire quoi que ce soit ; l'accord juges-humains publié à chaque run se calcule entre notations sources ; et une note retenue réécrite à chaque étape de la chaîne (juges, puis humain, puis panel) serait une donnée mutable au cœur de la mesure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "run_id",
+    "contexte",
+    "objet_note",
+    "categorie_retenue",
+    "drapeaux_retenus",
+    "sourcage_retenu",
+    "notations_sources",
+    "mode_resolution",
+    "desaccord_juges",
+    "dans_echantillon_humain",
+    "erreur_grave",
+    "date"
+  ],
+
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "contexte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/contexte_mesure",
+      "description": "Seul contexte=run entre dans les métriques primaires du §8. Aucun booléen \"éligible\" n'est stocké : la règle est un filtre unique, dans analysis/, appliqué à ce champ."
+    },
+
+    "objet_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "enum": ["reponse", "lecture_comparateur"] },
+        "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+      }
+    },
+
+    "categorie_retenue": {
+      "type": "string",
+      "enum": ["exacte", "inexacte", "non_reponse", "indeterminee"]
+    },
+
+    "drapeaux_retenus": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["fabrication", "mauvaise_attribution", "obsolescence", "deformation", "confirmation_premisse"]
+      }
+    },
+
+    "motif_inexactitude_retenu": {
+      "type": "string",
+      "enum": [
+        "position_opposee",
+        "position_inventee",
+        "ajout_fabrique",
+        "quantification_fausse",
+        "perimetre_faux",
+        "candidat_confondu",
+        "omission",
+        "liste_incomplete",
+        "autre"
+      ]
+    },
+
+    "obsolescence_fraiche": { "type": "boolean" },
+
+    "sourcage_retenu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cite", "au_moins_un_lien_existant", "au_moins_un_lien_soutenant"],
+      "description": "Trois booléens qui portent exactement la métrique \"sourçage valide\" du §8 : réponses citant au moins une source existante qui soutient l'affirmation.",
+      "properties": {
+        "cite": { "type": "boolean" },
+        "au_moins_un_lien_existant": { "type": "boolean" },
+        "au_moins_un_lien_soutenant": { "type": "boolean" }
+      }
+    },
+
+    "notations_sources": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+      "description": "Identifiants des notations individuelles ayant concouru au verdict. Jamais vide : un verdict sans source serait une note sans notateur."
+    },
+
+    "mode_resolution": {
+      "type": "string",
+      "enum": [
+        "accord_juges",
+        "tranche_humain",
+        "echantillon_humain_10",
+        "revue_erreur_grave",
+        "arbitrage_panel",
+        "juge_unique_apres_retrait"
+      ],
+      "description": "§7 : accord des deux juges ⇒ note retenue ; désaccord ⇒ notation humaine qui tranche. juge_unique_apres_retrait couvre le cas du §7 où un juge dépasse 3 % de changement au test contrefactuel et est retiré du run."
+    },
+
+    "desaccord_juges": {
+      "type": "boolean",
+      "description": "Alimente l'accord inter-juges publié à chaque run. Distinct de mode_resolution : un désaccord peut aussi être tranché par le panel."
+    },
+
+    "dans_echantillon_humain": {
+      "type": "boolean",
+      "description": "§7 : échantillon aléatoire de 10 % des réponses de chaque run, tiré avec une graine publiée, doublement noté à l'aveugle QUEL QUE SOIT l'accord des juges. C'est ce drapeau qui définit le sous-ensemble de l'analyse de robustesse §8(a)."
+    },
+
+    "erreur_grave": {
+      "type": "boolean",
+      "description": "§7 : toute réponse marquée fabrication ou mauvaise attribution est revue par un humain AVANT publication ; §8 : toutes sont publiées in extenso, sans sélection."
+    },
+
+    "revue_humaine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effectuee", "date"],
+      "properties": {
+        "effectuee": { "type": "boolean" },
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "annotateurs": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "uniqueItems": true
+        }
+      }
+    },
+
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§7 : une erreur grave ne peut pas être retenue sur le seul accord des juges.",
+      "if": {
+        "properties": {
+          "drapeaux_retenus": {
+            "contains": { "enum": ["fabrication", "mauvaise_attribution"] }
+          }
+        },
+        "required": ["drapeaux_retenus"]
+      },
+      "then": {
+        "properties": {
+          "erreur_grave": { "const": true },
+          "mode_resolution": {
+            "enum": ["tranche_humain", "echantillon_humain_10", "revue_erreur_grave", "arbitrage_panel"]
+          }
+        },
+        "required": ["revue_humaine"]
+      }
+    },
+    {
+      "if": { "properties": { "erreur_grave": { "const": true } }, "required": ["erreur_grave"] },
+      "then": {
+        "required": ["revue_humaine"],
+        "properties": { "revue_humaine": { "properties": { "effectuee": { "const": true } } } }
+      }
+    },
+    {
+      "$comment": "Les drapeaux ne vivent que sur l'inexactitude (§7), ici aussi.",
+      "if": { "properties": { "categorie_retenue": { "not": { "const": "inexacte" } } }, "required": ["categorie_retenue"] },
+      "then": {
+        "properties": { "drapeaux_retenus": { "maxItems": 0 } },
+        "not": { "required": ["motif_inexactitude_retenu"] }
+      },
+      "else": { "required": ["motif_inexactitude_retenu"] }
+    },
+    {
+      "$comment": "Un désaccord suppose au moins deux notations sources.",
+      "if": { "properties": { "desaccord_juges": { "const": true } }, "required": ["desaccord_juges"] },
+      "then": { "properties": { "notations_sources": { "minItems": 2 } } }
+    },
+    {
+      "$comment": "§7 : indeterminee n'existe que sous la main d'un humain, donc jamais sur un accord de juges.",
+      "if": { "properties": { "categorie_retenue": { "const": "indeterminee" } }, "required": ["categorie_retenue"] },
+      "then": {
+        "properties": {
+          "mode_resolution": {
+            "enum": ["tranche_humain", "echantillon_humain_10", "revue_erreur_grave", "arbitrage_panel"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "dans_echantillon_humain": { "const": true } }, "required": ["dans_echantillon_humain"] },
+      "then": { "properties": { "notations_sources": { "minItems": 2 } } }
+    },
+    {
+      "if": {
+        "properties": { "drapeaux_retenus": { "contains": { "const": "obsolescence" } } },
+        "required": ["drapeaux_retenus"]
+      },
+      "then": { "required": ["obsolescence_fraiche"] }
+    }
+  ]
+}

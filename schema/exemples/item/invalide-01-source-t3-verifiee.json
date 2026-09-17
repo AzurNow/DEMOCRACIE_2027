@@ -1,0 +1,101 @@
+{
+  "id": "8ANPAQGSMFQMTHFHZM8WZ76ZGA",
+  "version": 1,
+  "empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2",
+  "libelle_lisible": "TVA énergie à 5,5 %",
+  "type": "P",
+  "candidat_id": "cand-a",
+  "mesure_id": "JE6Y9CC6TBCK6K7H6WNNZ7353S",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "assertion": {
+    "position": "pour",
+    "paraphrase": "Ramener la TVA sur les produits énergétiques de 20 % à 5,5 %.",
+    "citation_verbatim": "Nous ramènerons la TVA sur les produits énergétiques à 5,5 %.",
+    "quantification": {
+      "dimensions": [
+        {
+          "type": "taux",
+          "valeur": 5.5,
+          "unite": "%",
+          "operateur": "exact"
+        },
+        {
+          "type": "perimetre",
+          "valeur": "carburants, fioul, gaz, électricité"
+        }
+      ]
+    },
+    "source": {
+      "tier": "T3",
+      "url": "https://exemple-media.fr/article-rapporte",
+      "type_document": "article_presse",
+      "sha256": "84393add8c489d33569360efd1bcb5f70ed5a22408127d241c751e5ea345eb7c",
+      "archive_url": "https://web.archive.org/web/20261020100000/https://exemple-media.fr/article-rapporte",
+      "date_source": "2026-10-20",
+      "date_collecte": "2026-10-20T18:30:00+02:00",
+      "publication": "publique"
+    },
+    "test_verbatim": {
+      "passe": true,
+      "date": "2026-09-03T09:20:00+02:00",
+      "version_normalisation": "norm-1.0.0",
+      "offset_debut": 48120,
+      "offset_fin": 48181
+    },
+    "extraction": {
+      "modeles": [
+        "famille-x/modele-1",
+        "famille-y/modele-2"
+      ],
+      "accord": "accord"
+    }
+  },
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [],
+  "notifications": [
+    {
+      "date": "2026-09-20T10:06:00+02:00",
+      "evenement": "creation",
+      "statut_envoi": "envoyee"
+    }
+  ],
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "JNXBS81ENFMXGVD4M2W4C2FD9W",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
+  },
+  "notateur": {
+    "type": "humain",
+    "id": "a4",
+    "sensibilite_declaree_famille": "famille-2",
+    "a_vu_identite_outil": false
+  },
+  "gabarit": "Q-DIR",
+  "references_item": [
+    {
+      "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "item_version": 1,
+      "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+    }
+  ],
+  "categorie": "inexacte",
+  "drapeaux": [
+    "fabrication"
+  ],
+  "motif_inexactitude": "position_inventee",
+  "sourcage": {
+    "cite": true,
+    "liens": [
+      {
+        "url_citee": "https://exemple-candidat.fr/programme-2027",
+        "url_finale": "https://exemple-candidat.fr/programme-2027",
+        "code_http": 404,
+        "date_test": "2026-12-03T11:05:00+01:00",
+        "verdict_existence": "mort",
+        "verdict_soutien": "non_applicable"
+      }
+    ]
+  },
+  "date": "2026-12-05T09:30:00+01:00",
+  "motif_notation": "erreur_grave"
+}

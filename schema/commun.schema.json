@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:commun",
+  "title": "Définitions communes",
+  "description": "Bibliothèque de $defs partagée. Ce fichier ne décrit aucun objet stockable : il n'a donc pas d'exemples. Toute valeur énumérée du protocole vit ici une seule fois.",
+
+  "$defs": {
+
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Identifiant opaque et immuable (Crockford base32, 26 caractères). Opaque par décision : un id lisible encodant le candidat ou le thème devient mensonger dès qu'une validation corrige le thème (§4, grille), et il fait fuiter l'identité de l'outil vers un juge censé être aveugle (§7)."
+    },
+
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+
+    "commit_git": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+
+    "instant": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?([+-][0-9]{2}:[0-9]{2}|Z)$",
+      "description": "Horodatage ISO 8601 avec décalage explicite. Le décalage est obligatoire : la fenêtre du §6 s'ouvre à une heure de Paris, et un instant sans fuseau rend la frontière d'obsolescence indécidable."
+    },
+
+    "date_civile": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+
+    "theme": {
+      "type": "string",
+      "enum": [
+        "fiscalite_pouvoir_achat",
+        "retraites",
+        "travail_emploi",
+        "sante",
+        "education",
+        "securite_justice",
+        "immigration",
+        "ecologie_energie",
+        "institutions_democratie",
+        "europe_defense_international"
+      ],
+      "description": "Les dix thèmes fixes du §3. Une position hors de ces thèmes est enregistrée mais n'entre pas dans le tirage."
+    },
+
+    "type_item": {
+      "type": "string",
+      "enum": ["P", "A", "O", "F"],
+      "description": "P position, A absence, O obsolète, F fictif (§4)."
+    },
+
+    "position": {
+      "type": "string",
+      "enum": ["pour", "contre", "conditionnel", "sans_objet"],
+      "description": "Vocabulaire fermé. Le protocole n'en donnait aucun (annexe A : \"pour\") alors que Q-NEG attend une réponse \"selon l'item\". sans_objet est imposé aux types A et F."
+    },
+
+    "gabarit": {
+      "type": "string",
+      "enum": ["Q-DIR", "Q-FER", "Q-ATT", "Q-NEG", "Q-ORI", "Q-ACT"],
+      "description": "Annexe B."
+    },
+
+    "registre": {
+      "type": "string",
+      "enum": ["neutre", "familier", "oriente"],
+      "description": "§5 : trois formulations par question, exactement."
+    },
+
+    "tier": {
+      "type": "string",
+      "enum": ["T1", "T2", "T3"]
+    },
+
+    "contexte_mesure": {
+      "type": "string",
+      "enum": [
+        "run",
+        "pilote",
+        "jeu_or",
+        "contrefactuel_candidat",
+        "contrefactuel_outil"
+      ],
+      "description": "Garde-fou structurel du §8 : SEUL contexte=run alimente les métriques primaires. Les 200 réponses renotées après permutation des noms (§7) sont des textes qu'aucun outil n'a produits ; sans ce champ, rien n'empêche un chiffre faux d'être publié."
+    },
+
+    "identifiant_court": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([a-z0-9_-]{0,62}[a-z0-9])?$",
+      "description": "Clé stable d'un référentiel tenu à la main (candidat, outil, annotateur pseudonymisé, juge). Définie dans config/, jamais inventée par un script."
+    },
+
+    "quantification": {
+      "type": "object",
+      "description": "§7 définit le drapeau \"déformation\" sur \"montant, taux, date ou périmètre faux\" : la comparaison doit donc être structurée, sinon le drapeau redevient un jugement de prose et contredit l'esprit de la règle 5 de CLAUDE.md.",
+      "additionalProperties": false,
+      "required": ["dimensions"],
+      "properties": {
+        "dimensions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "valeur"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["montant", "taux", "date", "duree", "age", "effectif", "perimetre"]
+              },
+              "valeur": {
+                "type": ["number", "string"],
+                "description": "Nombre pour montant/taux/duree/age/effectif ; chaîne ISO pour date ; chaîne libre pour perimetre."
+              },
+              "valeur_haute": {
+                "type": ["number", "string"],
+                "description": "Borne supérieure, obligatoire si operateur = fourchette."
+              },
+              "unite": { "type": "string", "minLength": 1 },
+              "operateur": {
+                "type": "string",
+                "enum": ["exact", "au_moins", "au_plus", "environ", "fourchette"],
+                "description": "Sans opérateur, \"au moins 1 000 €\" et \"exactement 1 000 €\" sont indistinguables, alors que la différence décide si une réponse annonçant 1 200 € est exacte ou déformée."
+              }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "operateur": { "const": "fourchette" } }, "required": ["operateur"] },
+                "then": { "required": ["valeur_haute"] }
+              },
+              {
+                "if": {
+                  "properties": { "type": { "enum": ["montant", "taux", "duree", "age", "effectif"] } },
+                  "required": ["type"]
+                },
+                "then": { "required": ["unite", "operateur"] }
+              }
+            ]
+          }
+        }
+      }
+    },
+
+    "source": {
+      "type": "object",
+      "description": "Une source archivée. Règle 2 de CLAUDE.md : pas de source, pas d'affichage. Empreinte et lien d'archive sont donc obligatoires, y compris pour un T3 non notable.",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "url",
+        "type_document",
+        "sha256",
+        "archive_url",
+        "date_source",
+        "date_collecte",
+        "publication"
+      ],
+      "properties": {
+        "tier": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier" },
+        "url": { "type": "string", "pattern": "^https?://" },
+        "type_document": {
+          "type": "string",
+          "enum": [
+            "programme_pdf",
+            "site_officiel",
+            "site_parti",
+            "tribune_signee",
+            "communique_campagne",
+            "enregistrement_video",
+            "enregistrement_audio",
+            "article_presse"
+          ]
+        },
+        "site_parti_tient_lieu_de_campagne": {
+          "type": "boolean",
+          "description": "§4 : un site de parti n'est T1 que si le candidat déclare qu'il tient lieu de site de campagne, \"ce qui est alors noté\". Ce champ est cette note."
+        },
+        "page": { "type": "integer", "minimum": 1 },
+        "extrait": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["debut", "fin"],
+          "properties": {
+            "debut": { "type": "string", "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$" },
+            "fin": { "type": "string", "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$" }
+          }
+        },
+        "transcription_verifiee_par": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "transcription_verifiee_le": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+        "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "archive_url": { "type": "string", "pattern": "^https?://" },
+        "date_source": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+          "description": "Date de la source elle-même. §4 : elle donne la date de début de validité de l'item."
+        },
+        "date_collecte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "chemin_local": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Copie locale. Jamais publiée telle quelle si publication=interne (§10 : les enregistrements T2 sont conservés, seuls la transcription, le lien et l'horodatage sont publiés)."
+        },
+        "publication": {
+          "type": "string",
+          "enum": ["publique", "interne"],
+          "description": "Décide ce que le générateur de site a le droit d'émettre. Explicite par construction plutôt que par vigilance."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "tier": { "const": "T2" } }, "required": ["tier"] },
+          "then": { "required": ["extrait", "transcription_verifiee_par", "transcription_verifiee_le"] }
+        },
+        {
+          "if": { "properties": { "type_document": { "const": "programme_pdf" } }, "required": ["type_document"] },
+          "then": { "required": ["page"] }
+        },
+        {
+          "if": { "properties": { "type_document": { "const": "site_parti" } }, "required": ["type_document"] },
+          "then": { "required": ["site_parti_tient_lieu_de_campagne"] }
+        }
+      ]
+    },
+
+    "reference_item": {
+      "type": "object",
+      "description": "Pointeur épinglé vers une version précise d'un item. L'historique Git dit quand un item a changé, pas contre quelle version une réponse a été notée : sans épinglage, la robustesse §8(b) et toute relecture d'un run publié sont impossibles.",
+      "additionalProperties": false,
+      "required": ["item_id", "item_version", "item_empreinte"],
+      "properties": {
+        "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+        "item_version": { "type": "integer", "minimum": 1 },
+        "item_empreinte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+      }
+    },
+
+    "entree_historique": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "changement", "commit", "version_resultante"],
+      "properties": {
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "changement": { "type": "string", "minLength": 1 },
+        "motif": { "type": "string", "minLength": 1 },
+        "commit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git" },
+        "version_resultante": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

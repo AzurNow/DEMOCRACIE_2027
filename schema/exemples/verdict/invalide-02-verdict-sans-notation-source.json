@@ -1,0 +1,22 @@
+{
+  "id": "60FC69SJN9DKM8QNZHC1N90MZA",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
+  },
+  "categorie_retenue": "exacte",
+  "drapeaux_retenus": [],
+  "sourcage_retenu": {
+    "cite": false,
+    "au_moins_un_lien_existant": false,
+    "au_moins_un_lien_soutenant": false
+  },
+  "notations_sources": [],
+  "mode_resolution": "accord_juges",
+  "desaccord_juges": false,
+  "dans_echantillon_humain": false,
+  "erreur_grave": false,
+  "date": "2026-12-03T12:00:00+01:00"
+}

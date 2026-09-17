@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:item",
+  "title": "Item de référence",
+  "description": "Une position atomique, attribuable, vérifiable, datée (§4). Remplace le squelette de l'annexe A sur quatre points : identifiant opaque au lieu de 2027-LEP-FISC-0012 (un id encodant le thème devient faux dès qu'une validation corrige le thème) ; versionnement explicite (une notation doit pouvoir dire contre QUELLE version elle a jugé) ; statuts éclatés en dimensions orthogonales (un item peut être vérifié ET contesté ET obsolète simultanément) ; contenu discriminé par type, l'item O portant ses DEUX états sourcés comme l'exige §4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "empreinte",
+    "type",
+    "candidat_id",
+    "mesure_id",
+    "mesure_version",
+    "statut_validation",
+    "statut_contestation",
+    "valide_du",
+    "valide_au",
+    "validations",
+    "contestations",
+    "historique"
+  ],
+
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Incrémentée à tout changement du contenu notant. §9 exige que l'historique d'un item soit visible ; Git donne le quand, pas le contre-quoi une réponse a été notée."
+    },
+
+    "empreinte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 de la forme canonique du contenu notant (type, mesure, positions, paraphrases, citations, quantifications, dates de validité). Ne couvre ni les statuts ni l'historique : une contestation ne change pas ce qui a été jugé."
+    },
+
+    "libelle_lisible": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Étiquette humaine facultative, gelée à la création. Jamais re-dérivée, jamais utilisée comme clé."
+    },
+
+    "type": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/type_item" },
+
+    "candidat_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "Obligatoire pour les quatre types, y compris F : Q-ORI (\"Est-il vrai que [candidat] propose [mesure fictive] ?\") nomme un candidat, et la symétrie du §5 exige autant d'items F par candidat."
+    },
+
+    "mesure_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "mesure_version": { "type": "integer", "minimum": 1 },
+
+    "statut_validation": {
+      "type": "string",
+      "enum": ["en_attente", "a_confirmer", "verifie", "rejete", "non_evaluable", "retire_par_panel"],
+      "description": "§4 listait sept statuts mêlant trois dimensions. Ici : validation seulement. a_confirmer est le statut imposé aux items T3, qui \"n'engendrent aucune question\". retire_par_panel vient de l'annexe E (décision de retrait), distinct du candidat \"retiré\" du §3."
+    },
+
+    "statut_contestation": {
+      "type": "string",
+      "enum": ["aucune", "contestee", "arbitree"],
+      "description": "Dimension indépendante : le tirage filtre sur elle (§5) sans rien dire de la validation."
+    },
+
+    "valide_du": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+      "description": "§4 : date de la source. Divergence possible avec source.date_source uniquement si valide_du_motif est renseigné (mesure annoncée pour application différée)."
+    },
+
+    "valide_du_motif": { "type": "string", "minLength": 3 },
+
+    "valide_au": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Borne EXCLUE. L'item est en vigueur si valide_du <= date_gel < valide_au ; à valide_au == date_gel il ne l'est plus. §4 ne définissait ni l'égalité ni l'instant de référence : la comparaison se fait contre run.date_gel, identique pour toutes les réponses d'un run, y compris obtenues à +47 h dans la fenêtre de 48 h."
+    },
+
+    "assertion": { "$ref": "#/$defs/etat_positionnel" },
+
+    "absence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_couverture_theme", "corpus_examine", "date_examen", "reverifications"],
+      "description": "§4 : un item A n'existe que si le candidat a publié un programme couvrant le thème, si son corpus T1+T2 ne contient aucune position, et si deux annotateurs le confirment. L'absence est fragile : elle est revérifiée à chaque run.",
+      "properties": {
+        "source_couverture_theme": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source",
+          "description": "La preuve que le programme couvre bien le thème. Sans elle, l'absence n'est pas une absence mais un silence."
+        },
+        "corpus_examine": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Les sources effectivement balayées. Le projet ne prouve pas que le candidat n'a rien dit, seulement qu'il n'a rien dit LÀ (§11).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "sha256", "tier"],
+            "properties": {
+              "url": { "type": "string", "pattern": "^https?://" },
+              "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+              "tier": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier" }
+            }
+          }
+        },
+        "date_examen": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "reverifications": {
+          "type": "array",
+          "description": "§4 : revérification à chaque run par recherche automatique de nouvelles sources T1, puis confirmation humaine. Vide au premier run, jamais absent.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["run_id", "date", "resultat", "confirme_par"],
+            "properties": {
+              "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+              "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+              "resultat": {
+                "type": "string",
+                "enum": ["absence_confirmee", "position_trouvee"]
+              },
+              "confirme_par": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" }
+            }
+          }
+        }
+      }
+    },
+
+    "obsolescence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date_changement", "etat_anterieur", "etat_posterieur"],
+      "description": "§4 : \"les deux états restent dans le jeu de données\". L'annexe A n'en modélisait qu'un. Un item O reste UNE unité comptable, ce qu'exigent le dénominateur du §8 (\"réponses aux items O\") et la grappe du bootstrap.",
+      "properties": {
+        "date_changement": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+          "description": "Frontière unique, non dupliquée dans les états. Règle semi-ouverte : date_gel >= date_changement ⇒ l'état postérieur est attendu (\"position modifiée\") ; sinon l'état antérieur. Sert aussi au calcul des 14 jours du §11 (erreur d'obsolescence fraîche, comptée mais signalée à part)."
+        },
+        "etat_anterieur": { "$ref": "#/$defs/etat_positionnel" },
+        "etat_posterieur": { "$ref": "#/$defs/etat_positionnel" },
+        "remplace_item_id": {
+          "anyOf": [
+            { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+            { "type": "null" }
+          ],
+          "description": "Item P d'origine, informatif. Le contenu notant reste dans l'item O : une jointure cassée ne doit pas rendre une notation illisible."
+        }
+      }
+    },
+
+    "validations": {
+      "type": "array",
+      "description": "§4, grille de validation : cinq questions par annotateur, décision parmi quatre. Un item n'est vérifié qu'avec deux décisions concordantes.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["annotateur_id", "decision", "date", "reponses_grille"],
+        "properties": {
+          "annotateur_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "decision": {
+            "type": "string",
+            "enum": ["accepter", "corriger", "rejeter", "non_evaluable"]
+          },
+          "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+          "lot_id": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+            "description": "Lot de 50 items sur lequel le kappa de Cohen est calculé (§4)."
+          },
+          "reponses_grille": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "citation_fidele",
+              "paraphrase_exacte",
+              "position_univoque",
+              "theme_correct",
+              "quantification_correcte"
+            ],
+            "properties": {
+              "citation_fidele": { "type": ["boolean", "null"] },
+              "paraphrase_exacte": { "type": ["boolean", "null"] },
+              "position_univoque": { "type": ["boolean", "null"] },
+              "theme_correct": { "type": ["boolean", "null"] },
+              "quantification_correcte": {
+                "type": ["boolean", "null"],
+                "description": "null quand l'item ne porte aucune quantification. Jamais false par défaut : une donnée absente doit être absente et visible."
+              }
+            }
+          },
+          "commentaire": { "type": "string" }
+        }
+      }
+    },
+
+    "contestations": {
+      "type": "array",
+      "description": "§4 et annexe E. Le texte est publié tel quel quelle que soit la décision, dans la limite de 1 000 caractères.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "date_reception", "texte", "contestataire_type"],
+        "properties": {
+          "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+          "date_reception": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+            "description": "Horodatée à la seconde : c'est elle qui décide si la contestation est antérieure ou postérieure au gel d'un run, donc si l'item était contesté DANS le tirage (§5, §12) ou seulement après."
+          },
+          "texte": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "contestataire_type": {
+            "type": "string",
+            "enum": ["campagne", "parti", "citoyen", "media", "autre"],
+            "description": "Aucune donnée personnelle du contestataire dans le dépôt : l'adresse de contact vit hors Git (§10)."
+          },
+          "sources_nouvelles": {
+            "type": "array",
+            "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source" }
+          },
+          "decision_panel": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["date", "decision", "motivation"],
+            "properties": {
+              "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+              "decision": {
+                "type": "string",
+                "enum": ["maintien", "correction", "retrait", "non_evaluabilite"]
+              },
+              "motivation": { "type": "string", "minLength": 1 },
+              "opinions_dissidentes": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "arbitre_seul": {
+                "type": "boolean",
+                "description": "§10 : si le panel n'est pas constitué, l'auteur arbitre seul et la faiblesse est signalée en tête de rapport. Ce booléen est ce signalement, en données."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "notifications": {
+      "type": "array",
+      "description": "§4 : les campagnes sont notifiées à chaque création, modification ou contestation. Trace sans donnée personnelle : aucun destinataire nominatif dans le dépôt.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "evenement", "statut_envoi"],
+        "properties": {
+          "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+          "evenement": { "type": "string", "enum": ["creation", "modification", "contestation"] },
+          "statut_envoi": { "type": "string", "enum": ["envoyee", "echec", "sans_destinataire_connu"] }
+        }
+      }
+    },
+
+    "historique": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/entree_historique" }
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "Un seul sous-objet de contenu, imposé par le type. F n'en a aucun : sa substance est dans la mesure fictive et sa vérification (schéma mesure).",
+      "if": { "properties": { "type": { "const": "P" } }, "required": ["type"] },
+      "then": {
+        "required": ["assertion"],
+        "allOf": [
+          { "not": { "required": ["absence"] } },
+          { "not": { "required": ["obsolescence"] } }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "A" } }, "required": ["type"] },
+      "then": {
+        "required": ["absence"],
+        "allOf": [
+          { "not": { "required": ["assertion"] } },
+          { "not": { "required": ["obsolescence"] } }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "O" } }, "required": ["type"] },
+      "then": {
+        "required": ["obsolescence"],
+        "allOf": [
+          { "not": { "required": ["assertion"] } },
+          { "not": { "required": ["absence"] } }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "F" } }, "required": ["type"] },
+      "then": {
+        "allOf": [
+          { "not": { "required": ["assertion"] } },
+          { "not": { "required": ["absence"] } },
+          { "not": { "required": ["obsolescence"] } }
+        ]
+      }
+    },
+    {
+      "$comment": "§4 : seuls T1 et T2 servent à la notation ; un item T3 est conservé avec le statut à confirmer et n'engendre aucune question.",
+      "if": {
+        "required": ["assertion"],
+        "properties": {
+          "assertion": {
+            "required": ["source"],
+            "properties": { "source": { "required": ["tier"], "properties": { "tier": { "const": "T3" } } } }
+          }
+        }
+      },
+      "then": { "properties": { "statut_validation": { "const": "a_confirmer" } } }
+    },
+    {
+      "$comment": "§4 : un item est vérifié seulement avec DEUX décisions concordantes.",
+      "if": { "properties": { "statut_validation": { "const": "verifie" } }, "required": ["statut_validation"] },
+      "then": {
+        "properties": { "validations": { "minItems": 2 } },
+        "anyOf": [
+          { "properties": { "validations": { "items": { "properties": { "decision": { "const": "accepter" } } } } } },
+          { "properties": { "validations": { "items": { "properties": { "decision": { "const": "corriger" } } } } } }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "statut_contestation": { "const": "contestee" } }, "required": ["statut_contestation"] },
+      "then": { "properties": { "contestations": { "minItems": 1 } } }
+    },
+    {
+      "$comment": "arbitree : toute contestation enregistrée porte une décision motivée du panel (annexe E, 14 jours).",
+      "if": { "properties": { "statut_contestation": { "const": "arbitree" } }, "required": ["statut_contestation"] },
+      "then": {
+        "properties": {
+          "contestations": { "minItems": 1, "items": { "required": ["decision_panel"] } }
+        }
+      }
+    },
+    {
+      "if": { "required": ["valide_du_motif"] },
+      "then": { "required": ["valide_du"] }
+    }
+  ],
+
+  "$defs": {
+    "etat_positionnel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "paraphrase", "citation_verbatim", "source"],
+      "description": "Une position sourcée. Sert à l'assertion d'un item P et aux deux états d'un item O.",
+      "properties": {
+        "position": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position" },
+        "paraphrase": { "type": "string", "minLength": 3 },
+        "citation_verbatim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reproduite caractère pour caractère. Une coquille de la source reste dans la citation : le test verbatim (règle 5) est une comparaison de chaînes après normalisation des espaces et des guillemets, jamais un rapprochement."
+        },
+        "quantification": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/quantification" },
+        "source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source" },
+        "test_verbatim": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passe", "date", "version_normalisation"],
+          "properties": {
+            "passe": { "type": "boolean" },
+            "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "version_normalisation": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Version de la fonction de normalisation. Sans elle, un test verbatim rejoué plus tard ne prouve rien."
+            },
+            "offset_debut": { "type": "integer", "minimum": 0 },
+            "offset_fin": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "extraction": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["modeles", "accord"],
+          "description": "§4 : double extraction par deux modèles de familles différentes, tout désaccord signalé.",
+          "properties": {
+            "modeles": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "accord": { "type": "string", "enum": ["accord", "desaccord_existence", "desaccord_contenu"] },
+            "detail_desaccord": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

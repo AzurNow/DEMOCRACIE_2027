@@ -1,0 +1,558 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:run",
+  "title": "Run",
+  "description": "Tout ce qui est figé au gel d'un run, et qui n'avait de domicile dans aucun des quatre objets demandés : les graines (§5, §7, §8 en exigent quatre distinctes), le périmètre effectif avec ses preuves d'inclusion, le résultat des tests de symétrie, le tirage avec ses réponses attendues résolues à la date de gel, et les critères go/no-go du §12. Sans cet objet, ces valeurs finiraient en dur dans un script : donc non publiées, contre §9, et le site afficherait des chiffres qui ne viennent pas d'un fichier de runs/.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "date_gel",
+    "fenetre",
+    "type_run",
+    "statut",
+    "versions",
+    "graines",
+    "perimetre",
+    "juges",
+    "taux_echantillon_humain",
+    "symetrie",
+    "tirage"
+  ],
+
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "date_gel": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Instant de référence UNIQUE du run, décalage Europe/Paris explicite. Toute comparaison de dates du run s'y adosse, y compris pour une réponse obtenue à +47 h : sinon deux réponses au même item obsolète attendraient des vérités opposées selon l'heure d'appel. Convention semi-ouverte : un item dont valide_au (ou obsolescence.date_changement) tombe exactement sur date_gel est DÉJÀ obsolète."
+    },
+
+    "fenetre": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["debut", "fin"],
+      "description": "§6 : 48 heures, ouverte le mardi à 6 h, heure de Paris.",
+      "properties": {
+        "debut": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "fin": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+      }
+    },
+
+    "type_run": {
+      "type": "string",
+      "enum": [
+        "pilote",
+        "mensuel",
+        "hebdomadaire",
+        "supplementaire_liste_officielle",
+        "supplementaire_debat",
+        "reexecution"
+      ],
+      "description": "§6 : un run supplémentaire est déclenché dans les 72 h suivant la liste officielle et chaque débat télévisé."
+    },
+
+    "statut": {
+      "type": "string",
+      "enum": ["planifie", "en_cours", "publie", "publie_provisoire", "invalide"],
+      "description": "§6 : si un incident technique invalide un run, le run entier est réexécuté et LES DEUX sont publiés, le premier marqué invalide avec la raison. §12 : un run qui rate un critère est publié en intégralité avec la mention provisoire, jamais retenu en privé."
+    },
+
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["motif"],
+      "properties": {
+        "motif": { "type": "string", "minLength": 1 },
+        "run_remplacant_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+      }
+    },
+
+    "motif_provisoire": {
+      "type": "string",
+      "minLength": 1,
+      "description": "§12 : la raison est publiée avec le run."
+    },
+
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocole", "code_commit"],
+      "description": "§9 : la version du protocole, du code et des données utilisée est inscrite en tête de chaque rapport.",
+      "properties": {
+        "protocole": { "type": "string", "minLength": 1 },
+        "protocole_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "code_commit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git" },
+        "donnees_commit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git" },
+        "amendements_appliques": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "§9 : les résultats produits avant et après un amendement sont rapportés séparément."
+        }
+      }
+    },
+
+    "graines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel"],
+      "description": "Le protocole exige une graine publiée à quatre endroits différents (§5 tirage, §7 échantillon de 10 % et test contrefactuel, §8 bootstrap et permutation) sans jamais dire où elles vivent.",
+      "properties": {
+        "tirage": { "$ref": "#/$defs/graine" },
+        "echantillon_humain": { "$ref": "#/$defs/graine" },
+        "bootstrap": { "$ref": "#/$defs/graine" },
+        "permutation": { "$ref": "#/$defs/graine" },
+        "contrefactuel": { "$ref": "#/$defs/graine" }
+      }
+    },
+
+    "perimetre": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidats", "outils"],
+      "description": "Instantané au gel, jamais une liste globale : le périmètre du §3 s'apprécie \"à la date de gel du run\".",
+      "properties": {
+        "candidats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["candidat_id", "statut_au_gel", "items_p_verifies", "sous_seuil", "interroge"],
+            "properties": {
+              "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "statut_au_gel": {
+                "type": "string",
+                "enum": ["actif", "nouveau", "retire"],
+                "description": "nouveau : absent du run précédent, donc hors du calcul du ratio de reprise 80/20. retire : §3, conservé dans le jeu de données mais plus interrogé."
+              },
+              "preuves_inclusion": {
+                "type": "array",
+                "description": "§3 : deux sondages publiés en 60 jours par un institut reconnu. Sans ces références, \"quiconque applique ces règles doit obtenir la même liste\" est invérifiable par un tiers.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["institut", "date_publication", "url", "archive_url"],
+                  "properties": {
+                    "institut": { "type": "string", "minLength": 1 },
+                    "date_publication": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+                    "url": { "type": "string", "pattern": "^https?://" },
+                    "archive_url": { "type": "string", "pattern": "^https?://" },
+                    "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+                  }
+                }
+              },
+              "declaration_candidature": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["url", "date"],
+                "properties": {
+                  "url": { "type": "string", "pattern": "^https?://" },
+                  "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+                  "par": { "type": "string", "enum": ["interesse", "parti"] }
+                }
+              },
+              "items_p_verifies": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Compté au gel et STOCKÉ. §4 et §8 en dépendent tous les deux ; le recalculer à la génération du site ferait vivre le seuil à deux endroits."
+              },
+              "sous_seuil": {
+                "type": "boolean",
+                "description": "§4 : moins de 10 items P vérifiés ⇒ rapporté à part, mention \"couverture insuffisante\", hors comparaisons inter-candidats."
+              },
+              "interroge": {
+                "type": "boolean",
+                "description": "false pour un candidat retiré : décision prise sur §3, dont la seconde moitié de phrase (\"ses items d'obsolescence servent à mesurer si les outils l'ont remarqué\") reste à amender, puisqu'un retrait de candidature est un fait biographique, hors périmètre v1.0."
+              }
+            },
+            "allOf": [
+              {
+                "$comment": "Cohérence dure du seuil du §4 : sous 10 items P vérifiés, sous_seuil ne peut pas être faux.",
+                "if": {
+                  "properties": { "items_p_verifies": { "exclusiveMaximum": 10 } },
+                  "required": ["items_p_verifies"]
+                },
+                "then": { "properties": { "sous_seuil": { "const": true } } }
+              },
+              {
+                "if": { "properties": { "statut_au_gel": { "const": "retire" } }, "required": ["statut_au_gel"] },
+                "then": { "properties": { "interroge": { "const": false } } },
+                "else": { "required": ["preuves_inclusion"] }
+              }
+            ]
+          }
+        },
+        "outils": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outil_id", "famille", "inclus"],
+            "properties": {
+              "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "famille": { "type": "string", "enum": ["assistant", "comparateur"] },
+              "inclus": { "type": "boolean" },
+              "motif_exclusion": { "type": "string", "minLength": 1 },
+              "modele_demande": {
+                "type": "string",
+                "minLength": 1,
+                "description": "§6 : l'identifiant de modèle par défaut du produit grand public à la date du run, tel que documenté publiquement."
+              },
+              "modes": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["web_activee", "web_desactivee"] },
+                "uniqueItems": true
+              },
+              "mode_de_tete": {
+                "type": "string",
+                "enum": ["web_activee", "web_desactivee"],
+                "description": "§8 : quand un seul chiffre est cité en titre, il vient du mode correspondant au réglage par défaut du produit grand public."
+              },
+              "alias_aveugle": { "type": "string", "pattern": "^[A-Z]{1,3}[0-9]{2,4}$" },
+              "cgu_relues_le": {
+                "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+                "description": "§10 : les conditions d'utilisation sont relues pour chaque outil ; une clause interdisant la publication de résultats comparatifs est signalée dans le rapport."
+              },
+              "clause_restrictive_signalee": { "type": "boolean" },
+              "reponses_manquantes_part": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "§8 : au-delà de 0,20, l'outil est marqué run incomplet et exclu des comparaisons de ce run."
+              },
+              "run_incomplet": { "type": "boolean" }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "famille": { "const": "assistant" }, "inclus": { "const": true } }, "required": ["famille", "inclus"] },
+                "then": { "required": ["modele_demande", "modes", "mode_de_tete", "alias_aveugle"] }
+              },
+              {
+                "if": { "properties": { "inclus": { "const": false } }, "required": ["inclus"] },
+                "then": { "required": ["motif_exclusion"] }
+              }
+            ]
+          }
+        }
+      }
+    },
+
+    "juges": {
+      "type": "array",
+      "minItems": 1,
+      "description": "§7 : deux juges de familles différentes ; au-delà de 3 % de changement au test contrefactuel, le juge est retiré du run et l'échantillon humain passe à 25 %. Cet événement change la composition du run : il doit être une donnée, pas une décision manuelle non tracée.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["juge_id", "famille_modele", "modele", "version_prompt", "retire"],
+        "properties": {
+          "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "famille_modele": { "type": "string", "minLength": 1 },
+          "modele": { "type": "string", "minLength": 1 },
+          "version_prompt": { "type": "string", "minLength": 1 },
+          "taux_changement_contrefactuel": { "type": "number", "minimum": 0, "maximum": 1 },
+          "kappa_juge_humain": { "type": "number", "minimum": -1, "maximum": 1 },
+          "retire": { "type": "boolean" },
+          "motif_retrait": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "retire": { "const": true } }, "required": ["retire"] },
+            "then": { "required": ["motif_retrait"] }
+          }
+        ]
+      }
+    },
+
+    "taux_echantillon_humain": {
+      "type": "number",
+      "enum": [0.1, 0.25],
+      "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
+    },
+
+    "kappa_paire_juges": {
+      "type": ["number", "null"],
+      "minimum": -1,
+      "maximum": 1,
+      "description": "§7 : seuil de publication 0,75 sur la catégorie primaire ; en dessous, résultats publiés avec la mention provisoire."
+    },
+
+    "symetrie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conditions", "statut_global"],
+      "description": "§5 : cinq conditions bloquantes, dont une non binaire (répartition par thème : \"sinon l'écart est imprimé dans le rapport du run\"). Un écart imprimé dans un rapport mais absent des données serait un chiffre du site sans fichier source.",
+      "properties": {
+        "statut_global": { "type": "string", "enum": ["vert", "ecart_tolere", "rouge"] },
+        "conditions": {
+          "type": "array",
+          "minItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "statut"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "nombre_questions_par_candidat",
+                  "repartition_gabarits_formulations",
+                  "repartition_themes",
+                  "aucun_item_conteste_ou_en_attente",
+                  "aucun_nom_candidat_dans_q_att",
+                  "part_items_a_f_minimale"
+                ]
+              },
+              "statut": { "type": "string", "enum": ["vert", "ecart_tolere", "rouge"] },
+              "mesure": { "type": "number" },
+              "seuil": { "type": "number" },
+              "detail_par_candidat": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["candidat_id", "valeur"],
+                  "properties": {
+                    "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+                    "valeur": { "type": "number" }
+                  }
+                }
+              },
+              "commentaire": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "tirage": {
+      "type": "array",
+      "description": "§9 publie \"les questions du run et la graine du tirage\". Chaque entrée fige ce que la question valait AU GEL : versions d'items, statuts d'items, réponse attendue résolue à date_gel. C'est ce gel qui rend le critère go/no-go du §12 décidable après coup et l'analyse de robustesse §8(b) reproductible.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question_id", "gabarit", "items_au_gel", "reponse_attendue", "reprise"],
+        "properties": {
+          "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
+          "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "theme": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme" },
+          "gabarit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
+          "grappe_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+          "items_au_gel": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["reference", "role", "statut_validation_au_gel", "statut_contestation_au_gel"],
+              "properties": {
+                "reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/reference_item" },
+                "role": { "type": "string", "enum": ["principal", "attendu_dans_liste", "distracteur", "contexte"] },
+                "statut_validation_au_gel": {
+                  "type": "string",
+                  "enum": ["en_attente", "a_confirmer", "verifie", "rejete", "non_evaluable", "retire_par_panel"]
+                },
+                "statut_contestation_au_gel": {
+                  "type": "string",
+                  "enum": ["aucune", "contestee", "arbitree"],
+                  "description": "§5 et §12 exigent qu'aucun item contesté ne figure dans le tirage. Le critère s'évalue sur CE champ, figé, et non sur l'état courant de data/ : une contestation reçue pendant la fenêtre ne rend pas rétroactivement le tirage fautif."
+                }
+              }
+            }
+          },
+          "reponse_attendue": { "$ref": "#/$defs/reponse_attendue" },
+          "reprise": {
+            "type": "boolean",
+            "description": "§5 : 80 % des questions sont reprises du run précédent, 20 % neuves. Calculé par candidat présent aux deux runs ; un candidat nouveau est hors du calcul."
+          },
+          "run_origine_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+          "empreinte_texte_precedente": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+            "description": "Empreinte du texte au run précédent. \"Question commune\" (§8) exige même identifiant ET même empreinte : une correction d'item qui change le texte casse la reprise explicitement."
+          }
+        }
+      }
+    },
+
+    "contestations_posterieures": {
+      "type": "array",
+      "description": "Contestations reçues APRÈS date_gel. Le run se poursuit et est publié intact (§4 : l'exclusion vaut pour le run suivant) ; cette liste est l'entrée exacte de l'analyse de robustesse §8(b), \"en excluant les items contestés à un run ultérieur\".",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_id", "contestation_id", "date_reception"],
+        "properties": {
+          "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+          "contestation_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+          "date_reception": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+        }
+      }
+    },
+
+    "go_no_go": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criteres", "decision"],
+      "description": "§12 : sept critères avant publication. Un run qui en rate un est publié en intégralité avec la mention provisoire et la raison, jamais retenu en privé.",
+      "properties": {
+        "criteres": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "statut"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "kappa_juges_humains",
+                  "test_contrefactuel",
+                  "aucun_item_conteste_dans_le_tirage",
+                  "tests_symetrie",
+                  "reponses_manquantes",
+                  "erreurs_graves_revues",
+                  "analyses_preenregistrees_executees"
+                ]
+              },
+              "statut": { "type": "string", "enum": ["vert", "rouge"] },
+              "valeur": { "type": ["number", "string", "null"] },
+              "seuil": { "type": ["number", "string", "null"] }
+            }
+          }
+        },
+        "decision": { "type": "string", "enum": ["publie", "publie_provisoire"] },
+        "motif": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date"],
+      "properties": {
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "doi": { "type": "string", "minLength": 1 },
+        "suspension_veille_electorale": {
+          "type": "boolean",
+          "description": "§10 : aucune publication de la veille de chaque tour à 0 h jusqu'à la fermeture des derniers bureaux."
+        }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "statut": { "const": "invalide" } }, "required": ["statut"] },
+      "then": { "required": ["invalidation"] },
+      "else": { "not": { "required": ["invalidation"] } }
+    },
+    {
+      "if": { "properties": { "statut": { "const": "publie_provisoire" } }, "required": ["statut"] },
+      "then": { "required": ["motif_provisoire"] }
+    },
+    {
+      "$comment": "§12 : un run dont la symétrie est rouge ne peut pas être publié sans la mention provisoire.",
+      "if": {
+        "properties": { "symetrie": { "properties": { "statut_global": { "const": "rouge" } }, "required": ["statut_global"] } },
+        "required": ["symetrie"]
+      },
+      "then": {
+        "properties": {
+          "statut": { "enum": ["planifie", "en_cours", "publie_provisoire", "invalide"] },
+          "go_no_go": { "properties": { "decision": { "const": "publie_provisoire" } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "statut": { "enum": ["publie", "publie_provisoire"] } }, "required": ["statut"] },
+      "then": { "required": ["go_no_go", "publication", "kappa_paire_juges"] }
+    }
+  ],
+
+  "$defs": {
+    "graine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valeur", "algorithme", "bibliotheque", "version"],
+      "description": "Une graine sans algorithme nommé ne reproduit rien : le pipeline est en Python et le site en TypeScript, et deux générateurs différents donnent deux tirages différents pour la même graine. \"Reproductible\" serait alors faux.",
+      "properties": {
+        "valeur": { "type": "integer", "minimum": 0 },
+        "algorithme": { "type": "string", "minLength": 1 },
+        "bibliotheque": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "reponse_attendue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nature", "resolution_temporelle"],
+      "description": "Résolue AU GEL, jamais stockée sur la question : pour un item O, la réponse attendue dépend de la date du run (§4).",
+      "properties": {
+        "nature": {
+          "type": "string",
+          "enum": [
+            "position",
+            "absence_de_position",
+            "oui",
+            "non",
+            "liste_candidats",
+            "aucun_candidat",
+            "changement_de_position",
+            "position_anterieure",
+            "non_avec_correction"
+          ]
+        },
+        "position": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position" },
+        "etat_attendu": {
+          "type": "string",
+          "enum": ["anterieur", "posterieur"],
+          "description": "Pour un item O : quel des deux états sourcés fait foi à date_gel, selon la règle semi-ouverte."
+        },
+        "candidats_attendus": {
+          "type": "array",
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "uniqueItems": true,
+          "description": "Q-ATT : la liste exacte des candidats du périmètre proposant la mesure. Vide pour un item fictif."
+        },
+        "resolution_temporelle": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["date_gel", "regle"],
+          "properties": {
+            "date_gel": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "date_changement": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+            "regle": {
+              "type": "string",
+              "const": "semi_ouvert",
+              "description": "valide_du <= date_gel < valide_au. Consignée dans les données pour qu'un lecteur n'ait pas à deviner la convention employée."
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "nature": { "const": "liste_candidats" } }, "required": ["nature"] },
+          "then": { "required": ["candidats_attendus"] }
+        },
+        {
+          "if": {
+            "properties": { "nature": { "enum": ["changement_de_position", "position_anterieure"] } },
+            "required": ["nature"]
+          },
+          "then": {
+            "required": ["etat_attendu"],
+            "properties": { "resolution_temporelle": { "required": ["date_changement"] } }
+          }
+        },
+        {
+          "if": { "properties": { "nature": { "const": "position" } }, "required": ["nature"] },
+          "then": { "required": ["position"] }
+        }
+      ]
+    }
+  }
+}

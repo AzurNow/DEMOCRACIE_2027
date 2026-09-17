@@ -1,0 +1,26 @@
+{
+  "id": "G86G9AR34Q6D5GNRS92NXHXVXC",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "outil_id": "comparateur-gamma",
+  "alias_aveugle": "C02",
+  "reference_item": {
+    "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+    "item_version": 1,
+    "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+  },
+  "methode_acces": "export_ouvert",
+  "date_lecture": "2026-12-01T08:00:00+01:00",
+  "source_archivee": {
+    "url": "https://comparateur-gamma.fr/export/2026-12-01.json",
+    "sha256": "677c3343aaf1d3218399f4b68bfd5033788b766584eabaf1d468a7e0d1092374",
+    "archive_url": "https://web.archive.org/web/20261201/https://comparateur-gamma.fr/export/2026-12-01.json",
+    "chemin_local": "collecte/2026-12-01/gamma.json"
+  },
+  "affiche": true,
+  "position_affichee": "pour",
+  "appariement": {
+    "methode": "mesure_canonique",
+    "confiance": "certaine"
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "date_gel": "2026-12-01T06:00:00+01:00",
+  "fenetre": {
+    "debut": "2026-12-01T06:00:00+01:00",
+    "fin": "2026-12-03T06:00:00+01:00"
+  },
+  "type_run": "mensuel",
+  "statut": "publie",
+  "versions": {
+    "protocole": "1.0",
+    "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
+    "code_commit": "e6fb06210fafc02fd7479ddbed2d042cc3a5155e",
+    "donnees_commit": "d95c5e3bc72813f7a365e976a3cd47de69b85476",
+    "amendements_appliques": []
+  },
+  "graines": {
+    "tirage": {
+      "valeur": 20261201,
+      "algorithme": "PCG64",
+      "bibliotheque": "numpy.random.Generator",
+      "version": "2.1.3"
+    },
+    "echantillon_humain": {
+      "valeur": 20261202,
+      "algorithme": "PCG64",
+      "bibliotheque": "numpy.random.Generator",
+      "version": "2.1.3"
+    },
+    "bootstrap": {
+      "valeur": 20261203,
+      "algorithme": "PCG64",
+      "bibliotheque": "numpy.random.Generator",
+      "version": "2.1.3"
+    },
+    "permutation": {
+      "valeur": 20261204,
+      "algorithme": "PCG64",
+      "bibliotheque": "numpy.random.Generator",
+      "version": "2.1.3"
+    },
+    "contrefactuel": {
+      "valeur": 20261205,
+      "algorithme": "PCG64",
+      "bibliotheque": "numpy.random.Generator",
+      "version": "2.1.3"
+    }
+  },
+  "perimetre": {
+    "candidats": [
+      {
+        "candidat_id": "cand-a",
+        "statut_au_gel": "actif",
+        "preuves_inclusion": [
+          {
+            "institut": "Institut A",
+            "date_publication": "2026-11-05",
+            "url": "https://institut-a.fr/sondage-novembre",
+            "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre",
+            "sha256": "f6c4c221c3b080d2f61cf00d3f55764e9ebfd5aacc896e81c8ba4cfaf3c52aba"
+          },
+          {
+            "institut": "Institut B",
+            "date_publication": "2026-11-20",
+            "url": "https://institut-b.fr/vague-12",
+            "archive_url": "https://web.archive.org/web/20261121/https://institut-b.fr/vague-12",
+            "sha256": "4e85dcc8b719c7d50497e06793d54494a6c5c98b8c04725f22dc6f36240eea1b"
+          }
+        ],
+        "declaration_candidature": {
+          "url": "https://exemple-candidat.fr/declaration",
+          "date": "2026-06-02",
+          "par": "interesse"
+        },
+        "items_p_verifies": 31,
+        "sous_seuil": false,
+        "interroge": true
+      },
+      {
+        "candidat_id": "cand-b",
+        "statut_au_gel": "nouveau",
+        "preuves_inclusion": [
+          {
+            "institut": "Institut A",
+            "date_publication": "2026-11-05",
+            "url": "https://institut-a.fr/sondage-novembre",
+            "archive_url": "https://web.archive.org/web/20261106/https://institut-a.fr/sondage-novembre"
+          },
+          {
+            "institut": "Institut C",
+            "date_publication": "2026-11-22",
+            "url": "https://institut-c.fr/barometre",
+            "archive_url": "https://web.archive.org/web/20261123/https://institut-c.fr/barometre"
+          }
+        ],
+        "items_p_verifies": 8,
+        "sous_seuil": true,
+        "interroge": true
+      },
+      {
+        "candidat_id": "cand-d",
+        "statut_au_gel": "retire",
+        "items_p_verifies": 22,
+        "sous_seuil": false,
+        "interroge": false
+      }
+    ],
+    "outils": [
+      {
+        "outil_id": "outil-alpha",
+        "famille": "assistant",
+        "inclus": true,
+        "modele_demande": "modele-grand-public",
+        "modes": [
+          "web_activee",
+          "web_desactivee"
+        ],
+        "mode_de_tete": "web_activee",
+        "alias_aveugle": "O07",
+        "cgu_relues_le": "2026-11-10",
+        "clause_restrictive_signalee": false,
+        "reponses_manquantes_part": 0.03,
+        "run_incomplet": false
+      },
+      {
+        "outil_id": "comparateur-gamma",
+        "famille": "comparateur",
+        "inclus": true,
+        "reponses_manquantes_part": 0.0,
+        "run_incomplet": false
+      }
+    ]
+  },
+  "juges": [
+    {
+      "juge_id": "juge-1",
+      "famille_modele": "famille-x",
+      "modele": "famille-x/modele-juge-1",
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "taux_changement_contrefactuel": 0.012,
+      "kappa_juge_humain": 0.83,
+      "retire": false
+    },
+    {
+      "juge_id": "juge-2",
+      "famille_modele": "famille-y",
+      "modele": "famille-y/modele-juge-2",
+      "version_prompt": "prompts/judge-primaire-1.0.0",
+      "taux_changement_contrefactuel": 0.021,
+      "kappa_juge_humain": 0.78,
+      "retire": false
+    }
+  ],
+  "taux_echantillon_humain": 0.1,
+  "kappa_paire_juges": 0.81,
+  "symetrie": {
+    "statut_global": "vert",
+    "conditions": [
+      {
+        "code": "nombre_questions_par_candidat",
+        "statut": "vert",
+        "mesure": 0,
+        "seuil": 0
+      },
+      {
+        "code": "repartition_gabarits_formulations",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      },
+      {
+        "code": "repartition_themes",
+        "statut": "ecart_tolere",
+        "mesure": 2,
+        "seuil": 0,
+        "detail_par_candidat": [
+          {
+            "candidat_id": "cand-a",
+            "valeur": 0
+          },
+          {
+            "candidat_id": "cand-b",
+            "valeur": 2
+          }
+        ],
+        "commentaire": "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une répartition identique (§5)."
+      },
+      {
+        "code": "aucun_item_conteste_ou_en_attente",
+        "statut": "vert"
+      },
+      {
+        "code": "aucun_nom_candidat_dans_q_att",
+        "statut": "vert"
+      },
+      {
+        "code": "part_items_a_f_minimale",
+        "statut": "vert",
+        "mesure": 0.23,
+        "seuil": 0.2
+      }
+    ]
+  },
+  "tirage": [
+    {
+      "question_id": "q_3aee55a036e1bc56fa8a62d2ada903d5",
+      "candidat_id": "cand-a",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-DIR",
+      "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+            "item_version": 1,
+            "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "position",
+        "position": "pour",
+        "resolution_temporelle": {
+          "date_gel": "2026-12-01T06:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "reprise": false
+    },
+    {
+      "question_id": "q_bd684c557d461d16291b5b64142a251f",
+      "candidat_id": "cand-b",
+      "theme": "retraites",
+      "gabarit": "Q-ACT",
+      "grappe_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+            "item_version": 3,
+            "item_empreinte": "4467e3ae7290d1b583e60a8cce0b128213242f7124ebe5f10755eca49822460f"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "arbitree"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "changement_de_position",
+        "etat_attendu": "posterieur",
+        "resolution_temporelle": {
+          "date_gel": "2026-12-01T06:00:00+01:00",
+          "date_changement": "2026-11-03",
+          "regle": "semi_ouvert"
+        }
+      },
+      "reprise": true,
+      "run_origine_id": "44CX8VSV75Q6ZAHDEJ8VA81YQE",
+      "empreinte_texte_precedente": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb"
+    }
+  ],
+  "contestations_posterieures": [
+    {
+      "item_id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+      "contestation_id": "PFHW0PWQ9VE2N6738D4VKSE3TM",
+      "date_reception": "2026-12-02T15:20:00+01:00"
+    }
+  ],
+  "go_no_go": {
+    "criteres": [
+      {
+        "code": "kappa_juges_humains",
+        "statut": "vert",
+        "valeur": 0.81,
+        "seuil": 0.75
+      },
+      {
+        "code": "test_contrefactuel",
+        "statut": "vert",
+        "valeur": 0.012,
+        "seuil": 0.03
+      },
+      {
+        "code": "aucun_item_conteste_dans_le_tirage",
+        "statut": "vert",
+        "valeur": 0,
+        "seuil": 0
+      },
+      {
+        "code": "tests_symetrie",
+        "statut": "vert",
+        "valeur": "vert",
+        "seuil": "vert"
+      },
+      {
+        "code": "reponses_manquantes",
+        "statut": "vert",
+        "valeur": 0.03,
+        "seuil": 0.2
+      },
+      {
+        "code": "erreurs_graves_revues",
+        "statut": "vert",
+        "valeur": 1,
+        "seuil": 1
+      },
+      {
+        "code": "analyses_preenregistrees_executees",
+        "statut": "vert",
+        "valeur": "oui",
+        "seuil": "oui"
+      }
+    ],
+    "decision": "publie"
+  },
+  "publication": {
+    "date": "2026-12-06T09:00:00+01:00",
+    "doi": "10.5281/zenodo.0000000",
+    "suspension_veille_electorale": false
+  }
+}

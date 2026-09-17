@@ -1,0 +1,66 @@
+{
+  "id": "910NY3HKVWNZK13PTN2GTKG7D0",
+  "version": 1,
+  "empreinte": "89a120d5de4311937b3cb59ff3a1c356fad502b0fa33f0474d8062df9e6f9b01",
+  "type": "A",
+  "candidat_id": "cand-c",
+  "mesure_id": "Q8HTYC6NCX8AVFBYX7CDVE0NCB",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-05",
+  "valide_au": null,
+  "assertion": {
+    "position": "pour",
+    "paraphrase": "Position inventée pour un item d'absence.",
+    "citation_verbatim": "…",
+    "source": {
+      "tier": "T1",
+      "url": "https://exemple-candidat.fr/programme-2027.pdf",
+      "type_document": "programme_pdf",
+      "page": 14,
+      "sha256": "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
+      "archive_url": "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/programme-2027.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-03T09:12:00+02:00",
+      "publication": "publique"
+    }
+  },
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    }
+  ]
+}

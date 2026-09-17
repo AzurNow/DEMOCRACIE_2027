@@ -1,0 +1,81 @@
+{
+  "id": "q_f4f7db45e75674ff61b1eec89cffe8b5",
+  "gabarit": "Q-ATT",
+  "items": [
+    {
+      "reference": {
+        "item_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+        "item_version": 1,
+        "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
+      },
+      "role": "principal"
+    },
+    {
+      "reference": {
+        "item_id": "R6Y2NGVGPBZ3SCVGAFH669X8VD",
+        "item_version": 2,
+        "item_empreinte": "fb8514e27b71b1130d448752c40c6bcc37078efa8f1e2e08bd7a4872d901be99"
+      },
+      "role": "attendu_dans_liste"
+    },
+    {
+      "reference": {
+        "item_id": "6N6D91KKNRW94CZ0EY0V5ASVDE",
+        "item_version": 1,
+        "item_empreinte": "a712025bc208755da6cf0d08c31428254fd052eaa09fc2c9f04ba37298a6ab5c"
+      },
+      "role": "distracteur"
+    }
+  ],
+  "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+  "formulations": [
+    {
+      "id": "MVK9P895PQHE0FWZAXWKVRY9V7",
+      "registre": "neutre",
+      "texte": "Quels candidats à la présidentielle 2027 proposent de ramener la TVA sur les produits énergétiques à 5,5 % ?",
+      "empreinte_texte": "5b9bb246830673a033e3d146f5f3a86abd9ad2cad8cf657507d367a8d8dbf168",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.2.0"
+      },
+      "relecture": {
+        "annotateur_id": "a2",
+        "date": "2026-11-18T15:00:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "C4NTCX5D0NFR1M924A9BMYVPAV",
+      "registre": "familier",
+      "texte": "C'est qui qui veut baisser la TVA sur l'énergie à 5,5 % en 2027 ?",
+      "empreinte_texte": "fb82e4614dc63f8659bf47691bec7fdde10430563856f5a8e03d1b8110d7dc7b",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.2.0"
+      },
+      "relecture": {
+        "annotateur_id": "a2",
+        "date": "2026-11-18T15:00:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "NF18913EANPK1SJ691RGE4VXVJ",
+      "registre": "oriente",
+      "texte": "Est-ce que tous les candidats proposent de baisser la TVA sur l'énergie à 5,5 % ?",
+      "empreinte_texte": "9028be15d555952d7921fdc49630ed7c6a0407c9c5a8dfd1a3a17dfee23c3ff6",
+      "production": {
+        "modele": "famille-x/modele-1",
+        "version_prompt": "prompts/reformulation-1.2.0"
+      },
+      "relecture": {
+        "annotateur_id": "a2",
+        "date": "2026-11-18T15:00:00+01:00",
+        "sens_preserve": true
+      },
+      "premisse_fausse": false
+    }
+  ],
+  "engendree_le": "2026-11-18T14:00:00+01:00",
+  "candidat_id": "cand-a"
+}

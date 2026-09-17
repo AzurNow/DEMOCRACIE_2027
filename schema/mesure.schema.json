@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:mesure",
+  "title": "Mesure (référent partagé)",
+  "description": "Une mesure est la chose dont on parle, indépendamment du candidat qui la propose. Absente du protocole, qui la laissait en chaîne libre dans l'item (annexe A : \"mesure\": \"tva_energie_5_5\"). Trois mécanismes la rendent indispensable : Q-ATT attend \"la liste exacte des candidats du périmètre\" proposant la mesure, ce qui suppose un référent commun à plusieurs candidats ; le drapeau \"mauvaise attribution\" (§7) se définit comme la position réelle d'un AUTRE candidat ; l'appariement item / comparateur (§6, QR9) joint sur la mesure. Avec des slugs libres, deux annotateurs écrivent deux slugs et la liste attendue de Q-ATT est fausse sans que rien n'échoue.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "empreinte",
+    "libelle",
+    "theme",
+    "formulation_canonique",
+    "fictive",
+    "historique"
+  ],
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Incrémentée à tout changement de contenu. Les items épinglent la version : une correction du thème d'une mesure ne doit pas déplacer silencieusement des items déjà tirés."
+    },
+    "empreinte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive}."
+    },
+    "libelle": { "type": "string", "minLength": 3 },
+    "theme": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme" },
+    "formulation_canonique": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Le texte exact substitué à [mesure] dans les gabarits de l'annexe B. Une seule formulation pour tous les candidats : c'est la condition de la symétrie du §5, qui serait violée si la même mesure était formulée plus favorablement pour un candidat."
+    },
+    "alias": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 2 },
+      "uniqueItems": true,
+      "description": "Variantes rencontrées à l'extraction. Servent à l'appariement, jamais à la génération de questions."
+    },
+    "fictive": {
+      "type": "boolean",
+      "description": "Vrai pour les mesures des items F (§4) : plausibles, proposées par aucun candidat du périmètre."
+    },
+    "origine_fictive": {
+      "type": "string",
+      "minLength": 3,
+      "description": "§5 : les mesures fictives sont \"une mesure existante dans un autre pays, ou proposée à une élection précédente par un candidat hors périmètre\". Ce champ dit laquelle, pour que la plausibilité soit contestable."
+    },
+    "verification_fictivite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "corpus_verifies", "operateur", "resultat"],
+      "description": "§5 : les items fictifs sont \"vérifiés contre l'ensemble des corpus T1 du périmètre\". Sans trace de cette vérification, la fictivité est une affirmation invérifiable — et une mesure faussement fictive transforme une réponse correcte de l'outil en fabrication comptabilisée.",
+      "properties": {
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "corpus_verifies": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "description": "Identifiants des candidats dont le corpus T1 a été balayé."
+        },
+        "operateur": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "resultat": {
+          "type": "string",
+          "enum": ["aucune_occurrence", "occurrence_trouvee"],
+          "description": "occurrence_trouvee interdit l'usage de la mesure comme fictive ; l'objet est conservé, la mesure passe fictive=false."
+        }
+      }
+    },
+    "historique": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/entree_historique" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "fictive": { "const": true } }, "required": ["fictive"] },
+      "then": { "required": ["origine_fictive", "verification_fictivite"] }
+    },
+    {
+      "if": { "properties": { "fictive": { "const": false } }, "required": ["fictive"] },
+      "then": { "not": { "required": ["origine_fictive"] } }
+    }
+  ]
+}

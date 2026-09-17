@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:question",
+  "title": "Question",
+  "description": "Une question logique = un item principal × un gabarit, portant ses trois formulations. §2 mettait la formulation hors de la question (\"une réponse = une question × ... × une formulation\") et §5 la mettait dedans (\"chaque question existe en trois formulations\") ; le décompte du §5 (400 items × 3 = 1 200 questions) tranchait dans un troisième sens. Convention retenue : la question est logique, les 1 200 du protocole se lisent 400 questions × 3 formulations, aucun chiffre ne change. Une question ne porte AUCUNE réponse attendue : celle-ci dépend de la date de gel et vit donc dans run.tirage[].",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "gabarit", "items", "grappe_id", "formulations", "engendree_le"],
+
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^q_[0-9a-f]{32}$",
+      "description": "Dérivé de (item principal, gabarit), et de rien d'autre : l'identité doit survivre à une correction d'item, sinon \"questions communes aux deux runs\" (§8, tendance) et la reprise à 80 % (§5) sont indécidables. La dérive de contenu est captée par formulations[].empreinte_texte, pas par l'id."
+    },
+
+    "gabarit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
+
+    "candidat_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "Interdit pour Q-ATT : §5 exige \"aucun nom de candidat dans les questions d'attribution, qui ne nomment que la mesure\". Conséquence à assumer côté symétrie : le test \"même nombre de questions par candidat\" ne peut pas porter sur les Q-ATT, qui ne sont attribuables à aucun candidat."
+    },
+
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Plusieurs items de référence peuvent être pertinents pour une même question. Q-ATT (\"Quels candidats proposent [mesure] ?\") porte par construction sur tous les items P de la mesure dans le périmètre, plus l'attente \"aucun\" pour un item F. Le squelette de prompt juge de l'annexe D, qui ne prend qu'un item, était donc insuffisant.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reference", "role"],
+        "properties": {
+          "reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/reference_item" },
+          "role": {
+            "type": "string",
+            "enum": ["principal", "attendu_dans_liste", "distracteur", "contexte"],
+            "description": "principal : l'item qui définit la question et la grappe. attendu_dans_liste : item P d'un autre candidat devant figurer dans la réponse à une Q-ATT. distracteur : item proche servant à détecter la mauvaise attribution. contexte : fourni au juge sans attente propre."
+          }
+        }
+      },
+      "contains": {
+        "type": "object",
+        "required": ["role"],
+        "properties": { "role": { "const": "principal" } }
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+
+    "grappe_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Identifiant de l'item principal, STOCKÉ. §8 impose un bootstrap en grappes \"la grappe étant l'item\", ce qui n'est pas défini pour une question à plusieurs items ; laisser l'analyse le recalculer reviendrait à faire vivre la métrique à deux endroits."
+    },
+
+    "formulations": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "§5 : neutre, familière, orientée. Produites par un modèle puis relues par un annotateur qui vérifie qu'elles ne changent pas le sens.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "registre", "texte", "empreinte_texte", "production", "relecture"],
+        "properties": {
+          "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+          "registre": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/registre" },
+          "texte": { "type": "string", "minLength": 5 },
+          "empreinte_texte": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+            "description": "sha256 du texte émis. \"Question commune aux deux runs\" (§8) = même id ET même empreinte : une correction d'item qui change le texte casse la reprise explicitement au lieu de faire passer une mesure d'amélioration pour une mesure de notre propre correction."
+          },
+          "premisse_fausse": {
+            "type": "boolean",
+            "description": "Obligatoire pour le registre orienté. Le dénominateur de la métrique \"confirmation de prémisse\" (§8) est \"formulations orientées sur items F et O\" : sans ce drapeau, il n'est pas calculable."
+          },
+          "production": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["modele", "version_prompt"],
+            "properties": {
+              "modele": { "type": "string", "minLength": 1 },
+              "version_prompt": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Référence au fichier versionné de prompts/. Règle 6 : aucun prompt en dur."
+              }
+            }
+          },
+          "relecture": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["annotateur_id", "date", "sens_preserve"],
+            "properties": {
+              "annotateur_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+              "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+              "sens_preserve": { "type": "boolean" },
+              "commentaire": { "type": "string" }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "registre": { "const": "oriente" } }, "required": ["registre"] },
+            "then": { "required": ["premisse_fausse"] }
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "contains": { "properties": { "registre": { "const": "neutre" } }, "required": ["registre"] },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": { "properties": { "registre": { "const": "familier" } }, "required": ["registre"] },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": { "properties": { "registre": { "const": "oriente" } }, "required": ["registre"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+
+    "engendree_le": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+
+    "version_gabarits": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Version du fichier de gabarits utilisé (prompts/). Un gabarit modifié est un amendement (§9)."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§5 : les questions d'attribution ne nomment que la mesure.",
+      "if": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["gabarit"] },
+      "then": { "not": { "required": ["candidat_id"] } },
+      "else": { "required": ["candidat_id"] }
+    },
+    {
+      "$comment": "Annexe B : Q-ACT porte sur les dates de validité, donc sur un item O.",
+      "if": { "properties": { "gabarit": { "const": "Q-ACT" } }, "required": ["gabarit"] },
+      "then": { "required": ["grappe_id"] }
+    }
+  ]
+}

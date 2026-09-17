@@ -1,0 +1,36 @@
+{
+  "id": "BCQYGNPRVPCAD4KW6S0JA4DEZY",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
+  },
+  "categorie_retenue": "inexacte",
+  "drapeaux_retenus": [
+    "fabrication"
+  ],
+  "motif_inexactitude_retenu": "position_inventee",
+  "sourcage_retenu": {
+    "cite": true,
+    "au_moins_un_lien_existant": false,
+    "au_moins_un_lien_soutenant": false
+  },
+  "notations_sources": [
+    "P584FDFZGFEB8P08FNANNGSXR9",
+    "XHQ5PTP0JQXBVR91YMCJ2QSMMZ",
+    "RTCACGRN8KMZBJE99480FP51PZ"
+  ],
+  "mode_resolution": "revue_erreur_grave",
+  "desaccord_juges": true,
+  "dans_echantillon_humain": false,
+  "erreur_grave": true,
+  "revue_humaine": {
+    "effectuee": true,
+    "date": "2026-12-05T09:30:00+01:00",
+    "annotateurs": [
+      "a4"
+    ]
+  },
+  "date": "2026-12-05T10:00:00+01:00"
+}

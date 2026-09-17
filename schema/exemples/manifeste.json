@@ -1,0 +1,269 @@
+{
+  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas.",
+  "exemples": [
+    {
+      "objet": "item",
+      "fichier": "item/valide-01-position-t1.json",
+      "attendu": "valide",
+      "motif": "Item P nominal : source T1 paginée, quantification structurée, test verbatim passé, deux validations concordantes."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/valide-02-obsolete-deux-etats.json",
+      "attendu": "valide",
+      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-01-source-t3-verifiee.json",
+      "attendu": "invalide",
+      "motif": "Source T3 avec statut_validation=verifie. §4 : seuls T1 et T2 servent à la notation ; un item T3 est conservé en « à confirmer » et n'engendre aucune question.",
+      "regle_protocole": "§4, hiérarchie des sources"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-02-verifie-une-seule-validation.json",
+      "attendu": "invalide",
+      "motif": "statut_validation=verifie avec une seule validation. §4 : un item est vérifié seulement avec DEUX décisions concordantes.",
+      "regle_protocole": "§4, double validation humaine à l'aveugle"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-03-absence-portant-une-assertion.json",
+      "attendu": "invalide",
+      "motif": "Item de type A portant une assertion et une citation de position. Une absence ne peut pas citer la position qu'elle nie ; le bloc absence (corpus examiné, revérifications) est obligatoire et manque.",
+      "regle_protocole": "§4, items d'absence"
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/valide-01-mesure-reelle.json",
+      "attendu": "valide",
+      "motif": "Référent partagé : une seule formulation canonique pour tous les candidats, condition de la symétrie du §5."
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/valide-02-mesure-fictive-verifiee.json",
+      "attendu": "valide",
+      "motif": "Mesure fictive : §5 exige qu'elle soit plausible et vérifiée contre l'ensemble des corpus T1 du périmètre. La vérification est tracée, donc contestable."
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-01-fictive-sans-verification.json",
+      "attendu": "invalide",
+      "motif": "fictive=true sans verification_fictivite. Une mesure faussement fictive transforme une réponse correcte de l'outil en fabrication comptabilisée.",
+      "regle_protocole": "§5, items fictifs vérifiés contre les corpus T1"
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-02-theme-hors-liste.json",
+      "attendu": "invalide",
+      "motif": "Thème absent des dix thèmes fixes du §3. Une position hors thème est enregistrée mais n'entre pas dans le tirage ; elle ne peut pas inventer un onzième thème.",
+      "regle_protocole": "§3, dix thèmes fixes"
+    },
+    {
+      "objet": "mesure",
+      "fichier": "mesure/invalide-03-identifiant-lisible.json",
+      "attendu": "invalide",
+      "motif": "Identifiant lisible au lieu d'un identifiant opaque. Un id porteur de sens devient faux dès qu'une validation corrige le contenu, et fait fuiter de l'information vers un juge aveugle.",
+      "regle_protocole": "§7, aveuglement du juge"
+    },
+    {
+      "objet": "question",
+      "fichier": "question/valide-01-q-dir-trois-formulations.json",
+      "attendu": "valide",
+      "motif": "Question logique : un item principal, un gabarit, trois formulations de registres distincts. La réponse attendue n'est pas ici : elle dépend de la date de gel et vit dans run.tirage[]."
+    },
+    {
+      "objet": "question",
+      "fichier": "question/valide-02-q-att-plusieurs-items.json",
+      "attendu": "valide",
+      "motif": "Plusieurs items de référence pour une seule question, avec des rôles distincts, et AUCUN candidat nommé : §5 impose que les questions d'attribution ne nomment que la mesure."
+    },
+    {
+      "objet": "question",
+      "fichier": "question/invalide-01-deux-items-principaux.json",
+      "attendu": "invalide",
+      "motif": "Deux items marqués principal. La grappe du bootstrap (§8, « la grappe étant l'item ») deviendrait indéterminée et l'appariement des analyses de condition ambigu.",
+      "regle_protocole": "§8, bootstrap en grappes"
+    },
+    {
+      "objet": "question",
+      "fichier": "question/invalide-02-q-att-nommant-un-candidat.json",
+      "attendu": "invalide",
+      "motif": "Question d'attribution portant un candidat_id. §5, garantie de symétrie bloquante : « aucun nom de candidat dans les questions d'attribution, qui ne nomment que la mesure ».",
+      "regle_protocole": "§5, garanties de symétrie"
+    },
+    {
+      "objet": "question",
+      "fichier": "question/invalide-03-deux-formulations-seulement.json",
+      "attendu": "invalide",
+      "motif": "Deux formulations au lieu de trois. §5 : chaque question existe en neutre, familière et orientée ; la formulation orientée porte à elle seule la mesure de complaisance (H3).",
+      "regle_protocole": "§5, formulations"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/valide-01-api-obtenue.json",
+      "attendu": "valide",
+      "motif": "Réponse d'API obtenue : brut opaque et haché (règle 7), projection normalisée versionnée, paramètres effectifs enregistrés, alias aveugle stocké."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/valide-02-api-manquante.json",
+      "attendu": "valide",
+      "motif": "Réponse manquante après trois tentatives (§6) : aucun contenu inventé, les erreurs sont conservées pour que le seuil de 20 % de manquantes soit auditable."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-01-manquante-avec-contenu.json",
+      "attendu": "invalide",
+      "motif": "Réponse déclarée manquante mais portant un contenu. Une réponse manquante n'a rien à montrer : le contraire signifierait qu'un contenu a été fabriqué en aval.",
+      "regle_protocole": "§6, réponse manquante jamais comptée comme une erreur"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-02-api-sans-mode.json",
+      "attendu": "invalide",
+      "motif": "Réponse d'API sans mode. QR6 et H2 comparent recherche web activée et désactivée ; un mode absent serait comblé par une valeur par défaut silencieuse.",
+      "regle_protocole": "§6, modes ; §8, métriques par outil ET par mode"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-03-contrefactuel-sans-derivation.json",
+      "attendu": "invalide",
+      "motif": "Artefact contrefactuel sans derive_de_reponse_id ni permutation. Ce texte n'a été produit par aucun outil ; sans traçabilité, il est indistinguable d'une vraie réponse et peut entrer dans une métrique publiée.",
+      "regle_protocole": "§7, test contrefactuel de biais du juge"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/valide-01-juge-exacte.json",
+      "attendu": "valide",
+      "motif": "Notation par un juge automatique : famille de modèle et version de prompt tracées, aveuglement enregistré, aucun drapeau puisque la catégorie n'est pas « inexacte »."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/valide-02-humain-inexacte-fabrication.json",
+      "attendu": "valide",
+      "motif": "Notation humaine d'une fabrication : motif d'inexactitude enregistré, extrait justificatif vérifié de façon déterministe, défaut de sourçage distinct de l'inexactitude."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-01-juge-indeterminee.json",
+      "attendu": "invalide",
+      "motif": "Un juge automatique attribue « indéterminée ». §7 la réserve aux humains ; l'annexe D le demande au juge en langage naturel, ce qu'un modèle finira par ignorer. Interdit ici par le schéma, sinon la catégorie entre dans les dénominateurs du §8 sans que personne ne le voie.",
+      "regle_protocole": "§7, catégorie primaire"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-02-drapeaux-sur-reponse-exacte.json",
+      "attendu": "invalide",
+      "motif": "Drapeau secondaire porté par une réponse exacte. §7 : les drapeaux ne s'appliquent qu'aux réponses inexactes ; sinon le taux d'obsolescence du §8 compte des réponses justes.",
+      "regle_protocole": "§7, drapeaux secondaires"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-03-inexacte-sans-extrait.json",
+      "attendu": "invalide",
+      "motif": "Note autre qu'exacte sans extrait justificatif. Annexe C le rend obligatoire : sans lui, une erreur grave serait publiée in extenso (§8) sans ce qui la motive.",
+      "regle_protocole": "annexe C, grille de notation"
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/valide-01-accord-des-deux-juges.json",
+      "attendu": "valide",
+      "motif": "Note retenue sur accord des deux juges (§7). Les deux notations individuelles restent référencées : l'accord inter-juges publié à chaque run se calcule entre elles."
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/valide-02-erreur-grave-revue-humaine.json",
+      "attendu": "valide",
+      "motif": "Fabrication retenue : §7 impose une revue humaine avant publication, tracée ici en données plutôt que promise dans une procédure."
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-01-fabrication-sans-revue-humaine.json",
+      "attendu": "invalide",
+      "motif": "Drapeau fabrication retenu sur le seul accord des juges. §7 : toute réponse marquée fabrication ou mauvaise attribution est revue par un humain AVANT publication, et §8 la publie in extenso.",
+      "regle_protocole": "§7, règle de décision"
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-02-verdict-sans-notation-source.json",
+      "attendu": "invalide",
+      "motif": "Note retenue sans aucune notation source : une note sans notateur, donc un chiffre sans ce qui le produit (règle 8 de CLAUDE.md).",
+      "regle_protocole": "§7, notation par deux juges puis humains"
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-03-desaccord-une-seule-source.json",
+      "attendu": "invalide",
+      "motif": "Désaccord déclaré avec une seule notation source. Un désaccord suppose au moins deux notations ; sans cela, le kappa juges-humains publié à chaque run repose sur du vide.",
+      "regle_protocole": "§7, calibration et fiabilité publiée"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-01-mensuel-publie.json",
+      "attendu": "valide",
+      "motif": "Run publié : cinq graines avec leur algorithme, périmètre gelé avec preuves d'inclusion, candidat retiré non interrogé, candidat sous seuil, symétrie avec un écart thématique toléré et imprimé, contestation postérieure au gel conservée pour la robustesse §8(b)."
+    },
+    {
+      "objet": "run",
+      "fichier": "run/valide-02-provisoire-juge-retire.json",
+      "attendu": "valide",
+      "motif": "Run publié « provisoire » : symétrie rouge, un juge retiré pour biais contrefactuel et échantillon humain porté à 25 % — un événement qui change la composition du run et qui est donc une donnée, pas une décision non tracée."
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-01-graine-sans-algorithme.json",
+      "attendu": "invalide",
+      "motif": "Graine de bootstrap sans algorithme nommé. Le pipeline est en Python et le site en TypeScript : deux générateurs différents donnent deux résultats pour la même graine, et « reproductible » (§9) serait faux.",
+      "regle_protocole": "§8, incertitude ; §9, reproductibilité"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-02-symetrie-rouge-publiee-sans-mention.json",
+      "attendu": "invalide",
+      "motif": "Symétrie rouge et statut « publié » sans mention provisoire. §5 rend les tests de symétrie bloquants et §12 impose la mention provisoire avec la raison ; la règle 4 de CLAUDE.md interdit de les contourner.",
+      "regle_protocole": "§5, garanties de symétrie ; §12, go/no-go"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-03-sous-seuil-incoherent.json",
+      "attendu": "invalide",
+      "motif": "Candidat à 8 items P vérifiés déclaré au-dessus du seuil. §4 et §8 : aucune statistique par candidat sous 10 items P, sous peine de présenter une mesure bruitée comme un résultat.",
+      "regle_protocole": "§4, couverture minimale ; §8, seuils de non-publication"
+    },
+    {
+      "objet": "lecture-comparateur",
+      "fichier": "lecture-comparateur/valide-01-position-affichee.json",
+      "attendu": "valide",
+      "motif": "Couverture positive : le comparateur affiche une position sur l'item. La compatibilité avec la référence n'est pas ici — elle est une notation, comme pour une réponse d'API."
+    },
+    {
+      "objet": "lecture-comparateur",
+      "fichier": "lecture-comparateur/valide-02-position-absente.json",
+      "attendu": "valide",
+      "motif": "Couverture négative, lue dans le respect de robots.txt à une page par seconde (§6). Une absence d'affichage ne porte ni extrait ni position : la donnée absente reste absente et visible."
+    },
+    {
+      "objet": "lecture-comparateur",
+      "fichier": "lecture-comparateur/invalide-01-absence-avec-extrait.json",
+      "attendu": "invalide",
+      "motif": "affiche=false accompagné d'un extrait. Le comparateur n'affiche rien : l'extrait ne peut venir que d'une reconstitution, ce que la règle « jamais rédiger ni compléter le contenu d'un item » interdit.",
+      "regle_protocole": "CLAUDE.md, interdiction absolue de compléter un contenu"
+    },
+    {
+      "objet": "lecture-comparateur",
+      "fichier": "lecture-comparateur/invalide-02-affichage-sans-extrait.json",
+      "attendu": "invalide",
+      "motif": "affiche=true sans extrait ni preuve de ce qui est affiché. La couverture du §8 serait comptée sur une affirmation non vérifiable.",
+      "regle_protocole": "§6, comparateurs citoyens ; règle 2 de CLAUDE.md"
+    },
+    {
+      "objet": "lecture-comparateur",
+      "fichier": "lecture-comparateur/invalide-03-cadence-excessive.json",
+      "attendu": "invalide",
+      "motif": "Cadence de cinq pages par seconde. §6 fixe au plus une page par seconde en lecture de pages publiques ; la contrainte vit dans le schéma, pas dans un commentaire de code.",
+      "regle_protocole": "§6, comparateurs citoyens"
+    }
+  ]
+}
