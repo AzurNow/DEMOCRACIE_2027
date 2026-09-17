@@ -1,0 +1,17 @@
+{
+  "id": "MES0RE00000000000000000002",
+  "version": 1,
+  "empreinte": "0000000000000000000000000000000000000000000000000000000000000000",
+  "libelle": "Mesure P2 (démonstration)",
+  "theme": "fiscalite_pouvoir_achat",
+  "formulation_canonique": "le gel des tarifs reglementes sera prolonge de deux ans.",
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ]
+}

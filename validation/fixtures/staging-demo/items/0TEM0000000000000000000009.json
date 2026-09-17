@@ -1,0 +1,23 @@
+{
+  "id": "0TEM0000000000000000000009",
+  "version": 1,
+  "type": "F",
+  "candidat_id": "demo-epsilon",
+  "mesure_id": "MES0RE00000000000000000009",
+  "mesure_version": 1,
+  "statut_validation": "en_attente",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "empreinte": "5cf60fa7d81ea0763f9d4b005c88ad2616bdf166f77d1092d4c8b25837f0ab29"
+}

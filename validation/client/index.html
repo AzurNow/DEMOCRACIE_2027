@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validation — Banc d'essai 2027</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header id="bandeau">
+      <span id="identite"></span>
+      <span id="fil"></span>
+      <span id="avancement"></span>
+      <button id="bouton-aide" type="button">Raccourcis (?)</button>
+    </header>
+
+    <main id="ecran" aria-live="polite"></main>
+
+    <dialog id="aide">
+      <h2>Raccourcis clavier</h2>
+      <div id="table-raccourcis"></div>
+      <p class="note">
+        Accepter, rejeter et non&nbsp;évaluable coûtent le même nombre de gestes. C'est une
+        exigence de méthode, pas un choix d'ergonomie : un raccourci plus rapide pour accepter
+        produirait un biais d'acquiescement mesurable dans le jeu de données.
+      </p>
+      <button id="fermer-aide" type="button">Fermer (Échap)</button>
+    </dialog>
+
+    <script type="module" src="/dist/app.js"></script>
+  </body>
+</html>

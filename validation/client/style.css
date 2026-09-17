@@ -1,0 +1,292 @@
+/*
+ * Interface de validation. Sobriété volontaire : deux personnes vont passer trente heures
+ * dessus, et tout ce qui attire l'œil sans le mériter est un coût.
+ *
+ * Aucune ressource distante — ni police, ni feuille de style, ni image. Le projet interdit
+ * tout appel réseau sortant, et un test vérifie qu'aucun octet servi ne contient d'URL externe.
+ */
+
+:root {
+  --encre: #1a1a1a;
+  --papier: #fdfdfc;
+  --papier-second: #f2f1ee;
+  --trait: #d5d3cd;
+  --appui: #2b4c7e;
+  --alerte: #8b2b2b;
+  --surlignage: #ffe89a;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--encre);
+  background: var(--papier);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#bandeau {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--trait);
+  background: var(--papier-second);
+  font-size: 0.85rem;
+}
+
+#bandeau #fil {
+  flex: 1;
+  color: #555;
+}
+
+#ecran {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ------------------------------------------------------------- deux volets */
+
+.volets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  overflow: hidden;
+}
+
+.volet {
+  overflow: auto;
+  padding: 1rem;
+}
+
+.volet + .volet {
+  border-left: 1px solid var(--trait);
+}
+
+.volet-source {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0;
+}
+
+.onglets {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.5rem 0;
+  border-bottom: 1px solid var(--trait);
+}
+
+.onglets button[aria-selected="true"] {
+  background: var(--papier);
+  border-bottom-color: var(--papier);
+  font-weight: 600;
+}
+
+.cadre-source {
+  flex: 0 0 45%;
+  border: 0;
+  border-bottom: 1px solid var(--trait);
+  width: 100%;
+  background: #555;
+}
+
+.texte-source {
+  flex: 1;
+  overflow: auto;
+  padding: 0 1rem 1rem;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+mark {
+  background: var(--surlignage);
+  padding: 0.1em 0;
+}
+
+/* ------------------------------------------------------------------ items */
+
+.entete-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.pastille {
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  background: var(--papier-second);
+}
+
+.champ {
+  margin: 0.6rem 0;
+}
+
+.champ label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+  margin-bottom: 0.15rem;
+}
+
+.champ .valeur {
+  border: 1px solid var(--trait);
+  border-radius: 3px;
+  padding: 0.4rem 0.5rem;
+  background: var(--papier);
+  white-space: pre-wrap;
+}
+
+.champ textarea,
+.champ input {
+  width: 100%;
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--appui);
+  border-radius: 3px;
+}
+
+.citation {
+  font-style: italic;
+}
+
+.etats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.etat {
+  border: 1px solid var(--trait);
+  border-radius: 4px;
+  padding: 0.6rem;
+}
+
+/* -------------------------------------------------------------- questions */
+
+.question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--trait);
+}
+
+.question.courante {
+  background: #eef3fa;
+  outline: 2px solid var(--appui);
+  outline-offset: -2px;
+}
+
+.reponses button {
+  min-width: 3.2rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--trait);
+  background: var(--papier);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+button[aria-pressed="true"] {
+  background: var(--appui);
+  color: white;
+  border-color: var(--appui);
+}
+
+/* Les quatre décisions ont volontairement la même taille et le même poids visuel. */
+.decisions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.decisions button {
+  padding: 0.6rem 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.decisions button[aria-pressed="true"] {
+  background: var(--appui);
+  color: white;
+}
+
+.confirmation {
+  margin-top: 0.6rem;
+  padding: 0.6rem;
+  border: 1px dashed var(--appui);
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------- listes, fin */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+th,
+td {
+  border: 1px solid var(--trait);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.alerte {
+  border-left: 4px solid var(--alerte);
+  background: #fbf0f0;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.avis {
+  border-left: 4px solid var(--appui);
+  background: #eef3fa;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.note {
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.centre {
+  margin: auto;
+  max-width: 44rem;
+  padding: 2rem;
+}
+
+dialog {
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+  max-width: 40rem;
+}
+
+.indefini {
+  color: #777;
+  font-style: italic;
+}

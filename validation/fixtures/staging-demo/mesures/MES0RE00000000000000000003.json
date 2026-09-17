@@ -1,0 +1,17 @@
+{
+  "id": "MES0RE00000000000000000003",
+  "version": 1,
+  "empreinte": "0000000000000000000000000000000000000000000000000000000000000000",
+  "libelle": "Mesure P3 (démonstration)",
+  "theme": "retraites",
+  "formulation_canonique": "nous retablirons le depart a la retraite a 60 ans pour toute",
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+Enregistrement de demonstration du Banc d'essai 2027.
+La position a change : ce sera 62 ans, et non plus 60.
+Les carrieres longues conservent un depart anticipe.

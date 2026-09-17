@@ -1,0 +1,30 @@
+{
+  "id": "MES0RE00000000000000000010",
+  "version": 1,
+  "empreinte": "0000000000000000000000000000000000000000000000000000000000000000",
+  "libelle": "Mesure fictive F2 (démonstration)",
+  "theme": "travail_emploi",
+  "formulation_canonique": "une semaine de quatre jours obligatoire dans le secteur public",
+  "fictive": true,
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "origine_fictive": "Mesure proposée lors d'une élection précédente par un parti hors périmètre.",
+  "verification_fictivite": {
+    "date": "2026-09-17T10:00:00+02:00",
+    "corpus_verifies": [
+      "demo-alpha",
+      "demo-beta",
+      "demo-gamma",
+      "demo-delta",
+      "demo-epsilon"
+    ],
+    "operateur": "a1",
+    "resultat": "aucune_occurrence"
+  }
+}
