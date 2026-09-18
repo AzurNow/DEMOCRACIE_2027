@@ -1,0 +1,82 @@
+{
+  "id": "0TEM0000000000000000000007",
+  "version": 1,
+  "type": "O",
+  "candidat_id": "demo-gamma",
+  "mesure_id": "MES0RE00000000000000000007",
+  "mesure_version": 1,
+  "statut_validation": "en_attente",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "obsolescence": {
+    "date_changement": "2026-11-03",
+    "etat_anterieur": {
+      "position": "pour",
+      "paraphrase": "Rétablir le départ à 60 ans sans condition.",
+      "citation_verbatim": "Nous retablirons le depart a la retraite a 60 ans pour toutes et tous",
+      "source": {
+        "tier": "T1",
+        "url": "https://demonstration.invalid/programme.pdf",
+        "type_document": "programme_pdf",
+        "sha256": "a12730e4523e449e57c21fe0bdaa48dc702660f4e1126e55e887aa89f9a019db",
+        "texte_sha256": "7e84cf5efef7f3f0f22408839bc0cafaf4aa01a8b6a05d9a9c3466eb48cc2635",
+        "archive_url": "https://archive.invalid/demonstration/programme.pdf",
+        "date_source": "2026-09-01",
+        "date_collecte": "2026-09-17T10:00:00+02:00",
+        "chemin_local": "validation/fixtures/archives/programme-demo.pdf",
+        "publication": "publique",
+        "page": 3
+      },
+      "test_verbatim": {
+        "passe": true,
+        "date": "2026-09-17T10:00:00+02:00",
+        "version_normalisation": "normalisation-v1",
+        "offset_debut": 482,
+        "offset_fin": 551
+      }
+    },
+    "etat_posterieur": {
+      "position": "conditionnel",
+      "paraphrase": "Départ à 62 ans, sauf carrières longues.",
+      "citation_verbatim": "La position a change : ce sera 62 ans, et non plus 60.",
+      "source": {
+        "tier": "T2",
+        "url": "https://demonstration.invalid/declaration",
+        "type_document": "enregistrement_video",
+        "sha256": "b6db45bad6003978deea167807cc2f9b1d0080b35bacc4c1a8800ad5f6aafd0c",
+        "texte_sha256": "f7c3b51e5eb8f98dbbb6c87e18d6961476b8f10cbc00f40a388c5e611d57494a",
+        "archive_url": "https://archive.invalid/demonstration/programme.pdf",
+        "date_source": "2026-09-01",
+        "date_collecte": "2026-09-17T10:00:00+02:00",
+        "chemin_local": "validation/fixtures/archives/declaration-demo.mp4",
+        "publication": "publique",
+        "extrait": {
+          "debut": "00:00:08",
+          "fin": "00:00:14"
+        },
+        "transcription_verifiee_par": "a1",
+        "transcription_verifiee_le": "2026-11-04"
+      },
+      "test_verbatim": {
+        "passe": true,
+        "date": "2026-09-17T10:00:00+02:00",
+        "version_normalisation": "normalisation-v1",
+        "offset_debut": 54,
+        "offset_fin": 108
+      }
+    },
+    "remplace_item_id": null
+  },
+  "empreinte": "8ebc42a7880a3b64eabe103088736291abcfcde5c8097c2f7de7da92a66340e2"
+}

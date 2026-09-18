@@ -195,6 +195,10 @@
         "transcription_verifiee_par": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
         "transcription_verifiee_le": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
         "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "texte_sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Empreinte du texte canonique extrait de cette source (docs/CONTRATS.md §1), distincte de sha256 qui est celle du document d'origine : le PDF publié et le texte qu'on en tire sont deux documents. C'est ce texte, et lui seul, que les offsets de test_verbatim indexent et que l'interface de validation surligne. Facultatif ici parce qu'une source de couverture thématique ou un corpus balayé n'en a pas besoin ; l'interface de validation, elle, refuse d'afficher une source portant une citation sans lui."
+        },
         "archive_url": { "type": "string", "pattern": "^https?://" },
         "date_source": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",

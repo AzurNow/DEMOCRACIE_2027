@@ -105,6 +105,23 @@
           }
         },
         "date_examen": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "confirmation_initiale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lot_id", "date", "annotateurs"],
+          "description": "§4 : un item A n'existe que si DEUX annotateurs confirment l'absence. Les cinq questions de reponses_grille ne pouvaient pas porter cette confirmation, qui n'est pas un jugement sur une citation mais sur une recherche. Écrit par pnpm promote à partir du journal de validation ; promote refuse de promouvoir un item A dont les deux décisions ne portent pas confirmation_absence = true. Distinct de reverifications[], qui couvre les runs suivants, pas la création.",
+          "properties": {
+            "lot_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+            "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "annotateurs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" }
+            }
+          }
+        },
         "reverifications": {
           "type": "array",
           "description": "§4 : revérification à chaque run par recherche automatique de nouvelles sources T1, puis confirmation humaine. Vide au premier run, jamais absent.",

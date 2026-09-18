@@ -1,0 +1,48 @@
+{
+  "id": "0TEM0000000000000000000002",
+  "version": 1,
+  "type": "P",
+  "candidat_id": "demo-gamma",
+  "mesure_id": "MES0RE00000000000000000002",
+  "mesure_version": 1,
+  "statut_validation": "en_attente",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "assertion": {
+    "position": "pour",
+    "paraphrase": "Paraphrase de démonstration n° 2.",
+    "citation_verbatim": "Le gel des tarifs reglementes sera prolonge de deux ans.",
+    "source": {
+      "tier": "T1",
+      "url": "https://demonstration.invalid/programme.pdf",
+      "type_document": "programme_pdf",
+      "sha256": "a12730e4523e449e57c21fe0bdaa48dc702660f4e1126e55e887aa89f9a019db",
+      "texte_sha256": "7e84cf5efef7f3f0f22408839bc0cafaf4aa01a8b6a05d9a9c3466eb48cc2635",
+      "archive_url": "https://archive.invalid/demonstration/programme.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-17T10:00:00+02:00",
+      "chemin_local": "validation/fixtures/archives/programme-demo.pdf",
+      "publication": "publique",
+      "page": 2
+    },
+    "test_verbatim": {
+      "passe": true,
+      "date": "2026-09-17T10:00:00+02:00",
+      "version_normalisation": "normalisation-v1",
+      "offset_debut": 405,
+      "offset_fin": 461
+    }
+  },
+  "empreinte": "d9edc503fe479155e6cf693b6293795fc7c8dd1b91f07ffb6aa5f84f3c345cb8"
+}

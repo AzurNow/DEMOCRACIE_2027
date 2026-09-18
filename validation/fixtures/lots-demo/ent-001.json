@@ -1,0 +1,43 @@
+{
+  "lot_id": "ent-001",
+  "nature": "entrainement",
+  "graine_maitresse": "graine-demonstration",
+  "algorithme_ordre": "ordre-annotateur-v1",
+  "date_creation": "2026-09-17T10:00:00+02:00",
+  "annotateurs": [
+    "a1",
+    "a2"
+  ],
+  "items": [
+    {
+      "item_id": "0TEM0000000000000000000009",
+      "item_version": 1,
+      "item_empreinte": "5cf60fa7d81ea0763f9d4b005c88ad2616bdf166f77d1092d4c8b25837f0ab29",
+      "candidat_id": "demo-epsilon"
+    },
+    {
+      "item_id": "0TEM0000000000000000000006",
+      "item_version": 1,
+      "item_empreinte": "24b670e0f6e37d328b698a6833dc843f2ef7f0b7e6fb5285f74675f85c929a6d",
+      "candidat_id": "demo-beta"
+    },
+    {
+      "item_id": "0TEM0000000000000000000002",
+      "item_version": 1,
+      "item_empreinte": "d9edc503fe479155e6cf693b6293795fc7c8dd1b91f07ffb6aa5f84f3c345cb8",
+      "candidat_id": "demo-gamma"
+    },
+    {
+      "item_id": "0TEM0000000000000000000004",
+      "item_version": 1,
+      "item_empreinte": "cb04027f1b2b2b97fdbbd291c86ac9c8f7951c2e86a5244f94cead594f070381",
+      "candidat_id": "demo-epsilon"
+    },
+    {
+      "item_id": "0TEM0000000000000000000001",
+      "item_version": 1,
+      "item_empreinte": "7dc1b4691fbea119a0ad6e3616891e8274cee0338c48162d8106f0352a5c3f41",
+      "candidat_id": "demo-beta"
+    }
+  ]
+}

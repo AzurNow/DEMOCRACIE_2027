@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:decision",
+  "title": "Entrée du journal de validation",
+  "description": "Une ligne du journal append-only écrit par l'interface de validation humaine (§4). Le journal est la trace primaire : item.validations[] n'en est qu'une projection, appauvrie, écrite par pnpm promote. Ce qui vit ici et pas là : la durée passée, les champs modifiés avec leur ancienne valeur, les questions propres au type d'item, les annulations, et les retraits d'items contestés. Un fichier JSONL par annotateur et par lot, une entrée par ligne, jamais réécrite : un changement d'avis est une nouvelle entrée horodatée, l'ancienne reste.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "journal_version",
+    "type_entree",
+    "annotateur_id",
+    "lot_id",
+    "lot_nature",
+    "item_id",
+    "horodatage",
+    "empreinte_ligne"
+  ],
+
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "journal_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version du format de ligne. Un journal publié se relit des années plus tard ; sans ce numéro, une évolution de format rend illisible ce qui a déjà été écrit."
+    },
+
+    "type_entree": {
+      "type": "string",
+      "enum": ["decision", "annulation", "retrait_item"],
+      "description": "annulation : l'annotateur revient sur sa dernière décision. L'entrée annulée reste dans le fichier — c'est la définition d'un journal append-only. retrait_item : l'item a été contesté et sort du lot en cours (§4, droit de réponse) ; l'entrée trace la sortie pour que le dénominateur du kappa reste auditable."
+    },
+
+    "annotateur_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "Lu une seule fois dans la variable d'environnement ANNOTATEUR_ID au démarrage du serveur, jamais fourni par une requête : c'est le premier des quatre mécanismes d'aveuglement."
+    },
+
+    "lot_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+
+    "lot_nature": {
+      "type": "string",
+      "enum": ["entrainement", "reel", "reannotation"],
+      "description": "§4 : 30 items d'entraînement communs avant tout lot réel. Les décisions d'un lot d'entraînement ne promeuvent jamais un item vers data/. reannotation : lot rejoué après une séance de calibration, quand le kappa du lot d'origine est sous 0,80."
+    },
+
+    "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "item_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version de l'item telle qu'affichée. Deux décisions portant sur deux versions différentes ne sont pas concordantes : elles n'ont pas jugé la même chose."
+    },
+
+    "item_empreinte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+
+    "item_type": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/type_item" },
+
+    "decision": {
+      "type": "string",
+      "enum": ["accepter", "corriger", "rejeter", "non_evaluable"],
+      "description": "§4. Le kappa publié porte sur trois catégories dérivées : retenu (accepter ou corriger), rejete, non_evaluable — c'est le devenir de l'item qui compte, et distinguer accepter de corriger pénaliserait une coquille corrigée par un seul annotateur."
+    },
+
+    "reponses_grille": {
+      "$ref": "#/$defs/grille",
+      "description": "Les cinq questions du §4. Interdit sur un item de type O, qui porte une grille par état : stocker en plus leur réduction serait stocker deux fois une valeur qui peut diverger."
+    },
+
+    "reponses_par_etat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anterieur", "posterieur"],
+      "description": "Items O seulement. §4 exige que les deux états soient sourcés ; ils sont donc jugés séparément. La réduction vers les cinq clés de item.reponses_grille est déterministe (ET logique : false si l'un est false, null si les deux sont null, true sinon) et calculée à la promotion, jamais stockée ici.",
+      "properties": {
+        "anterieur": { "$ref": "#/$defs/grille" },
+        "posterieur": { "$ref": "#/$defs/grille" }
+      }
+    },
+
+    "questions_specifiques": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Les cinq questions du §4 sont écrites pour un item P. Un item A n'a pas de citation, un item O en a deux, un item F n'a ni citation ni position de candidat. Ces questions-ci comblent l'écart sans toucher aux cinq clés de item.schema.json.",
+      "properties": {
+        "couverture_theme_verifiee": {
+          "type": "boolean",
+          "description": "Item A : le programme cité en source_couverture_theme couvre bien le thème. Sans elle, l'absence n'est pas une absence mais un silence."
+        },
+        "corpus_complet": {
+          "type": "boolean",
+          "description": "Item A : la liste corpus_examine[] correspond au corpus T1 et T2 enregistré du candidat à cette date."
+        },
+        "confirmation_absence": {
+          "type": "boolean",
+          "description": "Item A : confirmation explicite, décochée par défaut. promote refuse de promouvoir un item A dont les deux décisions ne la portent pas à true."
+        },
+        "changement_explicite": {
+          "type": "boolean",
+          "description": "Item O : la source postérieure dit que la position a changé ou été retirée — elle ne dit pas simplement autre chose. Un candidat qui parle d'un autre sujet n'a pas changé d'avis."
+        },
+        "fictivite_verifiee": {
+          "type": "boolean",
+          "description": "Item F : l'annotateur a vu les corpus balayés et les termes recherchés, et confirme. Une mesure faussement fictive transforme une réponse correcte d'un outil en fabrication comptabilisée."
+        },
+        "plausibilite": {
+          "type": "boolean",
+          "description": "Item F : §5 exige des mesures fictives plausibles. Une mesure absurde ne mesure pas la fabrication, elle mesure la détection d'absurdité."
+        }
+      }
+    },
+
+    "corrections": {
+      "type": "array",
+      "description": "§4 : « corriger » consigne le champ modifié et son ancienne valeur. Vide sur toute autre décision.",
+      "items": { "$ref": "#/$defs/correction" }
+    },
+
+    "commentaire": {
+      "type": ["string", "null"],
+      "description": "Champ libre, disponible sur les quatre décisions et sur une annulation. null quand l'annotateur n'a rien écrit : une chaîne vide et une absence de commentaire ne disent pas la même chose."
+    },
+
+    "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+
+    "duree_affichage_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Du premier affichage de cet item, à cette visite, jusqu'à la soumission. Sert à repérer les passages trop rapides, jamais à surveiller un annotateur : aucun seuil n'est appliqué par l'interface, les deux durées sont enregistrées et c'est tout."
+    },
+
+    "duree_active_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Somme des intervalles pendant lesquels la fenêtre avait le focus. Toujours inférieure ou égale à duree_affichage_ms : une pause café n'est pas une lecture attentive."
+    },
+
+    "visite": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "N-ième décision portée sur cet item par cet annotateur, annulées comprises. Un affichage sans décision ne laisse pas de trace : le journal n'enregistre que des actes, pas une activité."
+    },
+
+    "annule": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Identifiant de l'entrée annulée, pour type_entree = annulation."
+    },
+
+    "motif": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Obligatoire sur un retrait_item : dit pourquoi l'item sort du lot."
+    },
+
+    "empreinte_ligne": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 de la forme canonique de l'entrée privée de ce champ. Distingue une ligne tronquée par un arrêt brutal d'une ligne altérée à la main — distinction qui compte dans un journal destiné à être publié."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "Une décision porte sur une version épinglée de l'item, et sur elle seule.",
+      "if": { "properties": { "type_entree": { "const": "decision" } }, "required": ["type_entree"] },
+      "then": {
+        "required": [
+          "item_version",
+          "item_empreinte",
+          "item_type",
+          "decision",
+          "corrections",
+          "duree_affichage_ms",
+          "duree_active_ms",
+          "visite"
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "type_entree": { "const": "annulation" } }, "required": ["type_entree"] },
+      "then": {
+        "required": ["annule"],
+        "allOf": [{ "not": { "required": ["decision"] } }]
+      }
+    },
+    {
+      "if": { "properties": { "type_entree": { "const": "retrait_item" } }, "required": ["type_entree"] },
+      "then": {
+        "required": ["motif"],
+        "allOf": [{ "not": { "required": ["decision"] } }]
+      }
+    },
+    {
+      "$comment": "Un item O porte une grille par état ; les trois autres types portent la grille unique.",
+      "if": {
+        "properties": { "type_entree": { "const": "decision" }, "item_type": { "const": "O" } },
+        "required": ["type_entree", "item_type"]
+      },
+      "then": {
+        "required": ["reponses_par_etat", "questions_specifiques"],
+        "allOf": [
+          { "not": { "required": ["reponses_grille"] } },
+          { "properties": { "questions_specifiques": { "required": ["changement_explicite"] } } }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": { "type_entree": { "const": "decision" }, "item_type": { "enum": ["P", "A", "F"] } },
+        "required": ["type_entree", "item_type"]
+      },
+      "then": {
+        "required": ["reponses_grille"],
+        "allOf": [{ "not": { "required": ["reponses_par_etat"] } }]
+      }
+    },
+    {
+      "if": {
+        "properties": { "type_entree": { "const": "decision" }, "item_type": { "const": "A" } },
+        "required": ["type_entree", "item_type"]
+      },
+      "then": {
+        "required": ["questions_specifiques"],
+        "properties": {
+          "questions_specifiques": {
+            "required": ["couverture_theme_verifiee", "corpus_complet", "confirmation_absence"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "type_entree": { "const": "decision" }, "item_type": { "const": "F" } },
+        "required": ["type_entree", "item_type"]
+      },
+      "then": {
+        "required": ["questions_specifiques"],
+        "properties": {
+          "questions_specifiques": { "required": ["fictivite_verifiee", "plausibilite"] }
+        }
+      }
+    },
+    {
+      "$comment": "Seule la décision « corriger » porte des corrections ; l'inverse vaut aussi, une correction sans décision de correction n'aurait aucun statut.",
+      "if": {
+        "properties": { "decision": { "enum": ["accepter", "rejeter", "non_evaluable"] } },
+        "required": ["decision"]
+      },
+      "then": { "properties": { "corrections": { "maxItems": 0 } } }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "corriger" } }, "required": ["decision"] },
+      "then": { "properties": { "corrections": { "minItems": 1 } } }
+    }
+  ],
+
+  "$defs": {
+    "grille": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "citation_fidele",
+        "paraphrase_exacte",
+        "position_univoque",
+        "theme_correct",
+        "quantification_correcte"
+      ],
+      "description": "Les cinq questions du §4. null signifie « sans objet pour ce type d'item », jamais « non répondu » : une décision ne peut pas être soumise tant qu'une question applicable est sans réponse, et un null n'est jamais compté comme un désaccord dans le kappa par question.",
+      "properties": {
+        "citation_fidele": { "type": ["boolean", "null"] },
+        "paraphrase_exacte": { "type": ["boolean", "null"] },
+        "position_univoque": { "type": ["boolean", "null"] },
+        "theme_correct": { "type": ["boolean", "null"] },
+        "quantification_correcte": { "type": ["boolean", "null"] }
+      }
+    },
+
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cible", "chemin", "ancienne_valeur", "nouvelle_valeur"],
+      "properties": {
+        "cible": {
+          "type": "string",
+          "enum": ["item", "mesure"],
+          "description": "Le thème appartient au référent partagé « mesure », commun à plusieurs candidats : le corriger depuis l'écran de validation déplacerait les items d'autres candidats. Une correction visant la mesure est donc enregistrée comme demande ; promote refuse de promouvoir tout item dont la mesure porte une correction en attente, et c'est une commande séparée, lancée par un humain, qui applique la correction au référentiel."
+        },
+        "chemin": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Pointeur JSON (RFC 6901) vers le champ modifié, relatif à l'objet visé par cible."
+        },
+        "ancienne_valeur": {},
+        "nouvelle_valeur": {},
+        "offsets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ancien_debut", "ancien_fin", "nouveau_debut", "nouveau_fin"],
+          "description": "Correction d'une citation : la nouvelle citation doit être un intervalle contigu du texte canonique de la source (docs/CONTRATS.md §1), en points de code Unicode. Les anciens offsets sont journalisés à côté des nouveaux — sans eux, on ne peut plus savoir ce que l'extraction avait visé.",
+          "properties": {
+            "ancien_debut": { "type": ["integer", "null"], "minimum": 0 },
+            "ancien_fin": { "type": ["integer", "null"], "minimum": 0 },
+            "nouveau_debut": { "type": "integer", "minimum": 0 },
+            "nouveau_fin": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

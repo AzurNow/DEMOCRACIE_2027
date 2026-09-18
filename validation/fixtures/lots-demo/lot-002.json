@@ -1,0 +1,43 @@
+{
+  "lot_id": "lot-002",
+  "nature": "reel",
+  "graine_maitresse": "graine-demonstration",
+  "algorithme_ordre": "ordre-annotateur-v1",
+  "date_creation": "2026-09-17T10:00:00+02:00",
+  "annotateurs": [
+    "a1",
+    "a2"
+  ],
+  "items": [
+    {
+      "item_id": "0TEM0000000000000000000010",
+      "item_version": 1,
+      "item_empreinte": "f117ce037b89228411f78f6e0677458c77743c2b72fc08064c293a0236999935",
+      "candidat_id": "demo-alpha"
+    },
+    {
+      "item_id": "0TEM0000000000000000000007",
+      "item_version": 1,
+      "item_empreinte": "8ebc42a7880a3b64eabe103088736291abcfcde5c8097c2f7de7da92a66340e2",
+      "candidat_id": "demo-gamma"
+    },
+    {
+      "item_id": "0TEM0000000000000000000008",
+      "item_version": 1,
+      "item_empreinte": "f77e74423ae023b30cff1e49f813bba7ac8d7139fdf640112fb69c5ec0c867c0",
+      "candidat_id": "demo-delta"
+    },
+    {
+      "item_id": "0TEM0000000000000000000003",
+      "item_version": 1,
+      "item_empreinte": "a515fe38c92db9f4547cbaacf8fc5d177ae11b18a62c1ad3b3eacca93825c2ae",
+      "candidat_id": "demo-delta"
+    },
+    {
+      "item_id": "0TEM0000000000000000000005",
+      "item_version": 1,
+      "item_empreinte": "83d0c5f938fd9d6aae2d516d0d9d6528a5f104da1d4f2ba1272415e0c3d51abc",
+      "candidat_id": "demo-alpha"
+    }
+  ]
+}

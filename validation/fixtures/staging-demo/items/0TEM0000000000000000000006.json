@@ -1,0 +1,51 @@
+{
+  "id": "0TEM0000000000000000000006",
+  "version": 1,
+  "type": "A",
+  "candidat_id": "demo-beta",
+  "mesure_id": "MES0RE00000000000000000006",
+  "mesure_version": 1,
+  "statut_validation": "en_attente",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "absence": {
+    "source_couverture_theme": {
+      "tier": "T1",
+      "url": "https://demonstration.invalid/plateforme",
+      "type_document": "site_officiel",
+      "sha256": "0d3789d5973292b235f2f3b4e7ce39bbf7a2b4226b871e715e00ac97cda31a04",
+      "texte_sha256": "3ed180101367a2580c6aa33c320b1980004e813d2cbc372fe61c0cb97c04b3b9",
+      "archive_url": "https://archive.invalid/demonstration/programme.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-17T10:00:00+02:00",
+      "chemin_local": "validation/fixtures/archives/plateforme-demo.html",
+      "publication": "publique"
+    },
+    "corpus_examine": [
+      {
+        "url": "https://demonstration.invalid/plateforme",
+        "sha256": "0d3789d5973292b235f2f3b4e7ce39bbf7a2b4226b871e715e00ac97cda31a04",
+        "tier": "T1"
+      },
+      {
+        "url": "https://demonstration.invalid/programme.pdf",
+        "sha256": "a12730e4523e449e57c21fe0bdaa48dc702660f4e1126e55e887aa89f9a019db",
+        "tier": "T1"
+      }
+    ],
+    "date_examen": "2026-09-17T10:00:00+02:00",
+    "reverifications": []
+  },
+  "empreinte": "24b670e0f6e37d328b698a6833dc843f2ef7f0b7e6fb5285f74675f85c929a6d"
+}

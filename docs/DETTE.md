@@ -13,6 +13,118 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-17 — Interface locale de validation humaine (`validation/`, `outils/`, `tests/`)
+
+### 1. Le client n'est couvert par aucun test, et il redéclare des constantes du domaine — *moyenne*
+
+Les 8 900 lignes livrées sont testées côté domaine, IO et routes (120 tests), mais rien n'exerce
+`validation/client/`. Deux points précis : `app.ts:grilleComplete()` réécrit à la main la liste des
+cinq clés de la grille, que `domaine/grille.ts:CLES_GRILLE` détient déjà ; et `source.ts:rendreTexte()`
+découpe le texte canonique en **points de code** aux offsets reçus du serveur, convention qui ne vit
+que dans `docs/CONTRATS.md`.
+
+**Pourquoi ça casse.** Un extracteur qui livrerait des offsets en unités UTF-16 ferait surligner un
+passage décalé de quelques caractères sur toute source contenant un caractère hors du plan de base.
+L'annotateur compare alors la citation à la mauvaise portion de la source et valide ce qu'il croit
+avoir lu. Aucun test, aucune alerte : le seul symptôme est un surlignage qui « tombe à côté », que
+trente heures de fatigue rendent facile à ignorer.
+
+**Ce qu'il faut faire.** Faire importer `CLES_GRILLE` au client plutôt que de la recopier — le
+serveur l'envoie déjà dans `vue.questions`. Et ajouter un test de `rendreTexte` sur une source
+contenant un emoji, sur le modèle de `tests/verbatim.test.ts`, ce qui suppose de choisir un
+environnement DOM pour Vitest, donc une dépendance : décision à prendre, pas à prendre seul.
+
+*Décision du 2026-09-18 : pas d'environnement DOM. Extraire vers `domaine/` la logique pure du
+client (découpage aux offsets, parseur WebVTT) et la tester comme `verbatim.ts`, avec le cas emoji.
+Ce que les tests ne verront pas (focus clavier, page du PDF, ordre des boutons) fait l'objet d'une
+liste de contrôle manuelle versionnée, courte, à dérouler avant la campagne d'annotation.*
+
+### 2. Une correction de thème peut retenir un item indéfiniment — *moyenne*
+
+`domaine/promotion.ts:correctionDeMesureEnAttente()` retient tout item dont une décision demande un
+thème que la mesure ne porte pas encore. La commande qui appliquerait la correction au référentiel,
+`pnpm mesures`, n'existe pas, et rien n'exprime un **refus** de l'auteur : une demande non satisfaite
+et une demande refusée sont indiscernables dans les données.
+
+**Pourquoi ça casse.** Les deux annotateurs corrigent le thème d'un item, l'auteur estime le thème
+d'origine correct, et l'item reste en `correction_mesure_en_attente` à chaque exécution de
+`pnpm promote` — jamais promu, jamais arbitré. Il sort du jeu de données sans décision. Si cela
+frappe plusieurs items d'un même candidat, sa couverture passe sous le seuil de 10 items P du §4 et
+il est rapporté « couverture insuffisante » pour une raison qui n'a rien à voir avec ses positions.
+C'est visible dans le rapport de `promote` (`En attente : correction_mesure_en_attente : N`), à
+condition de le lire.
+
+**Ce qu'il faut faire.** Écrire `pnpm mesures`, et décider comment un refus s'enregistre — vraisem-
+blablement en envoyant l'item en arbitrage, comme tout autre désaccord.
+
+*Décision du 2026-09-18, reportée au §4 du protocole (« Correction de thème »).* Un refus est une
+décision tracée. `pnpm mesures` écrit un registre en ajout seul, `validation/mesures/decisions.json`
+(mesure, thème demandé, décision acceptée ou refusée, date, motif obligatoire sur un refus).
+`promote` lit ce registre : acceptée **et** mesure portant effectivement le thème demandé →
+promotion ; acceptée sans mesure modifiée → erreur bloquante ; refusée → arbitrage avec le motif
+`correction_mesure_refusee` ; absente → attente, listée à part dans le rapport avec son âge en
+jours. Jamais de refus implicite au bout de N jours.
+
+### 2 bis. Rien ne relie un lot de réannotation à son lot d'origine — *moyenne*
+
+Relevé le 2026-09-18. `Lot.reannote` est déclaré dans `domaine/types.ts` et affiché par le client,
+mais aucun code ne le remplit : `pnpm lots` n'a pas de drapeau pour le poser. Le §12 fait du kappa du
+lot final un critère go/no-go, et le lien entre les deux kappas d'un même lot n'est enregistré nulle
+part.
+
+**Pourquoi ça casse.** Un lot réannoté produit deux jeux de décisions pour les mêmes items dans un
+journal indexé par item. Sans lien ni règle de supersession, `promote` peut mélanger une décision du
+lot d'origine et une décision du lot de réannotation, et le kappa « du lot » est ambigu.
+
+**Ce qu'il faut faire.** *Décision du 2026-09-18, reportée au §4 (« Réannotation »).* Ajouter
+`--reannote=lot-XXX` à `pnpm lots`, qui exige une date de séance de calibration, crée un lot de
+nature `reannotation` avec les mêmes items et remplit le champ. `promote` prend les décisions du
+lot de réannotation et ignore celles du lot supersédé, qui reste publié mais ne compte plus. Aucun
+bouton dans l'interface : l'alerte informe, l'auteur agit.
+
+### 3. Deux règles nouvelles ne vivent que dans le code, pas dans les schémas — *basse*
+
+`source.texte_sha256` et `absence.confirmation_initiale` ont été ajoutés en **facultatifs**, pour ne
+pas invalider les 45 exemples de `schema/exemples/` ni brouiller les motifs de rejet que les fichiers
+`invalide-*` sont censés isoler. L'obligation vit donc ailleurs : l'interface refuse d'afficher une
+source sans texte canonique, et `promote` refuse de promouvoir un item A sans confirmation.
+
+**Pourquoi ça casse.** Un item A écrit à la main dans `data/`, ou par un futur script, passe la
+validation de schéma sans confirmation d'absence — c'est-à-dire sans la double confirmation que le §4
+exige pour qu'une absence existe. Le contrôle est réel mais il est dans `promote`, que ce chemin-là
+contourne.
+
+**Ce qu'il faut faire.** Ajouter les conditionnelles au schéma (`verifie` + type `A` ⇒
+`confirmation_initiale` requise) en même temps que le validateur de schémas du point 3 de l'entrée
+« JSON Schema » ci-dessous : même lot, et les exemples se corrigent une seule fois.
+
+### 4. La facture de la règle de complexité est désormais exigible — *basse*
+
+L'entrée « Règle de complexité » ci-dessous annonçait le risque du report. Il s'est réalisé : le
+dépôt contient maintenant 8 900 lignes écrites sans qu'aucun outil ne mesure quoi que ce soit.
+J'ai compté les branches à la main et découpé quatre fonctions qui dépassaient (`construireItems`
+des fixtures, les deux `lireOptions` des outils, `reinitialiserSaisie` du client), mais un comptage
+manuel ne se rejoue pas.
+
+**Pourquoi ça casse.** Pas de nombre faux. Le coût est que la mise en conformité, quand ESLint sera
+branché, tombera d'un coup sur du code déjà écrit — dont `domaine/promotion.ts` et
+`domaine/analyse-lot.ts`, c'est-à-dire là où un refactoring est le plus risqué.
+
+**Ce qu'il faut faire.** Brancher `complexity` et `sonarjs/cognitive-complexity` sur `pnpm check`
+maintenant que le socle TypeScript existe, plutôt qu'après le prochain millier de lignes.
+
+*Décision du 2026-09-18 : ESLint, typescript-eslint et eslint-plugin-sonarjs autorisés, dans un
+commit séparé de celui d'ajv, avec exactement deux règles actives en erreur : `complexity` à 9 et
+`sonarjs/cognitive-complexity` à 15. Pas de preset « recommended », pas de règle de style. Toute
+règle supplémentaire est une décision séparée.*
+
+*Règle partiellement le point 1 de l'entrée « JSON Schema » ci-dessous : l'invariant « les deux
+validations concordantes portent sur la même version » est désormais gardé par
+`domaine/promotion.ts:memeVersionJugee()` et deux tests. Les trois autres invariants restent
+non gardés.*
+
+---
+
 ## 2026-09-17 — Stockage hors Git du volume des runs (`schema/run.schema.json`, `schema/tirage.schema.json`)
 
 ### 1. La reproductibilité dépend désormais d'un service tiers — *moyenne*
@@ -91,19 +203,15 @@ recopié fait entrer une réponse contrefactuelle dans une métrique primaire.
 **Ce qu'il faut faire.** En faire des tests bloquants au moment d'écrire le pipeline, dans le même
 lot que les tests de symétrie. Tant que ce n'est pas fait, aucune métrique publiée n'est fiable.
 
-### 2. L'épinglage `version` + `empreinte` durcit toute correction d'item — *moyenne*
+### ~~2. L'épinglage `version` + `empreinte` durcit toute correction d'item~~ — réglé le 2026-09-18 par la définition du contenu notant au §4 du protocole
 
-Questions, tirages et notations épinglent `item_id` + `item_version` + `item_empreinte`. Toute
-correction d'item invalide donc, par construction, les objets qui le référencent.
-
-**Pourquoi ça casse.** Une coquille corrigée dans une paraphrase change l'empreinte, casse la
-reprise à 80 % du run suivant (§5) et sort la question des « questions communes aux deux runs »
-(§8, tendance). Le projet mesurerait alors sa propre correction au lieu de l'évolution de l'outil.
-
-**Ce qu'il faut faire.** Figer avant le premier run la liste exacte des champs entrant dans
-l'empreinte. Choix actuel : le contenu notant uniquement (type, mesure, positions, paraphrases,
-citations, quantifications, dates de validité), à l'exclusion des statuts et de l'historique. À
-confirmer explicitement — le protocole ne le dit nulle part.
+La liste des champs entrant dans l'empreinte est figée et écrite dans le protocole : type, candidat,
+mesure et sa version, dates de validité, position, citation normalisée, quantification, empreinte de
+la source, corpus examiné pour un item A, date de changement et deux états pour un item O. La
+**paraphrase est exclue** : corriger une coquille de paraphrase ne change plus l'empreinte ni la
+reprise à 80 % du §5. Reste vrai, et voulu : corriger une citation ou une quantification change
+l'empreinte, parce que c'est contre elles qu'une réponse a été jugée. Implémentation :
+`validation/domaine/empreinte.ts:empreinteContenuNotant()`.
 
 ### 3. Les exemples ne sont pas encore exécutés en intégration continue — *moyenne*
 
@@ -116,6 +224,10 @@ invalides sont les seuls gardiens des règles du protocole encodées dans les sc
 
 **Ce qu'il faut faire.** Brancher un validateur sur `pnpm check`. Suppose de choisir un validateur
 côté TypeScript, donc une dépendance : décision à prendre, pas un raccourci à prendre seul.
+
+*Décision du 2026-09-18 : ajv et ajv-formats autorisés, dans leur propre commit, avant ESLint. Les
+45 exemples du manifeste deviennent des tests bloquants de `pnpm check`. `jsonschema` côté Python
+n'est plus installé sur la machine, le runner TypeScript est donc le seul.*
 
 ### 4. `commun.schema.json` crée un couplage fort — *basse*
 

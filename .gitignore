@@ -1,0 +1,13 @@
+node_modules/
+validation/client/dist/
+
+# Brouillons de saisie : ni décisions, ni données publiables. Écrasables par nature,
+# donc hors du journal append-only et hors du dépôt.
+validation/brouillons/
+
+# Journal corrompu mis en quarantaine par la détection d'écriture interrompue.
+*.incomplet
+
+# Décisions et brouillons du jeu de démonstration : des essais, pas des validations.
+validation/fixtures/decisions-demo/
+validation/fixtures/brouillons-demo/

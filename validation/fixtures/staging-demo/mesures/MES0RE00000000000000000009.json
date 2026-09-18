@@ -1,0 +1,30 @@
+{
+  "id": "MES0RE00000000000000000009",
+  "version": 1,
+  "empreinte": "0000000000000000000000000000000000000000000000000000000000000000",
+  "libelle": "Mesure fictive F1 (démonstration)",
+  "theme": "ecologie_energie",
+  "formulation_canonique": "un péage urbain national sur le modèle de Stockholm",
+  "fictive": true,
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "origine_fictive": "Mesure existante en Suède, proposée par aucun candidat du périmètre.",
+  "verification_fictivite": {
+    "date": "2026-09-17T10:00:00+02:00",
+    "corpus_verifies": [
+      "demo-alpha",
+      "demo-beta",
+      "demo-gamma",
+      "demo-delta",
+      "demo-epsilon"
+    ],
+    "operateur": "a1",
+    "resultat": "aucune_occurrence"
+  }
+}

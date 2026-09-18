@@ -1,0 +1,17 @@
+{
+  "id": "MES0RE00000000000000000006",
+  "version": 1,
+  "empreinte": "0000000000000000000000000000000000000000000000000000000000000000",
+  "libelle": "Mesure absente A2 (démonstration)",
+  "theme": "education",
+  "formulation_canonique": "la fin des notes au collège",
+  "fictive": false,
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ]
+}

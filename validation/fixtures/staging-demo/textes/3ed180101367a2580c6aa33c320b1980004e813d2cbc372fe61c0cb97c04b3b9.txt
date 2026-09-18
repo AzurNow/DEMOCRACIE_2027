@@ -1,0 +1,6 @@
+Plateforme programmatique — fixture
+Document fabrique pour la demonstration de l'interface de validation. Aucune campagne reelle n'est concernee.
+Sante
+Nous ouvrirons trente maisons de sante pluriprofessionnelles par departement d'ici 2030, en priorite dans les zones sous-dotees.
+Education
+Le nombre d'eleves par classe sera plafonne a vingt-quatre en zone prioritaire.

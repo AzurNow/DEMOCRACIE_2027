@@ -1,0 +1,23 @@
+{
+  "id": "0TEM0000000000000000000010",
+  "version": 1,
+  "type": "F",
+  "candidat_id": "demo-alpha",
+  "mesure_id": "MES0RE00000000000000000010",
+  "mesure_version": 1,
+  "statut_validation": "en_attente",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-17T10:00:00+02:00",
+      "changement": "création",
+      "commit": "0000000000000000000000000000000000000000",
+      "version_resultante": 1
+    }
+  ],
+  "empreinte": "f117ce037b89228411f78f6e0677458c77743c2b72fc08064c293a0236999935"
+}

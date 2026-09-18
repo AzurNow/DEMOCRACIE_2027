@@ -42,6 +42,13 @@ instant de référence unique par run, et un décalage horaire explicite sur cha
 convention est même inscrite dans les données (`regle: "semi_ouvert"`), pour qu'un lecteur n'ait pas
 à la deviner.
 
+**Un offset n'existe pas sans son unité.** `projeter()` associait chaque caractère normalisé à sa
+position en points de code, puis la recherche se faisait avec `indexOf`, qui compte en unités UTF-16.
+Les deux coïncident jusqu'à la première source contenant un emoji ou un idéogramme, après quoi tout
+le surlignage se décale d'un caractère — sans erreur, sans exception, sans test rouge. La correction
+tient en une ligne (un index par unité UTF-16, valant le point de code d'origine) ; la trouver après
+coup aurait supposé de soupçonner le surlignage plutôt que la source.
+
 ## Tests
 
 **Les exemples invalides sont les vrais tests.** Un exemple valide vérifie qu'on n'a rien oublié ;
@@ -57,6 +64,18 @@ accident (une virgule, un champ oublié) et sembler valider une règle qu'il n'a
 **toutes** les erreurs de validation, pas seulement la première : sur `notation/invalide-02`, la
 règle visée ne produisait que la deuxième erreur du lot.
 
+**Faire échouer volontairement le test qui protège une propriété critique.** Le test d'aveuglement
+énumère toutes les routes et vérifie qu'aucune ne laisse filtrer le journal de l'autre annotateur.
+Écrit d'un trait, il passait — ce qui ne prouvait rien. En ajoutant une fuite délibérée dans deux
+routes, on a vu qu'il tombait *et* qu'il nommait la route fautive. Un test de sécurité qu'on n'a pas
+vu échouer est une décoration.
+
+**Un test de symétrie qui compare trois appels d'une même expression ne teste rien.** La première
+version de `gestesPourDecision()` calculait le même terme pour « accepter », « rejeter » et « non
+évaluable » : le test d'égalité était une tautologie et serait resté vert quoi qu'on fasse. Le coût
+de chaque décision vit maintenant dans une table de données, `COUT_DECISION`, dont la symétrie est
+la propriété testée. Faire porter l'assertion sur la donnée, pas sur le code qui la relit.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -69,6 +88,13 @@ dans le répertoire temporaire de session, jamais dans `scratch/` ni dans le dé
 **Ne pas écrire de JSON accentué par heredoc.** Le heredoc `cat <<'JSON'` est mal digéré par
 l'enveloppe shell de l'agent sur cette machine (erreur `unexpected EOF`). Pour tout contenu
 multi-ligne avec accents et guillemets, utiliser l'outil d'écriture de fichier.
+
+**Vérifier une fixture par ses propriétés, pas à l'œil.** Deux défauts silencieux dans le même
+générateur : un identifiant dérivé d'un compteur sans largeur fixe faisait collisionner l'item 1 et
+l'item 10 — dix items écrits, neuf fichiers sur le disque, aucune erreur ; et une `date_creation`
+prise à l'heure courante rendait deux exécutions successives différentes, donc le jeu de
+démonstration non reproductible. Compter les fichiers produits et comparer deux exécutions coûte
+deux commandes, et les deux défauts sautent aux yeux.
 
 ## Méthode
 
