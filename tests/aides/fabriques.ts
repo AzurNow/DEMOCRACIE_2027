@@ -164,39 +164,55 @@ export interface OptionsDecision {
   readonly commentaire?: string | null;
 }
 
+// Découpage en fonctions nommées plutôt qu'une cascade de `??` et de ternaires dans `decision()`
+// (compétence `complexite-maitrisee`, « extraire des prédicats nommés » / « déplacer les cas dans
+// les données ») : chaque valeur par défaut de fixture devient un appel, `decision()` reste plate.
+
+function avecDefaut<T>(valeur: T | undefined, defaut: T): T {
+  return valeur === undefined ? defaut : valeur;
+}
+
+function champsGrille(options: OptionsDecision): Partial<Pick<EntreeDecision, "reponses_grille">> {
+  if (options.item.type === "O") return {};
+  return { reponses_grille: avecDefaut(options.reponses_grille, GRILLE_TOUT_VRAI) };
+}
+
+function champsParEtat(options: OptionsDecision): Partial<Pick<EntreeDecision, "reponses_par_etat">> {
+  if (options.item.type !== "O") return {};
+  return {
+    reponses_par_etat: avecDefaut(options.reponses_par_etat, {
+      anterieur: GRILLE_TOUT_VRAI,
+      posterieur: GRILLE_TOUT_VRAI,
+    }),
+  };
+}
+
+function champsQuestionsSpecifiques(
+  options: OptionsDecision,
+): Partial<Pick<EntreeDecision, "questions_specifiques">> {
+  if (options.questions_specifiques === undefined) return {};
+  return { questions_specifiques: options.questions_specifiques };
+}
+
 export function decision(options: OptionsDecision): EntreeDecision {
   compteur += 1;
-  const grilleParDefaut =
-    options.item.type === "O" ? {} : { reponses_grille: options.reponses_grille ?? GRILLE_TOUT_VRAI };
-  const parEtat =
-    options.item.type === "O"
-      ? {
-          reponses_par_etat: options.reponses_par_etat ?? {
-            anterieur: GRILLE_TOUT_VRAI,
-            posterieur: GRILLE_TOUT_VRAI,
-          },
-        }
-      : {};
-
   const socle = {
     id: `01JBANCESSAIDECISION${String(compteur).padStart(6, "0")}`,
     journal_version: 1,
     type_entree: "decision" as const,
     annotateur_id: options.annotateur_id,
-    lot_id: options.lot_id ?? "lot-001",
-    lot_nature: options.lot_nature ?? ("reel" as NatureLot),
+    lot_id: avecDefaut(options.lot_id, "lot-001"),
+    lot_nature: avecDefaut(options.lot_nature, "reel" as NatureLot),
     item_id: options.item.id,
-    item_version: options.item_version ?? options.item.version,
-    item_empreinte: options.item_empreinte ?? options.item.empreinte,
+    item_version: avecDefaut(options.item_version, options.item.version),
+    item_empreinte: avecDefaut(options.item_empreinte, options.item.empreinte),
     item_type: options.item.type,
     decision: options.decision,
-    ...grilleParDefaut,
-    ...parEtat,
-    ...(options.questions_specifiques === undefined
-      ? {}
-      : { questions_specifiques: options.questions_specifiques }),
-    corrections: options.corrections ?? [],
-    commentaire: options.commentaire === undefined ? null : options.commentaire,
+    ...champsGrille(options),
+    ...champsParEtat(options),
+    ...champsQuestionsSpecifiques(options),
+    corrections: avecDefaut(options.corrections, [] as readonly Correction[]),
+    commentaire: avecDefaut(options.commentaire, null),
     horodatage: "2026-09-20T10:00:00+02:00",
     duree_affichage_ms: 40000,
     duree_active_ms: 38000,
