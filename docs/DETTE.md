@@ -13,6 +13,50 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-18 — Feuille de route générée (`docs/feuille-de-route.json`, `outils/feuille-de-route/`)
+
+### 1. Le niveau de preuve d'un lot est déclaré, jamais mesuré — *moyenne*
+
+`docs/feuille-de-route.json` porte pour chaque lot un `niveau` T0 à T4 saisi à la main par la
+session principale. Rien ne le confronte au dépôt : un lot marqué T2 sans test, ou laissé à T0
+après une session qui l'a livré, produit un graphe faux et des états « débloqué » ou « bloqué »
+faux en cascade, puisque `graphe.ts:calculerEtats()` ne raisonne que sur ces niveaux.
+
+**Pourquoi ça casse.** Une session qui saute la clôture laisse le niveau d'un lot en retard ; la
+suivante lit « bloqué par outillage » alors que l'outillage est livré, et n'ouvre pas un lot qui
+pouvait démarrer. Aucun chiffre publié n'en dépend, mais le pilotage du calendrier du §12 en
+dépend entièrement, et seule une relecture du dépôt le révèle.
+
+**Ce qu'il faut faire.** La procédure de clôture exige désormais de mettre à jour le niveau des
+lots touchés et de régénérer le Markdown (`.claude/skills/cloture-de-session/SKILL.md`, étape 6).
+Aller plus loin — dériver T2 de l'existence d'un fichier de test nommé — est une décision à
+prendre quand le pipeline existera, pas avant.
+
+### 2. Un Markdown périmé peut être commité — *basse*
+
+`pnpm feuille-de-route --verifier` existe mais n'est branché ni sur `pnpm check` ni sur une CI.
+Éditer le JSON sans relancer le générateur laisse `docs/FEUILLE-DE-ROUTE.md` en retard d'une
+version, et c'est lui que GitHub affiche.
+
+**Pourquoi ça casse.** L'auteur lit sur GitHub un graphe qui ne correspond plus au JSON que
+l'agent lit. Les deux « sources » divergent, exactement ce que le générateur devait empêcher.
+
+**Ce qu'il faut faire.** Brancher `--verifier` sur `pnpm check` dans le lot `outillage`, en même
+temps qu'ajv. Le script tourne en moins d'une seconde et ne dépend de rien.
+
+### 3. Une barre verticale dans un titre de lot casse le tableau — *basse*
+
+`markdown.ts` assemble les lignes du tableau des lots par jointure sur ` | ` sans échapper le
+caractère `|` dans les titres, notes et agents. Aucun titre actuel n'en contient.
+
+**Pourquoi ça casse.** Le jour où un titre en contient un, la ligne se scinde en colonnes
+supplémentaires et GitHub affiche un tableau décalé. Visible dès la lecture.
+
+**Ce qu'il faut faire.** Échapper `|` en `\|` dans une fonction de cellule unique, avec un test
+sur un titre contenant une barre. À faire au prochain passage sur le générateur.
+
+---
+
 ## 2026-09-18 — Décisions de validation reportées dans le protocole (`docs/PROTOCOLE.md` v0.2)
 
 ### 1. Le protocole promet trois comportements que le code n'a pas — *moyenne*
