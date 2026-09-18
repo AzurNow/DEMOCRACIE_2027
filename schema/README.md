@@ -127,9 +127,9 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | lecture-comparateur | absence d'affichage portant un extrait · affichage sans extrait · cadence supérieure à une page par seconde |
 
 Vérification faite avec `jsonschema` 4.26 (draft 2020-12) : 10/10 schémas conformes au méta-schéma,
-45/45 exemples conformes au manifeste. Le runner n'est pas encore dans le dépôt : le brancher sur
-`pnpm check` suppose de choisir un validateur côté TypeScript, ce qui est un ajout de dépendance et
-relève donc d'une décision à prendre, pas d'un raccourci à prendre seul.
+45/45 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
+types et ESLint.
 
 ## Points restés ouverts, qui demandent un amendement (§9)
 

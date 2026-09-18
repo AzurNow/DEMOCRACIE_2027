@@ -42,31 +42,54 @@ export interface Contexte {
   maintenant(): string;
 }
 
-export function configurationDepuisEnvironnement(env: NodeJS.ProcessEnv, racine: string): Configuration {
-  const annotateur_id = env["ANNOTATEUR_ID"];
-  if (annotateur_id === undefined || annotateur_id.length === 0) {
-    throw new Error(
-      "ANNOTATEUR_ID n'est pas défini. L'identité de l'annotateur est une variable " +
-        "d'environnement, jamais un choix fait dans l'interface :\n" +
-        "  ANNOTATEUR_ID=a1 pnpm validate",
-    );
-  }
-  const demo = env["BANC_DEMO"] === "1";
-  const racine_staging =
-    env["BANC_STAGING"] ??
-    (demo ? resolve(racine, "validation/fixtures/staging-demo") : resolve(racine, "staging"));
+// Découpage en phases nommées (compétence `complexite-maitrisee`) : lire l'annotateur, résoudre
+// le mode démo, puis chaque chemin par défaut — plutôt qu'une seule fonction cumulant `if`, `??`
+// et ternaires. Comportement inchangé, complexité de `configurationDepuisEnvironnement` ramenée à 1.
 
-  // En démonstration, tout vit dans validation/fixtures/ : les décisions d'essai ne doivent pas
-  // se mélanger au journal de production, qui est publié.
-  const base = demo ? "validation/fixtures" : "validation";
-  const suffixe = demo ? "-demo" : "";
+function annotateurIdRequis(env: NodeJS.ProcessEnv): string {
+  const annotateur_id = env["ANNOTATEUR_ID"];
+  if (annotateur_id !== undefined && annotateur_id.length > 0) return annotateur_id;
+  throw new Error(
+    "ANNOTATEUR_ID n'est pas défini. L'identité de l'annotateur est une variable " +
+      "d'environnement, jamais un choix fait dans l'interface :\n" +
+      "  ANNOTATEUR_ID=a1 pnpm validate",
+  );
+}
+
+interface ModeDemo {
+  readonly demo: boolean;
+  readonly base: string;
+  readonly suffixe: string;
+}
+
+/** En démonstration, tout vit dans validation/fixtures/ : les décisions d'essai ne doivent pas se
+ * mélanger au journal de production, qui est publié. */
+function resoudreMode(env: NodeJS.ProcessEnv): ModeDemo {
+  const demo = env["BANC_DEMO"] === "1";
+  return { demo, base: demo ? "validation/fixtures" : "validation", suffixe: demo ? "-demo" : "" };
+}
+
+function cheminOuDefaut(env: NodeJS.ProcessEnv, cle: string, defaut: string): string {
+  const valeur = env[cle];
+  return valeur === undefined ? defaut : valeur;
+}
+
+function racineStagingParDefaut(env: NodeJS.ProcessEnv, racine: string, demo: boolean): string {
+  const defaut = demo ? resolve(racine, "validation/fixtures/staging-demo") : resolve(racine, "staging");
+  return cheminOuDefaut(env, "BANC_STAGING", defaut);
+}
+
+export function configurationDepuisEnvironnement(env: NodeJS.ProcessEnv, racine: string): Configuration {
+  const annotateur_id = annotateurIdRequis(env);
+  const { demo, base, suffixe } = resoudreMode(env);
+  const racine_staging = racineStagingParDefaut(env, racine, demo);
 
   return {
     racine_depot: racine,
     racine_staging: resolve(racine_staging),
-    repertoire_lots: env["BANC_LOTS"] ?? resolve(racine, `${base}/lots${suffixe}`),
-    repertoire_decisions: env["BANC_DECISIONS"] ?? resolve(racine, `${base}/decisions${suffixe}`),
-    repertoire_brouillons: env["BANC_BROUILLONS"] ?? resolve(racine, `${base}/brouillons${suffixe}`),
+    repertoire_lots: cheminOuDefaut(env, "BANC_LOTS", resolve(racine, `${base}/lots${suffixe}`)),
+    repertoire_decisions: cheminOuDefaut(env, "BANC_DECISIONS", resolve(racine, `${base}/decisions${suffixe}`)),
+    repertoire_brouillons: cheminOuDefaut(env, "BANC_BROUILLONS", resolve(racine, `${base}/brouillons${suffixe}`)),
     annotateur_id,
   };
 }
