@@ -9,11 +9,36 @@
     "T4": "exercé sur données réelles"
   },
   "jalons": [
-    { "id": "J1", "date": "2026-10-15", "titre": "Protocole v1.0 gelé, relu par un avocat, déposé sur Zenodo, transmis aux institutions", "critere": "Empreinte et DOI publiés ; liste nominative des outils et des candidats du premier run publiée" },
-    { "id": "J2", "date": "2026-10-31", "titre": "Schéma, interface de validation, collecte et archivage en production", "critere": "100 items T1 archivés et extraits ; test verbatim et tests de symétrie verts en intégration continue" },
-    { "id": "J3", "date": "2026-11-15", "titre": "Annotateurs formés ; 200 items vérifiés ; panel constitué ou faiblesse déclarée", "critere": "Kappa ≥ 0,80 sur les deux derniers lots" },
-    { "id": "J4", "date": "2026-11-22", "titre": "Run pilote complet ; jeu d'or de 300 réponses", "critere": "Kappa juge-humain ≥ 0,75 ; taux de changement contrefactuel ≤ 3 %" },
-    { "id": "J5", "date": "2026-12-01", "titre": "Premier run public mensuel", "critere": "Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture" }
+    {
+      "id": "J1",
+      "date": "2026-10-15",
+      "titre": "Protocole v1.0 gelé, relu par un avocat, déposé sur Zenodo, transmis aux institutions",
+      "critere": "Empreinte et DOI publiés ; liste nominative des outils et des candidats du premier run publiée"
+    },
+    {
+      "id": "J2",
+      "date": "2026-10-31",
+      "titre": "Schéma, interface de validation, collecte et archivage en production",
+      "critere": "100 items T1 archivés et extraits ; test verbatim et tests de symétrie verts en intégration continue"
+    },
+    {
+      "id": "J3",
+      "date": "2026-11-15",
+      "titre": "Annotateurs formés ; 200 items vérifiés ; panel constitué ou faiblesse déclarée",
+      "critere": "Kappa ≥ 0,80 sur les deux derniers lots"
+    },
+    {
+      "id": "J4",
+      "date": "2026-11-22",
+      "titre": "Run pilote complet ; jeu d'or de 300 réponses",
+      "critere": "Kappa juge-humain ≥ 0,75 ; taux de changement contrefactuel ≤ 3 %"
+    },
+    {
+      "id": "J5",
+      "date": "2026-12-01",
+      "titre": "Premier run public mensuel",
+      "critere": "Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture"
+    }
   ],
   "decisions": [
     {
@@ -72,6 +97,28 @@
         "Attendre plus près du gel pour une liste plus fraîche, au prix de bloquer trois lots pendant ce temps."
       ],
       "recommandation": "Option 1 maintenant, avec révision au gel : les lots dépendants peuvent être développés sur un périmètre provisoire tant que le format est fixé."
+    },
+    {
+      "id": "D6",
+      "statut": "en_attente",
+      "question": "Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.",
+      "contexte": "Le code d'analysis/ n'a rien tranché : chaque point est un paramètre explicite ou une lecture littérale du §8 signalée. Avant gel, chaque réponse est une révision de texte, pas un amendement. (1) Réponses tronquées dans les métriques primaires. (2) Dénominateur de la confirmation de prémisse : « items F et O » laisse muet un drapeau posé sur un item P. (3) Holm est exigé sur les effets de condition mais aucune valeur p n'y est définie. (4) Famille des formulations : trois paires ou deux contre le neutre. (5) « Exactitude moyenne de l'outil » dans la permutation : globale ou moyenne des candidats. (6) Exactitude des comparateurs : les lectures indéterminées restent au dénominateur, contrairement aux assistants.",
+      "options": [
+        "(1) Inclure les tronquées et ajouter un quatrième recalcul de robustesse « hors tronquées ». (2) Garder le texte et interdire premisse_fausse sur un item P à l'engendrement. (3) Retirer Holm de cette famille, publier intervalles et qualificatif seulement. (4) Trois paires. (5) Globale. (6) Aligner sur les assistants.",
+        "Toute autre combinaison, point par point ; chaque choix est une ligne de code et une phrase de protocole."
+      ],
+      "recommandation": "Option 1 sur les six points. C'est la combinaison qui ajoute le moins de texte au §8 et ne fait disparaître aucun drapeau."
+    },
+    {
+      "id": "D7",
+      "statut": "en_attente",
+      "question": "Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.",
+      "contexte": "(1) Item arbitré : le brief l'excluait, l'annexe E point 6 le réintègre si maintenu ou corrigé, et un exemple valide du schéma le contient. (2) Q-ORI sur un item O avant son changement : la prémisse est vraie, l'annexe B dit « non avec correction » sans distinguer. (3) Position conditionnelle face à Q-FER ou Q-NEG : le protocole ne dit rien, le code lève une erreur. (4) Quota de questions par strate candidat × thème × gabarit : aucun nombre dans le §5, paramètre obligatoire sans défaut. (5) Q-ATT et reprise 80 % : le §5 calcule le ratio par candidat, les Q-ATT n'en ont pas. (6) Date civile comparée à date_gel : minuit UTC retenu, minuit Paris serait l'alternative. (7) Gabarits dans pipeline/questions/gabarits.ts alors que la règle 6 et le schéma les attendent dans prompts/.",
+      "options": [
+        "(1) Tirable si la dernière décision du panel vaut maintien ou correction. (2) Non avec correction si l'état postérieur est en vigueur, oui sinon, phrase ajoutée à l'annexe B. (3) Ni Q-FER ni Q-NEG pour une position conditionnelle, porté par la table des gabarits. (4) Quota fixé dans config/perimetre.yaml. (5) Même budget de reprise pour les Q-ATT, stratifiées par thème. (6) Minuit UTC, écrit dans schema/README.md. (7) Déplacement vers prompts/gabarits-1.0.0.json au lot perimetre-prompts.",
+        "Toute autre combinaison ; chaque point est une ligne dans un prédicat nommé."
+      ],
+      "recommandation": "Option 1 sur les sept points, à écrire avant le run pilote du 22 novembre : après, tout changement réduit les questions communes de la tendance §8."
     }
   ],
   "lots": [
@@ -84,20 +131,23 @@
       "taille": "S",
       "temps_auteur_h": 4,
       "depend_de": [],
-      "decisions": ["D4", "D5"],
+      "decisions": [
+        "D4",
+        "D5"
+      ],
       "note": "Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
     },
     {
       "id": "schemas",
       "titre": "Schémas JSON et 45 exemples",
       "jalon": "J2",
-      "niveau": "T1",
+      "niveau": "T2",
       "agent": "fait",
       "taille": "S",
       "temps_auteur_h": 0,
       "depend_de": [],
       "decisions": [],
-      "note": "Vérifiés une fois à la main. Passe à T2 quand le lot outillage branche ajv sur pnpm check."
+      "note": "Les 45 exemples sont des tests bloquants de pnpm check depuis le 2026-09-18. decision.schema.json reste hors registre et sans exemple."
     },
     {
       "id": "validation-interface",
@@ -127,13 +177,13 @@
       "id": "outillage",
       "titre": "ajv sur les 45 exemples, ESLint à deux règles de complexité",
       "jalon": "J2",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "sonnet puis opus",
       "taille": "M",
       "temps_auteur_h": 0.5,
       "depend_de": [],
       "decisions": [],
-      "note": "Décisions déjà prises dans docs/DETTE.md : ajv et ajv-formats dans un commit, ESLint dans un autre, exactement deux règles en erreur. La mise en conformité du code existant est confiée à Opus."
+      "note": "Livré le 2026-09-18 : ajv sur les 45 exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. Reste : catégoriser les avertissements ajv strict, enregistrer decision.schema.json (DETTE points 4 et 5)."
     },
     {
       "id": "ci",
@@ -144,7 +194,9 @@
       "taille": "S",
       "temps_auteur_h": 0.25,
       "depend_de": [],
-      "decisions": ["D1"],
+      "decisions": [
+        "D1"
+      ],
       "note": "Sans elle, « testé » reste une déclaration."
     },
     {
@@ -168,7 +220,9 @@
       "taille": "S",
       "temps_auteur_h": 5,
       "depend_de": [],
-      "decisions": ["D5"],
+      "decisions": [
+        "D5"
+      ],
       "note": "Seul l'auteur écrit ces fichiers. Bloque l'extraction, l'interrogation et la notation."
     },
     {
@@ -180,7 +234,9 @@
       "taille": "L",
       "temps_auteur_h": 1,
       "depend_de": [],
-      "decisions": ["D2"],
+      "decisions": [
+        "D2"
+      ],
       "note": "Le contrat des artefacts est déjà figé dans docs/CONTRATS.md. Python probable."
     },
     {
@@ -192,23 +248,33 @@
       "taille": "L",
       "temps_auteur_h": 1,
       "depend_de": [
-        { "lot": "perimetre-prompts", "type": "bloque" },
-        { "lot": "collecte", "type": "informe" }
+        {
+          "lot": "perimetre-prompts",
+          "type": "bloque"
+        },
+        {
+          "lot": "collecte",
+          "type": "informe"
+        }
       ],
-      "decisions": ["D3"],
+      "decisions": [
+        "D3"
+      ],
       "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts."
     },
     {
       "id": "questions-tirage-symetrie",
       "titre": "Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers",
       "jalon": "J2",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "opus",
       "taille": "L",
       "temps_auteur_h": 2,
       "depend_de": [],
-      "decisions": [],
-      "note": "Ne dépend que des schémas. Inclut les tests des quatre invariants inter-fichiers de la dette haute (grappe_id, contexte, item F fictif, même version jugée)."
+      "decisions": [
+        "D7"
+      ],
+      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote."
     },
     {
       "id": "interrogation",
@@ -219,11 +285,19 @@
       "taille": "M",
       "temps_auteur_h": 1,
       "depend_de": [
-        { "lot": "perimetre-prompts", "type": "bloque" },
-        { "lot": "questions-tirage-symetrie", "type": "bloque" }
+        {
+          "lot": "perimetre-prompts",
+          "type": "bloque"
+        },
+        {
+          "lot": "questions-tirage-symetrie",
+          "type": "bloque"
+        }
       ],
-      "decisions": ["D3"],
-      "note": "pnpm run:dry d'abord, jamais run:live par un agent."
+      "decisions": [
+        "D3"
+      ],
+      "note": "pnpm run:dry d'abord, jamais run:live par un agent. Doit écrire runs/README.md, disposition lue par analysis/filtre.ts:assembler() (DETTE point 3)."
     },
     {
       "id": "notation",
@@ -234,23 +308,33 @@
       "taille": "L",
       "temps_auteur_h": 2,
       "depend_de": [
-        { "lot": "perimetre-prompts", "type": "bloque" },
-        { "lot": "interrogation", "type": "informe" }
+        {
+          "lot": "perimetre-prompts",
+          "type": "bloque"
+        },
+        {
+          "lot": "interrogation",
+          "type": "informe"
+        }
       ],
-      "decisions": ["D3"],
+      "decisions": [
+        "D3"
+      ],
       "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives."
     },
     {
       "id": "analyse",
       "titre": "Métriques §8, bootstrap en grappes, permutation, Holm, robustesse",
       "jalon": "J5",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "opus",
       "taille": "L",
       "temps_auteur_h": 1,
       "depend_de": [],
-      "decisions": [],
-      "note": "Ne dépend que des schémas. Tests d'abord sur des verdicts fictifs. Peut démarrer aujourd'hui."
+      "decisions": [
+        "D6"
+      ],
+      "note": "Livré le 2026-09-18 : onze modules, 60 tests, aucun défaut silencieux. Pas de pnpm analyze tant que la disposition de runs/ n'est pas fixée (lot interrogation). Six précisions du §8 en attente (D6)."
     },
     {
       "id": "site",
@@ -261,9 +345,14 @@
       "taille": "M",
       "temps_auteur_h": 2,
       "depend_de": [
-        { "lot": "analyse", "type": "bloque" }
+        {
+          "lot": "analyse",
+          "type": "bloque"
+        }
       ],
-      "decisions": ["D4"],
+      "decisions": [
+        "D4"
+      ],
       "note": "Aucune logique métier, aucun chiffre qui ne vienne pas de runs/."
     },
     {
@@ -275,7 +364,10 @@
       "taille": "L",
       "temps_auteur_h": 24,
       "depend_de": [
-        { "lot": "protocole", "type": "bloque" }
+        {
+          "lot": "protocole",
+          "type": "bloque"
+        }
       ],
       "decisions": [],
       "note": "Rien de tout cela n'est du code, mais tout conditionne J1, J3 et J4."
@@ -284,6 +376,7 @@
   "anomalies": [
     "README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.",
     "CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.",
-    "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md."
+    "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.",
+    "schema/ contient onze fichiers, le README et le manifeste en connaissent dix : decision.schema.json n'est ni enregistré ni exemplifié."
   ]
 }

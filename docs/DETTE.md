@@ -13,6 +13,106 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-18 — Trois lots en parallèle : outillage, analyse, questions (`outils/schemas/`, `eslint.config.js`, `analysis/`, `pipeline/questions/`)
+
+### 1. Les graines de l'analyse sont textuelles, celles du run sont des entiers — *haute*
+
+`analysis/bootstrap.ts` et `analysis/permutation.ts` amorcent `validation/domaine/alea.ts` avec une
+graine **textuelle**, alors que `run.graines.bootstrap.valeur` et `run.graines.permutation.valeur`
+sont des entiers dans `schema/run.schema.json`. Aucune fonction unique ne fait la conversion.
+
+**Pourquoi ça casse.** Si l'appelant qui branchera `pnpm analyze` convertit l'entier autrement que
+par `String(valeur)`, les intervalles publiés restent déterministes mais ne sont plus rejouables par
+un tiers depuis le run publié. Pour un lecteur, un intervalle qu'il ne peut pas rejouer est
+indistinguable d'un intervalle faux, et rien ne le signale.
+
+**Ce qu'il faut faire.** Un unique `amorceDepuisGraine(run.graines.x)` dans `analysis/`, testé
+contre une valeur attendue écrite, utilisé par le bootstrap, la permutation et l'échantillon humain.
+À faire dans le lot qui écrit `pnpm analyze`.
+
+### 2. Le tirage fige quatre conventions que le protocole n'écrit pas — *moyenne*
+
+`pipeline/questions/` a retenu le comportement le plus restrictif sur quatre points non tranchés :
+date civile comparée à `date_gel` à **minuit UTC** ; item `arbitree` exclu du tirage, contre
+l'annexe E ; Q-ORI sur un item O avant son changement résolue par l'état en vigueur ; budget de
+reprise 80 % appliqué aussi aux Q-ATT. Les décisions sont listées en D7 de
+`docs/FEUILLE-DE-ROUTE.md`.
+
+**Pourquoi ça casse.** Si l'auteur tranche autrement après un premier run réel, le jeu de questions
+change entre deux runs et les « questions communes » de la tendance §8 se réduisent sans que le
+lecteur sache pourquoi. C'est visible dans le rapport de reprise, à condition de le lire.
+
+**Ce qu'il faut faire.** Trancher D7 **avant** le run pilote du 22 novembre et écrire chaque réponse
+dans le protocole ou `schema/README.md`, section Temps. Chaque changement est une ligne dans un
+prédicat nommé (`questionTirable`, `itemEngendreDesQuestions`, la table des résolveurs).
+
+### 3. Le contrat d'entrée de l'analyse précède la disposition de `runs/` — *moyenne*
+
+`analysis/types.ts:EntreesAnalyse` suppose une entrée de tirage par `question_id` et exactement un
+item principal par question, et `analysis/filtre.ts:assembler()` lève sur tout écart. La
+disposition de `runs/<date>/` n'existe pas encore.
+
+**Pourquoi ça casse.** Quand le lot interrogation fixera les fichiers d'un run, tout écart imposera
+un adaptateur plutôt qu'un chargement direct ; et un thème absent d'une entrée de tirage fait
+sortir l'unité de la ventilation par thème avec `theme: null`, visible dans le type mais muet dans
+les chiffres.
+
+**Ce qu'il faut faire.** Écrire `runs/README.md` avec la disposition des fichiers dans le lot
+interrogation, et faire lire ces fichiers par `assembler()` sans couche intermédiaire.
+
+### 4. ajv tourne en `strict: "log"` et compte ses avertissements sans les lire — *moyenne*
+
+`outils/schemas/registre.ts` passe ajv en `strict: "log"` parce que le mode strict refuse des
+combinaisons `if`/`then`/`not`/`contains` légitimes du draft 2020-12 utilisées par six schémas. Les
+135 avertissements sont comptés dans le rapport, jamais catégorisés.
+
+**Pourquoi ça casse.** Une coquille dans un mot-clé de schéma (`requird`, `additionalProperty`)
+est exactement ce que le mode strict attrape. En `log`, elle rejoint les 135 autres et `pnpm check`
+reste vert, tant qu'aucun exemple `invalide-*` ne vise précisément la règle affaiblie.
+
+**Ce qu'il faut faire.** Catégoriser les avertissements par code ajv et n'ignorer que les codes
+connus, en erreur sur tout code nouveau. Petit lot Sonnet.
+
+### 5. `decision.schema.json` n'est ni enregistré ni exemplifié — *moyenne*
+
+`schema/` contient onze fichiers ; `schema/README.md` et le manifeste en connaissent dix.
+`decision.schema.json`, ajouté avec le journal de validation, n'a aucun exemple et n'est pas dans
+le registre d'`outils/schemas/noms.ts`.
+
+**Pourquoi ça casse.** Le journal de validation, publié au §9, est le seul objet du dépôt dont la
+forme n'est gardée par aucun test. Un champ renommé dans `validation/domaine/journal.ts` ne fera
+échouer que la lecture croisée de `promote`, jamais `pnpm check`.
+
+**Ce qu'il faut faire.** Cinq exemples au manifeste, une ligne dans le README, le fichier ajouté
+au registre. Petit lot Sonnet, en même temps que le point 4.
+
+### 6. Les gabarits de questions vivent dans le code, pas dans `prompts/` — *basse*
+
+`pipeline/questions/gabarits.ts` porte les six textes de l'annexe B en table de données, et
+`question.version_gabarits` vaut `"annexe-B/protocole-0.2"`. `CLAUDE.md`, règle 6, dit « aucun
+prompt en dur dans le code », et `schema/question.schema.json` décrit `version_gabarits` comme la
+version d'un fichier de `prompts/`.
+
+**Pourquoi ça casse.** Un changement de gabarit est un amendement (§9) ; dans le code, il se noie
+dans un diff ordinaire. Visible à la relecture, mais après coup.
+
+**Ce qu'il faut faire.** Déplacer la table vers `prompts/gabarits-1.0.0.json` dans le lot
+`perimetre-prompts`, que seul l'auteur écrit ; `gabarits.ts` devient une lecture de fichier.
+
+### 7. Deux gardes pour le même invariant, et un test qui recopie sa configuration — *basse*
+
+`validation/domaine/promotion.ts:memeVersionJugee()` (privée) et
+`pipeline/questions/invariants.ts` gardent la même règle « deux validations concordantes, même
+version ». `tests/lint.test.ts` redéclare les deux règles d'`eslint.config.js` au lieu de l'importer.
+
+**Pourquoi ça casse.** Deux copies d'une règle divergent ; un seuil changé dans la configuration
+resterait testé à l'ancienne valeur. Visible à la lecture.
+
+**Ce qu'il faut faire.** Exporter `memeVersionJugee` et l'appeler depuis `invariants.ts` ; faire
+importer la configuration réelle par le test (`allowJs` ou déclaration de type minimale).
+
+---
+
 ## 2026-09-18 — Feuille de route générée (`docs/feuille-de-route.json`, `outils/feuille-de-route/`)
 
 ### 1. Le niveau de preuve d'un lot est déclaré, jamais mesuré — *moyenne*

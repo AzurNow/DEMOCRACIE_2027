@@ -163,3 +163,22 @@ question.** Premier sous-agent lancé d'après `.claude/briefs/GABARIT.md` : 28 
 sept hésitations prévisibles réglées d'avance. Rapport rendu sans question ouverte, 29 tests verts
 du premier coup, diff strictement dans le périmètre. Le temps passé à fermer la liste avant de
 lancer se retrouve en tokens non dépensés à relancer.
+
+**Écrire le code de mesure sur fixtures avant le gel : c'est la relecture la plus exigeante du
+protocole.** Trois lots lancés en parallèle sur le §5 et le §8 ont remonté dix-sept questions que
+deux lectures humaines n'avaient pas vues : item arbitré tirable ou non, Q-ORI sur un item obsolète
+avant son changement, position conditionnelle face à une question fermée, valeur p absente pour une
+famille où Holm est pourtant exigé, dénominateur de la confirmation de prémisse. Aucune n'était un
+bug : chacune était une phrase du protocole qui ne se traduit pas en `if`. Le coût d'un amendement
+après gel se paie en révision d'une ligne avant.
+
+**Quand une décision exige deux commits, le brief exige deux fichiers de tests.** Le lot outillage
+devait livrer ajv et ESLint « dans deux commits séparés ». Le sous-agent a livré un seul fichier de
+tests mêlant les deux ; le premier commit, pris seul, ne compilait pas. Il a fallu scinder et
+rejouer chaque commit dans un répertoire propre. Le brief disait « garde les deux travaux
+séparables » ; il fallait dire quels fichiers.
+
+**`eslint .` parcourt les worktrees des sous-agents.** Ils vivent sous `.claude/worktrees/`, à
+l'intérieur du dépôt, et ESLint y a signalé quatre fonctions déjà découpées, en double, depuis des
+copies périmées. Le répertoire est désormais ignoré par ESLint et par Git ; la surprise aurait été
+plus coûteuse en CI, où le répertoire n'existe pas et où l'erreur n'aurait jamais été reproduite.
