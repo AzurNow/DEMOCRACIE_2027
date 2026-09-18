@@ -132,3 +132,15 @@ du DOI Zenodo imposé à chaque publication. Aucun amendement n'a été nécessa
 **Un trou du protocole se signale, il ne se comble pas en silence.** Trois contradictions relevées
 cette session (candidat retiré, symétrie et Q-ATT, ajout fabriqué non contraire) sont documentées
 comme candidates à un amendement, pas résolues d'autorité dans le code.
+
+**Reporter une décision de mesure dans le protocole dans la session qui la prend.** Six décisions
+du 2026-09-17 (kappa à trois catégories, contenu notant, non-évaluabilité, grille par type) ont été
+implémentées et testées, puis laissées hors du protocole. Les écrire le lendemain a exigé de relire
+`kappa.ts`, `promotion.ts`, `grille.ts` et `empreinte.ts` pour retrouver exactement ce qui avait été
+tranché : le code était devenu la seule source, alors que le protocole doit faire autorité sur lui.
+
+**Poser une question ouverte, c'est souvent trouver un trou à côté.** En rédigeant les options sur
+l'alerte de kappa, on a vu que `Lot.reannote` était déclaré, affiché, et jamais rempli : le vrai
+manque n'était pas le bouton discuté, mais le lien entre un lot et sa réannotation, sans lequel le
+critère go/no-go du §12 est ambigu. Vérifier ce que le code fait du champ avant de débattre de
+l'écran qui le montre.

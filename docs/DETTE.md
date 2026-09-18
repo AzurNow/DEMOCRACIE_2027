@@ -13,6 +13,27 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-18 — Décisions de validation reportées dans le protocole (`docs/PROTOCOLE.md` v0.2)
+
+### 1. Le protocole promet trois comportements que le code n'a pas — *moyenne*
+
+Le §4 décrit désormais la réannotation par lot supersédant (« Réannotation »), le registre des
+corrections de mesure lu par `promote` (« Correction de thème ») et le suivi du taux de « non
+évaluable » par annotateur. Aucun des trois n'est implémenté : `pnpm lots` n'a pas de `--reannote`,
+`pnpm mesures` n'existe pas, `promote` ne lit aucun registre et ne connaît pas la supersession.
+
+**Pourquoi ça casse.** Si un lot est réannoté avant que la supersession existe, le journal, indexé
+par item, porte deux décisions par annotateur pour les mêmes items, et `promote` promeut sur une
+paire dont on ne sait pas de quel lot elle vient ; le kappa publié au titre du §12 peut être celui
+du lot supersédé. Rien ne l'arrête : le protocole affirme une règle que le dépôt ne tient pas, et
+seul un lecteur qui compare le §4 au code s'en apercevrait.
+
+**Ce qu'il faut faire.** Implémenter les trois, dans l'ordre déjà écrit au point 2 bis de l'entrée
+du 2026-09-17, **avant** le premier lot réel du 15 novembre. Tant que ce n'est pas fait, ne pas
+réannoter un lot.
+
+---
+
 ## 2026-09-17 — Interface locale de validation humaine (`validation/`, `outils/`, `tests/`)
 
 ### 1. Le client n'est couvert par aucun test, et il redéclare des constantes du domaine — *moyenne*
