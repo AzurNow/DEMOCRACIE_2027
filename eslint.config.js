@@ -7,7 +7,7 @@ import sonarjs from "eslint-plugin-sonarjs";
 
 export default [
   {
-    ignores: ["node_modules/**", "validation/client/dist/**"],
+    ignores: ["node_modules/**", "validation/client/dist/**", ".claude/worktrees/**"],
   },
   {
     files: ["**/*.ts"],
