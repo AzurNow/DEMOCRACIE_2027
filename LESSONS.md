@@ -144,3 +144,22 @@ l'alerte de kappa, on a vu que `Lot.reannote` était déclaré, affiché, et jam
 manque n'était pas le bouton discuté, mais le lien entre un lot et sa réannotation, sans lequel le
 critère go/no-go du §12 est ambigu. Vérifier ce que le code fait du champ avant de débattre de
 l'écran qui le montre.
+
+**Typer les dépendances avant de dessiner un graphe d'avancement.** La première idée de la feuille
+de route était un arbre de compétences où un lot est verrouillé tant que ses prérequis ne sont
+pas atteints. Sur ce dépôt, il aurait grisé l'extraction et la notation pendant des semaines, alors
+que les deux se développent sur `validation/fixtures/` avant que la collecte existe. Deux types
+d'arêtes, `bloque` et `informe`, et seul le premier entre dans le calcul de l'état ; le second se
+dessine en pointillé pour dire « à relire quand l'amont change ».
+
+**Générer une vue de pilotage, ne jamais l'éditer.** Un Markdown de suivi écrit à la main diverge
+du réel en deux sessions, et un outil externe sort l'état du dépôt Git qui est le journal public du
+projet. `docs/feuille-de-route.json` est la seule source, `pnpm feuille-de-route` la seule plume, et
+`--verifier` dit quand les deux ne coïncident plus. Ce que l'agent lit et ce que l'auteur regarde
+viennent du même fichier.
+
+**Un brief qui liste ses cas limites en liste fermée et ses questions déjà tranchées revient sans
+question.** Premier sous-agent lancé d'après `.claude/briefs/GABARIT.md` : 28 cas limites numérotés,
+sept hésitations prévisibles réglées d'avance. Rapport rendu sans question ouverte, 29 tests verts
+du premier coup, diff strictement dans le périmètre. Le temps passé à fermer la liste avant de
+lancer se retrouve en tokens non dépensés à relancer.

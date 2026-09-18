@@ -25,7 +25,11 @@ réel, écrire qu'il n'y en a pas et passer à autre chose.
    surprise n'ajoute aucune leçon, et c'est normal.
 5. **Rayer ce qui est réglé.** Si la session a résolu un point de dette antérieur, barrer la ligne
    dans `docs/DETTE.md` et dire par quoi. Un journal qui n'est jamais purgé cesse d'être lu.
-6. **Le dire en deux lignes** dans la réponse finale, sans recopier les fichiers.
+6. **Mettre la feuille de route à jour.** Dans `docs/feuille-de-route.json` : le `niveau` des lots
+   que la session a fait avancer, `date_maj`, et le `statut` des décisions que l'auteur a tranchées.
+   Puis `pnpm feuille-de-route`, et vérifier que `pnpm feuille-de-route --verifier` sort à 0. Le
+   Markdown est généré, jamais édité.
+7. **Le dire en deux lignes** dans la réponse finale, sans recopier les fichiers.
 
 ## Ce qui va dans `docs/DETTE.md`, ce qui n'y va pas
 
