@@ -1,0 +1,289 @@
+{
+  "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
+  "date_maj": "2026-09-18",
+  "echelle": {
+    "T0": "absent : rien n'existe",
+    "T1": "écrit, sans vérification automatique",
+    "T2": "testé unitairement, cas limites couverts",
+    "T3": "testé de bout en bout sur fixtures",
+    "T4": "exercé sur données réelles"
+  },
+  "jalons": [
+    { "id": "J1", "date": "2026-10-15", "titre": "Protocole v1.0 gelé, relu par un avocat, déposé sur Zenodo, transmis aux institutions", "critere": "Empreinte et DOI publiés ; liste nominative des outils et des candidats du premier run publiée" },
+    { "id": "J2", "date": "2026-10-31", "titre": "Schéma, interface de validation, collecte et archivage en production", "critere": "100 items T1 archivés et extraits ; test verbatim et tests de symétrie verts en intégration continue" },
+    { "id": "J3", "date": "2026-11-15", "titre": "Annotateurs formés ; 200 items vérifiés ; panel constitué ou faiblesse déclarée", "critere": "Kappa ≥ 0,80 sur les deux derniers lots" },
+    { "id": "J4", "date": "2026-11-22", "titre": "Run pilote complet ; jeu d'or de 300 réponses", "critere": "Kappa juge-humain ≥ 0,75 ; taux de changement contrefactuel ≤ 3 %" },
+    { "id": "J5", "date": "2026-12-01", "titre": "Premier run public mensuel", "critere": "Tous les critères précédents ; au moins 8 candidats au-dessus du seuil de couverture" }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "statut": "en_attente",
+      "question": "Brancher une intégration continue GitHub Actions qui exécute `pnpm check` et `pnpm test` sur chaque PR ?",
+      "contexte": "Aujourd'hui « testé » est une déclaration : rien ne rejoue les tests hors de la machine de l'auteur. GitHub Actions est un service tiers, donc une décision de l'auteur (CLAUDE.md, arrêt obligatoire).",
+      "options": [
+        "Oui, GitHub Actions, un fichier de quatre lignes, aucune dépendance npm.",
+        "Non, on s'en remet à la discipline de session ; le risque est un test rouge fusionné sans que personne ne le voie."
+      ],
+      "recommandation": "Oui. Coût unique négligeable, et c'est la seule preuve publique que les tests bloquants du §5 sont réellement bloquants."
+    },
+    {
+      "id": "D2",
+      "statut": "en_attente",
+      "question": "Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?",
+      "contexte": "La collecte doit produire les artefacts de docs/CONTRATS.md : texte canonique NFC, transcription WebVTT, copie locale avec SHA-256, sauvegarde Wayback. Aucune bibliothèque de la stdlib Python ou Node ne télécharge une vidéo, ne transcrit de l'audio ni n'extrait proprement le texte d'un PDF.",
+      "options": [
+        "yt-dlp + faster-whisper en local + pymupdf + appel HTTP direct à l'API Wayback : tout tourne sur la machine, aucune clé, transcription reproductible.",
+        "yt-dlp + API de transcription hébergée + pymupdf : plus rapide, mais un service tiers de plus et une transcription non reproductible hors ligne.",
+        "Pas de vidéo en v1.0 : sources T1 seulement, ce qui supprime yt-dlp et la transcription mais exclut les sources T2 que le §4 prévoit."
+      ],
+      "recommandation": "Option 1. Tout local, tout reproductible, quatre dépendances justifiables une par une dans le brief."
+    },
+    {
+      "id": "D3",
+      "statut": "en_attente",
+      "question": "Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?",
+      "contexte": "Trois lots appellent des modèles : l'extraction double (deux familles), l'interrogation des outils du périmètre, les deux juges. Chaque SDK est une dépendance et un appel réseau nouveau (CLAUDE.md, arrêt obligatoire).",
+      "options": [
+        "SDK officiels, un par éditeur, versions épinglées : typage fourni, retries maison, surface d'audit = nombre d'éditeurs.",
+        "Appels HTTP directs sans SDK : zéro dépendance, mais chaque format de réponse brute réécrit à la main, source d'erreurs sur la règle 7."
+      ],
+      "recommandation": "Option 1, avec la liste nominative fixée par le lot périmètre. La réponse brute stockée est le corps HTTP tel que reçu, pas l'objet du SDK."
+    },
+    {
+      "id": "D4",
+      "statut": "en_attente",
+      "question": "Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?",
+      "contexte": "Le §4 exige « un formulaire public et une adresse dédiée ». La règle 1 interdit tout runtime, le §10 interdit tout traceur. Un formulaire suppose un service qui reçoit les envois.",
+      "options": [
+        "Adresse mail dédiée seule pour la v1.0 : le §4 dit « formulaire public ET adresse », donc une révision de texte avant gel, pas un amendement.",
+        "Service de formulaire tiers déclaré dans le protocole, avec son traitement de données personnelles à documenter (§10, RGPD).",
+        "Formulaire via GitHub Issues public : gratuit, tracé, mais exige un compte GitHub au contestataire."
+      ],
+      "recommandation": "Option 1 pour la v1.0, texte du §4 ajusté avant gel. Un service de formulaire peut s'ajouter par amendement quand le volume le justifie."
+    },
+    {
+      "id": "D5",
+      "statut": "en_attente",
+      "question": "Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?",
+      "contexte": "Le §3 fixe des règles d'inclusion mais la liste nominative doit être publiée au gel (J1). Elle alimente config/perimetre.yaml, que seul l'auteur écrit. Elle bloque l'extraction, l'interrogation et la notation, qui ont besoin de savoir quels éditeurs appeler.",
+      "options": [
+        "L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion (deux sondages, classements de stores) et écrit config/perimetre.yaml.",
+        "Attendre plus près du gel pour une liste plus fraîche, au prix de bloquer trois lots pendant ce temps."
+      ],
+      "recommandation": "Option 1 maintenant, avec révision au gel : les lots dépendants peuvent être développés sur un périmètre provisoire tant que le format est fixé."
+    }
+  ],
+  "lots": [
+    {
+      "id": "protocole",
+      "titre": "Protocole v0.2, à geler en v1.0",
+      "jalon": "J1",
+      "niveau": "T1",
+      "agent": "auteur",
+      "taille": "S",
+      "temps_auteur_h": 4,
+      "depend_de": [],
+      "decisions": ["D4", "D5"],
+      "note": "Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
+    },
+    {
+      "id": "schemas",
+      "titre": "Schémas JSON et 45 exemples",
+      "jalon": "J2",
+      "niveau": "T1",
+      "agent": "fait",
+      "taille": "S",
+      "temps_auteur_h": 0,
+      "depend_de": [],
+      "decisions": [],
+      "note": "Vérifiés une fois à la main. Passe à T2 quand le lot outillage branche ajv sur pnpm check."
+    },
+    {
+      "id": "validation-interface",
+      "titre": "Interface de validation humaine, pnpm lots, pnpm promote",
+      "jalon": "J2",
+      "niveau": "T3",
+      "agent": "fait",
+      "taille": "L",
+      "temps_auteur_h": 0,
+      "depend_de": [],
+      "decisions": [],
+      "note": "120 tests verts sur domaine, IO et routes. Le client web n'a aucun test de comportement. Jamais exercé sur un vrai staging/."
+    },
+    {
+      "id": "feuille-de-route",
+      "titre": "Feuille de route générée depuis ce fichier",
+      "jalon": "J2",
+      "niveau": "T2",
+      "agent": "sonnet",
+      "taille": "S",
+      "temps_auteur_h": 0.5,
+      "depend_de": [],
+      "decisions": [],
+      "note": "Générateur sans dépendance, graphe Mermaid rendu par GitHub, relancé à chaque clôture de session."
+    },
+    {
+      "id": "outillage",
+      "titre": "ajv sur les 45 exemples, ESLint à deux règles de complexité",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "sonnet puis opus",
+      "taille": "M",
+      "temps_auteur_h": 0.5,
+      "depend_de": [],
+      "decisions": [],
+      "note": "Décisions déjà prises dans docs/DETTE.md : ajv et ajv-formats dans un commit, ESLint dans un autre, exactement deux règles en erreur. La mise en conformité du code existant est confiée à Opus."
+    },
+    {
+      "id": "ci",
+      "titre": "Intégration continue : check et test sur chaque PR",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "sonnet",
+      "taille": "S",
+      "temps_auteur_h": 0.25,
+      "depend_de": [],
+      "decisions": ["D1"],
+      "note": "Sans elle, « testé » reste une déclaration."
+    },
+    {
+      "id": "dette-validation",
+      "titre": "Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/",
+      "jalon": "J3",
+      "niveau": "T0",
+      "agent": "opus pour promote, sonnet pour le reste",
+      "taille": "M",
+      "temps_auteur_h": 1,
+      "depend_de": [],
+      "decisions": [],
+      "note": "Trois comportements que le protocole v0.2 promet et que le code n'a pas (DETTE 2026-09-18). À finir avant le premier lot réel du 15 novembre."
+    },
+    {
+      "id": "perimetre-prompts",
+      "titre": "config/perimetre.yaml et prompts/ versionnés",
+      "jalon": "J1",
+      "niveau": "T0",
+      "agent": "auteur avec fable",
+      "taille": "S",
+      "temps_auteur_h": 5,
+      "depend_de": [],
+      "decisions": ["D5"],
+      "note": "Seul l'auteur écrit ces fichiers. Bloque l'extraction, l'interrogation et la notation."
+    },
+    {
+      "id": "collecte",
+      "titre": "Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "sonnet",
+      "taille": "L",
+      "temps_auteur_h": 1,
+      "depend_de": [],
+      "decisions": ["D2"],
+      "note": "Le contrat des artefacts est déjà figé dans docs/CONTRATS.md. Python probable."
+    },
+    {
+      "id": "extraction",
+      "titre": "Extraction double, test verbatim, écriture dans staging/",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 1,
+      "depend_de": [
+        { "lot": "perimetre-prompts", "type": "bloque" },
+        { "lot": "collecte", "type": "informe" }
+      ],
+      "decisions": ["D3"],
+      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts."
+    },
+    {
+      "id": "questions-tirage-symetrie",
+      "titre": "Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 2,
+      "depend_de": [],
+      "decisions": [],
+      "note": "Ne dépend que des schémas. Inclut les tests des quatre invariants inter-fichiers de la dette haute (grappe_id, contexte, item F fictif, même version jugée)."
+    },
+    {
+      "id": "interrogation",
+      "titre": "Appels API, fenêtre 48 h, trois relances, réponses brutes immuables, archive Zenodo",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "M",
+      "temps_auteur_h": 1,
+      "depend_de": [
+        { "lot": "perimetre-prompts", "type": "bloque" },
+        { "lot": "questions-tirage-symetrie", "type": "bloque" }
+      ],
+      "decisions": ["D3"],
+      "note": "pnpm run:dry d'abord, jamais run:live par un agent."
+    },
+    {
+      "id": "notation",
+      "titre": "Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 2,
+      "depend_de": [
+        { "lot": "perimetre-prompts", "type": "bloque" },
+        { "lot": "interrogation", "type": "informe" }
+      ],
+      "decisions": ["D3"],
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives."
+    },
+    {
+      "id": "analyse",
+      "titre": "Métriques §8, bootstrap en grappes, permutation, Holm, robustesse",
+      "jalon": "J5",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 1,
+      "depend_de": [],
+      "decisions": [],
+      "note": "Ne dépend que des schémas. Tests d'abord sur des verdicts fictifs. Peut démarrer aujourd'hui."
+    },
+    {
+      "id": "site",
+      "titre": "Site statique généré depuis runs/",
+      "jalon": "J5",
+      "niveau": "T0",
+      "agent": "sonnet",
+      "taille": "M",
+      "temps_auteur_h": 2,
+      "depend_de": [
+        { "lot": "analyse", "type": "bloque" }
+      ],
+      "decisions": ["D4"],
+      "note": "Aucune logique métier, aucun chiffre qui ne vienne pas de runs/."
+    },
+    {
+      "id": "hors-code",
+      "titre": "Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9",
+      "jalon": "J3",
+      "niveau": "T0",
+      "agent": "auteur",
+      "taille": "L",
+      "temps_auteur_h": 24,
+      "depend_de": [
+        { "lot": "protocole", "type": "bloque" }
+      ],
+      "decisions": [],
+      "note": "Rien de tout cela n'est du code, mais tout conditionne J1, J3 et J4."
+    }
+  ],
+  "anomalies": [
+    "README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.",
+    "CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.",
+    "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md."
+  ]
+}
