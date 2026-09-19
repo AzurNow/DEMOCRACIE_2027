@@ -11,11 +11,23 @@
  *
  *   pnpm lots --nature=entrainement --taille=30 --annotateurs=a1,a2 --graine=lot-ent-2026-11
  *   pnpm lots --nature=reel --taille=50 --annotateurs=a1,a2 --graine=lots-2026-11
+ *
+ * Réannotation (§4) : un lot dont le kappa tombe strictement sous 0,80 est rejugé après une
+ * séance de calibration, dont la date est exigée — sans elle, le kappa du nouveau lot n'est pas
+ * interprétable. Le lot produit reprend les items du lot d'origine et le supersède.
+ *
+ *   pnpm lots --reannote=lot-003 --calibration=2026-11-24 --graine=reannotation-2026-11
  */
 
 import { resolve } from "node:path";
-import { analyserArguments, drapeau, entier, obligatoire, texte } from "./arguments.ts";
-import { adjacenceRespectee, composerLots, ordreAffichage, OrdreImpossible } from "../validation/domaine/lot.ts";
+import { analyserArguments, drapeau, entier, obligatoire, texte, type Arguments } from "./arguments.ts";
+import {
+  adjacenceRespectee,
+  composerLots,
+  ordreAffichage,
+  OrdreImpossible,
+  preparerReannotation,
+} from "../validation/domaine/lot.ts";
 import type { ItemDuLot, Lot, NatureLot } from "../validation/domaine/types.ts";
 import { lireLots, ecrireLot } from "../validation/io/lots-fichier.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
@@ -31,13 +43,20 @@ interface Options {
   readonly racine: string;
   readonly staging: string;
   readonly lots: string;
+  /** Lot d'origine à réannoter. Chaîne vide : composition ordinaire. */
+  readonly reannote: string;
+  /** Date civile de la séance de calibration. `null` hors réannotation. */
+  readonly calibration: string | null;
 }
+
+const DATE_CIVILE = /^\d{4}-\d{2}-\d{2}$/;
 
 function lireOptions(bruts: readonly string[]): Options {
   const table = analyserArguments(bruts);
   const racine = resolve(import.meta.dirname, "..");
   const nature = texte(table, "nature", "reel") as NatureLot;
   const entrainement = nature === "entrainement";
+  const reannote = texte(table, "reannote", "");
 
   return {
     nature,
@@ -50,7 +69,23 @@ function lireOptions(bruts: readonly string[]): Options {
     racine,
     staging: texte(table, "staging", resolve(racine, "staging")),
     lots: texte(table, "lots", resolve(racine, "validation/lots")),
+    reannote,
+    calibration: reannote.length === 0 ? null : dateDeCalibration(table),
   };
+}
+
+/** Sans date de séance, le kappa d'un lot de réannotation n'est pas interprétable (§4). */
+function dateDeCalibration(table: Arguments): string {
+  const valeur = obligatoire(
+    table,
+    "calibration",
+    "un lot de réannotation porte la date de la séance de calibration, sans laquelle son kappa " +
+      "n'est pas interprétable (§4).",
+  );
+  if (!DATE_CIVILE.test(valeur)) {
+    throw new Error(`--calibration attend une date civile AAAA-MM-JJ : ${JSON.stringify(valeur)}`);
+  }
+  return valeur;
 }
 
 function itemsDisponibles(options: Options): readonly ItemDuLot[] {
@@ -99,8 +134,47 @@ function verifierOrdres(lot: Lot): void {
   }
 }
 
+/**
+ * Un lot de réannotation reprend les items du lot d'origine **sans passer par la réserve** : ces
+ * items appartiennent déjà à un lot, et ce sont précisément eux qu'il faut rejuger. Ses
+ * annotateurs sont ceux du lot d'origine, sans quoi son kappa ne remplacerait pas le leur.
+ */
+function principalReannotation(options: Options): void {
+  if (options.annotateurs.length > 0) {
+    throw new Error(
+      "--annotateurs ne s'emploie pas avec --reannote : un lot de réannotation reprend les " +
+        "annotateurs du lot d'origine, faute de quoi son kappa ne remplacerait pas le leur (§4).",
+    );
+  }
+
+  const lot = preparerReannotation(lireLots(options.lots), {
+    origine_id: options.reannote,
+    graine_maitresse: options.graine,
+    date_calibration: options.calibration as string,
+    date_creation: instantLocal(new Date()),
+  });
+  verifierOrdres(lot);
+
+  process.stdout.write(
+    `${lot.lot_id} : réannotation de ${lot.reannote}, ${lot.items.length} item(s) repris,\n` +
+      `  séance de calibration du ${lot.date_calibration}, annotateurs ${lot.annotateurs.join(", ")},\n` +
+      `  ordre vérifié. Le lot d'origine reste publié ; ses décisions ne comptent plus pour ces items.\n`,
+  );
+
+  if (!options.ecrire) {
+    process.stdout.write("\nSimulation. Ajouter --ecrire pour écrire le manifeste.\n");
+    return;
+  }
+  ecrireLot(options.lots, lot);
+  process.stdout.write(`\nManifeste écrit dans ${options.lots}\n`);
+}
+
 function principal(): void {
   const options = lireOptions(process.argv.slice(2));
+  if (options.reannote.length > 0) {
+    principalReannotation(options);
+    return;
+  }
   if (options.annotateurs.length !== 2) {
     throw new Error("--annotateurs attend exactement deux identifiants, séparés par une virgule.");
   }

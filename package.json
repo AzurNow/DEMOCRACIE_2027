@@ -19,6 +19,7 @@
     "symmetry": "node --experimental-strip-types outils/symmetry.ts",
     "feuille-de-route": "node --experimental-strip-types outils/feuille-de-route.ts",
     "lots": "node --experimental-strip-types outils/lots.ts",
+    "mesures": "node --experimental-strip-types outils/mesures.ts",
     "promote": "node --experimental-strip-types outils/promote.ts",
     "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts"
   },

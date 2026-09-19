@@ -153,3 +153,176 @@ export function adjacenceRespectee(ordre: readonly ItemDuLot[]): boolean {
   }
   return true;
 }
+
+/* ----------------------------------------------------------- réannotation (§4) */
+
+/**
+ * Réannotation et supersession.
+ *
+ * Un lot dont le kappa tombe strictement sous 0,80 est réannoté après séance de calibration.
+ * Le lot de réannotation porte **les mêmes items**, la référence du lot d'origine et la date de
+ * la séance, sans laquelle son kappa n'est pas interprétable. Il supersède le lot d'origine :
+ * ses décisions remplacent celles du lot d'origine pour les items concernés. Le lot d'origine
+ * reste publié — son kappa est toujours calculé — mais il ne compte plus pour le §12.
+ *
+ * La chaîne est strictement linéaire : un lot n'est supersédé qu'une fois. Deux réannotations
+ * concurrentes du même lot rendraient indécidable la paire de décisions qui fait foi, donc le
+ * kappa publié ; c'est refusé plutôt qu'arbitré.
+ */
+
+export class LotIntrouvable extends Error {
+  readonly lot_id: string;
+
+  constructor(lot_id: string) {
+    super(`Lot introuvable : ${lot_id}. Aucun manifeste de ce nom parmi les lots lus.`);
+    this.name = "LotIntrouvable";
+    this.lot_id = lot_id;
+  }
+}
+
+export class LotDejaSupersede extends Error {
+  readonly lot_id: string;
+  readonly supersede_par: string;
+
+  constructor(lot_id: string, supersede_par: string) {
+    super(
+      `Le lot ${lot_id} est déjà supersédé par ${supersede_par}. Le réannoter une seconde fois ` +
+        `rendrait la chaîne de supersession ambiguë : deux lots prétendraient remplacer les mêmes ` +
+        `décisions. Réannoter ${supersede_par}, qui est le dernier maillon.`,
+    );
+    this.name = "LotDejaSupersede";
+    this.lot_id = lot_id;
+    this.supersede_par = supersede_par;
+  }
+}
+
+export class ChaineDeSupersessionCirculaire extends Error {
+  constructor(lot_id: string) {
+    super(
+      `Chaîne de réannotation circulaire au niveau du lot ${lot_id}. Un lot ne peut pas se ` +
+        `superséder, directement ou non : la paire de décisions qui fait foi serait indécidable.`,
+    );
+    this.name = "ChaineDeSupersessionCirculaire";
+  }
+}
+
+export function trouverLot(lots: readonly Lot[], lot_id: string): Lot {
+  const lot = lots.find((candidat) => candidat.lot_id === lot_id);
+  if (lot === undefined) throw new LotIntrouvable(lot_id);
+  return lot;
+}
+
+/** Le lot de réannotation qui supersède directement celui-ci, s'il existe. */
+export function supersediteurDe(lots: readonly Lot[], lot_id: string): Lot | null {
+  const candidats = lots.filter((lot) => lot.reannote === lot_id);
+  const premier = candidats[0];
+  if (premier === undefined) return null;
+  const second = candidats[1];
+  if (second !== undefined) throw new LotDejaSupersede(lot_id, premier.lot_id);
+  return premier;
+}
+
+/** Les maillons qui suivent ce lot dans la chaîne de réannotation, du plus proche au dernier. */
+export function chaineApres(lots: readonly Lot[], depart: Lot): readonly Lot[] {
+  const suite: Lot[] = [];
+  const vus = new Set<string>([depart.lot_id]);
+  let courant = supersediteurDe(lots, depart.lot_id);
+  while (courant !== null) {
+    if (vus.has(courant.lot_id)) throw new ChaineDeSupersessionCirculaire(courant.lot_id);
+    vus.add(courant.lot_id);
+    suite.push(courant);
+    courant = supersediteurDe(lots, courant.lot_id);
+  }
+  return suite;
+}
+
+/** Les maillons qui précèdent ce lot, du plus ancien au lot lui-même. */
+export function chaineAvant(lots: readonly Lot[], arrivee: Lot): readonly Lot[] {
+  const suite: Lot[] = [arrivee];
+  const vus = new Set<string>([arrivee.lot_id]);
+  let courant = arrivee;
+  while (courant.reannote !== undefined) {
+    const precedent = trouverLot(lots, courant.reannote);
+    if (vus.has(precedent.lot_id)) throw new ChaineDeSupersessionCirculaire(precedent.lot_id);
+    vus.add(precedent.lot_id);
+    suite.unshift(precedent);
+    courant = precedent;
+  }
+  return suite;
+}
+
+export interface LotEffectif {
+  readonly lot: Lot;
+  /** Items que ce lot juge encore : ceux qu'aucun maillon postérieur ne reprend. */
+  readonly items: readonly ItemDuLot[];
+  /** Lot qui supersède celui-ci, `null` s'il est le dernier maillon. */
+  readonly supersede_par: string | null;
+}
+
+/**
+ * Répartit les items entre les lots après supersession : un item repris par un lot postérieur
+ * n'est plus jugé par le lot d'origine, **quel que soit** l'état de sa réannotation. Un item
+ * décidé une seule fois dans le lot de réannotation vaut « décisions insuffisantes » ; il ne se
+ * complète jamais avec une décision du lot supersédé, car on ne saurait plus de quel lot vient
+ * la paire, ni quel kappa la couvre.
+ *
+ * Un item **absent** du lot de réannotation reste jugé par le lot d'origine : la supersession
+ * porte sur les items repris, pas sur le lot en bloc.
+ */
+export function lotsApresSupersession(lots: readonly Lot[]): readonly LotEffectif[] {
+  return lots.map((lot) => {
+    const posterieurs = chaineApres(lots, lot);
+    const repris = new Set<string>();
+    for (const maillon of posterieurs) {
+      for (const item of maillon.items) repris.add(item.item_id);
+    }
+    const premier = posterieurs[0];
+    return {
+      lot,
+      items: lot.items.filter((item) => !repris.has(item.item_id)),
+      supersede_par: premier === undefined ? null : premier.lot_id,
+    };
+  });
+}
+
+export interface DemandeReannotation {
+  readonly origine_id: string;
+  readonly graine_maitresse: string;
+  /** Date civile de la séance de calibration, `AAAA-MM-JJ`. */
+  readonly date_calibration: string;
+  readonly date_creation: string;
+}
+
+/**
+ * Compose le lot de réannotation d'un lot existant. Les items sont **repris tels quels**, sans
+ * passer par la réserve des items disponibles : ils appartiennent déjà à un lot, et c'est
+ * précisément ceux-là qu'il faut rejuger.
+ *
+ * Les annotateurs sont ceux du lot d'origine : le kappa du lot de réannotation remplace celui
+ * du lot d'origine pour le §12, et deux kappas portés par des paires d'annotateurs différentes
+ * ne se remplacent pas l'un l'autre.
+ */
+export function preparerReannotation(lots: readonly Lot[], demande: DemandeReannotation): Lot {
+  const source = trouverLot(lots, demande.origine_id);
+  const dejaSupersede = supersediteurDe(lots, source.lot_id);
+  if (dejaSupersede !== null) throw new LotDejaSupersede(source.lot_id, dejaSupersede.lot_id);
+
+  return {
+    lot_id: identifiantReannotation(lots, source),
+    nature: "reannotation",
+    graine_maitresse: demande.graine_maitresse,
+    algorithme_ordre: source.algorithme_ordre,
+    date_creation: demande.date_creation,
+    annotateurs: source.annotateurs,
+    items: source.items,
+    reannote: source.lot_id,
+    date_calibration: demande.date_calibration,
+  };
+}
+
+/** `lot-003` → `lot-003-r1` → `lot-003-r2` : le rang se lit dans le nom, la chaîne aussi. */
+function identifiantReannotation(lots: readonly Lot[], source: Lot): string {
+  const chaine = chaineAvant(lots, source);
+  const tete = chaine[0] as Lot;
+  return `${tete.lot_id}-r${chaine.length}`;
+}

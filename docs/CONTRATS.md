@@ -85,4 +85,5 @@ propriété vérifiée à chaque affichage, pas une promesse tenue par conventio
 | `validation/lots/*.json` | lecture ; écriture par `pnpm lots` uniquement | manifeste immuable une fois écrit |
 | `validation/decisions/<annotateur>/*.jsonl` | ajout en fin de fichier uniquement | jamais de réécriture, jamais de suppression |
 | `validation/brouillons/<annotateur>.json` | lecture et écriture | hors dépôt, hors publication |
+| `validation/mesures/decisions.json` | lecture ; ajout par `pnpm mesures --ecrire` uniquement | registre publié des corrections de thème, en ajout seul : une entrée n'est jamais modifiée ni retirée, un revirement est une entrée de plus. `pnpm promote` le lit, ne l'écrit jamais |
 | `data/` | **aucun** | seul `pnpm promote --ecrire`, lancé par un humain, y écrit |

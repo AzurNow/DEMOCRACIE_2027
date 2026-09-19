@@ -15,6 +15,14 @@
  *   l'autre que le candidat est flou : le statut final diffère, l'arbitre tranche.
  */
 
+import {
+  ancienneteEnJours,
+  CorrectionMesureIncoherente,
+  decisionApplicable,
+  type DecisionCorrectionMesure,
+  type RegistreCorrectionsMesure,
+  type ResultatCorrectionMesure,
+} from "./corrections-mesure.ts";
 import { empreinteContenuNotant } from "./empreinte.ts";
 import { reduireEtats } from "./grille.ts";
 import type {
@@ -38,7 +46,8 @@ export type MotifArbitrage =
   | "desaccord"
   | "corrections_divergentes"
   | "paraphrase_seule"
-  | "confirmation_absence_manquante";
+  | "confirmation_absence_manquante"
+  | "correction_mesure_refusee";
 
 export type StatutPromu = "verifie" | "rejete" | "non_evaluable";
 
@@ -52,11 +61,25 @@ export interface IssuePromouvoir {
 export interface IssueArbitrage {
   readonly sort: "arbitrage";
   readonly motif: MotifArbitrage;
+  /** Motif du refus, sur `correction_mesure_refusee` seulement : §4 l'exige dans l'arbitrage. */
+  readonly motif_refus?: string;
+}
+
+/** Ce qu'il faut pour rapporter une demande de correction de thème restée sans décision. */
+export interface DemandeEnAttente {
+  readonly mesure_id: string;
+  readonly chemin: string;
+  readonly valeur_demandee: string;
+  /** Horodatage de la décision d'annotation qui porte la demande. */
+  readonly depuis: string;
+  readonly anciennete_jours: number;
 }
 
 export interface IssueAttente {
   readonly sort: "attente";
   readonly motif: MotifAttente;
+  /** Présent sur `correction_mesure_en_attente` seulement. */
+  readonly demande?: DemandeEnAttente;
 }
 
 export type Issue = IssuePromouvoir | IssueArbitrage | IssueAttente;
@@ -68,6 +91,12 @@ export interface Dossier {
   readonly lot_nature: NatureLot;
   /** Décisions actives, une par annotateur. */
   readonly decisions: readonly EntreeDecision[];
+  /**
+   * Registre des corrections de thème, **lu par l'appelant**. Il est passé et non chargé :
+   * `evaluerPromotion` n'accède jamais au disque. Un registre vide est un registre sans
+   * décision, donc des demandes en attente — jamais des demandes refusées.
+   */
+  readonly registre_corrections_mesure: RegistreCorrectionsMesure;
 }
 
 export interface OptionsPromotion {
@@ -77,7 +106,7 @@ export interface OptionsPromotion {
 }
 
 export function evaluerPromotion(dossier: Dossier, options: OptionsPromotion): Issue {
-  const barrage = controlerPrealables(dossier);
+  const barrage = controlerPrealables(dossier, options);
   if (barrage !== null) return barrage;
 
   const [premiere, seconde] = dossier.decisions as [EntreeDecision, EntreeDecision];
@@ -88,7 +117,7 @@ export function evaluerPromotion(dossier: Dossier, options: OptionsPromotion): I
   return resoudre(dossier, premiere, seconde, options);
 }
 
-function controlerPrealables(dossier: Dossier): Issue | null {
+function controlerPrealables(dossier: Dossier, options: OptionsPromotion): Issue | null {
   if (dossier.lot_nature === "entrainement") return { sort: "attente", motif: "lot_entrainement" };
   if (dossier.item.statut_contestation !== "aucune") {
     return { sort: "attente", motif: "item_conteste" };
@@ -96,10 +125,7 @@ function controlerPrealables(dossier: Dossier): Issue | null {
   if (!deuxAnnotateursDistincts(dossier.decisions)) {
     return { sort: "attente", motif: "decisions_insuffisantes" };
   }
-  if (correctionDeMesureEnAttente(dossier)) {
-    return { sort: "attente", motif: "correction_mesure_en_attente" };
-  }
-  return null;
+  return issueDesCorrectionsDeMesure(dossier, options);
 }
 
 function deuxAnnotateursDistincts(decisions: readonly EntreeDecision[]): boolean {
@@ -117,24 +143,78 @@ function memeVersionJugee(premiere: EntreeDecision, seconde: EntreeDecision): bo
 
 /**
  * Le thème appartient à la mesure, référent partagé par plusieurs candidats. Une correction de
- * thème est donc une demande adressée au référentiel, pas une modification de l'item : tant que
- * la mesure ne porte pas le thème demandé, l'item attend. Une fois la mesure corrigée par la
- * commande dédiée, l'item est promu sans revalidation — la correction est ce que l'annotateur
- * demandait.
+ * thème est donc une demande adressée au référentiel, pas une modification de l'item : elle est
+ * tranchée par l'auteur, dans un registre publié, et c'est cette décision — ou son absence —
+ * qui dit le sort de l'item (§4, « Correction de thème »).
+ *
+ * L'ordre des issues est celui de la gravité : une incohérence du registre arrête tout, un refus
+ * l'emporte sur une attente, et une demande sans décision laisse l'item en attente aussi
+ * longtemps qu'il le faut — l'écoulement du temps ne vaut jamais refus.
  */
-function correctionDeMesureEnAttente(dossier: Dossier): boolean {
+function issueDesCorrectionsDeMesure(dossier: Dossier, options: OptionsPromotion): Issue | null {
+  const examens = examinerCorrectionsDeMesure(dossier);
+
+  const incoherente = examens.find((examen) => examen.verdict === "acceptee_sans_mesure_modifiee");
+  if (incoherente !== undefined) {
+    throw new CorrectionMesureIncoherente(dossier.mesure, incoherente.entree as DecisionCorrectionMesure);
+  }
+
+  const refusee = examens.find((examen) => examen.verdict === "refusee");
+  if (refusee !== undefined) return arbitrageDeRefus(refusee);
+
+  const absente = examens.find((examen) => examen.verdict === "absente");
+  if (absente !== undefined) return attenteDeDemande(absente, dossier.mesure, options);
+
+  return null;
+}
+
+interface ExamenMesure extends ResultatCorrectionMesure {
+  readonly correction: Correction;
+  readonly decision: EntreeDecision;
+}
+
+function examinerCorrectionsDeMesure(dossier: Dossier): readonly ExamenMesure[] {
+  const examens: ExamenMesure[] = [];
   for (const decision of dossier.decisions) {
     for (const correction of decision.corrections) {
       if (correction.cible !== "mesure") continue;
-      if (!correctionDeMesureSatisfaite(correction, dossier.mesure)) return true;
+      const resultat = decisionApplicable(dossier.registre_corrections_mesure, correction, dossier.mesure);
+      examens.push({ ...resultat, correction, decision });
     }
   }
-  return false;
+  return examens;
 }
 
-function correctionDeMesureSatisfaite(correction: Correction, mesure: Mesure): boolean {
-  if (correction.chemin !== "/theme") return false;
-  return mesure.theme === correction.nouvelle_valeur;
+function arbitrageDeRefus(examen: ExamenMesure): IssueArbitrage {
+  const entree = examen.entree as DecisionCorrectionMesure;
+  return {
+    sort: "arbitrage",
+    motif: "correction_mesure_refusee",
+    motif_refus: entree.motif as string,
+  };
+}
+
+function attenteDeDemande(
+  examen: ExamenMesure,
+  mesure: Mesure,
+  options: OptionsPromotion,
+): IssueAttente {
+  return {
+    sort: "attente",
+    motif: "correction_mesure_en_attente",
+    demande: {
+      mesure_id: mesure.id,
+      chemin: examen.correction.chemin,
+      valeur_demandee: pourAffichage(examen.correction.nouvelle_valeur),
+      depuis: examen.decision.horodatage,
+      anciennete_jours: ancienneteEnJours(examen.decision.horodatage, options.horodatage),
+    },
+  };
+}
+
+function pourAffichage(valeur: unknown): string {
+  if (typeof valeur === "string") return valeur;
+  return JSON.stringify(valeur);
 }
 
 /* ----------------------------------------------- résolution des deux décisions */
