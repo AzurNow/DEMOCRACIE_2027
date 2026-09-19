@@ -16,15 +16,9 @@
  */
 
 import { urlSource } from "./api.ts";
+import { decouperAuxOffsets } from "../domaine/decoupage.ts";
+import { analyserVtt, horodatageDebut } from "../domaine/webvtt.ts";
 import type { SourceAffichee, VueItem } from "./types.ts";
-
-export interface Cue {
-  readonly debut: number;
-  readonly fin: number;
-  readonly texte: string;
-  /** Offset du premier caractère de ce cue dans le texte canonique dérivé. */
-  readonly offset: number;
-}
 
 export function rendreSource(vue: VueItem, source: SourceAffichee): HTMLElement {
   const conteneur = document.createElement("div");
@@ -64,14 +58,32 @@ function rendreMedia(adresse: string, source: SourceAffichee): HTMLElement {
   lecteur.preload = "metadata";
   lecteur.src = adresse;
 
-  const cues = source.transcription === null ? [] : parserVtt(source.transcription);
-  const depart = secondesPourOffset(cues, source.offsets?.debut ?? null);
+  const depart = calculerDepart(source);
   if (depart !== null) {
     lecteur.addEventListener("loadedmetadata", () => {
       lecteur.currentTime = depart;
     });
   }
   return lecteur;
+}
+
+/**
+ * Horodatage de départ du lecteur, dérivé de la transcription et de l'offset de la citation.
+ *
+ * Un désaccord entre les deux (offset que la transcription ne couvre pas) ne doit pas priver
+ * l'annotateur du surlignage — qui reste correct, lui, puisqu'il vient directement du texte
+ * canonique déjà servi — pour la seule perte d'un positionnement automatique du lecteur. Ce cas
+ * ne devrait jamais survenir tant que `.vtt` et texte canonique restent synchronisés ; s'il
+ * survient, l'anomalie est journalisée en console plutôt qu'ignorée en silence.
+ */
+function calculerDepart(source: SourceAffichee): number | null {
+  if (source.transcription === null || source.offsets === null) return null;
+  try {
+    return horodatageDebut(analyserVtt(source.transcription), source.offsets.debut);
+  } catch (erreur) {
+    console.error("Positionnement du lecteur impossible :", erreur);
+    return null;
+  }
 }
 
 function rendreTexte(source: SourceAffichee): HTMLElement {
@@ -83,10 +95,9 @@ function rendreTexte(source: SourceAffichee): HTMLElement {
     return zone;
   }
 
-  const caracteres = [...source.texte];
-  const offsets = source.offsets;
-  if (offsets === null) {
-    zone.textContent = source.texte;
+  const decoupage = decouperAuxOffsets(source.texte, source.offsets);
+  if (decoupage.surlignage === "absent") {
+    zone.textContent = decoupage.texte;
     zone.prepend(
       avertissement(
         "Aucun offset n'accompagne cette citation : le texte est affiché sans surlignage. " +
@@ -97,9 +108,9 @@ function rendreTexte(source: SourceAffichee): HTMLElement {
   }
 
   zone.append(
-    document.createTextNode(caracteres.slice(0, offsets.debut).join("")),
-    marque(caracteres.slice(offsets.debut, offsets.fin).join("")),
-    document.createTextNode(caracteres.slice(offsets.fin).join("")),
+    document.createTextNode(decoupage.avant),
+    marque(decoupage.citation),
+    document.createTextNode(decoupage.apres),
   );
   return zone;
 }
@@ -122,51 +133,5 @@ function etatDe(vue: VueItem, source: SourceAffichee) {
   if (source.cle === "assertion") return vue.item.assertion;
   if (source.cle === "anterieur") return vue.item.obsolescence?.etat_anterieur ?? null;
   if (source.cle === "posterieur") return vue.item.obsolescence?.etat_posterieur ?? null;
-  return null;
-}
-
-/* ----------------------------------------------------------------- WebVTT */
-
-/**
- * Analyse d'un WebVTT, avec l'offset de chaque cue dans le texte canonique dérivé — les textes
- * des cues joints par un saut de ligne, exactement comme le fixe `docs/CONTRATS.md` §2. C'est
- * cette correspondance qui permet de placer le lecteur sur la citation sans que l'item ait à
- * stocker un horodatage par citation.
- */
-export function parserVtt(contenu: string): readonly Cue[] {
-  const cues: Cue[] = [];
-  let offset = 0;
-  for (const bloc of contenu.replace(/\r\n/g, "\n").split("\n\n")) {
-    const lignes = bloc.split("\n").filter((ligne) => ligne.trim().length > 0);
-    const indexTemps = lignes.findIndex((ligne) => ligne.includes("-->"));
-    if (indexTemps < 0) continue;
-    const bornes = (lignes[indexTemps] as string).split("-->");
-    const texte = lignes.slice(indexTemps + 1).join("\n");
-    cues.push({
-      debut: secondes(bornes[0] as string),
-      fin: secondes(bornes[1] as string),
-      texte,
-      offset,
-    });
-    offset += [...texte].length + 1; // +1 pour le saut de ligne de jonction
-  }
-  return cues;
-}
-
-export function secondes(horodatage: string): number {
-  const parties = horodatage.trim().split(":").map(Number);
-  if (parties.length === 3) {
-    return (parties[0] as number) * 3600 + (parties[1] as number) * 60 + (parties[2] as number);
-  }
-  if (parties.length === 2) return (parties[0] as number) * 60 + (parties[1] as number);
-  return parties[0] ?? 0;
-}
-
-export function secondesPourOffset(cues: readonly Cue[], offset: number | null): number | null {
-  if (offset === null) return null;
-  for (let index = cues.length - 1; index >= 0; index -= 1) {
-    const cue = cues[index] as Cue;
-    if (offset >= cue.offset) return cue.debut;
-  }
   return null;
 }

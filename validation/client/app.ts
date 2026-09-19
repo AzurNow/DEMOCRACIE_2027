@@ -9,6 +9,7 @@
 
 import { api, urlSource } from "./api.ts";
 import { champsEditables, corrections, type ChampEditable } from "./edition.ts";
+import { CLES_GRILLE } from "../domaine/grille.ts";
 import { rendreSource } from "./source.ts";
 import type {
   Brouillon,
@@ -588,17 +589,14 @@ function grillesSoumises(vue: VueItem): Record<string, unknown> {
   };
 }
 
-/** Les cinq clés sont toujours envoyées ; une question sans objet vaut `null`, jamais `false`. */
+/**
+ * Les clés de `CLES_GRILLE` sont toujours envoyées ; une question sans objet vaut `null`,
+ * jamais `false`. La liste vient de `domaine/grille.ts`, source unique de vérité — jamais
+ * recopiée ici, pour qu'une clé qui y serait ajoutée se répercute sans toucher à ce fichier.
+ */
 function grilleComplete(prefixe: string | null): Record<string, boolean | null> {
-  const cles = [
-    "citation_fidele",
-    "paraphrase_exacte",
-    "position_univoque",
-    "theme_correct",
-    "quantification_correcte",
-  ];
   const grille: Record<string, boolean | null> = {};
-  for (const cle of cles) {
+  for (const cle of CLES_GRILLE) {
     const complete = prefixe === null ? cle : `${prefixe}.${cle}`;
     grille[cle] = etat.reponses.get(complete) ?? null;
   }
