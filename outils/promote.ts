@@ -18,11 +18,14 @@ import { analyserArguments, drapeau, texte } from "./arguments.ts";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
+import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
 import { rejouer, type EtatAnnotateur } from "../validation/domaine/journal.ts";
+import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
 import { evaluerPromotion, type Issue } from "../validation/domaine/promotion.ts";
 import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
+import { lireRegistre } from "../validation/io/mesures-fichier.ts";
 import { chargerStaging, mesureDe, type Staging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
@@ -32,6 +35,7 @@ interface Options {
   readonly staging: string;
   readonly lots: string;
   readonly decisions: string;
+  readonly mesures: string;
   readonly data: string;
   readonly arbitrage: string;
 }
@@ -51,6 +55,7 @@ function lireOptions(): Options {
     staging: texte(table, "staging", resolve(racine, "staging")),
     lots: texte(table, "lots", resolve(racine, "validation/lots")),
     decisions: texte(table, "decisions", resolve(racine, "validation/decisions")),
+    mesures: texte(table, "mesures", resolve(racine, "validation/mesures")),
     data: texte(table, "data", resolve(racine, "data/items")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
   };
@@ -74,34 +79,50 @@ function decisionsActives(etats: ReadonlyMap<string, EtatAnnotateur>, item_id: s
   return actives;
 }
 
+interface Contexte {
+  readonly commit: string;
+  readonly horodatage: string;
+  readonly registre: RegistreCorrectionsMesure;
+}
+
+/**
+ * Un lot n'est évalué que sur les items qu'il juge encore : ceux qu'aucun lot de réannotation
+ * postérieur ne reprend (§4, supersession). Le lot d'origine reste lu, publié et diagnostiqué ;
+ * ses décisions ne comptent simplement plus pour les items rejugés.
+ */
 function evaluerLot(
-  lot: Lot,
+  effectif: LotEffectif,
   staging: Staging,
   options: Options,
-  contexte: { commit: string; horodatage: string },
+  contexte: Contexte,
 ): readonly Verdict[] {
-  const etats = etatsDuLot(options.decisions, lot);
+  const etats = etatsDuLot(options.decisions, effectif.lot);
   const verdicts: Verdict[] = [];
 
-  for (const reference of lot.items) {
+  for (const reference of effectif.items) {
     const item = staging.items.get(reference.item_id);
     if (item === undefined) continue;
     const issue = evaluerPromotion(
       {
         item,
         mesure: mesureDe(staging, item),
-        lot_id: lot.lot_id,
-        lot_nature: lot.nature,
+        lot_id: effectif.lot.lot_id,
+        lot_nature: effectif.lot.nature,
         decisions: decisionsActives(etats, item.id),
+        registre_corrections_mesure: contexte.registre,
       },
       contexte,
     );
-    verdicts.push({ lot_id: lot.lot_id, item, issue });
+    verdicts.push({ lot_id: effectif.lot.lot_id, item, issue });
   }
   return verdicts;
 }
 
-function imprimerRapport(verdicts: readonly Verdict[], lots: readonly Lot[], options: Options): void {
+function imprimerRapport(
+  verdicts: readonly Verdict[],
+  effectifs: readonly LotEffectif[],
+  options: Options,
+): void {
   const promus = verdicts.filter((verdict) => verdict.issue.sort === "promouvoir");
   const arbitrages = verdicts.filter((verdict) => verdict.issue.sort === "arbitrage");
   const attentes = verdicts.filter((verdict) => verdict.issue.sort === "attente");
@@ -116,7 +137,7 @@ function imprimerRapport(verdicts: readonly Verdict[], lots: readonly Lot[], opt
   process.stdout.write(`\nVers l'arbitrage : ${arbitrages.length}\n`);
   for (const verdict of arbitrages) {
     const issue = verdict.issue as Extract<Issue, { sort: "arbitrage" }>;
-    process.stdout.write(`  ${verdict.item.id}  ${issue.motif}  [${verdict.lot_id}]\n`);
+    process.stdout.write(`  ${verdict.item.id}  ${issue.motif}${motifDuRefus(issue)}  [${verdict.lot_id}]\n`);
   }
 
   process.stdout.write(`\nEn attente : ${attentes.length}\n`);
@@ -129,7 +150,54 @@ function imprimerRapport(verdicts: readonly Verdict[], lots: readonly Lot[], opt
     process.stdout.write(`  ${motif} : ${nombre}\n`);
   }
 
-  imprimerNonEvaluables(lots, options);
+  imprimerDemandesDeCorrection(attentes);
+  imprimerSupersessions(effectifs);
+  imprimerNonEvaluables(
+    effectifs.map((effectif) => effectif.lot),
+    options,
+  );
+}
+
+/** §4 : « Une demande refusée envoie l'item en arbitrage, avec le motif du refus. » */
+function motifDuRefus(issue: Extract<Issue, { sort: "arbitrage" }>): string {
+  if (issue.motif_refus === undefined) return "";
+  return ` — ${issue.motif_refus}`;
+}
+
+/**
+ * §4 : les demandes de correction de thème sans décision sont rapportées avec leur ancienneté,
+ * **à part** du reste. L'écoulement du temps ne vaut jamais refus : l'âge est publié pour que
+ * l'auteur tranche, jamais comparé à un délai au terme duquel la demande expirerait.
+ */
+function imprimerDemandesDeCorrection(attentes: readonly Verdict[]): void {
+  const demandes = attentes.filter(
+    (verdict) => (verdict.issue as Extract<Issue, { sort: "attente" }>).demande !== undefined,
+  );
+  process.stdout.write(`\nCorrections de mesure sans décision au registre : ${demandes.length}\n`);
+  for (const verdict of demandes) {
+    const issue = verdict.issue as Extract<Issue, { sort: "attente" }>;
+    const demande = issue.demande as NonNullable<typeof issue.demande>;
+    process.stdout.write(
+      `  ${verdict.item.id}  mesure ${demande.mesure_id}  ${demande.chemin} → ` +
+        `${demande.valeur_demandee}  ${demande.anciennete_jours} jour(s)  [${verdict.lot_id}]\n`,
+    );
+  }
+}
+
+/**
+ * Le lot supersédé reste publié et son kappa reste calculé : il ne compte simplement plus pour
+ * le §12. La distinction est portée par la donnée `supersede_par`, pas par un tri à l'affichage.
+ */
+function imprimerSupersessions(effectifs: readonly LotEffectif[]): void {
+  const supersedes = effectifs.filter((effectif) => effectif.supersede_par !== null);
+  if (supersedes.length === 0) return;
+  process.stdout.write("\nSupersession (§4) :\n");
+  for (const effectif of supersedes) {
+    process.stdout.write(
+      `  ${effectif.lot.lot_id} supersédé par ${effectif.supersede_par} — ` +
+        `${effectif.items.length} item(s) encore jugés par lui\n`,
+    );
+  }
 }
 
 /**
@@ -200,11 +268,16 @@ function principal(): void {
   }
 
   const staging = chargerStaging(options.staging);
-  const lots = lireLots(options.lots);
-  const contexte = { commit: commitCourant(options.racine), horodatage: instantLocal(new Date()) };
-  const verdicts = lots.flatMap((lot) => evaluerLot(lot, staging, options, contexte));
+  // Le registre est **lu**, jamais écrit ici : seul `pnpm mesures --ecrire` y ajoute une décision.
+  const contexte = {
+    commit: commitCourant(options.racine),
+    horodatage: instantLocal(new Date()),
+    registre: lireRegistre(options.mesures),
+  };
+  const effectifs = lotsApresSupersession(lireLots(options.lots));
+  const verdicts = effectifs.flatMap((effectif) => evaluerLot(effectif, staging, options, contexte));
 
-  imprimerRapport(verdicts, lots, options);
+  imprimerRapport(verdicts, effectifs, options);
 
   if (!options.ecrire) {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire pour écrire dans data/.\n");
@@ -213,4 +286,12 @@ function principal(): void {
   ecrire(verdicts, options);
 }
 
-principal();
+try {
+  principal();
+} catch (erreur) {
+  // §4 : « une acceptation enregistrée sans mesure modifiée est une erreur bloquante ». Elle
+  // arrête la commande plutôt que de promouvoir un item validé contre un thème inexistant.
+  if (!(erreur instanceof CorrectionMesureIncoherente)) throw erreur;
+  process.stderr.write(`\n${erreur.message}\n`);
+  process.exitCode = 1;
+}

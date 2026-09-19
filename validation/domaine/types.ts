@@ -213,4 +213,9 @@ export interface Lot {
   readonly items: readonly ItemDuLot[];
   /** Lot d'origine, pour une réannotation après séance de calibration (§4). */
   readonly reannote?: string;
+  /**
+   * Date civile de la séance de calibration, `AAAA-MM-JJ`. Exigée pour un lot de nature
+   * `reannotation` : sans elle, le kappa du lot n'est pas interprétable (§4).
+   */
+  readonly date_calibration?: string;
 }
