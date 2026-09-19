@@ -13,6 +13,80 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-19 — Lot dette-validation : réannotation, registre des mesures, logique pure du client (`validation/domaine/`, `outils/`, `validation/client/`)
+
+### 1. Deux kappas coexistent pour un même lot, et rien ne choisit encore lequel compte — *haute*
+
+Le §4 dit : « le kappa retenu pour les critères de la section 12 est celui du lot de réannotation ».
+Depuis cette session, un lot peut être supersédé, donc deux kappas existent pour les mêmes items.
+`domaine/analyse-lot.ts:diagnostiquerLot()` les calcule tous les deux, volontairement, et **aucun
+code ne sélectionne le dernier maillon** : le dépôt n'évalue pas encore les critères du §12.
+
+**Pourquoi ça casse.** Le lot qui écrira les critères go/no-go lira la liste des lots et en tirera un
+kappa. S'il ne filtre pas sur `domaine/lot.ts:supersediteurDe(lots, lot_id) === null`, le kappa du
+lot supersédé — celui qui, précisément, était sous 0,80 et a motivé la réannotation — entre dans un
+critère de publication et dans les diagnostics publiés au titre du §9. Aucun test ne tombe : les
+deux kappas sont justes, c'est le choix entre eux qui est faux.
+
+**Ce qu'il faut faire.** Dans le lot go/no-go, filtrer sur `supersediteurDe(...) === null` et nulle
+part ailleurs, et ne jamais recalculer un kappa hors de `diagnostiquerLot`. Les données pour le
+faire existent désormais : `Lot.reannote`, `supersediteurDe`, `lotsApresSupersession`.
+
+### 2. La supersession repose sur un champ de manifeste que rien ne valide à l'écriture — *moyenne*
+
+`promote` ne déduit la chaîne de supersession que du champ `reannote` des manifestes de
+`validation/lots/`. Un lot de réannotation écrit à la main sans ce champ redonne deux jeux de
+décisions pour les mêmes items ; un `reannote` pointant un identifiant absent lève `LotIntrouvable`.
+
+**Pourquoi ça casse.** Le manifeste est immuable une fois écrit (`docs/CONTRATS.md` §4) : un champ
+oublié se répare en réécrivant un fichier censé ne jamais l'être. Le symptôme n'apparaît qu'au
+lancement de `promote`, longtemps après la séance d'annotation.
+
+**Ce qu'il faut faire.** Valider le champ à la lecture dans `validation/io/lots-fichier.ts:lireLot()`,
+en même temps que le schéma du registre du point 3 : un lot de nature `reannotation` sans `reannote`
+ni `date_calibration` est un manifeste invalide, pas un lot ordinaire.
+
+### 3. Le registre des corrections de mesure n'est gardé par aucun schéma — *moyenne*
+
+`validation/mesures/decisions.json` est publié au titre du §9, et sa forme n'est tenue que par
+`domaine/corrections-mesure.ts:validerEntreeRegistre()`, écrite à la main. Aucun des 45 exemples ne
+le concerne, `pnpm check` ne le regarde pas.
+
+**Pourquoi ça casse.** C'est exactement le défaut déjà relevé au point 5 de l'entrée du 2026-09-18
+pour `decision.schema.json` : un champ renommé ne fait échouer que la commande qui le lit. Deux
+objets publiés échappent maintenant à la validation de schéma, là où les neuf autres sont couverts.
+
+**Ce qu'il faut faire.** Un seul petit lot : `schema/decision-mesure.schema.json` et
+`decision.schema.json` enregistrés, leurs exemples au manifeste, `mesures-fichier.ts` validant
+contre le schéma. À faire avant le premier lot réel du 15 novembre.
+
+### 4. Un registre en tableau JSON se réécrit en entier à chaque ajout — *basse*
+
+« Ajout seul » est ici une propriété du module — `validation/io/mesures-fichier.ts` n'expose ni
+modification ni suppression — et non du format : ajouter une entrée réécrit le fichier entier.
+Le journal des annotateurs, lui, est en `.jsonl` et sait détecter une écriture interrompue.
+
+**Pourquoi ça casse.** Une écriture interrompue tronque le registre entier, pas sa dernière ligne.
+Le fichier est alors illisible, ce que `lireRegistre` signale — donc bruyant, pas silencieux — mais
+les décisions déjà tranchées sont perdues et ne se retrouvent que dans l'historique Git.
+
+**Ce qu'il faut faire.** Basculer en `.jsonl` si le registre dépasse quelques dizaines d'entrées.
+Le nom `decisions.json` vient d'une décision de l'auteur du 2026-09-18 : le changer est sa décision.
+
+### 5. Le champ `registre_corrections_mesure` est obligatoire, mais un tableau vide est accepté — *basse*
+
+`Dossier.registre_corrections_mesure` est requis par le type, ce qui force tout futur appelant
+d'`evaluerPromotion` à le fournir. Rien ne force à le **remplir**.
+
+**Pourquoi ça casse.** Un appelant qui passerait `[]` par facilité transformerait toutes les
+demandes refusées en demandes en attente : des items partiraient en attente au lieu de l'arbitrage,
+sans qu'aucun test ne tombe. Visible seulement en comparant le rapport de `promote` au registre.
+
+**Ce qu'il faut faire.** Quand un second appelant apparaîtra, lui faire charger le registre par la
+même fonction que `promote`, plutôt que de construire un `Dossier` à la main.
+
+---
+
 ## 2026-09-18 — Trois lots en parallèle : outillage, analyse, questions (`outils/schemas/`, `eslint.config.js`, `analysis/`, `pipeline/questions/`)
 
 ### 1. Les graines de l'analyse sont textuelles, celles du run sont des entiers — *haute*
@@ -159,7 +233,12 @@ sur un titre contenant une barre. À faire au prochain passage sur le générate
 
 ## 2026-09-18 — Décisions de validation reportées dans le protocole (`docs/PROTOCOLE.md` v0.2)
 
-### 1. Le protocole promet trois comportements que le code n'a pas — *moyenne*
+### ~~1. Le protocole promet trois comportements que le code n'a pas~~ — réglé le 2026-09-19 par `--reannote`, la supersession dans `promote` et `pnpm mesures`
+
+*Correction du 2026-09-19 : ce point en annonçait trois, il n'y en avait que deux. Le suivi du taux
+de « non évaluable » par annotateur était **déjà implémenté** dans `outils/promote.ts:imprimerNonEvaluables()`,
+avec le commentaire qui cite le §4 ; il lui manquait seulement un test, désormais écrit. Une entrée
+de dette qui décrit un manque inexistant use la confiance qu'on accorde aux autres.*
 
 Le §4 décrit désormais la réannotation par lot supersédant (« Réannotation »), le registre des
 corrections de mesure lu par `promote` (« Correction de thème ») et le suivi du taux de « non
@@ -180,7 +259,7 @@ réannoter un lot.
 
 ## 2026-09-17 — Interface locale de validation humaine (`validation/`, `outils/`, `tests/`)
 
-### 1. Le client n'est couvert par aucun test, et il redéclare des constantes du domaine — *moyenne*
+### ~~1. Le client n'est couvert par aucun test, et il redéclare des constantes du domaine~~ — réglé le 2026-09-19 par l'extraction vers `domaine/decoupage.ts` et `domaine/webvtt.ts`, l'import de `CLES_GRILLE`, et `docs/CONTROLE-MANUEL.md` pour ce que les tests ne verront jamais
 
 Les 8 900 lignes livrées sont testées côté domaine, IO et routes (120 tests), mais rien n'exerce
 `validation/client/`. Deux points précis : `app.ts:grilleComplete()` réécrit à la main la liste des
@@ -204,7 +283,7 @@ client (découpage aux offsets, parseur WebVTT) et la tester comme `verbatim.ts`
 Ce que les tests ne verront pas (focus clavier, page du PDF, ordre des boutons) fait l'objet d'une
 liste de contrôle manuelle versionnée, courte, à dérouler avant la campagne d'annotation.*
 
-### 2. Une correction de thème peut retenir un item indéfiniment — *moyenne*
+### ~~2. Une correction de thème peut retenir un item indéfiniment~~ — réglé le 2026-09-19 par `pnpm mesures` et le registre lu par `promote`, un refus étant désormais une décision tracée
 
 `domaine/promotion.ts:correctionDeMesureEnAttente()` retient tout item dont une décision demande un
 thème que la mesure ne porte pas encore. La commande qui appliquerait la correction au référentiel,
@@ -230,7 +309,7 @@ promotion ; acceptée sans mesure modifiée → erreur bloquante ; refusée → 
 `correction_mesure_refusee` ; absente → attente, listée à part dans le rapport avec son âge en
 jours. Jamais de refus implicite au bout de N jours.
 
-### 2 bis. Rien ne relie un lot de réannotation à son lot d'origine — *moyenne*
+### ~~2 bis. Rien ne relie un lot de réannotation à son lot d'origine~~ — réglé le 2026-09-19 par `--reannote` et `--calibration`, qui remplissent `Lot.reannote` et `Lot.date_calibration`, et par `lotsApresSupersession` dans `promote`
 
 Relevé le 2026-09-18. `Lot.reannote` est déclaré dans `domaine/types.ts` et affiché par le client,
 mais aucun code ne le remplit : `pnpm lots` n'a pas de drapeau pour le poser. Le §12 fait du kappa du

@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-09-18",
+  "date_maj": "2026-09-19",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -119,6 +119,17 @@
         "Toute autre combinaison ; chaque point est une ligne dans un prédicat nommé."
       ],
       "recommandation": "Option 1 sur les sept points, à écrire avant le run pilote du 22 novembre : après, tout changement réduit les questions communes de la tendance §8."
+    },
+    {
+      "id": "D8",
+      "statut": "en_attente",
+      "question": "Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.",
+      "contexte": "(1) Les annotateurs d'un lot de réannotation sont hérités du lot d'origine, et --annotateurs est refusé avec --reannote. Le §4 ne dit rien. Deux kappas portés par des paires différentes ne se remplacent pas l'un l'autre, or le §4 fait remplacer. (2) Le registre est indexé par mesure et thème, donc une demande de correction visant un autre chemin que /theme ne pourrait jamais être tranchée et retiendrait l'item indéfiniment ; le cas est aujourd'hui inatteignable car l'interface refuse ces chemins, mais le §4 pourrait les ouvrir. (3) L'identifiant d'un lot de réannotation est dérivé (lot-003 puis lot-003-r1), et pnpm mesures prend par défaut la date civile du jour.",
+      "options": [
+        "(1) Garder l'héritage des annotateurs : faire rejuger un lot par une autre paire deviendrait un amendement au §4, qui devrait dire ce que devient le kappa comparé. (2) Si le §4 ouvre un jour la correction d'autre chose que le thème, élargir la clé du registre dans le même amendement. (3) Entériner les deux conventions dans le protocole ou schema/README.md.",
+        "Ouvrir dès maintenant la réannotation par une autre paire d'annotateurs, ce qui suppose de définir le kappa retenu."
+      ],
+      "recommandation": "Option 1 sur les trois points. Aucun ne bloque le 15 novembre, mais (1) doit être écrit avant qu'un annotateur ne quitte le projet en cours de campagne."
     }
   ],
   "lots": [
@@ -159,7 +170,7 @@
       "temps_auteur_h": 0,
       "depend_de": [],
       "decisions": [],
-      "note": "120 tests verts sur domaine, IO et routes. Le client web n'a aucun test de comportement. Jamais exercé sur un vrai staging/."
+      "note": "Fusionnée dans main par la PR #1. Le client n'a toujours aucun test de comportement, par décision : la logique pure en est sortie et docs/CONTROLE-MANUEL.md couvre le reste, à dérouler avant la campagne. Jamais exercée sur un vrai staging."
     },
     {
       "id": "feuille-de-route",
@@ -203,13 +214,15 @@
       "id": "dette-validation",
       "titre": "Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/",
       "jalon": "J3",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "opus pour promote, sonnet pour le reste",
       "taille": "M",
       "temps_auteur_h": 1,
       "depend_de": [],
-      "decisions": [],
-      "note": "Trois comportements que le protocole v0.2 promet et que le code n'a pas (DETTE 2026-09-18). À finir avant le premier lot réel du 15 novembre."
+      "decisions": [
+        "D8"
+      ],
+      "note": "Livré le 2026-09-19 : --reannote et --calibration sur pnpm lots, supersession dans promote, pnpm mesures et le registre validation/mesures/decisions.json, logique pure du client extraite vers domaine/ et testée sans DOM, docs/CONTROLE-MANUEL.md. 61 tests neufs. Les trois commandes n'ont jamais été exercées sur un vrai staging. Reste : sélectionner le kappa du §12 sur le dernier maillon (DETTE point 1, haute) et enregistrer les deux schémas manquants (point 3)."
     },
     {
       "id": "perimetre-prompts",
@@ -377,6 +390,7 @@
     "README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.",
     "CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.",
     "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.",
-    "schema/ contient onze fichiers, le README et le manifeste en connaissent dix : decision.schema.json n'est ni enregistré ni exemplifié."
+    "schema/ contient onze fichiers, le README et le manifeste en connaissent dix : decision.schema.json n'est ni enregistré ni exemplifié.",
+    "Le suivi du taux de « non évaluable » par annotateur était donné pour manquant par docs/DETTE.md alors qu'il était implémenté depuis le 2026-09-17 : entrée corrigée le 2026-09-19."
   ]
 }

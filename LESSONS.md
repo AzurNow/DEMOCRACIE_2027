@@ -182,3 +182,26 @@ séparables » ; il fallait dire quels fichiers.
 l'intérieur du dépôt, et ESLint y a signalé quatre fonctions déjà découpées, en double, depuis des
 copies périmées. Le répertoire est désormais ignoré par ESLint et par Git ; la surprise aurait été
 plus coûteuse en CI, où le répertoire n'existe pas et où l'erreur n'aurait jamais été reproduite.
+
+**Un garde-fou qu'on n'a pas vu attraper quelque chose ne garde rien.** L'extraction de la logique
+pure du client l'a fait dépendre de `domaine/`, avec ce risque : un futur module de `domaine/`
+important `node:*` casserait l'interface sans qu'aucun test ne le voie. J'ai ajouté la vérification
+de types du client à `pnpm check`, puis j'ai délibérément glissé un `import { readFileSync } from
+"node:fs"` dans `domaine/grille.ts` pour la voir tomber. Elle ne tombait pas : le client héritait des
+types Node par `@types/node`. Il a fallu lui retirer (`"types": []`) pour que le garde-fou garde.
+Même leçon que le test d'aveuglement, appliquée à l'outillage : écrire le garde-fou et le voir passer
+au vert ne prouve rien.
+
+**Durcir un parseur, c'est distinguer l'entrée malformée de l'entrée légale qu'on n'avait pas vue.**
+`secondesDeHorodatage` rendait `NaN` sur « abc », `0` sur une chaîne vide et `1` sur « 1:2:3:4 » : un
+lecteur positionné à la seconde zéro ferait vérifier à l'annotateur une autre portion de
+l'enregistrement. En le durcissant, il refusait du même coup `00:00:08.000 align:start`, qui est du
+WebVTT parfaitement légal. Les réglages de cue sont maintenant écartés avant l'analyse, et
+l'horodatage nu refuse tout le reste. Un durcissement sans cette seconde moitié transforme un bug
+silencieux en écran cassé sur des fichiers valides.
+
+**Vérifier qu'un sous-agent n'a pas affaibli une assertion se lit dans le diff, pas dans son
+rapport.** Le lot de réannotation changeait la signature de `Dossier`, donc `tests/promotion.test.ts`.
+Un `git diff` filtré sur les seules lignes contenant `expect` a montré en une commande qu'aucune
+attente n'avait bougé, seulement les appels. C'est deux secondes, et c'est la seule preuve que
+l'anti-pattern « un test rendu vert en affaiblissant son assertion » n'a pas eu lieu.
