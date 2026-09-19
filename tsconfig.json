@@ -24,6 +24,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["validation/domaine", "validation/io", "validation/serveur", "validation/fixtures", "outils", "tests"],
+  "include": ["analysis", "pipeline", "validation/domaine", "validation/io", "validation/serveur", "validation/fixtures", "outils", "tests"],
   "exclude": ["node_modules", "validation/client"]
 }

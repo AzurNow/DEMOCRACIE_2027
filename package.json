@@ -9,10 +9,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "tsc --noEmit -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json && eslint . && node --experimental-strip-types outils/schemas.ts",
+    "lint": "eslint .",
+    "schemas": "node --experimental-strip-types outils/schemas.ts",
     "test": "vitest run",
     "build:client": "tsc -p validation/client/tsconfig.json",
     "validate": "pnpm run build:client && node --experimental-strip-types validation/serveur/principal.ts",
+    "symmetry": "node --experimental-strip-types outils/symmetry.ts",
     "feuille-de-route": "node --experimental-strip-types outils/feuille-de-route.ts",
     "lots": "node --experimental-strip-types outils/lots.ts",
     "promote": "node --experimental-strip-types outils/promote.ts",
@@ -20,7 +23,12 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "eslint": "10.10.0",
+    "eslint-plugin-sonarjs": "4.2.1",
     "typescript": "^5.7.2",
+    "typescript-eslint": "8.70.0",
     "vitest": "^2.1.8"
   }
 }

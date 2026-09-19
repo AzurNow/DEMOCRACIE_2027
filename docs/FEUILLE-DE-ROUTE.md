@@ -71,6 +71,32 @@ Options :
 
 Lots portant cette décision : perimetre-prompts, protocole
 
+### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
+
+Le code d'analysis/ n'a rien tranché : chaque point est un paramètre explicite ou une lecture littérale du §8 signalée. Avant gel, chaque réponse est une révision de texte, pas un amendement. (1) Réponses tronquées dans les métriques primaires. (2) Dénominateur de la confirmation de prémisse : « items F et O » laisse muet un drapeau posé sur un item P. (3) Holm est exigé sur les effets de condition mais aucune valeur p n'y est définie. (4) Famille des formulations : trois paires ou deux contre le neutre. (5) « Exactitude moyenne de l'outil » dans la permutation : globale ou moyenne des candidats. (6) Exactitude des comparateurs : les lectures indéterminées restent au dénominateur, contrairement aux assistants.
+
+Options :
+
+1. (1) Inclure les tronquées et ajouter un quatrième recalcul de robustesse « hors tronquées ». (2) Garder le texte et interdire premisse_fausse sur un item P à l'engendrement. (3) Retirer Holm de cette famille, publier intervalles et qualificatif seulement. (4) Trois paires. (5) Globale. (6) Aligner sur les assistants.
+2. Toute autre combinaison, point par point ; chaque choix est une ligne de code et une phrase de protocole.
+
+**Recommandation :** Option 1 sur les six points. C'est la combinaison qui ajoute le moins de texte au §8 et ne fait disparaître aucun drapeau.
+
+Lots portant cette décision : analyse
+
+### D7 — Sept conventions du tirage que le protocole n'écrit pas, retenues au plus restrictif par le lot questions.
+
+(1) Item arbitré : le brief l'excluait, l'annexe E point 6 le réintègre si maintenu ou corrigé, et un exemple valide du schéma le contient. (2) Q-ORI sur un item O avant son changement : la prémisse est vraie, l'annexe B dit « non avec correction » sans distinguer. (3) Position conditionnelle face à Q-FER ou Q-NEG : le protocole ne dit rien, le code lève une erreur. (4) Quota de questions par strate candidat × thème × gabarit : aucun nombre dans le §5, paramètre obligatoire sans défaut. (5) Q-ATT et reprise 80 % : le §5 calcule le ratio par candidat, les Q-ATT n'en ont pas. (6) Date civile comparée à date_gel : minuit UTC retenu, minuit Paris serait l'alternative. (7) Gabarits dans pipeline/questions/gabarits.ts alors que la règle 6 et le schéma les attendent dans prompts/.
+
+Options :
+
+1. (1) Tirable si la dernière décision du panel vaut maintien ou correction. (2) Non avec correction si l'état postérieur est en vigueur, oui sinon, phrase ajoutée à l'annexe B. (3) Ni Q-FER ni Q-NEG pour une position conditionnelle, porté par la table des gabarits. (4) Quota fixé dans config/perimetre.yaml. (5) Même budget de reprise pour les Q-ATT, stratifiées par thème. (6) Minuit UTC, écrit dans schema/README.md. (7) Déplacement vers prompts/gabarits-1.0.0.json au lot perimetre-prompts.
+2. Toute autre combinaison ; chaque point est une ligne dans un prédicat nommé.
+
+**Recommandation :** Option 1 sur les sept points, à écrire avant le run pilote du 22 novembre : après, tout changement réduit les questions communes de la tendance §8.
+
+Lots portant cette décision : questions-tirage-symetrie
+
 ## Décisions tranchées
 
 Aucune décision tranchée.
@@ -90,9 +116,9 @@ flowchart LR
     lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T0"]:::T0
     lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T0"]:::T0
     lot_feuille_de_route["feuille-de-route<br/>Feuille de route générée depuis ce fichier<br/>T2"]:::T2
-    lot_outillage["outillage<br/>ajv sur les 45 exemples, ESLint à deux règles de complexité<br/>T0"]:::T0
-    lot_questions_tirage_symetrie["questions-tirage-symetrie<br/>Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers<br/>T0"]:::T0
-    lot_schemas["schemas<br/>Schémas JSON et 45 exemples<br/>T1"]:::T1
+    lot_outillage["outillage<br/>ajv sur les 45 exemples, ESLint à deux règles de complexité<br/>T3"]:::T3
+    lot_questions_tirage_symetrie["questions-tirage-symetrie<br/>Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers<br/>T2"]:::T2
+    lot_schemas["schemas<br/>Schémas JSON et 45 exemples<br/>T2"]:::T2
     lot_validation_interface["validation-interface<br/>Interface de validation humaine, pnpm lots, pnpm promote<br/>T3"]:::T3
   end
   subgraph jalon_J3["J3 · 15 nov. 2026"]
@@ -104,7 +130,7 @@ flowchart LR
     lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T0"]:::T0
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
-    lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T0"]:::T0
+    lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
   dec_D1{{"D1<br/>Brancher une intégration continue GitHub Actions qui exécute…"}}:::decision
@@ -112,6 +138,8 @@ flowchart LR
   dec_D3{{"D3<br/>Quels SDK d'API autoriser pour l'extraction, l'interrogation…"}}:::decision
   dec_D4{{"D4<br/>Comment offrir le formulaire public de contestation (§4, dro…"}}:::decision
   dec_D5{{"D5<br/>Quelle est la liste nominative des outils et des candidats d…"}}:::decision
+  dec_D6{{"D6<br/>Six précisions du §8 remontées par le lot analyse, à écrire …"}}:::decision
+  dec_D7{{"D7<br/>Sept conventions du tirage que le protocole n'écrit pas, ret…"}}:::decision
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
   lot_protocole --> lot_hors_code
@@ -129,6 +157,8 @@ flowchart LR
   dec_D4 --> lot_site
   dec_D5 --> lot_perimetre_prompts
   dec_D5 --> lot_protocole
+  dec_D6 --> lot_analyse
+  dec_D7 --> lot_questions_tirage_symetrie
   classDef T0 fill:#78716c,color:#ffffff,stroke:#44403c
   classDef T1 fill:#b45309,color:#ffffff,stroke:#78350f
   classDef T2 fill:#0369a1,color:#ffffff,stroke:#0c4a6e
@@ -147,15 +177,15 @@ flowchart LR
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T0 | bloqué par D2 | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T0 | bloqué par D3, perimetre-prompts | opus | L | 1 | collecte (informe), perimetre-prompts |
 | feuille-de-route | Feuille de route générée depuis ce fichier | J2 | T2 | débloqué | sonnet | S | 0.5 | — |
-| outillage | ajv sur les 45 exemples, ESLint à deux règles de complexité | J2 | T0 | débloqué | sonnet puis opus | M | 0.5 | — |
-| questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T0 | débloqué | opus | L | 2 | — |
-| schemas | Schémas JSON et 45 exemples | J2 | T1 | débloqué | fait | S | 0 | — |
+| outillage | ajv sur les 45 exemples, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
+| questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T2 | bloqué par D7 | opus | L | 2 | — |
+| schemas | Schémas JSON et 45 exemples | J2 | T2 | débloqué | fait | S | 0 | — |
 | validation-interface | Interface de validation humaine, pnpm lots, pnpm promote | J2 | T3 | atteint | fait | L | 0 | — |
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T0 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | interrogation | Appels API, fenêtre 48 h, trois relances, réponses brutes immuables, archive Zenodo | J4 | T0 | bloqué par D3, perimetre-prompts, questions-tirage-symetrie | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T0 | bloqué par D3, perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
-| analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T0 | débloqué | opus | L | 1 | — |
+| analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | bloqué par D6 | opus | L | 1 | — |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par D4, analyse | sonnet | M | 2 | analyse |
 
 ## Jalons
@@ -179,9 +209,9 @@ flowchart LR
 - collecte (T0)
 - extraction (T0)
 - feuille-de-route (T2)
-- outillage (T0)
-- questions-tirage-symetrie (T0)
-- schemas (T1)
+- outillage (T3)
+- questions-tirage-symetrie (T2)
+- schemas (T2)
 - validation-interface (T3)
 
 ### J3
@@ -196,7 +226,7 @@ flowchart LR
 
 ### J5
 
-- analyse (T0)
+- analyse (T2)
 - site (T0)
 
 ## Échelle de preuve
@@ -214,3 +244,4 @@ flowchart LR
 - README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.
 - CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.
 - L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.
+- schema/ contient onze fichiers, le README et le manifeste en connaissent dix : decision.schema.json n'est ni enregistré ni exemplifié.

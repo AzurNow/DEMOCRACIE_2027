@@ -11,3 +11,6 @@ validation/brouillons/
 # Décisions et brouillons du jeu de démonstration : des essais, pas des validations.
 validation/fixtures/decisions-demo/
 validation/fixtures/brouillons-demo/
+
+# Worktrees des sous-agents (Claude Code) : des copies de travail, jamais du contenu du dépôt.
+.claude/worktrees/
