@@ -1,0 +1,27 @@
+{
+  "id": "35VH20N8GAWV07492Q9V82KQ2P",
+  "journal_version": 1,
+  "type_entree": "decision",
+  "annotateur_id": "a1",
+  "lot_id": "lot-003",
+  "lot_nature": "reel",
+  "item_id": "DN65R6PPG2X7R5JQC42EJ5E6RH",
+  "item_version": 1,
+  "item_empreinte": "34ec2c187efef2b43a7e9f7f212db63e794524cc6d5077afb4b430edbfe3ee80",
+  "item_type": "P",
+  "decision": "corriger",
+  "reponses_grille": {
+    "citation_fidele": true,
+    "paraphrase_exacte": true,
+    "position_univoque": false,
+    "theme_correct": true,
+    "quantification_correcte": true
+  },
+  "corrections": [],
+  "commentaire": "La paraphrase confond deux mesures, mais rien n'est consigné ci-dessous.",
+  "horodatage": "2026-09-20T10:08:00+02:00",
+  "duree_affichage_ms": 51000,
+  "duree_active_ms": 47000,
+  "visite": 1,
+  "empreinte_ligne": "ced74baafe6b8d99181e87db0a01373a4d5975b7e6e2eabeddd51d3a565a1b2e"
+}

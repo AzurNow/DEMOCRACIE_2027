@@ -1,0 +1,27 @@
+{
+  "id": "DS3AR0RGXJVZ9CJD33M33YA35B",
+  "journal_version": 1,
+  "type_entree": "decision",
+  "annotateur_id": "a2",
+  "lot_id": "lot-003",
+  "lot_nature": "reel",
+  "item_id": "44FS7F25TMGDMFGS8KXM40X64D",
+  "item_version": 3,
+  "item_empreinte": "0ac5defa0aece70806910d44dc4438baa6ef336619d9e11fd874f50bd8c145f4",
+  "item_type": "O",
+  "decision": "accepter",
+  "reponses_grille": {
+    "citation_fidele": true,
+    "paraphrase_exacte": true,
+    "position_univoque": true,
+    "theme_correct": true,
+    "quantification_correcte": true
+  },
+  "corrections": [],
+  "commentaire": "La grille unique a été remplie au lieu de la grille par état.",
+  "horodatage": "2026-11-20T09:30:00+01:00",
+  "duree_affichage_ms": 61000,
+  "duree_active_ms": 55000,
+  "visite": 1,
+  "empreinte_ligne": "6a39e0c1e307f13387a65757b31c5ae98da726de5664f2a3bc9042f830464f42"
+}

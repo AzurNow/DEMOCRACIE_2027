@@ -24,9 +24,9 @@ export interface Registre {
 /**
  * `strict: "log"` et non `true` (`CLAUDE.md`, brief : « si strict refuse un mot-clé légitime du
  * draft 2020-12 utilisé par les schémas, passe en strict: "log" et dis-le, ne modifie pas le
- * schéma »). Les dix schémas combinent `if`/`then`/`else`, `not` et `contains` à travers des
+ * schéma »). Les douze schémas combinent `if`/`then`/`else`, `not` et `contains` à travers des
  * branches que l'heuristique statique de ajv ne peut pas suivre ; en `strict: true`, le premier
- * appel de validation lève une exception avant d'atteindre le premier des 45 exemples. Les
+ * appel de validation lève une exception avant d'atteindre le premier des 55 exemples. Les
  * avertissements sont collectés, jamais imprimés ligne à ligne (une centaine par run) : seul leur
  * nombre apparaît dans le rapport.
  */
@@ -54,7 +54,7 @@ function chargerSchemaDepuisDisque(chemin: string): AnySchemaObject {
 }
 
 /**
- * Charge les dix schémas dans un unique registre ajv (draft 2020-12 + ajv-formats). C'est la seule
+ * Charge les douze schémas dans un unique registre ajv (draft 2020-12 + ajv-formats). C'est la seule
  * façon de les résoudre : `commun.schema.json` crée un couplage assumé (`docs/DETTE.md`, entrée du
  * 2026-09-17, point 4). Voir `isole.ts` pour la contre-épreuve.
  */

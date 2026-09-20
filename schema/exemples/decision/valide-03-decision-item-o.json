@@ -1,0 +1,39 @@
+{
+  "id": "XQAQPDH4AFAXRHEM3E2MSH4DMD",
+  "journal_version": 1,
+  "type_entree": "decision",
+  "annotateur_id": "a2",
+  "lot_id": "lot-003",
+  "lot_nature": "reel",
+  "item_id": "ZSX9G8FGVSQE8Z5379AV4RRXG0",
+  "item_version": 3,
+  "item_empreinte": "15b1bdaee9cde9d74ec4b06d5998fdc1b8c042f3e586909fce8d1ac7518205a3",
+  "item_type": "O",
+  "decision": "accepter",
+  "reponses_par_etat": {
+    "anterieur": {
+      "citation_fidele": true,
+      "paraphrase_exacte": true,
+      "position_univoque": true,
+      "theme_correct": true,
+      "quantification_correcte": true
+    },
+    "posterieur": {
+      "citation_fidele": true,
+      "paraphrase_exacte": true,
+      "position_univoque": true,
+      "theme_correct": true,
+      "quantification_correcte": true
+    }
+  },
+  "questions_specifiques": {
+    "changement_explicite": true
+  },
+  "corrections": [],
+  "commentaire": null,
+  "horodatage": "2026-11-20T09:30:00+01:00",
+  "duree_affichage_ms": 61000,
+  "duree_active_ms": 55000,
+  "visite": 1,
+  "empreinte_ligne": "d7680df0a3349e192a71df5bc66198f3dc39f0d11d5d509e58e374f1ccaf9398"
+}

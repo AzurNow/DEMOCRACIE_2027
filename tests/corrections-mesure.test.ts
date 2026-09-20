@@ -21,11 +21,15 @@ import {
   ancienneteEnJours,
   CorrectionMesureIncoherente,
   decisionApplicable,
+  EntreeRegistreInvalide,
+  validerEntreeRegistre,
   type DecisionCorrectionMesure,
 } from "../validation/domaine/corrections-mesure.ts";
 import { evaluerPromotion, type Dossier } from "../validation/domaine/promotion.ts";
 import type { Correction, Decision, EntreeDecision, Item } from "../validation/domaine/types.ts";
 import { ajouterAuRegistre, lireRegistre, RegistreIllisible } from "../validation/io/mesures-fichier.ts";
+import { urnSchema } from "../outils/schemas/noms.ts";
+import { construireRegistre } from "../outils/schemas/registre.ts";
 import { creerBac, lotDe, resceller, type Bac } from "./aides/bac.ts";
 import { decision, itemP, mesure, OPTIONS_PROMOTION } from "./aides/fabriques.ts";
 
@@ -53,7 +57,7 @@ const CORRECTION_THEME: Correction = {
 
 function entree(surcharges: Partial<DecisionCorrectionMesure> = {}): DecisionCorrectionMesure {
   return {
-    mesure_id: "01JBANCESSAI0000000MESURE1",
+    mesure_id: "01JBANCESSA90000000MESVRE1",
     mesure_version: 1,
     theme_demande: "ecologie_energie",
     decision: "acceptee",
@@ -90,7 +94,7 @@ function deuxCorrections(item: Item): readonly EntreeDecision[] {
 describe("decisionApplicable", () => {
   it("rend « absente » quand aucune entrée ne vise cette mesure et ce thème", () => {
     const registre = [
-      entree({ mesure_id: "01JBANCESSAI0000000MESURE9" }),
+      entree({ mesure_id: "01JBANCESSA90000000MESVRE9" }),
       entree({ theme_demande: "sante" }),
     ];
     const resultat = decisionApplicable(registre, CORRECTION_THEME, mesure());
@@ -330,7 +334,7 @@ function poserDemande(bac: Bac, demande: Demande): Item {
   const item = itemP({
     id: `01JBANCESSAI00000ITEM${demande.suffixe}`,
     candidat_id: `demo-${demande.suffixe}`,
-    mesure_id: `01JBANCESSAI0000MESURE${demande.suffixe}`,
+    mesure_id: `01JBANCESSA90000000MESVR${demande.suffixe}`,
   });
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1, theme: demande.theme_mesure }));
@@ -451,7 +455,7 @@ describe("rapport de `pnpm promote`", () => {
         const item = itemP({
           id: `01JBANCESSAI00000ITEM6${rang}`,
           candidat_id: `demo-${rang}`,
-          mesure_id: `01JBANCESSAI0000MESURE6${rang}`,
+          mesure_id: `01JBANCESSA90000000MESVR6${rang}`,
         });
         bac.ecrireItem(item);
         bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
@@ -528,5 +532,76 @@ describe("`pnpm mesures`", () => {
     } finally {
       bac.detruire();
     }
+  });
+});
+
+/* -------------------------------------------------- accord entre les deux validateurs */
+
+/**
+ * `validerEntreeRegistre()` est la frontière d'exécution (messages en français, pour l'auteur qui
+ * corrige son registre à la main) ; `schema/decision-mesure.schema.json`, chargé ici par
+ * `construireRegistre()` comme le fait `tests/schemas.test.ts`, est le contrat publié — plus
+ * strict. Ce bloc vérifie qu'ils sont d'accord là où une règle leur est commune, et documente
+ * explicitement le seul point où ils divergent : `validerEntreeRegistre()` ne connaît pas la
+ * liste des dix thèmes, qui n'est définie nulle part dans `validation/domaine/` (`Mesure.theme`
+ * y est un `string` ordinaire).
+ */
+describe("accord entre validerEntreeRegistre() et le schéma decision-mesure", () => {
+  const racineSchema = join(RACINE, "schema");
+  const racineExemplesDecisionMesure = join(racineSchema, "exemples/decision-mesure");
+
+  function chargerExemple(nom: string): unknown {
+    return JSON.parse(readFileSync(join(racineExemplesDecisionMesure, nom), "utf8"));
+  }
+
+  function validateurSchema() {
+    const { ajv } = construireRegistre(racineSchema);
+    const validateur = ajv.getSchema(urnSchema("decision-mesure"));
+    if (validateur === undefined) throw new Error("schéma decision-mesure non enregistré.");
+    return validateur;
+  }
+
+  it("1. un registre contenant une entrée acceptée sans motif : valide pour les deux validateurs", () => {
+    const exemple = chargerExemple("valide-01-acceptation.json");
+    expect(() => validerEntreeRegistre(exemple, "test")).not.toThrow();
+    expect(validateurSchema()(exemple)).toBe(true);
+  });
+
+  it("2. un refus motivé est accepté par les deux validateurs", () => {
+    const exemple = chargerExemple("valide-02-refus-motive.json");
+    expect(() => validerEntreeRegistre(exemple, "test")).not.toThrow();
+    expect(validateurSchema()(exemple)).toBe(true);
+  });
+
+  it("3. un refus sans motif est rejeté par les deux validateurs", () => {
+    const exemple = chargerExemple("invalide-01-refus-sans-motif.json");
+    expect(() => validerEntreeRegistre(exemple, "test")).toThrow(EntreeRegistreInvalide);
+    expect(() => validerEntreeRegistre(exemple, "test")).toThrow(/motif/);
+    expect(validateurSchema()(exemple)).toBe(false);
+  });
+
+  it("4. un theme_demande hors des dix est rejeté par le schéma seul : asymétrie assumée", () => {
+    const exemple = chargerExemple("invalide-02-theme-hors-liste.json");
+
+    // Le schéma connaît les dix thèmes fixes du §3 (commun.schema.json#/$defs/theme) et rejette.
+    expect(validateurSchema()(exemple)).toBe(false);
+
+    // `validerEntreeRegistre()` ne porte aucune liste de thèmes : `Mesure.theme` est un `string`
+    // ordinaire dans `validation/domaine/types.ts`, et cette fonction n'en vérifie pas le contenu.
+    // Si un jour quelqu'un ajoute cette liste à la frontière, cette assertion devient fausse et
+    // ce test échoue — c'est voulu : le jour où la répartition des rôles change, il faut le dire
+    // explicitement ici, pas le découvrir en silence.
+    expect(() => validerEntreeRegistre(exemple, "test")).not.toThrow();
+  });
+
+  it("5. un mesure_id qui n'est pas un ULID (contient I ou U) est rejeté par le schéma", () => {
+    const entree: DecisionCorrectionMesure = {
+      mesure_id: "01JBANCESSAI0000000MESURE1", // I et U : hors de l'alphabet Crockford base32.
+      mesure_version: 1,
+      theme_demande: "sante",
+      decision: "acceptee",
+      date: "2026-11-20",
+    };
+    expect(validateurSchema()(entree)).toBe(false);
   });
 });

@@ -13,7 +13,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
@@ -25,7 +25,7 @@ import {
   preparerReannotation,
 } from "../validation/domaine/lot.ts";
 import type { Decision, Item, ItemDuLot, Lot } from "../validation/domaine/types.ts";
-import { lireLots } from "../validation/io/lots-fichier.ts";
+import { lireLot, lireLots, ManifesteLotInvalide } from "../validation/io/lots-fichier.ts";
 import { creerBac, lotDe, type Bac } from "./aides/bac.ts";
 import { decision, itemP, mesure } from "./aides/fabriques.ts";
 
@@ -254,7 +254,7 @@ function poserItem(bac: Bac, suffixe: string): Item {
   const item = itemP({
     id: `01JBANCESSAI00000ITEM${suffixe}`,
     candidat_id: `demo-${suffixe}`,
-    mesure_id: `01JBANCESSAI0000MESURE${suffixe}`,
+    mesure_id: `01JBANCESSA90000000MESVR${suffixe}`,
   });
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
@@ -366,6 +366,82 @@ describe("chaîne de réannotations", () => {
       expect(resultat.sortie).toMatch(/À promouvoir : 1/);
       expect(resultat.sortie).toMatch(new RegExp(`${item.id}\\s+rejete.*\\[lot-004-r2\\]`));
       expect(resultat.sortie).not.toMatch(new RegExp(`${item.id}\\s+verifie`));
+    } finally {
+      bac.detruire();
+    }
+  });
+});
+
+/* --------------------------------- lecture des manifestes : nature et réannotation */
+
+/**
+ * `lireLot()` et `lireLots()` castaient le JSON sans rien vérifier. Un manifeste de
+ * réannotation sans `date_calibration` rend son kappa ininterprétable (§4) ; un `nature`
+ * inconnu signale un manifeste écrit hors du domaine. Les deux arrêtent la lecture au lieu
+ * d'être lus comme un lot ordinaire.
+ */
+describe("lireLot() et lireLots() : nature du manifeste et champs de réannotation", () => {
+  function repertoireDe(bac: Bac): string {
+    return join(bac.racine, "validation/lots");
+  }
+
+  function ecrireManifesteBrut(bac: Bac, lot_id: string, manifeste: object): void {
+    writeFileSync(join(repertoireDe(bac), `${lot_id}.json`), JSON.stringify(manifeste), "utf8");
+  }
+
+  it("5. un lot de nature reannotation sans reannote : lireLot() lève", () => {
+    const bac = creerBac();
+    try {
+      const manifeste = { ...origine("lot-010"), nature: "reannotation", date_calibration: "2026-11-24" };
+      ecrireManifesteBrut(bac, "lot-010", manifeste);
+      expect(() => lireLot(repertoireDe(bac), "lot-010")).toThrow(ManifesteLotInvalide);
+      expect(() => lireLot(repertoireDe(bac), "lot-010")).toThrow(/reannote/);
+    } finally {
+      bac.detruire();
+    }
+  });
+
+  it("6. un lot de nature reannotation sans date_calibration : lireLot() lève", () => {
+    const bac = creerBac();
+    try {
+      const manifeste = { ...origine("lot-011"), nature: "reannotation", reannote: "lot-003" };
+      ecrireManifesteBrut(bac, "lot-011", manifeste);
+      expect(() => lireLot(repertoireDe(bac), "lot-011")).toThrow(ManifesteLotInvalide);
+      expect(() => lireLot(repertoireDe(bac), "lot-011")).toThrow(/date_calibration/);
+    } finally {
+      bac.detruire();
+    }
+  });
+
+  it("7. un lot de nature reel sans reannote ni date_calibration est lu sans erreur", () => {
+    const bac = creerBac();
+    try {
+      ecrireManifesteBrut(bac, "lot-012", origine("lot-012"));
+      expect(() => lireLot(repertoireDe(bac), "lot-012")).not.toThrow();
+      expect(lireLot(repertoireDe(bac), "lot-012")?.nature).toBe("reel");
+    } finally {
+      bac.detruire();
+    }
+  });
+
+  it("8. un lot dont nature vaut une valeur inconnue : lireLot() lève", () => {
+    const bac = creerBac();
+    try {
+      const manifeste = { ...origine("lot-013"), nature: "brouillon" };
+      ecrireManifesteBrut(bac, "lot-013", manifeste);
+      expect(() => lireLot(repertoireDe(bac), "lot-013")).toThrow(ManifesteLotInvalide);
+      expect(() => lireLot(repertoireDe(bac), "lot-013")).toThrow(/brouillon/);
+    } finally {
+      bac.detruire();
+    }
+  });
+
+  it("9. un répertoire de lots contenant un manifeste invalide : lireLots() lève aussi, sans le sauter", () => {
+    const bac = creerBac();
+    try {
+      ecrireManifesteBrut(bac, "lot-014", origine("lot-014"));
+      ecrireManifesteBrut(bac, "lot-015", { ...origine("lot-015"), nature: "reannotation" });
+      expect(() => lireLots(repertoireDe(bac))).toThrow(ManifesteLotInvalide);
     } finally {
       bac.detruire();
     }

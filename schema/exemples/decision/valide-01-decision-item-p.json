@@ -1,0 +1,27 @@
+{
+  "id": "71HFE865V215DE1CTEWH0AVNH9",
+  "journal_version": 1,
+  "type_entree": "decision",
+  "annotateur_id": "a1",
+  "lot_id": "lot-003",
+  "lot_nature": "reel",
+  "item_id": "DN65R6PPG2X7R5JQC42EJ5E6RH",
+  "item_version": 1,
+  "item_empreinte": "34ec2c187efef2b43a7e9f7f212db63e794524cc6d5077afb4b430edbfe3ee80",
+  "item_type": "P",
+  "decision": "accepter",
+  "reponses_grille": {
+    "citation_fidele": true,
+    "paraphrase_exacte": true,
+    "position_univoque": true,
+    "theme_correct": true,
+    "quantification_correcte": true
+  },
+  "corrections": [],
+  "commentaire": null,
+  "horodatage": "2026-09-20T10:00:00+02:00",
+  "duree_affichage_ms": 42000,
+  "duree_active_ms": 39000,
+  "visite": 1,
+  "empreinte_ligne": "46ae386c761f1a8eb6fde76f1b6881c7b49ae0a728947f3629355f5f394904a7"
+}

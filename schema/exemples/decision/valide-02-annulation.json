@@ -1,0 +1,13 @@
+{
+  "id": "043E42N4FHZD8YFYTC66VPVTX3",
+  "journal_version": 1,
+  "type_entree": "annulation",
+  "annotateur_id": "a1",
+  "lot_id": "lot-003",
+  "lot_nature": "reel",
+  "item_id": "DN65R6PPG2X7R5JQC42EJ5E6RH",
+  "annule": "63SN6FCCW8VBHXF4W6305FATZY",
+  "commentaire": "Décision soumise sur le mauvais item par erreur de focus clavier.",
+  "horodatage": "2026-09-20T10:04:00+02:00",
+  "empreinte_ligne": "913b067214a164acbd7b45b996fb9dd42638d12dc315e0aa79380129f54ce3e6"
+}
