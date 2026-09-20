@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les huit fichiers
+## Les douze fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -20,6 +20,8 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `run.schema.json` | run | §9 publication, §5 symétrie, §12 go/no-go |
 | `tirage.schema.json` | questions tirées d'un run | §5 tirage, §9 publication des questions |
 | `lecture-comparateur.schema.json` | lecture d'un comparateur | §6, QR9 |
+| `decision.schema.json` | entrée du journal de validation | §4, une ligne du journal append-only écrit par l'interface de validation humaine |
+| `decision-mesure.schema.json` | arbitrage d'une correction de thème | §4, décision de l'auteur sur une demande de correction du thème d'une mesure, publiée dans `validation/mesures/decisions.json` |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -110,7 +112,7 @@ l'item ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 45 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 55 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -125,9 +127,11 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | run | graine sans algorithme nommé · symétrie rouge publiée sans mention provisoire · candidat à 8 items P déclaré au-dessus du seuil |
 | tirage | entrée d'attribution nommant un candidat · deux items principaux dans une entrée · question reprise sans run d'origine |
 | lecture-comparateur | absence d'affichage portant un extrait · affichage sans extrait · cadence supérieure à une page par seconde |
+| decision | annulation portant une décision · decision=corriger avec corrections vide · item O portant reponses_grille au lieu de reponses_par_etat |
+| decision-mesure | refus sans motif · theme_demande hors des dix thèmes fixes du §3 |
 
-Vérification faite avec `jsonschema` 4.26 (draft 2020-12) : 10/10 schémas conformes au méta-schéma,
-45/45 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+Vérification faite avec `jsonschema` 4.26 (draft 2020-12) : 12/12 schémas conformes au méta-schéma,
+55/55 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

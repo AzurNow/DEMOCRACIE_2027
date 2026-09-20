@@ -218,8 +218,8 @@ describe("invariant : les deux validations concordantes portent la même version
 /* ------------------------------------------------- exemples réels du dépôt */
 
 describe("exemples de schema/exemples/", () => {
-  it("charge les 45 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(45);
+  it("charge les 55 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(55);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

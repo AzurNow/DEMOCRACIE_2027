@@ -36,7 +36,7 @@ function resultatFichierAbsent(entree: EntreeManifeste): ResultatExemple {
 
 function schemaDeLObjet(ajv: InstanceAjv, objet: string, fichier: string) {
   if (!estNomSchema(objet)) {
-    throw new Error(`manifeste : objet "${objet}" (${fichier}) n'est pas un des dix schémas connus.`);
+    throw new Error(`manifeste : objet "${objet}" (${fichier}) n'est pas un des douze schémas connus.`);
   }
   const validateur = ajv.getSchema(urnSchema(objet));
   if (validateur === undefined) {

@@ -8,20 +8,73 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Lot } from "../domaine/types.ts";
+import type { Lot, NatureLot } from "../domaine/types.ts";
+
+const NATURES_CONNUES: readonly NatureLot[] = ["entrainement", "reel", "reannotation"];
+
+/**
+ * Un manifeste de lot dont `nature` est inconnue, ou dont une réannotation ne porte pas
+ * `reannote` ou `date_calibration`. Ni l'un ni l'autre n'est un lot ordinaire lisible tel quel :
+ * sans `date_calibration`, le kappa du lot n'est pas interprétable (§4, réannotation après
+ * calibration), et un `nature` hors des trois valeurs connues signale un manifeste écrit par un
+ * outil désynchronisé du domaine plutôt qu'un cas particulier à tolérer.
+ */
+export class ManifesteLotInvalide extends Error {
+  constructor(chemin: string, detail: string) {
+    super(`Manifeste de lot invalide (${chemin}) : ${detail}`);
+    this.name = "ManifesteLotInvalide";
+  }
+}
+
+function estNatureConnue(valeur: unknown): valeur is NatureLot {
+  return typeof valeur === "string" && (NATURES_CONNUES as readonly string[]).includes(valeur);
+}
+
+function validerNature(lot: Lot, chemin: string): void {
+  if (!estNatureConnue(lot.nature)) {
+    throw new ManifesteLotInvalide(
+      chemin,
+      `nature "${String(lot.nature)}" inconnue (attendu : ${NATURES_CONNUES.join(", ")}).`,
+    );
+  }
+}
+
+function validerReannotation(lot: Lot, chemin: string): void {
+  if (lot.nature !== "reannotation") return;
+  if (lot.reannote === undefined) {
+    throw new ManifesteLotInvalide(
+      chemin,
+      "nature=reannotation sans reannote : impossible de savoir quel lot d'origine ce lot supersède.",
+    );
+  }
+  if (lot.date_calibration === undefined) {
+    throw new ManifesteLotInvalide(
+      chemin,
+      "nature=reannotation sans date_calibration : le kappa de ce lot n'est pas interprétable sans " +
+        "la date de la séance de calibration qui l'a déclenché (§4).",
+    );
+  }
+}
+
+function lireEtValiderLot(chemin: string): Lot {
+  const lot = JSON.parse(readFileSync(chemin, "utf8")) as Lot;
+  validerNature(lot, chemin);
+  validerReannotation(lot, chemin);
+  return lot;
+}
 
 export function lireLots(repertoire: string): readonly Lot[] {
   if (!existsSync(repertoire)) return [];
   return readdirSync(repertoire)
     .filter((nom) => nom.endsWith(".json"))
     .sort()
-    .map((nom) => JSON.parse(readFileSync(join(repertoire, nom), "utf8")) as Lot);
+    .map((nom) => lireEtValiderLot(join(repertoire, nom)));
 }
 
 export function lireLot(repertoire: string, lot_id: string): Lot | null {
   const chemin = join(repertoire, `${lot_id}.json`);
   if (!existsSync(chemin)) return null;
-  return JSON.parse(readFileSync(chemin, "utf8")) as Lot;
+  return lireEtValiderLot(chemin);
 }
 
 export class LotDejaExistant extends Error {

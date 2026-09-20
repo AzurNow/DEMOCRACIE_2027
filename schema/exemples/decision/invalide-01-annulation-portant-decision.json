@@ -1,0 +1,13 @@
+{
+  "id": "G8P4FQJAWK0K68G769HJDNDGZG",
+  "journal_version": 1,
+  "type_entree": "annulation",
+  "annotateur_id": "a1",
+  "lot_id": "lot-003",
+  "lot_nature": "reel",
+  "item_id": "DN65R6PPG2X7R5JQC42EJ5E6RH",
+  "annule": "63SN6FCCW8VBHXF4W6305FATZY",
+  "decision": "accepter",
+  "horodatage": "2026-09-20T10:04:00+02:00",
+  "empreinte_ligne": "1ea31bfbf3e01f76b503f54ba33c0abb9ce185fadeaa174c2d6d8902c454d55c"
+}

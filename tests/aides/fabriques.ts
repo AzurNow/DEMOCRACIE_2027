@@ -44,7 +44,7 @@ export function source(surcharges: Partial<Source> = {}): Source {
 
 export function mesure(surcharges: Partial<Mesure> = {}): Mesure {
   const socle: Mesure = {
-    id: "01JBANCESSAI0000000MESURE1",
+    id: "01JBANCESSA90000000MESVRE1",
     version: 1,
     empreinte: "3".repeat(64),
     libelle: "TVA réduite sur l'énergie",
@@ -63,7 +63,7 @@ export function itemP(surcharges: Partial<Item> = {}): Item {
     empreinte: "0".repeat(64),
     type: "P",
     candidat_id: "demo-alpha",
-    mesure_id: "01JBANCESSAI0000000MESURE1",
+    mesure_id: "01JBANCESSA90000000MESVRE1",
     mesure_version: 1,
     statut_validation: "en_attente",
     statut_contestation: "aucune",
@@ -141,7 +141,7 @@ export function itemF(surcharges: Partial<Item> = {}): Item {
     ...sansAssertion,
     id: "01JBANCESSAI00000000ITEM04",
     type: "F",
-    mesure_id: "01JBANCESSAI0000000MESURE2",
+    mesure_id: "01JBANCESSA90000000MESVRE2",
     ...surcharges,
   };
   return { ...socle, empreinte: empreinteContenuNotant(socle) };

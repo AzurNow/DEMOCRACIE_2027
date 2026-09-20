@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:decision-mesure",
+  "title": "Entrée du registre des corrections de mesure",
+  "description": "Une ligne de `validation/mesures/decisions.json` (§4, « Correction de thème »). Le thème appartient à la mesure, référent partagé entre plusieurs candidats : un annotateur ne le corrige donc pas depuis l'écran de validation, il en demande la correction, et l'auteur tranche. Ce schéma décrit UNE entrée de ce registre, pas le tableau qui les contient : `pnpm mesures` écrit une entrée à la fois, `pnpm promote` les relit une à une. Contrat publié, plus strict que `validerEntreeRegistre()` (`validation/domaine/corrections-mesure.ts`), qui reste la frontière d'exécution — les deux sont reliés par un test d'accord (`tests/corrections-mesure.test.ts`).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mesure_id", "mesure_version", "theme_demande", "decision", "date"],
+
+  "properties": {
+    "mesure_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "La mesure visée par la demande de correction. Un identifiant opaque : le référentiel des mesures est déjà indexé par cet id ailleurs, et une valeur lisible dupliquerait ce que `mesure.libelle` porte déjà."
+    },
+
+    "mesure_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version de la mesure telle qu'elle était au moment de la demande. La mesure peut changer entre la demande et la décision ; sans cette version, on ne sait plus contre quel état l'auteur a tranché."
+    },
+
+    "theme_demande": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme",
+      "description": "Le thème que l'annotateur demandait de substituer à celui que porte la mesure. Restreint aux dix thèmes fixes du §3 : un onzième thème glissé ici migrerait vers `mesure.theme` à la prochaine acceptation appliquée, en dehors de toute discussion sur le périmètre."
+    },
+
+    "decision": {
+      "type": "string",
+      "enum": ["acceptee", "refusee"],
+      "description": "Verdict de l'auteur sur la demande. Une décision en attente n'a pas d'entrée : l'absence d'entrée EST l'attente (§4), elle ne s'exprime pas par une troisième valeur ici."
+    },
+
+    "date": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+      "description": "Jour où l'auteur a tranché, pas l'instant : c'est une décision humaine relue à l'échelle du jour, comme les autres arbitrages publiés du §4."
+    },
+
+    "motif": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pourquoi la demande est refusée, publié avec elle (§4). Permis mais non exigé sur une acceptation : une acceptation se justifie déjà par le nouveau thème appliqué à la mesure."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§4 : un refus est publié avec son motif. Une acceptation reste valide sans lui.",
+      "if": { "properties": { "decision": { "const": "refusee" } }, "required": ["decision"] },
+      "then": { "required": ["motif"] }
+    }
+  ]
+}

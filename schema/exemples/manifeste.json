@@ -297,6 +297,71 @@
       "attendu": "invalide",
       "motif": "Cadence de cinq pages par seconde. §6 fixe au plus une page par seconde en lecture de pages publiques ; la contrainte vit dans le schéma, pas dans un commentaire de code.",
       "regle_protocole": "§6, comparateurs citoyens"
+    },
+    {
+      "objet": "decision",
+      "fichier": "decision/valide-01-decision-item-p.json",
+      "attendu": "valide",
+      "motif": "Décision nominale sur un item P : grille complète, aucune correction, durées d'affichage et de focus enregistrées."
+    },
+    {
+      "objet": "decision",
+      "fichier": "decision/valide-02-annulation.json",
+      "attendu": "valide",
+      "motif": "Annulation : l'entrée annulée reste visée par son id, et aucune décision n'accompagne une annulation."
+    },
+    {
+      "objet": "decision",
+      "fichier": "decision/valide-03-decision-item-o.json",
+      "attendu": "valide",
+      "motif": "Décision sur un item O : les deux états sont jugés séparément (reponses_par_etat), et changement_explicite confirme que la source postérieure dit un changement, pas un simple silence."
+    },
+    {
+      "objet": "decision",
+      "fichier": "decision/invalide-01-annulation-portant-decision.json",
+      "attendu": "invalide",
+      "motif": "Annulation portant une décision. Une annulation revient sur une décision antérieure, elle n'en prend pas une nouvelle : les deux champs s'excluent.",
+      "regle_protocole": "§4, journal append-only"
+    },
+    {
+      "objet": "decision",
+      "fichier": "decision/invalide-02-corriger-sans-correction.json",
+      "attendu": "invalide",
+      "motif": "decision=corriger avec corrections vide. §4 : « corriger » consigne le champ modifié et son ancienne valeur ; sans cela, une correction annoncée n'est tracée nulle part.",
+      "regle_protocole": "§4, corrections"
+    },
+    {
+      "objet": "decision",
+      "fichier": "decision/invalide-03-item-o-avec-reponses-grille.json",
+      "attendu": "invalide",
+      "motif": "Item O portant reponses_grille au lieu de reponses_par_etat. La réduction des deux états vers une grille unique est calculée à la promotion, jamais stockée deux fois dans le journal.",
+      "regle_protocole": "§4, items obsolètes à deux états"
+    },
+    {
+      "objet": "decision-mesure",
+      "fichier": "decision-mesure/valide-01-acceptation.json",
+      "attendu": "valide",
+      "motif": "Acceptation d'une demande de correction de thème, sans motif : une acceptation se justifie par le nouveau thème appliqué à la mesure, le motif reste facultatif."
+    },
+    {
+      "objet": "decision-mesure",
+      "fichier": "decision-mesure/valide-02-refus-motive.json",
+      "attendu": "valide",
+      "motif": "Refus motivé : §4 exige qu'un refus soit publié avec son motif."
+    },
+    {
+      "objet": "decision-mesure",
+      "fichier": "decision-mesure/invalide-01-refus-sans-motif.json",
+      "attendu": "invalide",
+      "motif": "Refus sans motif. §4 : un refus est publié avec son motif ; sans lui, l'arbitrage n'est pas contestable.",
+      "regle_protocole": "§4, correction de thème"
+    },
+    {
+      "objet": "decision-mesure",
+      "fichier": "decision-mesure/invalide-02-theme-hors-liste.json",
+      "attendu": "invalide",
+      "motif": "theme_demande hors des dix thèmes fixes du §3. Un arbitrage ne peut pas faire exister un onzième thème.",
+      "regle_protocole": "§3, dix thèmes fixes"
     }
   ]
 }
