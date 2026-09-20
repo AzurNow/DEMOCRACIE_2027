@@ -126,6 +126,13 @@ describe("lecture : validation structurelle", () => {
     expect(() => validerFeuilleDeRoute(feuille)).toThrow(ErreurFeuilleDeRoute);
   });
 
+  it("7 bis. une décision tranchee sans retenu ni date_decision lève une erreur", () => {
+    const sansRetenu = feuilleBrute({ decisions: [decisionBrute({ statut: "tranchee", date_decision: "2026-09-20" })] });
+    expect(() => validerFeuilleDeRoute(sansRetenu)).toThrow(ErreurFeuilleDeRoute);
+    const sansDate = feuilleBrute({ decisions: [decisionBrute({ statut: "tranchee", retenu: "Option 1." })] });
+    expect(() => validerFeuilleDeRoute(sansDate)).toThrow(ErreurFeuilleDeRoute);
+  });
+
   it("8. champ obligatoire manquant (taille) nomme le lot et le champ", () => {
     const lot = lotBrut();
     delete lot["taille"];
@@ -173,14 +180,15 @@ function fabriquerLot(champs: {
 }
 
 function fabriquerDecision(id: string, statut: Decision["statut"]): Decision {
-  return {
+  const commune = {
     id,
-    statut,
     question: `Question de ${id}`,
     contexte: "Contexte.",
     options: ["Option 1", "Option 2"],
     recommandation: "Recommandation.",
   };
+  if (statut === "en_attente") return { ...commune, statut };
+  return { ...commune, statut, retenu: "Option 1 retenue.", date_decision: "2026-09-20" };
 }
 
 function fabriquerJalon(id: string, date: string): Jalon {
@@ -377,6 +385,14 @@ describe("markdown et outil", () => {
     const etats = calculerEtats(f.lots, f.decisions);
     const markdown = genererMarkdown(f, etats);
     expect(markdown).toContain("bloqué par D3, collecte");
+  });
+
+  it("27 bis. une décision tranchée affiche ce qui a été retenu et sa date, pas sa recommandation", () => {
+    const f = feuille({ decisions: [fabriquerDecision("D1", "tranchee")] });
+    const etats = calculerEtats(f.lots, f.decisions);
+    const markdown = genererMarkdown(f, etats);
+    expect(markdown).toContain("**Décision du 2026-09-20 :** Option 1 retenue.");
+    expect(markdown).not.toContain("**Recommandation :** Recommandation.");
   });
 
   it("28. --verifier : code 0 sur un Markdown à jour, code 1 sur un Markdown modifié", () => {

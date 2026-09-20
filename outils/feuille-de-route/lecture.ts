@@ -111,13 +111,19 @@ function validerDecision(brut: unknown, index: number): Decision {
   const id = exigerTexte(objet, "id", `Décision #${index + 1}`);
   const etiquette = `Décision ${id}`;
   const statut = exigerEnum(exigerTexte(objet, "statut", etiquette), STATUTS_DECISION, etiquette, "statut");
-  return {
+  const commune = {
     id,
-    statut,
     question: exigerTexte(objet, "question", etiquette),
     contexte: exigerTexte(objet, "contexte", etiquette),
     options: exigerTableauTexte(objet, "options", etiquette),
     recommandation: exigerTexte(objet, "recommandation", etiquette),
+  };
+  if (statut === "en_attente") return { ...commune, statut };
+  return {
+    ...commune,
+    statut,
+    retenu: exigerTexte(objet, "retenu", etiquette),
+    date_decision: exigerTexte(objet, "date_decision", etiquette),
   };
 }
 

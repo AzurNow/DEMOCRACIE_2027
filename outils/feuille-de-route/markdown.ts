@@ -9,7 +9,7 @@
 
 import type { EtatLot } from "./graphe.ts";
 import { genererMermaid } from "./mermaid.ts";
-import type { Decision, FeuilleDeRoute, Jalon, Lot, Niveau } from "./types.ts";
+import type { Decision, DecisionTranchee, FeuilleDeRoute, Jalon, Lot, Niveau } from "./types.ts";
 
 const NIVEAUX: readonly Niveau[] = ["T0", "T1", "T2", "T3", "T4"];
 
@@ -61,13 +61,15 @@ function genererDecisionsEnAttente(feuille: FeuilleDeRoute): string {
 
 function genererDecisionsTranchees(feuille: FeuilleDeRoute): string {
   const decisions = feuille.decisions
-    .filter((decision) => decision.statut === "tranchee")
+    .filter((decision): decision is DecisionTranchee => decision.statut === "tranchee")
     .sort((a, b) => a.id.localeCompare(b.id));
   if (decisions.length === 0) {
     return ["## Décisions tranchées", "", "Aucune décision tranchée."].join("\n");
   }
   const blocs = decisions.map(
-    (decision) => `### ${decision.id} — ${decision.question}\n\n**Recommandation :** ${decision.recommandation}`,
+    (decision) =>
+      `### ${decision.id} — ${decision.question}\n\n` +
+      `**Décision du ${decision.date_decision} :** ${decision.retenu}`,
   );
   return ["## Décisions tranchées", "", blocs.join("\n\n")].join("\n");
 }

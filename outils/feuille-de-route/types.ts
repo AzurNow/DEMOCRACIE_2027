@@ -17,14 +17,28 @@ export interface Dependance {
   readonly type: TypeDependance;
 }
 
-export interface Decision {
+interface DecisionCommune {
   readonly id: string;
-  readonly statut: StatutDecision;
   readonly question: string;
   readonly contexte: string;
   readonly options: readonly string[];
   readonly recommandation: string;
 }
+
+/**
+ * Une décision tranchée porte ce que l'auteur a retenu et le jour où il l'a fait. Les deux champs
+ * sont exigés par le type, et non optionnels : une décision dite tranchée dont on ne lirait que la
+ * recommandation laisserait croire que la recommandation *est* la décision, alors qu'elle peut en
+ * différer. La date compte autant : une convention de tirage tranchée après un run ne vaut pas la
+ * même chose qu'une convention tranchée avant.
+ */
+export type DecisionTranchee = DecisionCommune & {
+  readonly statut: "tranchee";
+  readonly retenu: string;
+  readonly date_decision: string;
+};
+
+export type Decision = (DecisionCommune & { readonly statut: "en_attente" }) | DecisionTranchee;
 
 export interface Jalon {
   readonly id: string;
