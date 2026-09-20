@@ -32,6 +32,9 @@ function dossier(item: Item, decisions: readonly EntreeDecision[], surcharges: P
     lot_id: "lot-001",
     lot_nature: "reel",
     decisions,
+    // Le registre des corrections de thème est passé, jamais chargé : `evaluerPromotion` reste
+    // pure. Vide par défaut — aucune décision prise, donc aucune demande tranchée.
+    registre_corrections_mesure: [],
     ...surcharges,
   };
 }
@@ -514,7 +517,21 @@ describe("corrections visant la mesure", () => {
             questions_specifiques: { fictivite_verifiee: true, plausibilite: true },
           }),
         ],
-        { mesure: mesure({ theme: "ecologie_energie" }) },
+        {
+          mesure: mesure({ theme: "ecologie_energie" }),
+          // §4 : la promotion demande une demande **acceptée** au registre, et une mesure qui
+          // porte effectivement le thème. La mesure corrigée sans décision tracée reste en
+          // attente — c'est le cas testé juste au-dessus.
+          registre_corrections_mesure: [
+            {
+              mesure_id: mesure().id,
+              mesure_version: 1,
+              theme_demande: "ecologie_energie",
+              decision: "acceptee",
+              date: "2026-09-21",
+            },
+          ],
+        },
       ),
       OPTIONS_PROMOTION,
     );

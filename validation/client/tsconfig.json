@@ -1,8 +1,9 @@
 {
-  "$comment": "Le client est compilé en modules ES par tsc seul, sans empaqueteur : le serveur sert les fichiers produits tels quels.",
+  "$comment": "Le client est compilé en modules ES par tsc seul, sans empaqueteur : le serveur sert les fichiers produits tels quels. rootDir remonte à validation/ (et non plus au seul dossier client) pour que le client importe la logique pure de domaine/ (décision du 2026-09-18, docs/DETTE.md) : la sortie compilée gagne un niveau, dist/client/ et dist/domaine/, d'où le chemin de index.html. \"types\": [] prive délibérément le client des types Node : c'est ce qui fait échouer `pnpm check` si un module de domaine/ atteint par le client importe `node:*`, ce que le navigateur ne saurait pas charger.",
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
     "module": "ESNext",
     "moduleResolution": "Bundler",
 
@@ -19,7 +20,7 @@
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "..",
     "noEmit": false,
     "skipLibCheck": true
   },

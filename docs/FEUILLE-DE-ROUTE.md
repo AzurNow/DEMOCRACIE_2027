@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-09-18.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-09-19.
 
 ## Décisions en attente
 
@@ -97,6 +97,19 @@ Options :
 
 Lots portant cette décision : questions-tirage-symetrie
 
+### D8 — Trois points que le §4 ne tranche pas, rencontrés en implémentant la réannotation et le registre des mesures.
+
+(1) Les annotateurs d'un lot de réannotation sont hérités du lot d'origine, et --annotateurs est refusé avec --reannote. Le §4 ne dit rien. Deux kappas portés par des paires différentes ne se remplacent pas l'un l'autre, or le §4 fait remplacer. (2) Le registre est indexé par mesure et thème, donc une demande de correction visant un autre chemin que /theme ne pourrait jamais être tranchée et retiendrait l'item indéfiniment ; le cas est aujourd'hui inatteignable car l'interface refuse ces chemins, mais le §4 pourrait les ouvrir. (3) L'identifiant d'un lot de réannotation est dérivé (lot-003 puis lot-003-r1), et pnpm mesures prend par défaut la date civile du jour.
+
+Options :
+
+1. (1) Garder l'héritage des annotateurs : faire rejuger un lot par une autre paire deviendrait un amendement au §4, qui devrait dire ce que devient le kappa comparé. (2) Si le §4 ouvre un jour la correction d'autre chose que le thème, élargir la clé du registre dans le même amendement. (3) Entériner les deux conventions dans le protocole ou schema/README.md.
+2. Ouvrir dès maintenant la réannotation par une autre paire d'annotateurs, ce qui suppose de définir le kappa retenu.
+
+**Recommandation :** Option 1 sur les trois points. Aucun ne bloque le 15 novembre, mais (1) doit être écrit avant qu'un annotateur ne quitte le projet en cours de campagne.
+
+Lots portant cette décision : dette-validation
+
 ## Décisions tranchées
 
 Aucune décision tranchée.
@@ -122,7 +135,7 @@ flowchart LR
     lot_validation_interface["validation-interface<br/>Interface de validation humaine, pnpm lots, pnpm promote<br/>T3"]:::T3
   end
   subgraph jalon_J3["J3 · 15 nov. 2026"]
-    lot_dette_validation["dette-validation<br/>Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/<br/>T0"]:::T0
+    lot_dette_validation["dette-validation<br/>Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/<br/>T2"]:::T2
     lot_hors_code["hors-code<br/>Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9<br/>T0"]:::T0
   end
   subgraph jalon_J4["J4 · 22 nov. 2026"]
@@ -140,6 +153,7 @@ flowchart LR
   dec_D5{{"D5<br/>Quelle est la liste nominative des outils et des candidats d…"}}:::decision
   dec_D6{{"D6<br/>Six précisions du §8 remontées par le lot analyse, à écrire …"}}:::decision
   dec_D7{{"D7<br/>Sept conventions du tirage que le protocole n'écrit pas, ret…"}}:::decision
+  dec_D8{{"D8<br/>Trois points que le §4 ne tranche pas, rencontrés en impléme…"}}:::decision
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
   lot_protocole --> lot_hors_code
@@ -159,6 +173,7 @@ flowchart LR
   dec_D5 --> lot_protocole
   dec_D6 --> lot_analyse
   dec_D7 --> lot_questions_tirage_symetrie
+  dec_D8 --> lot_dette_validation
   classDef T0 fill:#78716c,color:#ffffff,stroke:#44403c
   classDef T1 fill:#b45309,color:#ffffff,stroke:#78350f
   classDef T2 fill:#0369a1,color:#ffffff,stroke:#0c4a6e
@@ -181,7 +196,7 @@ flowchart LR
 | questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T2 | bloqué par D7 | opus | L | 2 | — |
 | schemas | Schémas JSON et 45 exemples | J2 | T2 | débloqué | fait | S | 0 | — |
 | validation-interface | Interface de validation humaine, pnpm lots, pnpm promote | J2 | T3 | atteint | fait | L | 0 | — |
-| dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T0 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
+| dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | bloqué par D8 | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | interrogation | Appels API, fenêtre 48 h, trois relances, réponses brutes immuables, archive Zenodo | J4 | T0 | bloqué par D3, perimetre-prompts, questions-tirage-symetrie | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T0 | bloqué par D3, perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
@@ -216,7 +231,7 @@ flowchart LR
 
 ### J3
 
-- dette-validation (T0)
+- dette-validation (T2)
 - hors-code (T0)
 
 ### J4
@@ -245,3 +260,4 @@ flowchart LR
 - CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.
 - L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.
 - schema/ contient onze fichiers, le README et le manifeste en connaissent dix : decision.schema.json n'est ni enregistré ni exemplifié.
+- Le suivi du taux de « non évaluable » par annotateur était donné pour manquant par docs/DETTE.md alors qu'il était implémenté depuis le 2026-09-17 : entrée corrigée le 2026-09-19.
