@@ -76,6 +76,21 @@ version de `gestesPourDecision()` calculait le même terme pour « accepter », 
 de chaque décision vit maintenant dans une table de données, `COUT_DECISION`, dont la symétrie est
 la propriété testée. Faire porter l'assertion sur la donnée, pas sur le code qui la relit.
 
+**Un test d'accord entre deux validateurs doit nommer aussi ce qu'ils ne partagent pas.** Le
+registre des corrections de thème a deux gardiens : `validerEntreeRegistre()`, frontière d'exécution
+aux messages lisibles, et `decision-mesure.schema.json`, contrat publié plus strict. La tentation
+était de les faire coïncider en apprenant les dix thèmes à la frontière — au prix d'une troisième
+copie de la liste, ou d'un import de `pipeline/` depuis `validation/`. La divergence est devenue une
+assertion commentée : le schéma rejette un onzième thème, la frontière l'accepte. Le jour où
+quelqu'un resserre la frontière, ce test tombe et l'oblige à le dire.
+
+**Un identifiant de fixture respecte la forme qu'il imite.** Les fabriques de test portaient des
+identifiants de mesure `01JBANCESSAI…` contenant `I` et `U`, hors de l'alphabet Crockford base32 que
+`commun.schema.json` impose aux ULID. Rien ne les validait, donc personne ne l'avait vu ; le premier
+schéma qui les regarde les refuse. Les corriger a fait tomber huit tests d'un coup, parce que
+`entree().mesure_id` et `mesure().id` doivent rester égaux pour que l'appariement du registre
+fonctionne — le défaut dormait depuis l'écriture des fabriques.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -95,6 +110,13 @@ l'item 10 — dix items écrits, neuf fichiers sur le disque, aucune erreur ; et
 prise à l'heure courante rendait deux exécutions successives différentes, donc le jeu de
 démonstration non reproductible. Compter les fichiers produits et comparer deux exécutions coûte
 deux commandes, et les deux défauts sautent aux yeux.
+
+**Enregistrer un schéma ne suffit pas à garder l'objet qu'il décrit.** La dette demandait d'ajouter
+`decision.schema.json` au registre et de lui écrire des exemples : fait, et `pnpm check` les vérifie.
+Le trou réel restait ouvert. Les exemples avaient été écrits à la main d'après le schéma, et
+`JournalAnnotateur.ajouter()` sérialise toujours ce que le type TypeScript accepte, sans rien
+valider : schéma et exemples restent d'accord entre eux pendant que le code s'en éloigne. Ce qui
+garde un objet, c'est le chemin qui va du code qui l'écrit jusqu'au schéma — pas le schéma seul.
 
 ## Méthode
 

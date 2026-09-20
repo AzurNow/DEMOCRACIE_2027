@@ -13,6 +13,63 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-20 — Lot schemas-decision : `decision` et `decision-mesure` au registre, manifestes de lots validés (`schema/`, `outils/schemas/`, `validation/io/`)
+
+### 1. Le journal de validation est gardé par ses exemples, pas par le code qui l'écrit — *moyenne*
+
+`decision.schema.json` est au registre ajv avec six exemples, et `pnpm check` les vérifie. Ce qui
+manque est le lien entre le schéma et le code : `JournalAnnotateur.ajouter()` sérialise ce que le
+type `EntreeJournal` de `validation/domaine/types.ts` accepte, `analyser()` recaste sans valider, et
+les six exemples ont été écrits à la main d'après le schéma. Schéma et exemples restent donc
+d'accord entre eux pendant que le code peut s'en éloigner. `decision-mesure`, lui, a la paire
+`validerEntreeRegistre()` + test d'accord.
+
+**Pourquoi ça casse.** Ajouter un champ à `EntreeDecision` — une sixième question spécifique, par
+exemple — compile, s'écrit dans les journaux, et `additionalProperties: false` rend alors non
+conforme à son propre schéma publié un journal que le §9 publie précisément pour qu'un tiers le
+vérifie. `pnpm check` reste vert : rien n'y confronte une entrée **produite par le code** à son
+schéma.
+
+**Ce qu'il faut faire.** Le test d'accord écrit pour `decision-mesure`, transposé : fabriquer une
+`EntreeDecision`, une `EntreeAnnulation` et un `EntreeRetrait` depuis `tests/aides/fabriques.ts`,
+les valider contre `urn:banc-essai-2027:schema:decision`. Suppose le point 3 corrigé d'abord.
+Valider à l'écriture dans `ajouter()` serait plus fort, mais mettrait ajv dans le chemin d'exécution
+de l'interface de validation : à trancher seulement si le test ne suffit pas.
+
+### 2. `lireLot()` refuse désormais un manifeste que `ecrireLot()` accepte d'écrire — *moyenne*
+
+La validation ajoutée cette session est en lecture seule. `ecrireLot()` écrit tout objet `Lot` que
+le type TypeScript accepte, et un manifeste n'est jamais réécrit (`LotDejaExistant`,
+`docs/CONTRATS.md` §4). Aujourd'hui `pnpm lots` compose toujours un lot complet ; rien ne garantit
+que le prochain appelant le fera.
+
+**Pourquoi ça casse.** Un lot de nature `reannotation` composé sans `date_calibration` s'écrit sans
+broncher, puis devient illisible au premier `lireLot()` : le fichier est à la fois invalide et
+censé ne jamais être réécrit. La réparation suppose de violer l'immutabilité du manifeste ou de
+jeter un lot dont la graine et la composition étaient la garantie de reproductibilité du kappa.
+
+**Ce qu'il faut faire.** Appeler la même validation dans `ecrireLot()`, avant l'écriture, le jour où
+un second appelant que `pnpm lots` apparaît. Les fonctions existent déjà (`validerNature`,
+`validerReannotation`) : c'est un appel, pas un mécanisme.
+
+### 3. La moitié des identifiants de fixtures reste hors de l'alphabet Crockford — *basse*
+
+Cette session a corrigé les identifiants de **mesure** des fabriques de test (`I` et `U`, hors
+Crockford base32) parce que le schéma neuf les refusait. Ceux des **items** portent le même défaut
+et n'ont pas été touchés : `01JBANCESSAI00000000ITEM04`, `01JBANCESSAI00000ITEM${rang}`. Rien ne les
+valide aujourd'hui.
+
+**Pourquoi ça casse.** Le jour où un test confronte une fixture d'item à `item.schema.json`, ou une
+entrée de journal fabriquée à `decision.schema.json` — exactement ce que demande le point 1 —, il
+échoue sur la forme de l'identifiant avant d'atteindre la règle qu'il visait. Le lecteur du test
+conclut que la règle est fausse. La demi-correction d'aujourd'hui aggrave le piège : elle fait
+croire que les identifiants restants sont volontaires.
+
+**Ce qu'il faut faire.** Les corriger dans le lot qui écrira le test d'accord du journal, pas avant :
+un renommage de fixtures isolé ne se relit pas et ne prouve rien.
+
+---
+
 ## 2026-09-19 — Lot dette-validation : réannotation, registre des mesures, logique pure du client (`validation/domaine/`, `outils/`, `validation/client/`)
 
 ### 1. Deux kappas coexistent pour un même lot, et rien ne choisit encore lequel compte — *haute*
@@ -32,7 +89,7 @@ deux kappas sont justes, c'est le choix entre eux qui est faux.
 part ailleurs, et ne jamais recalculer un kappa hors de `diagnostiquerLot`. Les données pour le
 faire existent désormais : `Lot.reannote`, `supersediteurDe`, `lotsApresSupersession`.
 
-### 2. La supersession repose sur un champ de manifeste que rien ne valide à l'écriture — *moyenne*
+### ~~2. La supersession repose sur un champ de manifeste que rien ne valide à l'écriture~~ — réglé le 2026-09-20 par la validation de `lireLot()`
 
 `promote` ne déduit la chaîne de supersession que du champ `reannote` des manifestes de
 `validation/lots/`. Un lot de réannotation écrit à la main sans ce champ redonne deux jeux de
@@ -44,9 +101,10 @@ lancement de `promote`, longtemps après la séance d'annotation.
 
 **Ce qu'il faut faire.** Valider le champ à la lecture dans `validation/io/lots-fichier.ts:lireLot()`,
 en même temps que le schéma du registre du point 3 : un lot de nature `reannotation` sans `reannote`
-ni `date_calibration` est un manifeste invalide, pas un lot ordinaire.
+ni `date_calibration` est un manifeste invalide, pas un lot ordinaire. *Fait ; reste le versant
+écriture, entrée du 2026-09-20, point 2.*
 
-### 3. Le registre des corrections de mesure n'est gardé par aucun schéma — *moyenne*
+### ~~3. Le registre des corrections de mesure n'est gardé par aucun schéma~~ — réglé le 2026-09-20 par `schema/decision-mesure.schema.json` et le test d'accord
 
 `validation/mesures/decisions.json` est publié au titre du §9, et sa forme n'est tenue que par
 `domaine/corrections-mesure.ts:validerEntreeRegistre()`, écrite à la main. Aucun des 45 exemples ne
@@ -147,7 +205,7 @@ reste vert, tant qu'aucun exemple `invalide-*` ne vise précisément la règle a
 **Ce qu'il faut faire.** Catégoriser les avertissements par code ajv et n'ignorer que les codes
 connus, en erreur sur tout code nouveau. Petit lot Sonnet.
 
-### 5. `decision.schema.json` n'est ni enregistré ni exemplifié — *moyenne*
+### ~~5. `decision.schema.json` n'est ni enregistré ni exemplifié~~ — réglé le 2026-09-20 par son entrée au registre et ses six exemples
 
 `schema/` contient onze fichiers ; `schema/README.md` et le manifeste en connaissent dix.
 `decision.schema.json`, ajouté avec le journal de validation, n'a aucun exemple et n'est pas dans
@@ -158,7 +216,8 @@ forme n'est gardée par aucun test. Un champ renommé dans `validation/domaine/j
 échouer que la lecture croisée de `promote`, jamais `pnpm check`.
 
 **Ce qu'il faut faire.** Cinq exemples au manifeste, une ligne dans le README, le fichier ajouté
-au registre. Petit lot Sonnet, en même temps que le point 4.
+au registre. Petit lot Sonnet, en même temps que le point 4. *Fait ; reste à relier le schéma au code qui
+écrit les journaux, entrée du 2026-09-20, point 1.*
 
 ### 6. Les gabarits de questions vivent dans le code, pas dans `prompts/` — *basse*
 

@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-09-19",
+  "date_maj": "2026-09-20",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -158,7 +158,7 @@
       "temps_auteur_h": 0,
       "depend_de": [],
       "decisions": [],
-      "note": "Les 45 exemples sont des tests bloquants de pnpm check depuis le 2026-09-18. decision.schema.json reste hors registre et sans exemple."
+      "note": "Les 45 exemples sont des tests bloquants de pnpm check depuis le 2026-09-18. Le 2026-09-20, decision.schema.json est entré au registre et decision-mesure.schema.json a été créé : douze schémas, 55 exemples, plus un test d'accord entre le schéma du registre des corrections de thème et la frontière écrite à la main. Reste : relier decision.schema.json au code qui écrit les journaux (DETTE 2026-09-20, point 1)."
     },
     {
       "id": "validation-interface",
@@ -194,7 +194,7 @@
       "temps_auteur_h": 0.5,
       "depend_de": [],
       "decisions": [],
-      "note": "Livré le 2026-09-18 : ajv sur les 45 exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. Reste : catégoriser les avertissements ajv strict, enregistrer decision.schema.json (DETTE points 4 et 5)."
+      "note": "Livré le 2026-09-18 : ajv sur les exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. decision.schema.json enregistré le 2026-09-20. Reste : catégoriser les avertissements ajv strict (DETTE 2026-09-18, point 4)."
     },
     {
       "id": "ci",
@@ -222,7 +222,7 @@
       "decisions": [
         "D8"
       ],
-      "note": "Livré le 2026-09-19 : --reannote et --calibration sur pnpm lots, supersession dans promote, pnpm mesures et le registre validation/mesures/decisions.json, logique pure du client extraite vers domaine/ et testée sans DOM, docs/CONTROLE-MANUEL.md. 61 tests neufs. Les trois commandes n'ont jamais été exercées sur un vrai staging. Reste : sélectionner le kappa du §12 sur le dernier maillon (DETTE point 1, haute) et enregistrer les deux schémas manquants (point 3)."
+      "note": "Livré le 2026-09-19 : --reannote et --calibration sur pnpm lots, supersession dans promote, pnpm mesures et le registre validation/mesures/decisions.json, logique pure du client extraite vers domaine/ et testée sans DOM, docs/CONTROLE-MANUEL.md. 61 tests neufs. Les trois commandes n'ont jamais été exercées sur un vrai staging. Les deux schémas manquants ont été enregistrés le 2026-09-20. Reste : sélectionner le kappa du §12 sur le dernier maillon (DETTE point 1, haute)."
     },
     {
       "id": "perimetre-prompts",
@@ -390,7 +390,6 @@
     "README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.",
     "CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.",
     "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.",
-    "schema/ contient onze fichiers, le README et le manifeste en connaissent dix : decision.schema.json n'est ni enregistré ni exemplifié.",
     "Le suivi du taux de « non évaluable » par annotateur était donné pour manquant par docs/DETTE.md alors qu'il était implémenté depuis le 2026-09-17 : entrée corrigée le 2026-09-19."
   ]
 }
