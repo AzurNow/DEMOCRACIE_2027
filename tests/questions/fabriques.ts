@@ -159,6 +159,30 @@ export function itemF(options: OptionsItem): Item {
   return sceller({ ...socle(options), type: "F" });
 }
 
+/* ------------------------------------------------------------ contestations */
+
+export type DecisionPanel = "maintien" | "correction" | "retrait" | "non_evaluabilite";
+
+/** Une contestation arbitrée, au format de `item.schema.json` (contestations[].decision_panel). */
+export function contestation(
+  cle: string,
+  decision: DecisionPanel,
+  date: string,
+): Record<string, unknown> {
+  return {
+    id: identifiant(`contestation:${cle}`),
+    date_reception: "2026-09-25T09:00:00+02:00",
+    texte: "Texte de contestation fictif.",
+    contestataire_type: "campagne",
+    decision_panel: { date, decision, motivation: "Motivation fictive du panel." },
+  };
+}
+
+/** L'item, passé en « arbitree » avec ces contestations. L'empreinte ne couvre pas les statuts. */
+export function arbitre(item: Item, contestations: readonly unknown[]): Item {
+  return { ...item, statut_contestation: "arbitree", contestations };
+}
+
 /* --------------------------------------------------------------- questions */
 
 function formulation(registre: Registre, texte: string): Formulation {

@@ -10,7 +10,8 @@
  *
  * Deux statuts arrêtent l'engendrement, et aucun autre : un item dont la validation n'est pas
  * acquise — dont les items T3, « conservés avec le statut à confirmer », qui « n'engendrent
- * aucune question » (§4) — et un item contesté, que §5 interdit dans le tirage.
+ * aucune question » (§4) — et un item contesté, que §5 interdit dans le tirage. Un item arbitré
+ * n'engendre que si la dernière décision du panel le réintègre (maintien ou correction).
  *
  * Pour un item qui engendre, le choix des gabarits appartient à la table de `prompts/` : types
  * admis, et `positions_exclues` (§5, protocole 0.3 : la position conditionnelle). Ce module ne
@@ -18,6 +19,7 @@
  */
 
 import { sha256 } from "../../validation/domaine/empreinte.ts";
+import { contestationPermetLeTirage } from "./contestation.ts";
 import { gabaritsPourType, remplirTexteNeutre, VERSION_GABARITS } from "./gabarits.ts";
 import type { Gabarit } from "./gabarits.ts";
 import type {
@@ -59,9 +61,15 @@ export class ThemeHorsPerimetre extends Error {
   }
 }
 
-/** §4 et §5 : seul un item vérifié et non contesté engendre des questions. */
+/**
+ * §4 et §5 : seul un item vérifié et admis au tirage engendre des questions. Pour la contestation,
+ * la règle est celle du tirage (`contestationPermetLeTirage`) : non contesté, ou arbitré avec une
+ * dernière décision de maintien ou de correction (§5, protocole 0.3 ; annexe E, point 6). Elle est
+ * évaluée même quand la validation exclut déjà l'item : un arbitrage illisible se signale toujours.
+ */
 export function itemEngendreDesQuestions(item: Item): boolean {
-  return item.statut_validation === "verifie" && item.statut_contestation === "aucune";
+  const contestationAdmise = contestationPermetLeTirage(item);
+  return item.statut_validation === "verifie" && contestationAdmise;
 }
 
 export function referenceDe(item: Item): ReferenceItem {

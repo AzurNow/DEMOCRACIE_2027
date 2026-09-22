@@ -18,7 +18,7 @@ import {
 } from "../../pipeline/questions/tirage.ts";
 import type { TiragePrecedent } from "../../pipeline/questions/tirage.ts";
 import type { Item, Question } from "../../pipeline/questions/types.ts";
-import { candidat, graine, identifiant, jeu, run, THEMES_DE_TEST } from "./fabriques.ts";
+import { candidat, contestation, graine, jeu, run, THEMES_DE_TEST } from "./fabriques.ts";
 
 const MESURES_PAR_THEME = 10;
 const GEL = "2026-12-01T06:00:00+01:00";
@@ -294,19 +294,6 @@ describe("exclusion des items non tirables", () => {
 });
 
 /* ------------------------------------------------ item sorti de l'arbitrage */
-
-type DecisionPanel = "maintien" | "correction" | "retrait" | "non_evaluabilite";
-
-/** Une contestation arbitrée, au format de `item.schema.json` (contestations[].decision_panel). */
-function contestation(cle: string, decision: DecisionPanel, date: string): Record<string, unknown> {
-  return {
-    id: identifiant(`contestation:${cle}`),
-    date_reception: "2026-09-25T09:00:00+02:00",
-    texte: "Texte de contestation fictif.",
-    contestataire_type: "campagne",
-    decision_panel: { date, decision, motivation: "Motivation fictive du panel." },
-  };
-}
 
 const ARBITRE = JEU.items[2] as Item;
 
