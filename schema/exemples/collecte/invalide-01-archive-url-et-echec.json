@@ -1,16 +1,10 @@
 {
-  "url": "https://example.org/programme.pdf",
-  "url_finale": "https://example.org/programme.pdf",
-  "candidat_id": "candidat-a",
-  "tier": "T1",
-  "type_document": "programme_pdf",
-  "date_source": "2026-09-01",
-  "publication": "publique",
   "sha256": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
   "chemin_local": "archives/14/14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494.pdf",
   "taille_octets": 41,
   "type_contenu_recu": "application/pdf",
-  "date_collecte": "2026-09-22T14:30:05+02:00",
+  "date_premiere_collecte": "2026-09-22T14:30:05+02:00",
+  "url_soumise": "https://example.org/programme.pdf",
   "archive_url": "https://web.archive.org/web/20260922123005/https://example.org/programme.pdf",
   "echec_archivage": {
     "service": "wayback_save_page_now",

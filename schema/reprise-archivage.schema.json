@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:reprise-archivage",
+  "title": "Reprise d'un archivage Wayback",
+  "description": "staging/archivages/<sha256>.json, écrit par pipeline/collecte quand une collecte ultérieure obtient les mêmes octets qu'un manifeste de contenu en echec_archivage, sans reprise existante, et que Save Page Now réussit (docs/CONTRATS.md §5). C'est la seule condition où un instantané pris maintenant correspond au document archivé. Immuable ; n'existe qu'en cas de succès, une reprise en échec n'écrit rien. Le manifeste n'est jamais réécrit : le lien effectif est celui du manifeste, sinon celui de ce fichier (pipeline/collecte/lien_archive.py:archive_url_de), et les deux à la fois sont une incohérence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sha256", "date_reprise", "url_soumise", "archive_url"],
+  "properties": {
+    "sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Contenu dont l'archivage est repris ; égal au nom du fichier et à celui du manifeste en échec."
+    },
+    "date_reprise": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Instant où la sauvegarde reprise a réussi."
+    },
+    "url_soumise": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/url",
+      "description": "url listée de la source dont le téléchargement a déclenché la reprise. Elle peut différer de url_soumise du manifeste quand deux sources servent les mêmes octets."
+    },
+    "archive_url": {
+      "$ref": "urn:banc-essai-2027:schema:collecte#/$defs/instantane_wayback",
+      "description": "Instantané daté renvoyé par Save Page Now pour url_soumise. Jamais fabriqué."
+    }
+  }
+}

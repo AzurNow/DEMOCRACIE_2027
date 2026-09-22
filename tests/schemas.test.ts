@@ -85,20 +85,20 @@ function nouveauRepertoire(): RepertoireJetable {
 }
 
 describe("schémas réels : manifeste et méta-schéma", () => {
-  it("1. les 64 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  it("1. les 70 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(64);
+    expect(manifeste.exemples).toHaveLength(70);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
   });
 
-  it("2. les quatorze schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  it("2. les seize schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(14);
+    expect(conformites).toHaveLength(16);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -193,7 +193,7 @@ describe("couplage du registre commun", () => {
 });
 
 describe("aucun fichier du disque n'est ignoré", () => {
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 64 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(64);
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 70 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(70);
   });
 });

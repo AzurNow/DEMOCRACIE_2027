@@ -1,45 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:collecte",
-  "title": "Manifeste de collecte",
-  "description": "Ce qu'une collecte a récupéré pour une source de config/sources.toml : staging/sources/<sha256>.json, écrit par pipeline/collecte, immuable une fois écrit (docs/CONTRATS.md §5). Il alimente champ pour champ commun#/$defs/source (tier, url, type_document, sha256, archive_url, date_source, date_collecte, chemin_local, publication, site_parti_tient_lieu_de_campagne). Les valeurs énumérées sont celles de commun, par référence, jamais recopiées. Le texte canonique extrait plus tard (sous-lot C2) n'y figure pas : le manifeste étant immuable, texte_sha256 vivra à côté, pas dedans.",
+  "title": "Manifeste de contenu collecté",
+  "description": "Les faits d'un document archivé une seule fois : staging/sources/<sha256>.json, écrit par pipeline/collecte à la première collecte de ces octets, immuable ensuite (docs/CONTRATS.md §5). Il ne porte aucune métadonnée de source : deux entrées de config/sources.toml qui servent les mêmes octets ont chacune leur fiche (fiche-source.schema.json), qui pointe ce manifeste par son sha256. Un archivage en échec se reprend dans staging/archivages/<sha256>.json (reprise-archivage.schema.json), jamais en réécrivant ce fichier ; le lien effectif se résout par pipeline/collecte/lien_archive.py:archive_url_de. Le texte canonique extrait plus tard (sous-lot C2) n'y figure pas : texte_sha256 vivra à côté, pas dedans.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "url",
-    "url_finale",
-    "candidat_id",
-    "tier",
-    "type_document",
-    "date_source",
-    "publication",
     "sha256",
     "chemin_local",
     "taille_octets",
     "type_contenu_recu",
-    "date_collecte"
+    "date_premiere_collecte",
+    "url_soumise"
   ],
   "properties": {
-    "url": {
-      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/url",
-      "description": "URL telle que listée par l'auteur dans config/sources.toml. C'est elle que la Wayback Machine sauvegarde."
-    },
-    "url_finale": {
-      "type": "string",
-      "pattern": "^https?://",
-      "description": "URL qui a effectivement servi les octets, après redirections. Égale à url sans redirection."
-    },
-    "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
-    "tier": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier" },
-    "type_document": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/type_document" },
-    "site_parti_tient_lieu_de_campagne": {
-      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/site_parti_tient_lieu_de_campagne"
-    },
-    "date_source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
-    "publication": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/publication" },
     "sha256": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
-      "description": "Empreinte des octets reçus, tels quels : ni BOM retiré, ni fins de ligne converties."
+      "description": "Empreinte des octets reçus, tels quels : ni BOM retiré, ni fins de ligne converties. C'est aussi le nom du fichier."
     },
     "chemin_local": {
       "type": "string",
@@ -50,19 +27,25 @@
     "type_contenu_recu": {
       "type": ["string", "null"],
       "minLength": 1,
-      "description": "En-tête Content-Type tel que reçu, paramètres compris. null si le serveur n'en a envoyé aucun : absent et visible, jamais deviné."
+      "description": "En-tête Content-Type tel que reçu à la première collecte, paramètres compris. null si le serveur n'en a envoyé aucun : absent et visible, jamais deviné."
     },
-    "date_collecte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "date_premiere_collecte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Fin du premier téléchargement qui a produit ces octets. Chaque source garde sa propre date_collecte dans sa fiche."
+    },
+    "url_soumise": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/url",
+      "description": "URL soumise à Save Page Now : l'url listée par l'auteur (jamais url_finale) de la source qui a servi ces octets en premier. Sans elle, ni archive_url ni echec_archivage ne se vérifient."
+    },
     "archive_url": {
-      "type": "string",
-      "pattern": "^https://web\\.archive\\.org/web/[0-9]{14}/.+$",
-      "description": "Instantané daté renvoyé par Save Page Now. Jamais fabriqué : sans réponse désignant un instantané, ce champ est absent et echec_archivage est présent."
+      "$ref": "#/$defs/instantane_wayback",
+      "description": "Instantané daté renvoyé par Save Page Now pour url_soumise. Jamais fabriqué : sans réponse désignant un instantané, ce champ est absent et echec_archivage est présent."
     },
     "echec_archivage": {
       "type": "object",
       "additionalProperties": false,
       "required": ["service", "motif", "tentatives"],
-      "description": "La sauvegarde Wayback a échoué après toutes ses tentatives. Une source sans archive_url ne peut pas s'afficher (CLAUDE.md, règle 2) : c'est voulu.",
+      "description": "La sauvegarde Wayback a échoué après toutes ses tentatives. Une source sans lien d'archive effectif ne peut pas s'afficher (CLAUDE.md, règle 2) ; une collecte ultérieure des mêmes octets peut écrire une reprise.",
       "properties": {
         "service": { "const": "wayback_save_page_now" },
         "motif": { "type": "string", "minLength": 1, "description": "Motif de la dernière tentative." },
@@ -74,10 +57,11 @@
     { "required": ["archive_url"] },
     { "required": ["echec_archivage"] }
   ],
-  "if": {
-    "properties": { "type_document": { "const": "site_parti" } },
-    "required": ["type_document"]
-  },
-  "then": { "required": ["site_parti_tient_lieu_de_campagne"] },
-  "else": { "not": { "required": ["site_parti_tient_lieu_de_campagne"] } }
+  "$defs": {
+    "instantane_wayback": {
+      "type": "string",
+      "pattern": "^https://web\\.archive\\.org/web/[0-9]{14}/.+$",
+      "description": "URL d'instantané daté /web/<AAAAMMJJhhmmss>/…, telle que renvoyée par Save Page Now (en-tête Location ou Content-Location). Définie ici une seule fois, référencée par reprise-archivage.schema.json."
+    }
+  }
 }

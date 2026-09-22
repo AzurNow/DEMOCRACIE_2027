@@ -1,8 +1,10 @@
 """`uv run python -m pipeline.collecte config/sources.toml` (ou `pnpm collecte config/sources.toml`).
 
-Codes de sortie : 0 si chaque source est collectée ou déjà collectée ; 1 si au moins une source a
-échoué (HTTP, robots.txt, réseau, réponse vide) ou n'a pas pu être sauvegardée sur la Wayback
-Machine ; 2 si la liste des sources est refusée, auquel cas rien n'a été téléchargé.
+Codes de sortie : 0 si chaque source est collectée, déjà collectée, rattachée par une fiche à un
+contenu déjà archivé, ou si son archivage a été repris ; 1 si au moins une source a échoué (HTTP,
+robots.txt, réseau, réponse vide) ou n'a pas pu être sauvegardée sur la Wayback Machine, à la
+première collecte comme à la reprise ; 2 si la liste des sources est refusée, auquel cas rien n'a
+été téléchargé.
 """
 
 from __future__ import annotations

@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les quatorze fichiers
+## Les seize fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -23,7 +23,9 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `decision.schema.json` | entrée du journal de validation | §4, une ligne du journal append-only écrit par l'interface de validation humaine |
 | `decision-mesure.schema.json` | arbitrage d'une correction de thème | §4, décision de l'auteur sur une demande de correction du thème d'une mesure, publiée dans `validation/mesures/decisions.json` |
 | `gabarits.schema.json` | table des gabarits de questions | §5 (protocole 0.3) : les gabarits sont versionnés dans `prompts/` ; décrit `prompts/gabarits-1.0.0.json`, lu par `pipeline/questions/gabarits.ts` |
-| `collecte.schema.json` | manifeste de collecte d'une source | §4, collecte horodatée et archivée : `staging/sources/<sha256>.json`, écrit par `pipeline/collecte` (Python), format dans `docs/CONTRATS.md` §5 ; alimente champ pour champ `commun#/$defs/source` |
+| `collecte.schema.json` | manifeste de contenu collecté | §4, collecte horodatée et archivée : `staging/sources/<sha256>.json`, les faits d'un document archivé une seule fois (empreinte, copie locale, archivage Wayback), écrit par `pipeline/collecte` (Python), format dans `docs/CONTRATS.md` §5 |
+| `fiche-source.schema.json` | fiche d'une source listée | §4 : `staging/sources/par-source/<cle_source>/<sha256>.json`, une par entrée de `config/sources.toml` et par contenu obtenu, pour qu'aucune source ne perde ses métadonnées quand deux servent les mêmes octets ; avec le manifeste de contenu qu'elle pointe, alimente champ pour champ `commun#/$defs/source` |
+| `reprise-archivage.schema.json` | reprise d'un archivage Wayback | §4 et règle 2 de `CLAUDE.md` : `staging/archivages/<sha256>.json`, écrit sans réécrire le manifeste quand une collecte ultérieure des mêmes octets réussit la sauvegarde qui avait échoué |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -121,7 +123,7 @@ l'item ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 64 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 70 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -139,10 +141,12 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | decision | annulation portant une décision · decision=corriger avec corrections vide · item O portant reponses_grille au lieu de reponses_par_etat |
 | decision-mesure | refus sans motif · theme_demande hors des dix thèmes fixes du §3 |
 | gabarits | gabarit sans `positions_exclues` · gabarit présent deux fois |
-| collecte | `archive_url` et `echec_archivage` à la fois · site de parti sans `site_parti_tient_lieu_de_campagne` |
+| collecte | `archive_url` et `echec_archivage` à la fois · manifeste sans `url_soumise` |
+| fiche-source | site de parti sans `site_parti_tient_lieu_de_campagne` · fiche portant `archive_url` |
+| reprise-archivage | `archive_url` qui n'est pas un instantané daté |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 14 schémas au registre, 64/64 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 16 schémas au registre, 70/70 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

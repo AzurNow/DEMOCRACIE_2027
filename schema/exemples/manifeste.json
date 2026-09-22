@@ -401,13 +401,13 @@
       "objet": "collecte",
       "fichier": "collecte/valide-01-archive-wayback.json",
       "attendu": "valide",
-      "motif": "Manifeste d'un programme PDF collecté et sauvegardé sur la Wayback Machine : copie du fichier doré tests/collecte/dore/manifeste-archive.json, produit par pipeline/collecte."
+      "motif": "Manifeste de contenu d'un programme PDF sauvegardé sur la Wayback Machine : les seuls faits du document, sans métadonnée de source. Copie du fichier doré tests/collecte/dore/manifeste-archive.json, égalité octet pour octet vérifiée par tests/collecte/dores.test.ts."
     },
     {
       "objet": "collecte",
       "fichier": "collecte/valide-02-echec-archivage.json",
       "attendu": "valide",
-      "motif": "Site de parti collecté après redirection (url_finale distincte de url), Wayback en échec : pas d'archive_url, bloc echec_archivage explicite. Copie du fichier doré tests/collecte/dore/manifeste-echec-archivage.json."
+      "motif": "Manifeste de contenu d'une page HTML dont la sauvegarde Wayback a échoué : pas d'archive_url, bloc echec_archivage explicite, url_soumise conservée pour la reprise. Copie du fichier doré tests/collecte/dore/manifeste-echec-archivage.json."
     },
     {
       "objet": "collecte",
@@ -418,10 +418,49 @@
     },
     {
       "objet": "collecte",
-      "fichier": "collecte/invalide-02-site-parti-sans-mention.json",
+      "fichier": "collecte/invalide-02-sans-url-soumise.json",
+      "attendu": "invalide",
+      "motif": "Manifeste sans url_soumise. Deux sources peuvent servir les mêmes octets : sans l'URL soumise à Save Page Now, on ne sait plus de quelle adresse l'instantané archive_url est la capture, ni laquelle retenter.",
+      "regle_protocole": "§4, archivage (sauvegarde Wayback Machine)"
+    },
+    {
+      "objet": "fiche-source",
+      "fichier": "fiche-source/valide-01-programme-pdf.json",
+      "attendu": "valide",
+      "motif": "Fiche d'une source listée, qui pointe par sha256 le contenu archivé une seule fois. Copie du fichier doré tests/collecte/dore/fiche-programme-pdf.json."
+    },
+    {
+      "objet": "fiche-source",
+      "fichier": "fiche-source/valide-02-site-parti-redirige.json",
+      "attendu": "valide",
+      "motif": "Site de parti collecté après redirection (url_finale distincte de url), avec la mention site_parti_tient_lieu_de_campagne exigée par §4. Copie du fichier doré tests/collecte/dore/fiche-site-parti.json."
+    },
+    {
+      "objet": "fiche-source",
+      "fichier": "fiche-source/invalide-01-site-parti-sans-mention.json",
       "attendu": "invalide",
       "motif": "type_document=site_parti sans site_parti_tient_lieu_de_campagne. Un site de parti n'est T1 que si le candidat déclare qu'il tient lieu de site de campagne, « ce qui est alors noté ».",
       "regle_protocole": "§4, hiérarchie des sources"
+    },
+    {
+      "objet": "fiche-source",
+      "fichier": "fiche-source/invalide-02-lien-d-archive-dans-la-fiche.json",
+      "attendu": "invalide",
+      "motif": "Fiche portant archive_url. L'archivage est un fait du contenu, consigné une seule fois dans le manifeste ou sa reprise : recopié dans une fiche, il pourrait contredire le lien effectif résolu par archive_url_de.",
+      "regle_protocole": "§4, archivage ; CLAUDE.md règle 2"
+    },
+    {
+      "objet": "reprise-archivage",
+      "fichier": "reprise-archivage/valide-01-reprise-reussie.json",
+      "attendu": "valide",
+      "motif": "Reprise réussie le lendemain d'un échec Wayback, sur les mêmes octets : instantané daté renvoyé par Save Page Now. Copie du fichier doré tests/collecte/dore/reprise-archivage.json."
+    },
+    {
+      "objet": "reprise-archivage",
+      "fichier": "reprise-archivage/invalide-01-lien-non-date.json",
+      "attendu": "invalide",
+      "motif": "archive_url qui n'est pas un instantané daté /web/<AAAAMMJJhhmmss>/ mais l'adresse de demande /save/. Un lien d'archive n'est jamais fabriqué : seul un instantané renvoyé par le service en tient lieu.",
+      "regle_protocole": "§4, archivage ; CLAUDE.md règle 2"
     }
   ]
 }
