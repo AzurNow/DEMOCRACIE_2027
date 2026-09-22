@@ -14,3 +14,12 @@ validation/fixtures/brouillons-demo/
 
 # Worktrees des sous-agents (Claude Code) : des copies de travail, jamais du contenu du dépôt.
 .claude/worktrees/
+
+# Copies locales des sources collectées (pipeline/collecte) : hors Git par décision du 2026-09-22.
+# Git ne garde que les manifestes staging/sources/<sha256>.json (docs/CONTRATS.md §5).
+archives/
+
+# Environnement Python géré par uv, et caches.
+.venv/
+__pycache__/
+.pytest_cache/

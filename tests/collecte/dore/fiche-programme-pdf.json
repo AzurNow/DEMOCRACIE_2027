@@ -1,0 +1,11 @@
+{
+  "url": "https://example.org/programme.pdf",
+  "url_finale": "https://example.org/programme.pdf",
+  "candidat_id": "candidat-a",
+  "tier": "T1",
+  "type_document": "programme_pdf",
+  "date_source": "2026-09-01",
+  "publication": "publique",
+  "sha256": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
+  "date_collecte": "2026-09-22T14:30:05+02:00"
+}

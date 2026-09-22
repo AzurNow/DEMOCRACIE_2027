@@ -1,0 +1,43 @@
+# Exemple de liste de sources pour `python -m pipeline.collecte` (format : docs/CONTRATS.md §5).
+#
+# Le fichier réel est config/sources.toml, tenu à la main par l'auteur seul. Les URL ci-dessous
+# sont fictives (example.org) : ce fichier ne sert qu'à montrer la forme, et un test vérifie qu'il
+# reste une liste valide.
+#
+# Chaque [[source]] porte obligatoirement les six champs ci-dessous, sans valeur par défaut :
+#   url            URL http ou https du document, telle que citée
+#   candidat_id    identifiant court du candidat (config/perimetre.yaml)
+#   tier           T1, T2 ou T3 (docs/PROTOCOLE.md §4)
+#   type_document  programme_pdf, site_officiel, site_parti, tribune_signee, communique_campagne,
+#                  enregistrement_video, enregistrement_audio ou article_presse
+#   date_source    date de la source elle-même, en date TOML nue : 2026-09-01, sans guillemets
+#   publication    publique ou interne (docs/PROTOCOLE.md §10, droit d'auteur)
+#
+# site_parti_tient_lieu_de_campagne est obligatoire si et seulement si type_document vaut
+# site_parti (§4 : la déclaration du candidat « est alors notée »). Tout autre champ est refusé.
+# Une seule erreur refuse tout le fichier, avant le moindre téléchargement.
+
+[[source]]
+url = "https://example.org/candidat-a/programme-2027.pdf"
+candidat_id = "candidat-a"
+tier = "T1"
+type_document = "programme_pdf"
+date_source = 2026-09-01
+publication = "publique"
+
+[[source]]
+url = "https://example.org/parti-b/propositions"
+candidat_id = "candidat-b"
+tier = "T1"
+type_document = "site_parti"
+date_source = 2026-08-15
+publication = "publique"
+site_parti_tient_lieu_de_campagne = true
+
+[[source]]
+url = "https://example.org/media/entretien-candidat-a.mp4"
+candidat_id = "candidat-a"
+tier = "T2"
+type_document = "enregistrement_video"
+date_source = 2026-09-10
+publication = "interne"

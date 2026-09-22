@@ -87,3 +87,182 @@ propriété vérifiée à chaque affichage, pas une promesse tenue par conventio
 | `validation/brouillons/<annotateur>.json` | lecture et écriture | hors dépôt, hors publication |
 | `validation/mesures/decisions.json` | lecture ; ajout par `pnpm mesures --ecrire` uniquement | registre publié des corrections de thème, en ajout seul : une entrée n'est jamais modifiée ni retirée, un revirement est une entrée de plus. `pnpm promote` le lit, ne l'écrit jamais |
 | `data/` | **aucun** | seul `pnpm promote --ecrire`, lancé par un humain, y écrit |
+
+## 5. Collecte des sources — `config/sources.toml`, `archives/`, `staging/sources/`, `staging/archivages/`
+
+La collecte (`pipeline/collecte`, `pnpm collecte config/sources.toml`) récupère une **liste
+explicite** d'URL tenue par l'auteur, sans crawl ni suivi de liens. Pour chaque source, elle
+télécharge le document et calcule le SHA-256 des octets reçus. Un contenu nouveau est copié tel quel
+dans `archives/`, sauvegardé sur la Wayback Machine et décrit par un **manifeste de contenu** ;
+chaque source reçoit en outre sa **fiche**, qui pointe ce contenu. §4 du protocole : « la collecte
+est horodatée et archivée (copie locale, empreinte SHA-256, sauvegarde Wayback Machine) ».
+
+Le contenu et la source sont séparés parce que deux sources peuvent servir les mêmes octets (un
+programme commun à deux adresses, ou listé pour deux candidats) : le document est archivé une seule
+fois, et aucune source listée ne perd ses métadonnées.
+
+### 5.1 Liste des sources — `config/sources.toml`
+
+Écrite à la main par l'auteur seul ; aucun script ne l'écrit. Exemple commenté :
+`pipeline/collecte/exemples/sources.exemple.toml`. TOML parce que `tomllib` est dans la
+bibliothèque standard de Python 3.12 et accepte les commentaires.
+
+```toml
+[[source]]
+url = "https://example.org/candidat-a/programme-2027.pdf"
+candidat_id = "candidat-a"
+tier = "T1"
+type_document = "programme_pdf"
+date_source = 2026-09-01          # date TOML nue : ni guillemets, ni heure
+publication = "publique"
+
+[[source]]
+url = "https://example.org/parti-b/propositions"
+candidat_id = "candidat-b"
+tier = "T1"
+type_document = "site_parti"
+date_source = 2026-08-15
+publication = "publique"
+site_parti_tient_lieu_de_campagne = true
+```
+
+| Champ | Obligatoire | Valeurs |
+| --- | --- | --- |
+| `url` | oui | URL `http` ou `https` avec un hôte |
+| `candidat_id` | oui | `commun#/$defs/identifiant_court` |
+| `tier` | oui | `commun#/$defs/tier` : `T1`, `T2`, `T3` |
+| `type_document` | oui | énumération de `commun#/$defs/source/properties/type_document` |
+| `date_source` | oui | date TOML nue `AAAA-MM-JJ` : date de la source elle-même (§4) |
+| `publication` | oui | `publique` ou `interne` (§10, droit d'auteur) |
+| `site_parti_tient_lieu_de_campagne` | si et seulement si `type_document = "site_parti"` | `true` ou `false` |
+
+Aucune autre clé n'est admise, ni dans une source ni au premier niveau. Un seul problème (champ
+manquant, inconnu, hors énumération, mal typé) **refuse tout le fichier avant le moindre
+téléchargement** ; chaque problème est rapporté avec le numéro et l'URL de la source fautive. Aucune
+valeur par défaut. Les énumérations sont lues dans `schema/commun.schema.json`, jamais recopiées.
+
+### 5.2 Politesse
+
+Norme du §6, appliquée à toute la collecte : respect de `robots.txt` et au plus une requête par
+seconde **par hôte**, mesurée entre deux débuts de requête, `robots.txt` et redirections compris.
+User-Agent : `BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRACIE_2027)`.
+
+| `robots.txt` répond | Effet |
+| --- | --- |
+| 2xx | règles appliquées ; une URL interdite est refusée et consignée, jamais contournée |
+| 401 ou 403 | tout l'hôte est interdit |
+| autre 4xx (404…) | pas de `robots.txt` : tout est permis |
+| 5xx, erreur réseau, délai dépassé, contenu non UTF-8 | **erreur consignée**, jamais une autorisation |
+
+`robots.txt` est lu une fois par origine et par lot ; son résultat, erreur comprise, vaut pour tout
+le lot. Les redirections (301, 302, 303, 307, 308) sont suivies une à une, cinq au plus, chaque
+étape repassant par la cadence et par le `robots.txt` de sa cible ; une cible hors `http`/`https`
+est un échec.
+
+### 5.3 Copie locale — `archives/<sha256[0:2]>/<sha256><extension>`
+
+Hors Git (`.gitignore`). Octets reçus écrits tels quels : ni BOM retiré, ni fins de ligne
+converties, ni réencodage ; le SHA-256 porte sur ces octets. L'extension vient d'une table fermée
+de `Content-Type` (`pipeline/collecte/archivage.py`) ; un type absent de la table, ou un en-tête
+absent, donne `.bin`, et le type reçu reste consigné dans le manifeste. Écriture atomique (fichier
+temporaire `.<nom>.*.partiel` dans le même répertoire, puis renommage) : une interruption ne laisse
+jamais de fichier partiel sous le nom définitif. Une archive n'est jamais écrasée.
+
+### 5.4 Manifeste de contenu — `staging/sources/<sha256>.json`
+
+Décrit par `schema/collecte.schema.json`. Écrit à la **première** collecte de ces octets, quelle
+que soit la source qui les a servis. JSON UTF-8, indentation de deux espaces, ordre des clés fixe,
+saut de ligne final, écriture atomique. **Immuable une fois écrit.**
+
+| Champ | Origine |
+| --- | --- |
+| `sha256` | empreinte des octets archivés ; c'est aussi le nom du fichier |
+| `chemin_local` | chemin de l'archive, relatif à la racine du dépôt |
+| `taille_octets` | nombre d'octets reçus, au moins 1 |
+| `type_contenu_recu` | en-tête `Content-Type` tel que reçu à la première collecte, ou `null` s'il manquait |
+| `date_premiere_collecte` | instant de fin du premier téléchargement qui a produit ces octets, ISO 8601 avec décalage |
+| `url_soumise` | URL soumise à Save Page Now : l'`url` listée (jamais `url_finale`) de la source qui a servi ces octets en premier |
+| `archive_url` | instantané daté renvoyé par Save Page Now — **ou** — |
+| `echec_archivage` | `{service: "wayback_save_page_now", motif, tentatives}` quand la sauvegarde a échoué |
+
+Exactement un des deux derniers est présent. `archive_url` n'est jamais fabriqué : seule une URL
+`/web/<AAAAMMJJhhmmss>/…` renvoyée par le service (en-tête `Location` ou `Content-Location`) en
+tient lieu. La sauvegarde est tentée trois fois, espacées de dix secondes.
+
+Ce que le manifeste **ne porte pas** : les métadonnées d'une source (elles sont dans la fiche, §5.5)
+et le texte canonique. `texte_sha256` (§1) sera produit par l'extraction (sous-lot C2) dans un
+fichier à part, apparié par le même `sha256` ; le manifeste étant immuable, il ne peut pas le
+recevoir après coup.
+
+### 5.5 Fiche de source — `staging/sources/par-source/<cle_source>/<sha256>.json`
+
+Décrite par `schema/fiche-source.schema.json`. Une fiche par entrée de `config/sources.toml` **et**
+par contenu obtenu ; mêmes règles d'écriture que le manifeste, immuable.
+
+`cle_source` est le SHA-256 (hexadécimal minuscule) de la chaîne UTF-8 `candidat_id + "\n" + url`.
+La même `url` listée pour deux candidats donne donc deux sources et deux fiches : un programme
+commun appartient aux deux. Le répertoire d'une source garde l'historique de ses contenus
+successifs, un fichier par `sha256`.
+
+| Champ | Origine |
+| --- | --- |
+| `url`, `candidat_id`, `tier`, `type_document`, `site_parti_tient_lieu_de_campagne`, `date_source`, `publication` | repris de la liste des sources ; la mention `site_parti_…` si et seulement si `type_document = "site_parti"` |
+| `url_finale` | URL qui a servi les octets à cette collecte, après redirections |
+| `sha256` | contenu obtenu, qui nomme le manifeste de §5.4 |
+| `date_collecte` | instant de fin du téléchargement de cette source qui a produit ces octets |
+
+La fiche est écrite **après** le manifeste qu'elle pointe : une fiche n'existe jamais sans son
+manifeste. Avec lui, elle alimente champ pour champ `commun#/$defs/source`, le lien d'archive
+venant de §5.7.
+
+### 5.6 Reprise d'archivage — `staging/archivages/<sha256>.json`
+
+Décrite par `schema/reprise-archivage.schema.json`. Le manifeste étant immuable, un échec de Save
+Page Now se reprend dans un fichier à part, jamais en réécrivant le manifeste.
+
+**Déclencheur, et seulement lui** : la collecte télécharge une source, obtient un `sha256` dont le
+manifeste existe déjà, porte `echec_archivage`, et pour lequel aucun fichier de reprise n'existe.
+Le contenu servi aujourd'hui est alors identique au document archivé : c'est la seule condition où
+un instantané Wayback pris maintenant lui correspond. Save Page Now est retenté pour l'`url` listée
+de cette source (trois tentatives, comme en §5.4).
+
+- Succès : `staging/archivages/<sha256>.json` est écrit avec `sha256`, `date_reprise`,
+  `url_soumise` et `archive_url`. Il est immuable.
+- Échec : rien n'est écrit, l'échec est nommé dans le rapport, le code de sortie est non nul. La
+  collecte suivante des mêmes octets retentera.
+- Contenu changé : aucune reprise pour l'ancien `sha256`, qui ne correspond plus à ce que le serveur
+  sert ; le nouveau contenu suit le chemin normal avec son propre archivage.
+
+### 5.7 Lien d'archive effectif — `pipeline/collecte/lien_archive.py:archive_url_de`
+
+`archive_url_de(racine, sha256)` est la seule résolution du lien d'archive d'un contenu. L'extraction
+(C2) et tout ce qui affiche une source l'appellent au lieu de lire les fichiers :
+
+| Manifeste | Reprise | Résultat |
+| --- | --- | --- |
+| `archive_url` | absente | l'`archive_url` du manifeste |
+| `echec_archivage` | présente | l'`archive_url` de la reprise |
+| `echec_archivage` | absente | `None` : la source ne peut pas s'afficher (règle 2 de `CLAUDE.md`), l'appelant doit traiter l'absence |
+| `archive_url` | présente | erreur `ArchivageIncoherent` |
+| absent | — | erreur `ManifesteAbsent` |
+
+Une reprise dont le `sha256` diffère du nom de son fichier, ou un manifeste qui porte les deux
+branches ou aucune, lèvent aussi `ArchivageIncoherent`. Aucun lien n'est jamais inventé.
+
+### 5.8 Cas de collecte
+
+| Situation | Archive | Manifeste de contenu | Fiche | Reprise | Rapport, code de sortie |
+| --- | --- | --- | --- | --- | --- |
+| contenu nouveau, Wayback en succès | écrite | écrit, avec `archive_url` | écrite | — | « collecté », 0 |
+| contenu nouveau, Wayback en échec | écrite | écrit, avec `echec_archivage` | écrite | — | « ARCHIVAGE EN ÉCHEC », 1 |
+| fiche de cette source pour ce contenu déjà présente, lien effectif présent | inchangée | inchangé | inchangée | inchangée | « déjà collectée », 0 |
+| nouvelle source (ou fiche manquante) dont le contenu est déjà archivé, lien effectif présent | inchangée | inchangé | **écrite** | inchangée | « contenu déjà archivé, fiche ajoutée », 0 |
+| contenu connu, manifeste en échec, sans reprise, Wayback en succès | inchangée | inchangé | écrite si absente | **écrite** | « archivage repris » (« , fiche ajoutée »), 0 |
+| contenu connu, manifeste en échec, sans reprise, Wayback en échec | inchangée | inchangé | écrite si absente | aucune | « REPRISE D'ARCHIVAGE EN ÉCHEC », 1 |
+| même source, contenu différent | nouvelle | nouveau ; l'ancien reste | nouvelle, dans le même répertoire ; l'ancienne reste | — | « collecté », 0 |
+| HTTP autre que 200 après redirections, délai dépassé, erreur réseau, réponse de 0 octet, `robots.txt` interdit ou injoignable, redirection hors http(s) | aucune | aucun | aucune | aucune | « ÉCHEC » avec le motif, 1 |
+| liste des sources invalide | aucune | aucun | aucune | aucune | erreurs sur la sortie d'erreur, 2, rien n'est téléchargé |
+
+Un échec n'arrête pas le lot : les sources suivantes sont collectées, et le code de sortie final
+est non nul. Deux sources du même lot qui servent les mêmes octets sont traitées dans l'ordre de la
+liste : si la sauvegarde de la première échoue, la seconde déclenche aussitôt une reprise (§5.6).

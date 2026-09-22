@@ -258,7 +258,7 @@
       "id": "collecte",
       "titre": "Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback",
       "jalon": "J2",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "sonnet",
       "taille": "L",
       "temps_auteur_h": 1,
@@ -266,7 +266,7 @@
       "decisions": [
         "D2"
       ],
-      "note": "Le contrat des artefacts est déjà figé dans docs/CONTRATS.md. Python probable."
+      "note": "Découpé en sous-lots. C1 et C1-bis livrés le 2026-09-22 (PR #11) : socle uv et Python 3.12, téléchargement poli (robots.txt, 1 req/s), archives/ hors Git, SHA-256, Save Page Now avec reprise sans réécriture (staging/archivages/), manifeste de contenu et fiche par source (CONTRATS §5), 106 tests pytest sans réseau, ruff C901 en CI. Jamais lancé sur une vraie source. PROCHAINE ÉTAPE : C2, texte canonique PDF (pymupdf) et HTML (bibliothèque standard), qui lit le lien d'archive par archive_url_de. Puis C3, audio et vidéo. Entrée : config/sources.toml, que seul l'auteur écrit."
     },
     {
       "id": "extraction",

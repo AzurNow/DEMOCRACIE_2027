@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:fiche-source",
+  "title": "Fiche de source collectée",
+  "description": "Trace d'une entrée de config/sources.toml pour un contenu obtenu : staging/sources/par-source/<cle_source>/<sha256>.json, écrite par pipeline/collecte, immuable (docs/CONTRATS.md §5). cle_source est le SHA-256 de candidat_id + \"\\n\" + url : la même URL listée pour deux candidats donne deux fiches, parce qu'un programme commun appartient aux deux. Le répertoire d'une source garde l'historique de ses contenus successifs. La fiche pointe le document par sha256 vers son manifeste de contenu (collecte.schema.json) et, avec lui, alimente champ pour champ commun#/$defs/source. Les valeurs énumérées sont celles de commun, par référence, jamais recopiées.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "url",
+    "url_finale",
+    "candidat_id",
+    "tier",
+    "type_document",
+    "date_source",
+    "publication",
+    "sha256",
+    "date_collecte"
+  ],
+  "properties": {
+    "url": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/url",
+      "description": "URL telle que listée par l'auteur dans config/sources.toml."
+    },
+    "url_finale": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "URL qui a effectivement servi les octets à cette collecte, après redirections. Égale à url sans redirection."
+    },
+    "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+    "tier": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier" },
+    "type_document": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/type_document" },
+    "site_parti_tient_lieu_de_campagne": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/site_parti_tient_lieu_de_campagne"
+    },
+    "date_source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+    "publication": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/publication" },
+    "sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Contenu obtenu : nom du manifeste staging/sources/<sha256>.json et nom de ce fichier."
+    },
+    "date_collecte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Fin du téléchargement de cette source qui a produit ces octets."
+    }
+  },
+  "if": {
+    "properties": { "type_document": { "const": "site_parti" } },
+    "required": ["type_document"]
+  },
+  "then": { "required": ["site_parti_tient_lieu_de_campagne"] },
+  "else": { "not": { "required": ["site_parti_tient_lieu_de_campagne"] } }
+}

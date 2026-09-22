@@ -52,7 +52,7 @@ flowchart LR
   end
   subgraph jalon_J2["J2 · 31 oct. 2026"]
     lot_ci["ci<br/>Intégration continue : check et test sur chaque PR<br/>T3"]:::T3
-    lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T0"]:::T0
+    lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T2"]:::T2
     lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T0"]:::T0
     lot_feuille_de_route["feuille-de-route<br/>Feuille de route générée depuis ce fichier<br/>T2"]:::T2
     lot_outillage["outillage<br/>ajv sur les 45 exemples, ESLint à deux règles de complexité<br/>T3"]:::T3
@@ -96,7 +96,7 @@ flowchart LR
 | perimetre-prompts | config/perimetre.yaml et prompts/ versionnés | J1 | T0 | débloqué | auteur avec fable | S | 5 | — |
 | protocole | Protocole v0.2, à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
 | ci | Intégration continue : check et test sur chaque PR | J2 | T3 | atteint | sonnet | S | 0.25 | — |
-| collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T0 | débloqué | sonnet | L | 1 | — |
+| collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T0 | bloqué par perimetre-prompts | opus | L | 1 | collecte (informe), perimetre-prompts |
 | feuille-de-route | Feuille de route générée depuis ce fichier | J2 | T2 | débloqué | sonnet | S | 0.5 | — |
 | outillage | ajv sur les 45 exemples, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
@@ -129,7 +129,7 @@ flowchart LR
 ### J2
 
 - ci (T3)
-- collecte (T0)
+- collecte (T2)
 - extraction (T0)
 - feuille-de-route (T2)
 - outillage (T3)

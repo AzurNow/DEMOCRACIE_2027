@@ -1,7 +1,7 @@
 # Décision D1 (2026-09-20) : `pnpm check` et `pnpm test` rejoués hors de la machine de l'auteur,
 # sur chaque PR et sur main. C'est la seule preuve publique que les tests bloquants le sont.
 #
-# Seules les deux actions officielles de GitHub sont utilisées, épinglées par empreinte de commit
+# Seules les actions officielles de GitHub (checkout, setup-node, setup-python) sont utilisées, épinglées par empreinte de commit
 # (une étiquette peut être déplacée, une empreinte non). pnpm vient de corepack, livré avec Node, à
 # la version que fixe `packageManager` dans package.json : aucune action tierce, aucune dépendance.
 # Node 22 est le plancher déclaré par `engines` : c'est lui qu'on vérifie.
@@ -28,3 +28,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm test
+      # Pipeline Python (sous-lot C1, décision du 2026-09-22) : Python épinglé par .python-version,
+      # uv installé par pip à version fixe (aucune action tierce), dépendances rejouées depuis uv.lock.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - run: python -m pip install uv==0.12.17
+      - run: uv sync --frozen
+      - run: uv run ruff check pipeline tests
+      - run: uv run pytest

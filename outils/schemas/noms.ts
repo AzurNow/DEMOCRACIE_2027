@@ -1,6 +1,8 @@
 /**
- * Les treize schémas de `schema/` (voir `schema/README.md`, « Les dix fichiers » — en réalité
- * douze avec `commun` et `lecture-comparateur`, treize avec `gabarits`). Nommés une seule fois
+ * Les seize schémas de `schema/` (voir `schema/README.md`, « Les seize fichiers » : douze avec
+ * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
+ * `fiche-source` et `reprise-archivage`).
+ * Nommés une seule fois
  * ici : tout le reste du module en dérive, jamais d'un `if` par nom.
  *
  * `decision` (journal de validation, §4) et `decision-mesure` (arbitrage des corrections de
@@ -12,6 +14,12 @@
  * `gabarits` décrit la table des gabarits versionnée dans `prompts/` (§5, protocole 0.3). Ses
  * exemples sont vérifiés ici comme les autres ; le fichier réel `prompts/gabarits-1.0.0.json`
  * l'est par `tests/questions/gabarits.test.ts`, et par le chargeur à chaque import.
+ *
+ * `collecte`, `fiche-source` et `reprise-archivage` décrivent les trois fichiers écrits par
+ * `pipeline/collecte` (Python, `docs/CONTRATS.md` §5) : manifeste de contenu, fiche par source,
+ * reprise d'archivage. Python ne valide pas contre le schéma : les fichiers dorés de
+ * `tests/collecte/dore/`, reproduits octet pour octet par pytest, sont validés ici par
+ * `tests/collecte/dores.test.ts`, qui vérifie aussi que les exemples valides leur sont identiques.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -27,6 +35,9 @@ export const NOMS_SCHEMAS = [
   "decision",
   "decision-mesure",
   "gabarits",
+  "collecte",
+  "fiche-source",
+  "reprise-archivage",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

@@ -1,0 +1,34 @@
+# Projet Python du pipeline de données (collecte, puis extraction). Le reste du dépôt est en
+# TypeScript (package.json). Environnement géré par uv, Python épinglé en 3.12 (décision du
+# 2026-09-22) ; uv.lock est commité et `uv sync --frozen` le rejoue à l'identique.
+#
+# Aucune dépendance d'exécution : la collecte (sous-lot C1) n'utilise que la bibliothèque
+# standard. Dépendances de développement autorisées : pytest et ruff, épinglés.
+[project]
+name = "banc-essai-2027-pipeline"
+version = "0.0.0"
+description = "Pipeline de collecte du Banc d'essai 2027"
+requires-python = "==3.12.*"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.16.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["--import-mode=importlib", "--strict-markers"]
+
+# Seule règle activée : C901 (McCabe) à 9 au plus, équivalent de la règle ESLint `complexity`
+# côté TypeScript (CLAUDE.md, « Complexité sous les seuils »). Aucune autre règle, pas de formateur.
+[tool.ruff.lint]
+select = ["C901"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 9

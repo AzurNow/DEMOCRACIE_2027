@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:collecte",
+  "title": "Manifeste de contenu collecté",
+  "description": "Les faits d'un document archivé une seule fois : staging/sources/<sha256>.json, écrit par pipeline/collecte à la première collecte de ces octets, immuable ensuite (docs/CONTRATS.md §5). Il ne porte aucune métadonnée de source : deux entrées de config/sources.toml qui servent les mêmes octets ont chacune leur fiche (fiche-source.schema.json), qui pointe ce manifeste par son sha256. Un archivage en échec se reprend dans staging/archivages/<sha256>.json (reprise-archivage.schema.json), jamais en réécrivant ce fichier ; le lien effectif se résout par pipeline/collecte/lien_archive.py:archive_url_de. Le texte canonique extrait plus tard (sous-lot C2) n'y figure pas : texte_sha256 vivra à côté, pas dedans.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sha256",
+    "chemin_local",
+    "taille_octets",
+    "type_contenu_recu",
+    "date_premiere_collecte",
+    "url_soumise"
+  ],
+  "properties": {
+    "sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte des octets reçus, tels quels : ni BOM retiré, ni fins de ligne converties. C'est aussi le nom du fichier."
+    },
+    "chemin_local": {
+      "type": "string",
+      "pattern": "^archives/[0-9a-f]{2}/[0-9a-f]{64}\\.[a-z0-9]+$",
+      "description": "archives/<sha256[0:2]>/<sha256><extension>, relatif à la racine du dépôt, hors Git. L'extension vient d'une table fermée de Content-Type (pipeline/collecte/archivage.py) ; un type inconnu ou absent donne .bin."
+    },
+    "taille_octets": { "type": "integer", "minimum": 1, "description": "Une réponse de 0 octet est refusée : un document vide n'est pas une source." },
+    "type_contenu_recu": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "En-tête Content-Type tel que reçu à la première collecte, paramètres compris. null si le serveur n'en a envoyé aucun : absent et visible, jamais deviné."
+    },
+    "date_premiere_collecte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Fin du premier téléchargement qui a produit ces octets. Chaque source garde sa propre date_collecte dans sa fiche."
+    },
+    "url_soumise": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/url",
+      "description": "URL soumise à Save Page Now : l'url listée par l'auteur (jamais url_finale) de la source qui a servi ces octets en premier. Sans elle, ni archive_url ni echec_archivage ne se vérifient."
+    },
+    "archive_url": {
+      "$ref": "#/$defs/instantane_wayback",
+      "description": "Instantané daté renvoyé par Save Page Now pour url_soumise. Jamais fabriqué : sans réponse désignant un instantané, ce champ est absent et echec_archivage est présent."
+    },
+    "echec_archivage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "motif", "tentatives"],
+      "description": "La sauvegarde Wayback a échoué après toutes ses tentatives. Une source sans lien d'archive effectif ne peut pas s'afficher (CLAUDE.md, règle 2) ; une collecte ultérieure des mêmes octets peut écrire une reprise.",
+      "properties": {
+        "service": { "const": "wayback_save_page_now" },
+        "motif": { "type": "string", "minLength": 1, "description": "Motif de la dernière tentative." },
+        "tentatives": { "type": "integer", "minimum": 1, "maximum": 3 }
+      }
+    }
+  },
+  "oneOf": [
+    { "required": ["archive_url"] },
+    { "required": ["echec_archivage"] }
+  ],
+  "$defs": {
+    "instantane_wayback": {
+      "type": "string",
+      "pattern": "^https://web\\.archive\\.org/web/[0-9]{14}/.+$",
+      "description": "URL d'instantané daté /web/<AAAAMMJJhhmmss>/…, telle que renvoyée par Save Page Now (en-tête Location ou Content-Location). Définie ici une seule fois, référencée par reprise-archivage.schema.json."
+    }
+  }
+}
