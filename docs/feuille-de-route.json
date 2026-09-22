@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-09-20",
+  "date_maj": "2026-09-22",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -162,7 +162,7 @@
         "D4",
         "D5"
       ],
-      "note": "Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
+      "note": "Version 0.3 le 2026-09-20 : D4, D6 et D7 écrits dans les §4, §5, §8, §10 et les annexes B et E, avant gel. Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
     },
     {
       "id": "schemas",
@@ -252,7 +252,7 @@
       "decisions": [
         "D5"
       ],
-      "note": "Seul l'auteur écrit ces fichiers. Bloque l'extraction, l'interrogation et la notation."
+      "note": "Squelette de config/perimetre.yaml écrit le 2026-09-20 : thèmes, quotas, règles d'inclusion du §3 en commentaire, analyseur yaml 2.9.1. Listes nominatives vides et quota_par_strate à null : seul l'auteur les remplit, preuves archivées à l'appui. prompts/ n'existe pas encore. Bloque l'extraction, l'interrogation et la notation."
     },
     {
       "id": "collecte",
@@ -364,6 +364,21 @@
         "D6"
       ],
       "note": "Livré le 2026-09-18 : onze modules, 60 tests, aucun défaut silencieux. Pas de pnpm analyze tant que la disposition de runs/ n'est pas fixée (lot interrogation). Six précisions du §8 en attente (D6)."
+    },
+    {
+      "id": "alignement-0-3",
+      "titre": "Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "M",
+      "temps_auteur_h": 0.5,
+      "depend_de": [],
+      "decisions": [
+        "D6",
+        "D7"
+      ],
+      "note": "Holm retiré des effets de condition, quatrième recalcul hors tronquées, tronquées incluses d'office, premisse_fausse interdite sur un item P, gabarits déplacés vers prompts/gabarits-1.0.0.json. Tests d'abord, rouges sur le code actuel (DETTE 2026-09-20 protocole 0.3, point 1, haute). Avant le run pilote."
     },
     {
       "id": "site",
