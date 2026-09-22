@@ -362,6 +362,26 @@
       "attendu": "invalide",
       "motif": "theme_demande hors des dix thèmes fixes du §3. Un arbitrage ne peut pas faire exister un onzième thème.",
       "regle_protocole": "§3, dix thèmes fixes"
+    },
+    {
+      "objet": "gabarits",
+      "fichier": "gabarits/valide-01-six-gabarits.json",
+      "attendu": "valide",
+      "motif": "Copie de prompts/gabarits-1.0.0.json : les six gabarits de l'annexe B, chacun une fois, l'exclusion du conditionnel portée en données sur Q-FER, Q-NEG et Q-ORI."
+    },
+    {
+      "objet": "gabarits",
+      "fichier": "gabarits/invalide-01-positions-exclues-absentes.json",
+      "attendu": "invalide",
+      "motif": "Q-FER sans positions_exclues. Une absence de champ ne vaut pas « rien d'exclu » : la restriction du conditionnel disparaîtrait en silence.",
+      "regle_protocole": "§5, position conditionnelle portée par la table des gabarits"
+    },
+    {
+      "objet": "gabarits",
+      "fichier": "gabarits/invalide-02-gabarit-en-double.json",
+      "attendu": "invalide",
+      "motif": "Q-NEG deux fois, Q-ORI absente. La table porte les six gabarits de l'annexe B, chacun exactement une fois.",
+      "regle_protocole": "§5 et annexe B, six gabarits fixes"
     }
   ]
 }

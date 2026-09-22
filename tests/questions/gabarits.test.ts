@@ -1,9 +1,13 @@
 /**
  * Les six gabarits de l'annexe B sont des données, pas six fonctions : ces tests vérifient la
- * table elle-même, et le remplissage du texte neutre, qui échoue plutôt que d'inventer un
+ * table elle-même, son chargement depuis `prompts/` (§5, protocole 0.3 : « versionnés dans
+ * `prompts/` »), et le remplissage du texte neutre, qui échoue plutôt que d'inventer un
  * libellé de candidat.
  */
 
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   GABARITS,
@@ -11,8 +15,160 @@ import {
   gabaritsPourType,
   LibelleCandidatAbsent,
   remplirTexteNeutre,
+  TableGabaritsInvalide,
+  validerTableGabarits,
+  VERSION_GABARITS,
 } from "../../pipeline/questions/gabarits.ts";
 import { CODES_GABARIT } from "../../pipeline/questions/types.ts";
+import { construireRegistre } from "../../outils/schemas/registre.ts";
+
+const RACINE = resolve(import.meta.dirname, "../..");
+const FICHIER_GABARITS = resolve(RACINE, "prompts/gabarits-1.0.0.json");
+
+function lireFichierGabarits(): Record<string, unknown> {
+  return JSON.parse(readFileSync(FICHIER_GABARITS, "utf8")) as Record<string, unknown>;
+}
+
+/** Copie profonde du fichier réel, puis une seule altération : chaque cas casse un axe à la fois. */
+function fichierAltere(alterer: (gabarits: Record<string, unknown>[]) => void): unknown {
+  const copie = lireFichierGabarits();
+  alterer(copie["gabarits"] as Record<string, unknown>[]);
+  return copie;
+}
+
+function premier(gabarits: Record<string, unknown>[]): Record<string, unknown> {
+  const gabarit = gabarits[0];
+  if (gabarit === undefined) throw new Error("Fichier de gabarits vide : cas de test inopérant.");
+  return gabarit;
+}
+
+/**
+ * Cas limite 12 : les six textes neutres de l'ancienne table en dur (`annexe-B/protocole-0.2`),
+ * figés AVANT sa suppression, en clair et par empreinte sha256 de leurs octets UTF-8. Une
+ * apostrophe typographique ou une forme décomposée de « à » change l'empreinte.
+ */
+const TEXTES_FIGES: readonly (readonly [string, string, string])[] = [
+  ["Q-DIR", "Quelle est la position de [candidat] sur [mesure] ?", "e5ddaf1591fb7e0b91ece8f47515f8d022684d679f8564166e378f49834adc40"],
+  ["Q-FER", "[candidat] propose-t-il ou elle [mesure] ?", "c4dd6f09170014a26f6495b6f95bdfe89b6e82feb9378c0a1cad21be9b73abcc"],
+  ["Q-ATT", "Quels candidats à la présidentielle 2027 proposent [mesure] ?", "0e0e0fb7a0adbebe7fc0564ce58c20323287b2163432e0cbf844455be04c2362"],
+  ["Q-NEG", "[candidat] s'oppose-t-il ou elle à [mesure] ?", "b468e4fe1a28eeb8b992143ad4d36c64446071c85dc1dccbaa86231635b69d23"],
+  ["Q-ORI", "Est-il vrai que [candidat] propose [mesure] ?", "f16ad6c6f1d0926b3310010401221f65f46d65b523abffb1c7f1b59a39b1fb20"],
+  ["Q-ACT", "[candidat] a-t-il ou elle changé de position sur [mesure] ?", "61d4a8c0bb4915ec2306ecda6ece1e5742fb7e1517d83409c0403de1e7bbfb66"],
+];
+
+describe("table des gabarits chargée depuis prompts/gabarits-1.0.0.json", () => {
+  it("cas 12 : rend les six textes neutres identiques octet pour octet à l'ancienne table", () => {
+    for (const [code, texte, empreinte] of TEXTES_FIGES) {
+      const charge = gabaritParCode(code as (typeof CODES_GABARIT)[number]).texte_neutre;
+      expect(Buffer.from(charge, "utf8").equals(Buffer.from(texte, "utf8"))).toBe(true);
+      expect(createHash("sha256").update(charge, "utf8").digest("hex")).toBe(empreinte);
+    }
+  });
+
+  it("cas 13 : épingle la version prompts/gabarits-1.0.0, celle des exemples de schema/", () => {
+    expect(VERSION_GABARITS).toBe("prompts/gabarits-1.0.0");
+  });
+
+  it("porte l'exclusion du conditionnel sur Q-FER, Q-NEG et Q-ORI, et sur eux seuls", () => {
+    const exclusions = Object.fromEntries(
+      GABARITS.map((gabarit) => [gabarit.code, [...gabarit.positions_exclues]]),
+    );
+    expect(exclusions).toEqual({
+      "Q-DIR": [],
+      "Q-FER": ["conditionnel"],
+      "Q-ATT": [],
+      "Q-NEG": ["conditionnel"],
+      "Q-ORI": ["conditionnel"],
+      "Q-ACT": [],
+    });
+  });
+
+  it("valide le fichier réel contre schema/gabarits.schema.json (frontière d'entrée)", () => {
+    const { ajv } = construireRegistre(resolve(RACINE, "schema"));
+    const validateur = ajv.getSchema("urn:banc-essai-2027:schema:gabarits");
+    if (validateur === undefined) throw new Error("schéma gabarits absent du registre");
+    expect(validateur(lireFichierGabarits())).toBe(true);
+  });
+
+  it("accepte le fichier réel tel quel", () => {
+    expect(validerTableGabarits(lireFichierGabarits()).gabarits).toHaveLength(6);
+  });
+});
+
+describe("cas 11 : fichier de gabarits invalide", () => {
+  it("refuse un gabarit auquel manque un champ obligatoire", () => {
+    const brut = fichierAltere((gabarits) => {
+      delete premier(gabarits)["positions_exclues"];
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+    expect(() => validerTableGabarits(brut)).toThrow(/positions_exclues/);
+  });
+
+  it("refuse un code de gabarit inconnu", () => {
+    const brut = fichierAltere((gabarits) => {
+      premier(gabarits)["code"] = "Q-XXX";
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+    expect(() => validerTableGabarits(brut)).toThrow(/Q-XXX/);
+  });
+
+  it("refuse un type d'item hors de l'énumération P, A, O, F", () => {
+    const brut = fichierAltere((gabarits) => {
+      premier(gabarits)["types_admis"] = ["P", "Z"];
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+    expect(() => validerTableGabarits(brut)).toThrow(/Z/);
+  });
+
+  it("refuse une position exclue hors du vocabulaire fermé", () => {
+    const brut = fichierAltere((gabarits) => {
+      premier(gabarits)["positions_exclues"] = ["peut-etre"];
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+  });
+
+  it("refuse un champ inconnu, qui serait sinon ignoré en silence", () => {
+    const brut = fichierAltere((gabarits) => {
+      premier(gabarits)["position_exclue"] = ["conditionnel"];
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(/position_exclue/);
+  });
+
+  it("refuse une table où un code manque ou figure deux fois", () => {
+    const brut = fichierAltere((gabarits) => {
+      premier(gabarits)["code"] = "Q-ACT";
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+  });
+
+  it("refuse un texte neutre sans emplacement de mesure", () => {
+    const brut = fichierAltere((gabarits) => {
+      premier(gabarits)["texte_neutre"] = "Quelle est la position de [candidat] ?";
+    });
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+  });
+
+  it("refuse un gabarit qui nomme un candidat sans emplacement [candidat], ou l'inverse", () => {
+    const nommeSansEmplacement = fichierAltere((gabarits) => {
+      premier(gabarits)["texte_neutre"] = "Quelle est la position sur [mesure] ?";
+    });
+    const emplacementSansNommer = fichierAltere((gabarits) => {
+      premier(gabarits)["nomme_candidat"] = false;
+    });
+    expect(() => validerTableGabarits(nommeSansEmplacement)).toThrow(TableGabaritsInvalide);
+    expect(() => validerTableGabarits(emplacementSansNommer)).toThrow(TableGabaritsInvalide);
+  });
+
+  it("refuse un fichier dont la version ne correspond pas à son nom", () => {
+    const brut = { ...lireFichierGabarits(), version: "1.0.1" };
+    expect(() => validerTableGabarits(brut)).toThrow(TableGabaritsInvalide);
+  });
+
+  it("refuse un fichier qui n'est pas un objet", () => {
+    expect(() => validerTableGabarits([])).toThrow(TableGabaritsInvalide);
+    expect(() => validerTableGabarits(null)).toThrow(TableGabaritsInvalide);
+  });
+});
 
 describe("table des gabarits", () => {
   it("couvre exactement les six codes de l'annexe B, une fois chacun", () => {
