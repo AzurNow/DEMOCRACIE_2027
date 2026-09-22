@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-09-22 — Lot collecte, sous-lot C1 : socle Python et archivage (`pipeline/collecte/`, `schema/collecte.schema.json`, `docs/CONTRATS.md` §5)
 
-### 1. Deux sources au contenu identique gardent une seule fiche, et la seconde disparaît — *moyenne*
+### ~~1. Deux sources au contenu identique gardent une seule fiche, et la seconde disparaît~~ — réglé le 2026-09-22 par les fiches `staging/sources/par-source/` (C1-bis)
 
 Le manifeste est indexé par le SHA-256 du document. Si deux entrées de `config/sources.toml` servent
 les mêmes octets (un programme commun hébergé à deux adresses, un PDF repris par deux candidats), la
@@ -29,7 +29,7 @@ erreur. Le rapport de collecte la mentionne, mais le code de sortie reste 0.
 **Ce qu'il faut faire.** À décider par l'auteur : au minimum, signaler la collision et sortir en
 erreur ; au mieux, un index source → sha256 en plus du manifeste par contenu.
 
-### 2. Un archivage Wayback en échec ne peut plus être repris — *moyenne*
+### ~~2. Un archivage Wayback en échec ne peut plus être repris~~ — réglé le 2026-09-22 par `staging/archivages/<sha256>.json` et `archive_url_de()` (C1-bis)
 
 Le manifeste est immuable, et une recollecte du même contenu s'arrête sur « déjà collecté » avant
 d'appeler la Wayback Machine. Une source dont Save Page Now a échoué garde donc `echec_archivage`
@@ -53,7 +53,7 @@ après les téléchargements et les demandes Wayback.
 
 **Ce qu'il faut faire.** La vérifier dans le lecteur du périmètre, côté TypeScript, quand il existera.
 
-### 4. Les exemples valides du schéma de collecte sont des copies des fichiers dorés — *basse*
+### ~~4. Les exemples valides du schéma de collecte sont des copies des fichiers dorés~~ — réglé le 2026-09-22 par `tests/collecte/dores.test.ts` (C1-bis)
 
 `schema/exemples/collecte/valide-0*.json` recopient `tests/collecte/dore/*.json`. Aucun test ne
 compare les deux.
@@ -64,6 +64,20 @@ valides, rien ne rougit, et le README montre alors un manifeste que le code ne p
 
 **Ce qu'il faut faire.** Un test d'égalité entre chaque exemple valide et son fichier doré, ou un seul
 fichier référencé des deux côtés.
+
+### 5. Lire `archive_url` directement dans un manifeste rend une reprise invisible — *moyenne*
+
+Depuis C1-bis, le lien d'archive effectif d'un contenu peut venir du manifeste **ou** d'un fichier
+de reprise, `staging/archivages/<sha256>.json`. `pipeline/collecte/lien_archive.py:archive_url_de()`
+est le seul endroit qui combine les deux. Rien n'empêche un futur consommateur (extraction C2,
+interface de validation, site) de lire `archive_url` dans le manifeste.
+
+**Pourquoi ça casse.** Une source dont l'archivage a été repris apparaît sans lien d'archive, donc
+ne s'affiche pas et n'entre pas dans le corpus. Aucun test ne rougit : le manifeste est valide, il
+porte simplement `echec_archivage`.
+
+**Ce qu'il faut faire.** Dans C2 et dans le lecteur TypeScript des sources, passer par
+`archive_url_de` ou par son équivalent unique côté TypeScript, avec un test de reprise.
 
 ---
 
