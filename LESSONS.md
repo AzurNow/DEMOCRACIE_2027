@@ -120,6 +120,18 @@ garde un objet, c'est le chemin qui va du code qui l'écrit jusqu'au schéma —
 
 ## Méthode
 
+**Suivre une règle jusqu'à tous ceux qui la lisent, pas seulement jusqu'au premier.** Le brief du
+lot alignement-0-3 demandait de réintégrer l'item arbitré « au tirage » : le sous-agent l'a fait dans
+`tirage.ts`, et l'engendrement comme la condition de symétrie continuaient de rejeter tout item
+arbitré. Le premier item maintenu par le panel aurait bloqué le run sur un contrôle bloquant. Avant de
+briefer un changement de règle, lister avec `grep` chaque endroit qui la lit (ici `statut_contestation`)
+et les mettre tous dans le périmètre.
+
+**Un brief ne contredit pas la définition de l'agent qui le reçoit.** Le brief demandait un commit
+alors que `.claude/agents/codeur-*.md` l'interdit : les deux sous-agents ont suivi leur définition et
+rendu un arbre non commité, ce qui était la bonne réponse mais a coûté un aller-retour. Le gabarit
+`.claude/briefs/GABARIT.md` dit « Aucun commit » : s'y tenir, et commiter soi-même après relecture.
+
 **Poser les questions bloquantes avant d'écrire la première ligne.** Sur un protocole préenregistré,
 une hypothèse inventée coûte plus cher qu'une session de questions. Les décisions structurelles
 (qu'est-ce qu'une « question » ? combien d'objets ?) changent la forme de tous les fichiers : les
