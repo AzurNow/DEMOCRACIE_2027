@@ -60,6 +60,13 @@ valide_au`. Un item dont `valide_au` (ou `obsolescence.date_changement`) tombe e
 `date_gel` est donc **déjà obsolète**, et la réponse attendue est « position modifiée ». §4 disait
 « avant » et « après » sans jamais définir l'égalité.
 
+Une **date civile** (`AAAA-MM-JJ` : `valide_du`, `valide_au`, `date_changement`) comparée à
+`date_gel` est lue à **minuit UTC**, décidé le 2026-09-20 (D7, point 6). Minuit à Paris aurait été
+l'autre lecture défendable, et elle décale la bascule d'une ou deux heures selon la saison : un item
+dont la source est datée du jour du gel serait obsolète pour l'auteur et pas encore pour un tiers
+qui recalcule le run depuis une autre zone. UTC est aussi ce que rend `Date.parse("2026-11-22")`
+partout, donc ce qu'obtient un tiers qui ne lit pas cette ligne.
+
 **Versionnement et épinglage.** `item.version` + `item.empreinte` sont épinglés partout où un item
 est utilisé (question, tirage, notation). Git dit *quand* un item a changé ; l'épinglage dit *contre
 quelle version* une réponse a été notée. Sans lui, la robustesse §8(b) et toute relecture d'un run

@@ -13,6 +13,43 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-20 — Protocole 0.3 et squelette du périmètre (`docs/PROTOCOLE.md`, `schema/README.md`, `config/perimetre.yaml`, `package.json`)
+
+### 1. Le protocole 0.3 tranche des points que `analysis/` implémente encore autrement — *haute*
+
+D6 est écrit dans le §8, pas dans le code. `analysis/conditions.ts` applique toujours Holm aux
+effets de condition, alors que le §8 le retire de cette famille. `analysis/robustesse.ts` compte
+trois recalculs (`Recalcul` n'a pas `reponses_tronquees`), alors que le §8 en exige quatre.
+`analysis/filtre.ts` garde `inclure_tronquees` en paramètre libre, alors que le §8 fixe
+l'inclusion. Côté questions, les gabarits vivent encore dans `pipeline/questions/gabarits.ts` et
+non dans `prompts/` (D7, point 7). Ni l'interdiction de `premisse_fausse` sur un item P ni
+l'exactitude des comparateurs ne sont vérifiées dans le code.
+
+**Pourquoi ça casse.** `pnpm test` est vert, puisque les tests décrivent le code d'avant la
+révision. Un run analysé en l'état publierait des valeurs p corrigées que le protocole ne définit
+plus. Il qualifierait aussi de « robuste » un résultat qui ne survit pas à l'exclusion des
+tronquées. Un lecteur qui confronte le rapport au protocole gelé trouverait l'écart, alors que
+personne dans le projet ne l'aurait vu.
+
+**Ce qu'il faut faire.** Un lot « alignement 0.3 » avant le run pilote du 22 novembre, en
+commençant par les tests : un test par phrase du §8 révisée, rouge sur le code actuel.
+
+### 2. Les dix thèmes sont écrits deux fois et aucun test ne vérifie qu'ils concordent — *moyenne*
+
+`config/perimetre.yaml` énumère les thèmes, `schema/commun.schema.json#/$defs/theme` aussi. Le
+commentaire du YAML exige qu'ils restent identiques, mais aucun lecteur du périmètre n'existe
+encore, donc aucune validation.
+
+**Pourquoi ça casse.** Si l'auteur retire ou renomme un thème dans le YAML, le tirage l'ignorera et
+la couverture par candidat baissera sans erreur. Un thème ajouté au YAML ne sera refusé qu'au moment
+où les questions seront validées contre le schéma.
+
+**Ce qu'il faut faire.** Au lot qui écrira le lecteur du périmètre, valider l'objet contre un
+JSON Schema dont l'énumération `themes` référence `commun.schema.json`. Ajouter un test d'égalité
+des deux listes.
+
+---
+
 ## 2026-09-20 — Lot schemas-decision : `decision` et `decision-mesure` au registre, manifestes de lots validés (`schema/`, `outils/schemas/`, `validation/io/`)
 
 ### 1. Le journal de validation est gardé par ses exemples, pas par le code qui l'écrit — *moyenne*

@@ -1,0 +1,97 @@
+# Périmètre du run — Banc d'essai 2027
+#
+# Écrit à la main, par l'auteur seul. Aucun script, aucun agent n'écrit ce fichier : il décide
+# quels candidats et quels outils entrent dans une mesure publiée, et le §3 du protocole veut que
+# ce soient les règles qui décident, pas une personne. Ce fichier est la trace vérifiable que les
+# règles ont été appliquées ; il est publié avec le run.
+#
+# Ce qu'il alimente : le tirage (§5), l'interrogation (§6), la notation (§7), et l'instantané
+# `run.perimetre` que l'analyse lit (§8). Les dix thèmes ci-dessous doivent rester identiques à
+# ceux de `schema/commun.schema.json#/$defs/theme` — ils y sont énumérés une fois, ici une fois,
+# et nulle part ailleurs.
+#
+# Règle de remplissage : une liste vide est une liste vide, jamais un « à compléter » qui passerait
+# inaperçu. Le pipeline refuse un run dont le périmètre ne porte ni candidat ni outil.
+
+version: "0.1.0-provisoire"
+date_gel: null # instant de référence du run (§6). null tant qu'aucun run n'est gelé.
+
+# ---------------------------------------------------------------------------- thèmes
+# Les dix thèmes fixes du §3. Ni neuf ni onze : une position hors de ces thèmes est enregistrée
+# mais n'entre pas dans le tirage.
+themes:
+  - fiscalite_pouvoir_achat
+  - retraites
+  - travail_emploi
+  - sante
+  - education
+  - securite_justice
+  - immigration
+  - ecologie_energie
+  - institutions_democratie
+  - europe_defense_international
+
+# ---------------------------------------------------------------------------- tirage
+# Quota de questions par strate (candidat × thème × gabarit), décidé le 2026-09-20 (D7, point 4).
+# Le §5 ne fixe aucun nombre : le paramètre est obligatoire et sans valeur par défaut, pour qu'une
+# valeur implicite ne se transmette pas d'un run à l'autre sans être relue.
+tirage:
+  quota_par_strate: null # entier ≥ 1, à fixer avant le premier run
+  part_reprise: 0.8 # §5 : 80 % repris du run précédent, 20 % neufs
+  part_absence_et_fictifs_min: 0.2 # §5 : au moins 20 % des questions
+
+# ---------------------------------------------------------------------------- candidats
+# Règle d'inclusion (§3), à la date de gel du run, les deux conditions réunies :
+#   1. candidature déclarée publiquement par l'intéressé ou par son parti ;
+#   2. présence dans au moins deux sondages d'intention de vote publiés au cours des 60 jours
+#      précédents par un institut membre d'une association professionnelle reconnue, quel que
+#      soit le score.
+#
+# Chaque entrée porte ses preuves archivées, sans quoi la règle d'inclusion est invérifiable par un
+# tiers — c'est la seule chose qui distingue une liste appliquée d'une liste choisie.
+#
+#   - candidat_id: cle-stable-minuscules   # jamais inventée par un script
+#     libelle: "Prénom Nom"
+#     declaration:
+#       url: "…"
+#       date: "AAAA-MM-JJ"
+#       sha256: "…"
+#       archive_url: "…"
+#     sondages: # au moins deux, publiés dans les 60 jours précédant date_gel
+#       - institut: "…"
+#         date_publication: "AAAA-MM-JJ"
+#         url: "…"
+#         sha256: "…"
+#         archive_url: "…"
+#     statut_au_gel: actif # actif | nouveau | retire
+#     interroge: true # faux pour un candidat retiré, dont les items O restent mesurés
+candidats: []
+
+# ---------------------------------------------------------------------------- outils
+# Deux familles (§3). La liste nominative est fixée à la version 1.0 du protocole, publiée, et ne
+# bouge qu'en cas de disparition d'un outil ou de sortie d'un outil remplissant la règle — par
+# amendement (§9), jamais par commodité. Un outil ne peut pas demander à en sortir.
+#
+# Assistants : accessibles gratuitement en français, par API, et figurant dans le top des
+# applications de la catégorie sur les stores en France à la date de gel ; plus, systématiquement,
+# l'assistant édité en France (Le Chat), que le §3 nomme.
+#
+#   - outil_id: cle-stable
+#     libelle: "…"
+#     editeur: "…"
+#     famille: assistant # assistant | comparateur
+#     acces: api
+#     modes: [avec_recherche, sans_recherche] # §6 : les deux modes sont toujours publiés côte à côte
+#     preuve_inclusion: # classement de store à la date de gel, archivé
+#       url: "…"
+#       date: "AAAA-MM-JJ"
+#       sha256: "…"
+#       archive_url: "…"
+#     sdk: # D3 : SDK officiel, version épinglée ; la réponse brute stockée reste le corps HTTP
+#       paquet: "…"
+#       version: "…"
+#
+# Comparateurs : sites publics comparant les positions d'au moins cinq candidats du périmètre,
+# accessibles sans compte, contenu consultable sans exécution de scripts tiers. Lecture du contenu
+# publié, jamais d'API.
+outils: []
