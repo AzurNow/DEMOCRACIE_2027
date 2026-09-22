@@ -396,6 +396,32 @@
       "attendu": "invalide",
       "motif": "Q-NEG deux fois, Q-ORI absente. La table porte les six gabarits de l'annexe B, chacun exactement une fois.",
       "regle_protocole": "§5 et annexe B, six gabarits fixes"
+    },
+    {
+      "objet": "collecte",
+      "fichier": "collecte/valide-01-archive-wayback.json",
+      "attendu": "valide",
+      "motif": "Manifeste d'un programme PDF collecté et sauvegardé sur la Wayback Machine : copie du fichier doré tests/collecte/dore/manifeste-archive.json, produit par pipeline/collecte."
+    },
+    {
+      "objet": "collecte",
+      "fichier": "collecte/valide-02-echec-archivage.json",
+      "attendu": "valide",
+      "motif": "Site de parti collecté après redirection (url_finale distincte de url), Wayback en échec : pas d'archive_url, bloc echec_archivage explicite. Copie du fichier doré tests/collecte/dore/manifeste-echec-archivage.json."
+    },
+    {
+      "objet": "collecte",
+      "fichier": "collecte/invalide-01-archive-url-et-echec.json",
+      "attendu": "invalide",
+      "motif": "archive_url ET echec_archivage. L'archivage a réussi ou échoué, pas les deux : un manifeste qui porte les deux rend indécidable l'affichage de la source.",
+      "regle_protocole": "§4, archivage (sauvegarde Wayback Machine) ; CLAUDE.md règle 2"
+    },
+    {
+      "objet": "collecte",
+      "fichier": "collecte/invalide-02-site-parti-sans-mention.json",
+      "attendu": "invalide",
+      "motif": "type_document=site_parti sans site_parti_tient_lieu_de_campagne. Un site de parti n'est T1 que si le candidat déclare qu'il tient lieu de site de campagne, « ce qui est alors noté ».",
+      "regle_protocole": "§4, hiérarchie des sources"
     }
   ]
 }

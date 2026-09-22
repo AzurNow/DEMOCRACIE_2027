@@ -1,0 +1,19 @@
+{
+  "url": "https://example.org/parti",
+  "url_finale": "https://example.org/parti/",
+  "candidat_id": "candidat-b",
+  "tier": "T1",
+  "type_document": "site_parti",
+  "date_source": "2026-08-15",
+  "publication": "publique",
+  "sha256": "a17fb4415d242dc7868ba4262aa61d4aa5521e1acc849e3392c99f2359e13757",
+  "chemin_local": "archives/a1/a17fb4415d242dc7868ba4262aa61d4aa5521e1acc849e3392c99f2359e13757.html",
+  "taille_octets": 62,
+  "type_contenu_recu": "text/html; charset=utf-8",
+  "date_collecte": "2026-09-22T14:30:05+02:00",
+  "echec_archivage": {
+    "service": "wayback_save_page_now",
+    "motif": "HTTP 520 sans instantané daté",
+    "tentatives": 3
+  }
+}

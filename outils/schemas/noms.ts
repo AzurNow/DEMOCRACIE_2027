@@ -1,6 +1,7 @@
 /**
- * Les treize schémas de `schema/` (voir `schema/README.md`, « Les dix fichiers » — en réalité
- * douze avec `commun` et `lecture-comparateur`, treize avec `gabarits`). Nommés une seule fois
+ * Les quatorze schémas de `schema/` (voir `schema/README.md`, « Les dix fichiers » — en réalité
+ * douze avec `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`).
+ * Nommés une seule fois
  * ici : tout le reste du module en dérive, jamais d'un `if` par nom.
  *
  * `decision` (journal de validation, §4) et `decision-mesure` (arbitrage des corrections de
@@ -12,6 +13,11 @@
  * `gabarits` décrit la table des gabarits versionnée dans `prompts/` (§5, protocole 0.3). Ses
  * exemples sont vérifiés ici comme les autres ; le fichier réel `prompts/gabarits-1.0.0.json`
  * l'est par `tests/questions/gabarits.test.ts`, et par le chargeur à chaque import.
+ *
+ * `collecte` décrit le manifeste `staging/sources/<sha256>.json` écrit par `pipeline/collecte`
+ * (Python, `docs/CONTRATS.md` §5). Python ne valide pas contre le schéma : les fichiers dorés de
+ * `tests/collecte/dore/`, reproduits octet pour octet par pytest, sont validés ici par
+ * `tests/collecte/manifeste-dore.test.ts`.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -27,6 +33,7 @@ export const NOMS_SCHEMAS = [
   "decision",
   "decision-mesure",
   "gabarits",
+  "collecte",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

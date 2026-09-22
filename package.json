@@ -21,7 +21,10 @@
     "lots": "node --experimental-strip-types outils/lots.ts",
     "mesures": "node --experimental-strip-types outils/mesures.ts",
     "promote": "node --experimental-strip-types outils/promote.ts",
-    "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts"
+    "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts",
+    "collecte": "uv run python -m pipeline.collecte",
+    "check:py": "uv run ruff check pipeline tests",
+    "test:py": "uv run pytest"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

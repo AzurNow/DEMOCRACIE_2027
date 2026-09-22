@@ -87,3 +87,119 @@ propriété vérifiée à chaque affichage, pas une promesse tenue par conventio
 | `validation/brouillons/<annotateur>.json` | lecture et écriture | hors dépôt, hors publication |
 | `validation/mesures/decisions.json` | lecture ; ajout par `pnpm mesures --ecrire` uniquement | registre publié des corrections de thème, en ajout seul : une entrée n'est jamais modifiée ni retirée, un revirement est une entrée de plus. `pnpm promote` le lit, ne l'écrit jamais |
 | `data/` | **aucun** | seul `pnpm promote --ecrire`, lancé par un humain, y écrit |
+
+## 5. Collecte des sources — `config/sources.toml`, `archives/`, `staging/sources/<sha256>.json`
+
+La collecte (`pipeline/collecte`, `pnpm collecte config/sources.toml`) récupère une **liste
+explicite** d'URL tenue par l'auteur, sans crawl ni suivi de liens. Pour chaque source, elle
+télécharge le document, en copie les octets tels quels dans `archives/`, calcule leur SHA-256,
+demande une sauvegarde à la Wayback Machine et écrit un manifeste. §4 du protocole : « la collecte
+est horodatée et archivée (copie locale, empreinte SHA-256, sauvegarde Wayback Machine) ».
+
+### 5.1 Liste des sources — `config/sources.toml`
+
+Écrite à la main par l'auteur seul ; aucun script ne l'écrit. Exemple commenté :
+`pipeline/collecte/exemples/sources.exemple.toml`. TOML parce que `tomllib` est dans la
+bibliothèque standard de Python 3.12 et accepte les commentaires.
+
+```toml
+[[source]]
+url = "https://example.org/candidat-a/programme-2027.pdf"
+candidat_id = "candidat-a"
+tier = "T1"
+type_document = "programme_pdf"
+date_source = 2026-09-01          # date TOML nue : ni guillemets, ni heure
+publication = "publique"
+
+[[source]]
+url = "https://example.org/parti-b/propositions"
+candidat_id = "candidat-b"
+tier = "T1"
+type_document = "site_parti"
+date_source = 2026-08-15
+publication = "publique"
+site_parti_tient_lieu_de_campagne = true
+```
+
+| Champ | Obligatoire | Valeurs |
+| --- | --- | --- |
+| `url` | oui | URL `http` ou `https` avec un hôte |
+| `candidat_id` | oui | `commun#/$defs/identifiant_court` |
+| `tier` | oui | `commun#/$defs/tier` : `T1`, `T2`, `T3` |
+| `type_document` | oui | énumération de `commun#/$defs/source/properties/type_document` |
+| `date_source` | oui | date TOML nue `AAAA-MM-JJ` : date de la source elle-même (§4) |
+| `publication` | oui | `publique` ou `interne` (§10, droit d'auteur) |
+| `site_parti_tient_lieu_de_campagne` | si et seulement si `type_document = "site_parti"` | `true` ou `false` |
+
+Aucune autre clé n'est admise, ni dans une source ni au premier niveau. Un seul problème (champ
+manquant, inconnu, hors énumération, mal typé) **refuse tout le fichier avant le moindre
+téléchargement** ; chaque problème est rapporté avec le numéro et l'URL de la source fautive. Aucune
+valeur par défaut. Les énumérations sont lues dans `schema/commun.schema.json`, jamais recopiées.
+
+### 5.2 Politesse
+
+Norme du §6, appliquée à toute la collecte : respect de `robots.txt` et au plus une requête par
+seconde **par hôte**, mesurée entre deux débuts de requête, `robots.txt` et redirections compris.
+User-Agent : `BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRACIE_2027)`.
+
+| `robots.txt` répond | Effet |
+| --- | --- |
+| 2xx | règles appliquées ; une URL interdite est refusée et consignée, jamais contournée |
+| 401 ou 403 | tout l'hôte est interdit |
+| autre 4xx (404…) | pas de `robots.txt` : tout est permis |
+| 5xx, erreur réseau, délai dépassé, contenu non UTF-8 | **erreur consignée**, jamais une autorisation |
+
+`robots.txt` est lu une fois par origine et par lot ; son résultat, erreur comprise, vaut pour tout
+le lot. Les redirections (301, 302, 303, 307, 308) sont suivies une à une, cinq au plus, chaque
+étape repassant par la cadence et par le `robots.txt` de sa cible ; une cible hors `http`/`https`
+est un échec.
+
+### 5.3 Copie locale — `archives/<sha256[0:2]>/<sha256><extension>`
+
+Hors Git (`.gitignore`). Octets reçus écrits tels quels : ni BOM retiré, ni fins de ligne
+converties, ni réencodage ; le SHA-256 porte sur ces octets. L'extension vient d'une table fermée
+de `Content-Type` (`pipeline/collecte/archivage.py`) ; un type absent de la table, ou un en-tête
+absent, donne `.bin`, et le type reçu reste consigné dans le manifeste. Écriture atomique (fichier
+temporaire `.<nom>.*.partiel` dans le même répertoire, puis renommage) : une interruption ne laisse
+jamais de fichier partiel sous le nom définitif. Une archive n'est jamais écrasée.
+
+### 5.4 Manifeste de collecte — `staging/sources/<sha256>.json`
+
+Décrit par `schema/collecte.schema.json`. JSON UTF-8, indentation de deux espaces, ordre des clés
+fixe, saut de ligne final. **Immuable une fois écrit.**
+
+| Champ | Origine |
+| --- | --- |
+| `url`, `candidat_id`, `tier`, `type_document`, `site_parti_tient_lieu_de_campagne`, `date_source`, `publication` | repris de la liste des sources |
+| `url_finale` | URL qui a servi les octets, après redirections |
+| `sha256` | empreinte des octets archivés |
+| `chemin_local` | chemin de l'archive, relatif à la racine du dépôt |
+| `taille_octets` | nombre d'octets reçus, au moins 1 |
+| `type_contenu_recu` | en-tête `Content-Type` tel que reçu, ou `null` s'il manquait |
+| `date_collecte` | instant de fin du téléchargement, ISO 8601 avec décalage |
+| `archive_url` | instantané daté renvoyé par Save Page Now — **ou** — |
+| `echec_archivage` | `{service: "wayback_save_page_now", motif, tentatives}` quand la sauvegarde a échoué |
+
+Exactement un des deux derniers est présent. `archive_url` n'est jamais fabriqué : seule une URL
+`/web/<AAAAMMJJhhmmss>/…` renvoyée par le service (en-tête `Location` ou `Content-Location`) en
+tient lieu. La sauvegarde est tentée trois fois, espacées de dix secondes ; en cas d'échec, le
+manifeste est écrit sans `archive_url`, et une source sans `archive_url` ne peut pas s'afficher
+(règle 2 de `CLAUDE.md`).
+
+Ce que le manifeste **ne porte pas** : le texte canonique. `texte_sha256` (§1) sera produit par
+l'extraction (sous-lot C2) dans un fichier à part, apparié par le même `sha256` ; le manifeste étant
+immuable, il ne peut pas le recevoir après coup.
+
+### 5.5 Cas de collecte
+
+| Situation | Archive | Manifeste | Rapport, code de sortie |
+| --- | --- | --- | --- |
+| collectée, Wayback en succès | écrite | écrit, avec `archive_url` | « collecté », 0 |
+| collectée, Wayback en échec | écrite | écrit, avec `echec_archivage` | « ARCHIVAGE EN ÉCHEC », 1 |
+| même SHA-256 déjà manifesté | inchangée | **inchangé** | « déjà collecté », 0 |
+| même URL, contenu différent | nouvelle | nouveau ; l'ancien reste | « collecté », 0 |
+| HTTP autre que 200 après redirections, délai dépassé, erreur réseau, réponse de 0 octet, `robots.txt` interdit ou injoignable, redirection hors http(s) | aucune | aucun | « ÉCHEC » avec le motif, 1 |
+| liste des sources invalide | aucune | aucun | erreurs sur la sortie d'erreur, 2, rien n'est téléchargé |
+
+Un échec n'arrête pas le lot : les sources suivantes sont collectées, et le code de sortie final
+est non nul.
