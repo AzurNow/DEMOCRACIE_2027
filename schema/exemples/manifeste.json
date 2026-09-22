@@ -239,6 +239,20 @@
       "regle_protocole": "§5, reprise 80/20 ; §8, tendance"
     },
     {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-04-arbitre-sans-decision-figee.json",
+      "attendu": "invalide",
+      "motif": "Item arbitré au gel sans decision_panel_au_gel. La symétrie d'un tirage publié doit se revérifier sur le tirage seul : sans la décision figée, un tiers devrait lire l'état courant des items, qui a pu changer après le gel.",
+      "regle_protocole": "§5, tirage ; annexe E, point 6"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-05-decision-figee-sans-arbitrage.json",
+      "attendu": "invalide",
+      "motif": "decision_panel_au_gel sur un item dont statut_contestation_au_gel vaut « aucune ». Une décision du panel n'existe que pour un item arbitré.",
+      "regle_protocole": "§5, tirage ; annexe E, point 6"
+    },
+    {
       "objet": "run",
       "fichier": "run/valide-02-provisoire-juge-retire.json",
       "attendu": "valide",

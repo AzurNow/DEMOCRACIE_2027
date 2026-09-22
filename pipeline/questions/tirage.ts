@@ -24,7 +24,7 @@
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { mesureDe, themeDe } from "./engendrement.ts";
-import { contestationPermetLeTirage } from "./contestation.ts";
+import { contestationPermetLeTirage, decisionPanelAuGel } from "./contestation.ts";
 import { reponseAttendue } from "./reponse-attendue.ts";
 import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
@@ -102,6 +102,7 @@ export interface DemandeTirage {
 export {
   ArbitrageSansDecision,
   contestationPermetLeTirage,
+  DecisionPanelPosterieureAuGel,
   DecisionsPanelSimultanees,
 } from "./contestation.ts";
 
@@ -157,8 +158,12 @@ export function empreinteNeutre(question: Question): string {
   return neutre.empreinte_texte;
 }
 
-/** Frontière de sortie : le statut écrit dans le tirage appartient à l'énumération du schéma. */
-function itemAuGel(entree: Question["items"][number], index: Index): ItemAuGel {
+/**
+ * Frontière de sortie : le statut écrit dans le tirage appartient à l'énumération du schéma. Pour
+ * un item arbitré, la dernière décision du panel est figée avec sa date : la symétrie du tirage
+ * publié se juge sur elle, et non sur l'état des items au moment où l'on revérifie.
+ */
+function itemAuGel(entree: Question["items"][number], index: Index, date_gel: string): ItemAuGel {
   const item = index.items.get(entree.reference.item_id);
   if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
   if (!estStatutValidation(item.statut_validation)) {
@@ -167,12 +172,14 @@ function itemAuGel(entree: Question["items"][number], index: Index): ItemAuGel {
         `l'énumération du schéma.`,
     );
   }
-  return {
+  const socle = {
     reference: entree.reference,
     role: entree.role,
     statut_validation_au_gel: item.statut_validation,
     statut_contestation_au_gel: item.statut_contestation,
   };
+  if (item.statut_contestation !== "arbitree") return socle;
+  return { ...socle, decision_panel_au_gel: decisionPanelAuGel(item, date_gel) };
 }
 
 function entreeDe(
@@ -186,7 +193,7 @@ function entreeDe(
     theme: themeDeQuestion(question, index),
     gabarit: question.gabarit,
     grappe_id: question.grappe_id,
-    items_au_gel: question.items.map((entree) => itemAuGel(entree, index)),
+    items_au_gel: question.items.map((entree) => itemAuGel(entree, index, date_gel)),
     reponse_attendue: reponseAttendue(question, [...index.items.values()], date_gel),
     ...(question.candidat_id === undefined ? {} : { candidat_id: question.candidat_id }),
   };

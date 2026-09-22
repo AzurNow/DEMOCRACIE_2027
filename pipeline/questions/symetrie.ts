@@ -15,9 +15,8 @@
  * d'attribuer une question d'attribution à un candidat (`schema/README.md`, point ouvert 2).
  */
 
-import { decisionReintegre, derniereDecisionPanel } from "./contestation.ts";
+import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
 import { trouverLibelle } from "./libelles.ts";
-import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
   CandidatAuGel,
   CodeCondition,
@@ -45,6 +44,8 @@ export const ECART_MAXIMAL_GABARITS = 1;
 
 interface Contexte {
   readonly entrees: readonly EntreeTirage[];
+  /** L'instant du gel du tirage : borne des décisions du panel qu'il a figées. */
+  readonly date_gel: string;
   readonly questions: ReadonlyMap<string, Question>;
   readonly items: ReadonlyMap<string, Item>;
   /** Candidats comparés : interrogés et au-dessus du seuil de couverture (§4). */
@@ -85,6 +86,7 @@ function construireContexte(
   const perimetre = run.perimetre.candidats;
   return {
     entrees: tirage.entrees,
+    date_gel: tirage.date_gel,
     questions: parId,
     items: new Map(items.map((item) => [item.id, item])),
     compares: perimetre
@@ -266,7 +268,7 @@ function detailParTheme(
 function aucunItemContesteOuEnAttente(contexte: Contexte): ConditionSymetrie {
   for (const entree of contexte.entrees) {
     for (const item of entree.items_au_gel) {
-      const motif = motifDExclusion(item, contexte.items);
+      const motif = motifDExclusion(item, contexte.date_gel);
       if (motif === null) continue;
       return {
         code: "aucun_item_conteste_ou_en_attente",
@@ -279,28 +281,30 @@ function aucunItemContesteOuEnAttente(contexte: Contexte): ConditionSymetrie {
 }
 
 /**
- * §5 : « aucun item contesté ou en attente dans le tirage ». Les statuts lus sont ceux figés au
- * gel. Un item `arbitree` au gel n'est ni contesté ni en attente s'il est sorti de l'arbitrage
- * réintégré (§5, protocole 0.3 ; annexe E, point 6) : la dernière décision du panel se lit sur
- * l'item, avec la règle unique de `contestation.ts`. Tout autre statut de contestation reste un
- * motif d'exclusion.
+ * §5 : « aucun item contesté ou en attente dans le tirage ». Tout se lit dans le tirage, figé au
+ * gel, et rien dans les items courants : une contestation ou une décision postérieure au gel ne
+ * rend pas rétroactivement le tirage fautif (`tirage.schema.json`). Un item `arbitree` au gel
+ * n'est ni contesté ni en attente si la décision figée le réintègre (§5, protocole 0.3 ; annexe E,
+ * point 6), selon la règle unique de `contestation.ts`.
  */
-function motifDExclusion(item: ItemAuGel, items: ReadonlyMap<string, Item>): string | null {
+function motifDExclusion(item: ItemAuGel, date_gel: string): string | null {
   const validation = item.statut_validation_au_gel;
   const contestation = item.statut_contestation_au_gel;
   if (validation !== "verifie") return `statut de validation « ${validation} »`;
+  if (contestation === "arbitree") return motifDArbitrage(item, date_gel);
+  if (item.decision_panel_au_gel !== undefined) return "décision du panel figée sur un item non arbitré";
   if (contestation === "aucune") return null;
-  if (contestation === "arbitree") return motifDArbitrage(item.reference.item_id, items);
   return `statut de contestation « ${contestation} »`;
 }
 
-/** Un item arbitré introuvable ne se juge pas : refus, jamais admission ni exclusion supposée. */
-function motifDArbitrage(item_id: string, items: ReadonlyMap<string, Item>): string | null {
-  const item = items.get(item_id);
-  if (item === undefined) throw new ItemIntrouvable(item_id);
-  const decision = derniereDecisionPanel(item);
-  if (decisionReintegre(decision, item_id)) return null;
-  return `arbitré, dernière décision du panel « ${decision} »`;
+function motifDArbitrage(item: ItemAuGel, date_gel: string): string | null {
+  const decision = item.decision_panel_au_gel;
+  if (decision === undefined) return "arbitré sans décision du panel figée au gel";
+  if (!decisionAvantGel(decision, date_gel)) {
+    return `arbitré, décision du panel datée ${decision.date}, postérieure au gel`;
+  }
+  if (decisionReintegre(decision.decision, item.reference.item_id)) return null;
+  return `arbitré, dernière décision du panel « ${decision.decision} »`;
 }
 
 function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {

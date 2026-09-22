@@ -85,12 +85,12 @@ function nouveauRepertoire(): RepertoireJetable {
 }
 
 describe("schémas réels : manifeste et méta-schéma", () => {
-  it("1. les 58 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  it("1. les 60 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(58);
+    expect(manifeste.exemples).toHaveLength(60);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -193,7 +193,7 @@ describe("couplage du registre commun", () => {
 });
 
 describe("aucun fichier du disque n'est ignoré", () => {
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 58 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(58);
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 60 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(60);
   });
 });
