@@ -196,8 +196,12 @@ function etatObsolescence(contexte: Contexte): EtatPositionnel {
 
 /**
  * « X propose-t-il [mesure] ? » : oui si la position en vigueur est « pour », non si elle est
- * « contre ». Une position conditionnelle n'a pas de réponse fermée dans le protocole ; y
- * répondre « oui » ou « non » serait une décision de mesure prise ici, en silence.
+ * « contre ». §5 (protocole 0.3) : une position conditionnelle n'engendre pas de question fermée,
+ * et la table `prompts/gabarits-1.0.0.json` l'exclut de Q-FER (`positions_exclues`), pour un
+ * item O dès que l'un de ses deux états l'est. Le `throw` ci-dessous est donc un filet de
+ * sécurité, inatteignable par l'engendrement : il ne sert que si une question arrive d'ailleurs
+ * (fichier écrit à la main, table de gabarits modifiée), et y répondre « oui » ou « non » serait
+ * alors une décision de mesure prise ici, en silence.
  */
 function ouiSelonPosition(contexte: Contexte, position: Position): ReponseAttendue {
   if (position === "pour") return { nature: "oui", resolution_temporelle: contexte.temporelle };
@@ -209,7 +213,12 @@ function ouiSelonPosition(contexte: Contexte, position: Position): ReponseAttend
   );
 }
 
-/** « X s'oppose-t-il à [mesure] ? » : la symétrique exacte de la question fermée. */
+/**
+ * « X s'oppose-t-il à [mesure] ? » : la symétrique exacte de la question fermée. §5 (protocole
+ * 0.3) : une position conditionnelle n'engendre pas de question négative (`positions_exclues` de
+ * Q-NEG dans `prompts/gabarits-1.0.0.json`). Le `throw` est un filet de sécurité inatteignable
+ * par l'engendrement, gardé pour une question qui n'en viendrait pas.
+ */
 function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
   if (position === "contre") return { nature: "oui", resolution_temporelle: contexte.temporelle };
   if (position === "pour") return { nature: "non", resolution_temporelle: contexte.temporelle };
@@ -279,7 +288,11 @@ const RESOLVEURS: ReadonlyMap<string, Resolveur> = new Map<string, Resolveur>([
 /**
  * « Est-il vrai que X propose [mesure] ? » sur un item obsolète. Avant le changement, la
  * prémisse est vraie et la réponse attendue est « oui » ; après, l'annexe B attend « non, avec
- * correction ». Une position conditionnelle en vigueur ne tranche ni l'un ni l'autre.
+ * correction ». Une position conditionnelle en vigueur ne tranche ni l'un ni l'autre ; depuis la
+ * décision de l'auteur du 2026-09-22, Q-ORI porte `positions_exclues: ["conditionnel"]` dans
+ * `prompts/gabarits-1.0.0.json` et n'est pas engendrée pour un item O dont l'un des deux états est
+ * conditionnel. Le `throw` est donc un filet de sécurité inatteignable par l'engendrement ; la
+ * logique de ce résolveur, elle, est inchangée.
  */
 function orienteeSurObsolete(contexte: Contexte): ReponseAttendue {
   const position = positionDe(etatObsolescence(contexte));

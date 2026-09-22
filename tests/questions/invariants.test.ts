@@ -16,10 +16,12 @@ import {
   contexteSuitObjetNote,
   grappeSuitItemPrincipal,
   itemsFictifsPointentMesureFictive,
+  premisseFausseSurItemFOuO,
   validationsConcordantesMemeVersion,
 } from "../../pipeline/questions/invariants.ts";
+import type { PorteurDePremisse } from "../../pipeline/questions/invariants.ts";
 import type { Item, Mesure } from "../../pipeline/questions/types.ts";
-import { itemF, itemP, mesure } from "./fabriques.ts";
+import { itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
 const RACINE_EXEMPLES = resolve(import.meta.dirname, "../../schema/exemples");
 
@@ -215,11 +217,76 @@ describe("invariant : les deux validations concordantes portent la même version
   });
 });
 
+/* ------------------------------------------ prémisse fausse sur F ou O */
+
+describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5, protocole 0.3)", () => {
+  const MESURE_REELLE = mesure({ cle: "premisse-reelle" });
+  const MESURE_FICTIVE = mesure({ cle: "premisse-fictive", fictive: true });
+  const p = itemP({ cle: "premisse-p", candidat_id: "demo-alpha", mesure: MESURE_REELLE });
+  const f = itemF({ cle: "premisse-f", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE });
+  const o = itemO({ cle: "premisse-o", candidat_id: "demo-alpha", mesure: MESURE_REELLE });
+  const items = [p, f, o];
+
+  /** Question minimale dont la formulation orientée porte le drapeau demandé, ou aucun. */
+  function questionSur(item: Item, premisse_fausse: boolean | undefined): PorteurDePremisse {
+    const orientee = { id: `f-${item.id}-oriente`, registre: "oriente" };
+    return {
+      id: `q-${item.id}-${String(premisse_fausse)}`,
+      items: [{ reference: { item_id: item.id }, role: "principal" }],
+      formulations: [
+        { id: `f-${item.id}-neutre`, registre: "neutre" },
+        premisse_fausse === undefined ? orientee : { ...orientee, premisse_fausse },
+      ],
+    };
+  }
+
+  it("cas 10 : nomme la question dont l'item principal est P et qui porte une prémisse fausse", () => {
+    const fautive = questionSur(p, true);
+    const violations = premisseFausseSurItemFOuO([fautive], items);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.objet).toBe(fautive.id);
+    expect(violations[0]?.detail).toContain(`f-${p.id}-oriente`);
+  });
+
+  it("cas 10 : ne rend aucune violation pour une prémisse fausse sur un item F ou O", () => {
+    expect(premisseFausseSurItemFOuO([questionSur(f, true), questionSur(o, true)], items)).toEqual(
+      [],
+    );
+  });
+
+  it("cas 10 : ne rend aucune violation pour un drapeau false ou absent sur un item P", () => {
+    expect(
+      premisseFausseSurItemFOuO([questionSur(p, false), questionSur(p, undefined)], items),
+    ).toEqual([]);
+  });
+
+  it("nomme la question à prémisse fausse dont l'item principal est introuvable", () => {
+    const violations = premisseFausseSurItemFOuO([questionSur(p, true)], [f, o]);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.detail).toMatch(/introuvable/i);
+  });
+
+  it("nomme la question à prémisse fausse qui ne porte pas exactement un item principal", () => {
+    const sansPrincipal: PorteurDePremisse = {
+      ...questionSur(f, true),
+      items: [{ reference: { item_id: f.id }, role: "attendu_dans_liste" }],
+    };
+    expect(premisseFausseSurItemFOuO([sansPrincipal], items)).toHaveLength(1);
+  });
+
+  it("rend les violations triées par question, indépendamment de l'ordre des fichiers", () => {
+    const a = { ...questionSur(p, true), id: "q-a" };
+    const b = { ...questionSur(p, true), id: "q-b" };
+    const objets = premisseFausseSurItemFOuO([b, a], items).map((violation) => violation.objet);
+    expect(objets).toEqual(["q-a", "q-b"]);
+  });
+});
+
 /* ------------------------------------------------- exemples réels du dépôt */
 
 describe("exemples de schema/exemples/", () => {
-  it("charge les 55 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(55);
+  it("charge les 58 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(58);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:gabarits",
+  "title": "Table des gabarits de questions",
+  "description": "§5 (protocole 0.3) : les gabarits sont « publiés en annexe et versionnés dans prompts/ : ce sont des données du protocole, pas du code ». Un fichier prompts/gabarits-<version>.json par version ; question.version_gabarits le nomme (\"prompts/gabarits-<version>\"). Modifier un gabarit est un amendement (§9) et se lit dans l'historique du fichier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gabarits"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+[.][0-9]+[.][0-9]+$",
+      "description": "Doit être celle que porte le nom du fichier : le chargeur refuse un écart."
+    },
+    "gabarits": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "description": "Les six gabarits de l'annexe B, chacun exactement une fois.",
+      "items": { "$ref": "#/$defs/gabarit" },
+      "allOf": [
+        { "contains": { "properties": { "code": { "const": "Q-DIR" } } }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "code": { "const": "Q-FER" } } }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "code": { "const": "Q-ATT" } } }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "code": { "const": "Q-NEG" } } }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "code": { "const": "Q-ORI" } } }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "code": { "const": "Q-ACT" } } }, "minContains": 1, "maxContains": 1 }
+      ]
+    }
+  },
+
+  "$defs": {
+    "gabarit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "texte_neutre", "types_admis", "nomme_candidat", "positions_exclues"],
+      "properties": {
+        "code": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
+        "texte_neutre": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\[mesure\\]",
+          "description": "Formulation neutre de l'annexe B, à trous [candidat] et [mesure]. Les formulations familière et orientée sont produites ailleurs (§5)."
+        },
+        "types_admis": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/type_item" },
+          "description": "Types d'item pour lesquels l'annexe B admet ce gabarit."
+        },
+        "nomme_candidat": {
+          "type": "boolean",
+          "description": "§5 : les questions d'attribution ne nomment que la mesure."
+        },
+        "positions_exclues": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position" },
+          "description": "§5 (protocole 0.3) : une position conditionnelle n'engendre ni question fermée ni question négative, et « la restriction vit dans la table des gabarits, en données ». Un item dont une position portée figure ici n'engendre pas ce gabarit ; pour un item O, ses deux états comptent. Obligatoire, vide quand rien n'est exclu : une absence de champ ne vaut jamais « rien d'exclu »."
+        }
+      },
+      "if": { "properties": { "nomme_candidat": { "const": true } }, "required": ["nomme_candidat"] },
+      "then": { "properties": { "texte_neutre": { "pattern": "\\[candidat\\]" } } },
+      "else": { "properties": { "texte_neutre": { "not": { "pattern": "\\[candidat\\]" } } } }
+    }
+  }
+}

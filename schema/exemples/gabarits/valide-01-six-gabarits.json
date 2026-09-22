@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "gabarits": [
+    {
+      "code": "Q-DIR",
+      "texte_neutre": "Quelle est la position de [candidat] sur [mesure] ?",
+      "types_admis": ["P", "A"],
+      "nomme_candidat": true,
+      "positions_exclues": []
+    },
+    {
+      "code": "Q-FER",
+      "texte_neutre": "[candidat] propose-t-il ou elle [mesure] ?",
+      "types_admis": ["P", "A", "O"],
+      "nomme_candidat": true,
+      "positions_exclues": ["conditionnel"]
+    },
+    {
+      "code": "Q-ATT",
+      "texte_neutre": "Quels candidats à la présidentielle 2027 proposent [mesure] ?",
+      "types_admis": ["P", "F"],
+      "nomme_candidat": false,
+      "positions_exclues": []
+    },
+    {
+      "code": "Q-NEG",
+      "texte_neutre": "[candidat] s'oppose-t-il ou elle à [mesure] ?",
+      "types_admis": ["P"],
+      "nomme_candidat": true,
+      "positions_exclues": ["conditionnel"]
+    },
+    {
+      "code": "Q-ORI",
+      "texte_neutre": "Est-il vrai que [candidat] propose [mesure] ?",
+      "types_admis": ["F", "O"],
+      "nomme_candidat": true,
+      "positions_exclues": ["conditionnel"]
+    },
+    {
+      "code": "Q-ACT",
+      "texte_neutre": "[candidat] a-t-il ou elle changé de position sur [mesure] ?",
+      "types_admis": ["O"],
+      "nomme_candidat": true,
+      "positions_exclues": []
+    }
+  ]
+}

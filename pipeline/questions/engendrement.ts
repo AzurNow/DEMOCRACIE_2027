@@ -11,6 +11,10 @@
  * Deux statuts arrêtent l'engendrement, et aucun autre : un item dont la validation n'est pas
  * acquise — dont les items T3, « conservés avec le statut à confirmer », qui « n'engendrent
  * aucune question » (§4) — et un item contesté, que §5 interdit dans le tirage.
+ *
+ * Pour un item qui engendre, le choix des gabarits appartient à la table de `prompts/` : types
+ * admis, et `positions_exclues` (§5, protocole 0.3 : la position conditionnelle). Ce module ne
+ * teste jamais un code de gabarit pour en décider.
  */
 
 import { sha256 } from "../../validation/domaine/empreinte.ts";
@@ -80,11 +84,37 @@ export function engendrer(
   const questions: QuestionEngendree[] = [];
   for (const item of eligibles) {
     const mesure = mesureDe(referentiel, item);
-    for (const gabarit of gabaritsPourType(item.type)) {
+    for (const gabarit of gabaritsPourItem(item)) {
       questions.push(construire(item, mesure, gabarit, positionsParMesure));
     }
   }
   return questions;
+}
+
+/**
+ * Toutes les positions que l'item porte, quel que soit l'instant : l'assertion d'un item P, les
+ * DEUX états d'un item O. L'engendrement ne connaît pas la date du run, donc pas l'état qui sera
+ * en vigueur au gel (décision de l'auteur du 2026-09-22). Un item A ou F n'en porte aucune.
+ * La lecture suit les blocs présents, jamais le type : aucun cas particulier n'est codé ici.
+ */
+export function positionsPortees(item: Item): readonly string[] {
+  const etats = [
+    item.assertion,
+    item.obsolescence?.etat_anterieur,
+    item.obsolescence?.etat_posterieur,
+  ];
+  return etats.flatMap((etat) => (etat === undefined ? [] : [etat.position]));
+}
+
+/**
+ * §5 (protocole 0.3) : les gabarits admis pour le type, moins ceux dont `positions_exclues`
+ * contient une position portée par l'item. La règle est lue dans la table, en données.
+ */
+export function gabaritsPourItem(item: Item): readonly Gabarit[] {
+  const portees = positionsPortees(item);
+  return gabaritsPourType(item.type).filter(
+    (gabarit) => !gabarit.positions_exclues.some((exclue) => portees.includes(exclue)),
+  );
 }
 
 export function mesureDe(referentiel: ReadonlyMap<string, Mesure>, item: Item): Mesure {

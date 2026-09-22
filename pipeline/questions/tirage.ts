@@ -24,7 +24,7 @@
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { mesureDe, themeDe } from "./engendrement.ts";
-import { reponseAttendue } from "./reponse-attendue.ts";
+import { instantDe, reponseAttendue } from "./reponse-attendue.ts";
 import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
   CandidatAuGel,
@@ -125,13 +125,123 @@ function themeDeQuestion(question: Question, index: Index): Theme {
   return themeDe(mesureDe(index.mesures, itemPrincipalDe(question, index)));
 }
 
-/** §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question. */
+/* ------------------------------------------------- contestation et arbitrage */
+
+/** Un item arbitré dont aucune décision du panel n'est lisible : refus, jamais exclusion muette. */
+export class ArbitrageSansDecision extends Error {
+  readonly item_id: string;
+
+  constructor(item_id: string, detail: string) {
+    super(`Item ${item_id} arbitré sans décision du panel exploitable : ${detail}.`);
+    this.name = "ArbitrageSansDecision";
+    this.item_id = item_id;
+  }
+}
+
+/** Deux décisions différentes au même instant : aucun ordre n'est inventé pour les départager. */
+export class DecisionsPanelSimultanees extends Error {
+  readonly item_id: string;
+
+  constructor(item_id: string, date: string, decisions: readonly string[]) {
+    super(
+      `Item ${item_id} : décisions du panel ${decisions.join(", ")} au même instant (${date}). ` +
+        `La dernière décision n'est pas déterminable.`,
+    );
+    this.name = "DecisionsPanelSimultanees";
+    this.item_id = item_id;
+  }
+}
+
+/**
+ * §5 et annexe E, point 6 : un item arbitré « revient au tirage au run suivant si la décision vaut
+ * maintien ou correction ; un retrait ou une non-évaluabilité l'en sort ». Table fermée sur
+ * l'énumération de `item.schema.json` (`contestations[].decision_panel.decision`).
+ */
+const REINTEGRATION_PAR_DECISION: ReadonlyMap<string, boolean> = new Map([
+  ["maintien", true],
+  ["correction", true],
+  ["retrait", false],
+  ["non_evaluabilite", false],
+]);
+
+interface DecisionDatee {
+  readonly decision: string;
+  readonly date: string;
+  readonly instant: number;
+}
+
+function champObjet(valeur: unknown): Record<string, unknown> | undefined {
+  if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) return undefined;
+  return valeur as Record<string, unknown>;
+}
+
+/** Frontière d'entrée : `Item.contestations` est typé `unknown[]`, sa forme se vérifie ici. */
+function decisionDe(contestation: unknown, item_id: string): DecisionDatee {
+  const decisionPanel = champObjet(champObjet(contestation)?.["decision_panel"]);
+  if (decisionPanel === undefined) {
+    throw new ArbitrageSansDecision(item_id, "une contestation ne porte pas de decision_panel");
+  }
+  const decision = decisionPanel["decision"];
+  const date = decisionPanel["date"];
+  if (typeof decision !== "string" || typeof date !== "string") {
+    throw new ArbitrageSansDecision(item_id, "decision_panel sans décision ou sans date textuelle");
+  }
+  return { decision, date, instant: instantDe(date) };
+}
+
+/**
+ * « Dernière » s'entend sur `decision_panel.date`, instant horodaté avec décalage : c'est le seul
+ * champ du schéma qui date la décision elle-même (`date_reception` date la contestation, pas son
+ * issue). La comparaison porte sur l'instant, jamais sur la chaîne, ni sur l'ordre du tableau.
+ */
+function derniereDecision(item: Item): string {
+  const contestations = item.contestations;
+  if (contestations === undefined || contestations.length === 0) {
+    throw new ArbitrageSansDecision(item.id, "aucune contestation enregistrée");
+  }
+  const decisions = contestations.map((contestation) => decisionDe(contestation, item.id));
+  const plusTardif = Math.max(...decisions.map((decision) => decision.instant));
+  const dernieres = decisions.filter((decision) => decision.instant === plusTardif);
+  const distinctes = [...new Set(dernieres.map((decision) => decision.decision))].sort();
+  const derniere = dernieres[0];
+  if (derniere === undefined) {
+    throw new ArbitrageSansDecision(item.id, "aucune décision datée n'a pu être retenue");
+  }
+  if (distinctes.length !== 1) throw new DecisionsPanelSimultanees(item.id, derniere.date, distinctes);
+  return derniere.decision;
+}
+
+function reintegreApresArbitrage(item: Item): boolean {
+  const decision = derniereDecision(item);
+  const reintegre = REINTEGRATION_PAR_DECISION.get(decision);
+  if (reintegre === undefined) {
+    throw new Error(
+      `Décision du panel « ${decision} » de l'item ${item.id} hors de l'énumération du schéma.`,
+    );
+  }
+  return reintegre;
+}
+
+/** §5 : un item contesté n'est jamais tiré ; un item arbitré l'est selon la dernière décision. */
+export function contestationPermetLeTirage(item: Item): boolean {
+  if (item.statut_contestation === "aucune") return true;
+  if (item.statut_contestation === "arbitree") return reintegreApresArbitrage(item);
+  return false;
+}
+
+/**
+ * §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question.
+ * La contestation est évaluée même quand la validation exclut déjà l'item : un arbitrage illisible
+ * se signale toujours, il ne se cache pas derrière un autre motif d'exclusion.
+ */
 function questionTirable(question: Question, index: Index): boolean {
-  return question.items.every((entree) => {
+  const verdicts = question.items.map((entree) => {
     const item = index.items.get(entree.reference.item_id);
     if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
-    return item.statut_validation === "verifie" && item.statut_contestation === "aucune";
+    const contestationAdmise = contestationPermetLeTirage(item);
+    return item.statut_validation === "verifie" && contestationAdmise;
   });
+  return verdicts.every((tirable) => tirable);
 }
 
 /* ------------------------------------------------------- entrées de tirage */
