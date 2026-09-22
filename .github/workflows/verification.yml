@@ -1,0 +1,30 @@
+# Décision D1 (2026-09-20) : `pnpm check` et `pnpm test` rejoués hors de la machine de l'auteur,
+# sur chaque PR et sur main. C'est la seule preuve publique que les tests bloquants le sont.
+#
+# Seules les deux actions officielles de GitHub sont utilisées, épinglées par empreinte de commit
+# (une étiquette peut être déplacée, une empreinte non). pnpm vient de corepack, livré avec Node, à
+# la version que fixe `packageManager` dans package.json : aucune action tierce, aucune dépendance.
+# Node 22 est le plancher déclaré par `engines` : c'est lui qu'on vérifie.
+name: verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check-et-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm test
