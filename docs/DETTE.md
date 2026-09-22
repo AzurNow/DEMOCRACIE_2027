@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-09-22 — Lot alignement-0-3, CI et protocole 0.4 (`analysis/`, `pipeline/questions/`, `prompts/`, `schema/gabarits.schema.json`, `.github/workflows/`, `docs/PROTOCOLE.md`)
 
-### 1. La symétrie d'un tirage passé dépend désormais de l'état actuel des items — *moyenne*
+### ~~1. La symétrie d'un tirage passé dépend désormais de l'état actuel des items~~ — réglé le 2026-09-22 par `items_au_gel[].decision_panel_au_gel` (lot decision-au-gel)
 
 Avant ce lot, `aucun_item_conteste_ou_en_attente` ne lisait que les statuts figés dans
 `tirage.entrees[].items_au_gel`. Pour admettre un item arbitré puis maintenu, `symetrie.ts:motifDArbitrage`

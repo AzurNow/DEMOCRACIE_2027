@@ -8,7 +8,7 @@
  */
 
 import { instantDe } from "./reponse-attendue.ts";
-import type { Item } from "./types.ts";
+import type { DecisionPanelAuGel, Item } from "./types.ts";
 
 /** Un item arbitré dont aucune décision du panel n'est lisible : refus, jamais exclusion muette. */
 export class ArbitrageSansDecision extends Error {
@@ -31,6 +31,23 @@ export class DecisionsPanelSimultanees extends Error {
         `La dernière décision n'est pas déterminable.`,
     );
     this.name = "DecisionsPanelSimultanees";
+    this.item_id = item_id;
+  }
+}
+
+/**
+ * Une décision du panel datée après le gel ne peut pas être celle du gel : les items passés au
+ * tirage ne sont pas ceux du gel, et figer cette décision ferait mentir le tirage publié.
+ */
+export class DecisionPanelPosterieureAuGel extends Error {
+  readonly item_id: string;
+
+  constructor(item_id: string, date: string, date_gel: string) {
+    super(
+      `Item ${item_id} : dernière décision du panel datée ${date}, après le gel ${date_gel}. ` +
+        `Le tirage doit être fait sur les items du gel.`,
+    );
+    this.name = "DecisionPanelPosterieureAuGel";
     this.item_id = item_id;
   }
 }
@@ -78,6 +95,11 @@ function decisionDe(contestation: unknown, item_id: string): DecisionDatee {
  * issue). La comparaison porte sur l'instant, jamais sur la chaîne, ni sur l'ordre du tableau.
  */
 export function derniereDecisionPanel(item: Item): string {
+  return derniereDecisionPanelDatee(item).decision;
+}
+
+/** La dernière décision et sa date, telles que le tirage les fige dans `items_au_gel`. */
+export function derniereDecisionPanelDatee(item: Item): DecisionPanelAuGel {
   const contestations = item.contestations;
   if (contestations === undefined || contestations.length === 0) {
     throw new ArbitrageSansDecision(item.id, "aucune contestation enregistrée");
@@ -91,7 +113,24 @@ export function derniereDecisionPanel(item: Item): string {
     throw new ArbitrageSansDecision(item.id, "aucune décision datée n'a pu être retenue");
   }
   if (distinctes.length !== 1) throw new DecisionsPanelSimultanees(item.id, derniere.date, distinctes);
-  return derniere.decision;
+  return { decision: derniere.decision, date: derniere.date };
+}
+
+/** Vrai si la décision est antérieure ou égale à l'instant du gel. */
+export function decisionAvantGel(decision: DecisionPanelAuGel, date_gel: string): boolean {
+  return instantDe(decision.date) <= instantDe(date_gel);
+}
+
+/**
+ * La décision que le tirage fige dans `items_au_gel` pour un item arbitré. Levée si elle est
+ * postérieure au gel, plutôt que de publier un tirage qui ne décrit pas l'état du gel.
+ */
+export function decisionPanelAuGel(item: Item, date_gel: string): DecisionPanelAuGel {
+  const decision = derniereDecisionPanelDatee(item);
+  if (!decisionAvantGel(decision, date_gel)) {
+    throw new DecisionPanelPosterieureAuGel(item.id, decision.date, date_gel);
+  }
+  return decision;
 }
 
 /** Vrai si la décision réintègre l'item au tirage. Une décision hors énumération est un refus. */
@@ -111,8 +150,9 @@ function reintegreApresArbitrage(item: Item): boolean {
 
 /**
  * §5 : un item contesté n'est jamais tiré ; un item arbitré l'est selon la dernière décision.
- * Seule définition de la règle : le tirage et l'engendrement l'appellent, la symétrie en réutilise
- * les deux étages (`derniereDecisionPanel`, `decisionReintegre`) pour nommer la décision fautive.
+ * Seule définition de la règle : le tirage et l'engendrement l'appellent. La symétrie applique
+ * `decisionReintegre` à la décision figée dans le tirage (`decisionPanelAuGel`), jamais aux items
+ * courants : un tirage publié se revérifie seul.
  */
 export function contestationPermetLeTirage(item: Item): boolean {
   if (item.statut_contestation === "aucune") return true;

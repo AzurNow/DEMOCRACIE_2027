@@ -378,7 +378,7 @@
         "D6",
         "D7"
       ],
-      "note": "Livré le 2026-09-22 : effets de condition sans valeur p, recalcul (d) hors tronquées, tronquées toujours incluses ; gabarits dans prompts/gabarits-1.0.0.json avec schéma ; conditionnel exclu par la table (Q-FER, Q-NEG, Q-ORI, les deux états d'un item O) ; item arbitré maintenu ou corrigé réintégré à l'engendrement, au tirage et à la symétrie ; invariant de prémisse fausse. Protocole 0.4 pour les deux précisions. Reste : figer la dernière décision du panel au gel (DETTE 2026-09-22, point 1)."
+      "note": "Livré le 2026-09-22 : effets de condition sans valeur p, recalcul (d) hors tronquées, tronquées toujours incluses ; gabarits dans prompts/gabarits-1.0.0.json avec schéma ; conditionnel exclu par la table (Q-FER, Q-NEG, Q-ORI, les deux états d'un item O) ; item arbitré maintenu ou corrigé réintégré à l'engendrement, au tirage et à la symétrie ; invariant de prémisse fausse. Protocole 0.4 pour les deux précisions. Dernière décision du panel figée dans items_au_gel le même jour : la symétrie d'un tirage publié se revérifie sur le tirage seul."
     },
     {
       "id": "site",

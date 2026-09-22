@@ -8,13 +8,13 @@
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { ArbitrageSansDecision, entreesPour } from "../../pipeline/questions/tirage.ts";
-import { ItemIntrouvable } from "../../pipeline/questions/reponse-attendue.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
 import type {
   CodeCondition,
   CodeGabarit,
   EntreeTirage,
   Item,
+  ItemAuGel,
   Question,
   Symetrie,
   Tirage,
@@ -293,11 +293,95 @@ describe("items sortis de l'arbitrage du panel", () => {
     expect(conditionArbitrage(items).statut).toBe("rouge");
   });
 
-  it("refuse de noter un item arbitré au gel absent du jeu d'items", () => {
-    const items = avecArbitrage([contestation("si", "maintien", DATE)]);
-    const tirage = tirageDe(SYMETRIQUES, items);
-    const sansCible = items.filter((item) => item.id !== cible.id);
-    expect(() => verifierSymetrie(tirage, QUESTIONS, sansCible, RUN)).toThrow(ItemIntrouvable);
+});
+
+/**
+ * La décision du panel est figée dans `items_au_gel` : la symétrie d'un tirage publié se juge sur
+ * ce qu'il porte, jamais sur l'état courant des items. `tirage.schema.json` : « une contestation
+ * reçue pendant la fenêtre ne rend pas rétroactivement le tirage fautif ».
+ */
+describe("décision du panel figée au gel", () => {
+  const DATE = "2026-10-05T10:00:00+02:00";
+  const APRES_GEL = "2026-12-10T10:00:00+01:00";
+  const cible = itemsDe("demo-alpha").p1;
+
+  function avec(transformer: (item: Item) => Item): readonly Item[] {
+    return ITEMS.map((item) => (item.id === cible.id ? transformer(item) : item));
+  }
+
+  const MAINTENU = avec((item) => arbitre(item, [contestation("g1", "maintien", DATE)]));
+  const TIRAGE_MAINTENU = tirageDe(SYMETRIQUES, MAINTENU);
+
+  function conditionSur(tirage: Tirage, items: readonly Item[]) {
+    return conditionDe(
+      verifierSymetrie(tirage, QUESTIONS, items, RUN),
+      "aucun_item_conteste_ou_en_attente",
+    );
+  }
+
+  /** Le tirage, avec l'entrée de l'item cible réécrite : pour les tirages que `entreesPour` refuse de produire. */
+  function tirageAvecCible(reecrire: (item: ItemAuGel) => ItemAuGel): Tirage {
+    return {
+      ...TIRAGE_MAINTENU,
+      entrees: TIRAGE_MAINTENU.entrees.map((entree) => ({
+        ...entree,
+        items_au_gel: entree.items_au_gel.map((item) =>
+          item.reference.item_id === cible.id ? reecrire(item) : item,
+        ),
+      })),
+    };
+  }
+
+  it("reste vert quand l'item a été retiré par le panel après le gel", () => {
+    const retire = avec((item) =>
+      arbitre(item, [
+        contestation("g1", "maintien", DATE),
+        contestation("g2", "retrait", APRES_GEL),
+      ]),
+    );
+    expect(conditionSur(TIRAGE_MAINTENU, retire).statut).toBe("vert");
+  });
+
+  it("reste vert quand l'item a reçu après le gel une contestation encore sans décision", () => {
+    const reconteste = avec((item) => ({
+      ...item,
+      statut_contestation: "contestee" as const,
+      contestations: [contestation("g1", "maintien", DATE)],
+    }));
+    expect(conditionSur(TIRAGE_MAINTENU, reconteste).statut).toBe("vert");
+  });
+
+  it("passe au rouge pour un item arbitré au gel sans décision figée, et le dit", () => {
+    const tirage = tirageAvecCible(({ decision_panel_au_gel: _retiree, ...reste }) => reste);
+    const condition = conditionSur(tirage, MAINTENU);
+    expect(condition.statut).toBe("rouge");
+    expect(condition.commentaire).toContain(cible.id);
+    expect(condition.commentaire).toContain("sans décision du panel figée");
+  });
+
+  it("passe au rouge pour une décision figée datée après le gel", () => {
+    const tirage = tirageAvecCible((item) => ({
+      ...item,
+      decision_panel_au_gel: { decision: "maintien", date: APRES_GEL },
+    }));
+    const condition = conditionSur(tirage, MAINTENU);
+    expect(condition.statut).toBe("rouge");
+    expect(condition.commentaire).toContain("postérieure au gel");
+  });
+
+  it("passe au rouge pour une décision figée sur un item non arbitré", () => {
+    const tirage = tirageAvecCible((item) => ({ ...item, statut_contestation_au_gel: "aucune" }));
+    const condition = conditionSur(tirage, MAINTENU);
+    expect(condition.statut).toBe("rouge");
+    expect(condition.commentaire).toContain("non arbitré");
+  });
+
+  it("passe au rouge pour une décision figée de retrait", () => {
+    const tirage = tirageAvecCible((item) => ({
+      ...item,
+      decision_panel_au_gel: { decision: "retrait", date: DATE },
+    }));
+    expect(conditionSur(tirage, MAINTENU).statut).toBe("rouge");
   });
 });
 

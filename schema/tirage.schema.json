@@ -68,8 +68,27 @@
                 "type": "string",
                 "enum": ["aucune", "contestee", "arbitree"],
                 "description": "§5 et §12 exigent qu'aucun item contesté ne figure dans le tirage. Le critère s'évalue sur CE champ, figé, et non sur l'état courant de data/ : une contestation reçue pendant la fenêtre ne rend pas rétroactivement le tirage fautif."
+              },
+              "decision_panel_au_gel": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["decision", "date"],
+                "description": "§5 (protocole 0.3) et annexe E, point 6 : un item arbitré revient au tirage si la dernière décision du panel vaut maintien ou correction. Cette décision est figée ici, avec sa date, pour que la symétrie du tirage publié se revérifie sur le tirage seul, sans l'état courant des items. Sa date est antérieure ou égale à date_gel.",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": ["maintien", "correction", "retrait", "non_evaluabilite"]
+                  },
+                  "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+                }
               }
-            }
+            },
+            "if": {
+              "properties": { "statut_contestation_au_gel": { "const": "arbitree" } },
+              "required": ["statut_contestation_au_gel"]
+            },
+            "then": { "required": ["decision_panel_au_gel"] },
+            "else": { "not": { "required": ["decision_panel_au_gel"] } }
           },
           "contains": {
             "type": "object",

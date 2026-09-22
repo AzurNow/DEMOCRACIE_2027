@@ -64,6 +64,16 @@ export function estStatutValidation(valeur: string): valeur is StatutValidation 
 
 export type StatutContestation = "aucune" | "contestee" | "arbitree";
 
+/**
+ * La dernière décision du panel d'un item arbitré, figée au gel dans le tirage : la symétrie d'un
+ * tirage publié se juge sur elle, jamais sur l'état courant des items.
+ */
+export interface DecisionPanelAuGel {
+  readonly decision: string;
+  /** `contestations[].decision_panel.date`, instant horodaté avec décalage. */
+  readonly date: string;
+}
+
 export interface ReferenceItem {
   readonly item_id: string;
   readonly item_version: number;
@@ -159,6 +169,8 @@ export interface ItemAuGel {
   readonly role: RoleItem;
   readonly statut_validation_au_gel: StatutValidation;
   readonly statut_contestation_au_gel: StatutContestation;
+  /** Présente si et seulement si `statut_contestation_au_gel` vaut « arbitree ». */
+  readonly decision_panel_au_gel?: DecisionPanelAuGel;
 }
 
 export interface EntreeTirage {

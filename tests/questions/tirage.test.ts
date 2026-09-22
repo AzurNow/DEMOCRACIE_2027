@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ArbitrageSansDecision,
+  DecisionPanelPosterieureAuGel,
   DecisionsPanelSimultanees,
   empreinteNeutre,
   PART_REPRISE,
@@ -406,6 +407,70 @@ describe("item sorti de l'arbitrage du panel (§5, annexe E point 6)", () => {
         : item,
     );
     expect(grappesTirees(items)).not.toContain(ARBITRE.id);
+  });
+});
+
+/* ------------------------------------------- décision du panel figée au gel */
+
+function entreesTirees(items: readonly Item[]) {
+  return tirer({
+    questions: JEU.questions,
+    items,
+    mesures: JEU.mesures,
+    run: RUN,
+    graine: graine(),
+    parametres: { questions_par_strate: MESURES_PAR_THEME },
+  }).tirage.entrees;
+}
+
+function itemsAuGelDe(items: readonly Item[], item_id: string) {
+  return entreesTirees(items)
+    .flatMap((entree) => entree.items_au_gel)
+    .filter((item) => item.reference.item_id === item_id);
+}
+
+describe("décision du panel figée dans items_au_gel", () => {
+  it("fige la décision et sa date pour un item arbitré maintenu", () => {
+    const date = "2026-10-05T10:00:00+02:00";
+    const figes = itemsAuGelDe(avecContestations([contestation("f1", "maintien", date)]), ARBITRE.id);
+    expect(figes.length).toBeGreaterThan(0);
+    for (const item of figes) {
+      expect(item.statut_contestation_au_gel).toBe("arbitree");
+      expect(item.decision_panel_au_gel).toEqual({ decision: "maintien", date });
+    }
+  });
+
+  it("fige la dernière décision, pas la première du tableau", () => {
+    const figes = itemsAuGelDe(
+      avecContestations([
+        contestation("f3", "correction", "2026-10-20T10:00:00+02:00"),
+        contestation("f2", "retrait", "2026-10-05T10:00:00+02:00"),
+      ]),
+      ARBITRE.id,
+    );
+    for (const item of figes) {
+      expect(item.decision_panel_au_gel).toEqual({
+        decision: "correction",
+        date: "2026-10-20T10:00:00+02:00",
+      });
+    }
+  });
+
+  it("ne porte aucune décision figée pour un item non arbitré", () => {
+    for (const entree of entreesTirees(JEU.items)) {
+      for (const item of entree.items_au_gel) expect(item).not.toHaveProperty("decision_panel_au_gel");
+    }
+  });
+
+  it("refuse de figer une décision du panel datée après le gel", () => {
+    const apres = contestation("f4", "maintien", "2026-12-01T06:00:01+01:00");
+    expect(() => entreesTirees(avecContestations([apres]))).toThrow(DecisionPanelPosterieureAuGel);
+  });
+
+  it("accepte une décision datée exactement à l'instant du gel", () => {
+    const pile = contestation("f5", "maintien", "2026-12-01T05:00:00Z");
+    const figes = itemsAuGelDe(avecContestations([pile]), ARBITRE.id);
+    expect(figes.length).toBeGreaterThan(0);
   });
 });
 
