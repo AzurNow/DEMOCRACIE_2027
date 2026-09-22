@@ -157,7 +157,8 @@ Ces schémas les rendent *représentables* sans trancher la règle de mesure :
    littéral. Le champ `motif_inexactitude: ajout_fabrique` permet de l'enregistrer dans les deux
    sens ; la règle de classement appartient au prompt du juge et reste à écrire.
 4. **§6, troncature.** Retenu : une réponse tronquée est obtenue et notée telle quelle, avec
-   `normalise.troncature`. Reste à décider si elle entre dans les métriques primaires.
+   `normalise.troncature`. Tranché par le protocole 0.3 (§8) : elle entre dans les métriques
+   primaires, et un recalcul de robustesse (d) l'exclut.
 5. **§12, kappa et seuils.** `taux_echantillon_humain` n'accepte que 0,10 et 0,25, les deux seules
    valeurs prévues par le §7. Tout autre taux exige un amendement, et c'est voulu.
 6. **Annexe A, `obsolescence.date_changement`.** La frontière est portée par un champ unique, et non

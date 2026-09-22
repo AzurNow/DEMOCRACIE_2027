@@ -1,6 +1,7 @@
 /**
- * Correction de Holm (§8 : « correction de Holm sur l'ensemble des outils », et « au sein de
- * chaque famille de comparaisons » pour les effets de condition).
+ * Correction de Holm (§8, protocole 0.3 : « Correction de Holm sur l'ensemble des outils » pour le
+ * test d'asymétrie). Elle ne s'applique qu'à lui : le §8 le dit « seul endroit du protocole où une
+ * valeur p est calculée », et les effets de condition n'en portent aucune.
  *
  * Procédure descendante, sans hypothèse d'indépendance : les m valeurs p sont triées
  * croissantes, la i-ème est multipliée par (m − i + 1), puis le maximum courant est propagé pour

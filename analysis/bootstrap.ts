@@ -146,57 +146,21 @@ export function differenceAppariee(
   statistique: Statistique,
   options: OptionsBootstrap,
 ): DifferenceTaux {
-  return differenceEtEchantillon(unitesA, unitesB, statistique, options).difference;
-}
-
-/**
- * Même calcul, en rendant aussi la distribution rééchantillonnée : une valeur p et l'intervalle
- * qui l'accompagne doivent venir de la MÊME distribution, sinon le rapport publierait deux
- * mesures d'une seule chose.
- */
-export function differenceEtEchantillon(
-  unitesA: readonly UniteAnalyse[],
-  unitesB: readonly UniteAnalyse[],
-  statistique: Statistique,
-  options: OptionsBootstrap,
-): { readonly difference: DifferenceTaux; readonly echantillon: EchantillonBootstrap | null } {
   const taux_a = statistique(unitesA);
   const taux_b = statistique(unitesB);
   const difference = ecart(taux_a, taux_b);
   if (difference === null) {
-    return {
-      difference: { taux_a, taux_b, difference: null, intervalle: null, qualificatif: null },
-      echantillon: null,
-    };
+    return { taux_a, taux_b, difference: null, intervalle: null, qualificatif: null };
   }
   const echantillon = reechantillonnerDifference(unitesA, unitesB, statistique, options);
   const intervalle = intervalleDepuis(echantillon, options.reechantillonnages);
-  return {
-    difference: { taux_a, taux_b, difference, intervalle, qualificatif: qualifier(intervalle) },
-    echantillon,
-  };
+  return { taux_a, taux_b, difference, intervalle, qualificatif: qualifier(intervalle) };
 }
 
 /** §8 : « établie » seulement si l'intervalle exclut zéro. Aucun autre mot n'est publiable. */
 export function qualifier(intervalle: Intervalle95 | null): Qualificatif | null {
   if (intervalle === null) return null;
   return intervalle.bas > 0 || intervalle.haut < 0 ? "etablie" : "non_etablie";
-}
-
-/**
- * Valeur p bilatérale du percentile bootstrap : deux fois la plus petite des deux masses de part
- * et d'autre de zéro, bornée à 1. Elle vient de la même distribution rééchantillonnée que
- * l'intervalle qu'elle accompagne.
- *
- * Le « 1 + » au numérateur et au dénominateur est la même convention que pour le test de
- * permutation : aucun nombre fini de rééchantillonnages ne justifie de publier zéro.
- */
-export function valeurPBilaterale(echantillon: EchantillonBootstrap): number | null {
-  const m = echantillon.valeurs.length;
-  if (m === 0) return null;
-  const negatives = echantillon.valeurs.filter((v) => v <= 0).length;
-  const positives = echantillon.valeurs.filter((v) => v >= 0).length;
-  return Math.min(1, (2 * (1 + Math.min(negatives, positives))) / (1 + m));
 }
 
 function echantillonner(

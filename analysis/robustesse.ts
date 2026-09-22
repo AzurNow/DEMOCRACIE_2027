@@ -1,14 +1,19 @@
 /**
- * Analyses de robustesse préenregistrées (§8).
+ * Analyses de robustesse préenregistrées (§8, protocole 0.3).
  *
  * « Recalcul des métriques primaires (a) sur la seule notation humaine de l'échantillon de 10 %,
  * (b) en excluant les items contestés à un run ultérieur, (c) en excluant les formulations
- * orientées. Un résultat qui ne survit pas à ces trois recalculs est signalé comme fragile. »
+ * orientées, (d) en excluant les réponses tronquées. Un résultat qui ne survit pas à ces quatre
+ * recalculs est signalé comme fragile. »
+ *
+ * Les réponses tronquées entrent toujours dans le calcul principal (§8 : elles sont « notée[s]
+ * sur ce qu'elle[s] contien[nent] et entre[nt] dans les métriques primaires ») ; leur exclusion
+ * n'existe qu'ici, comme recalcul (d).
  *
  * Deux lectures assumées, toutes deux visibles dans la sortie :
  *
  * - « Ne pas survivre » se dit d'un résultat **établi** au calcul principal qui cesse de l'être
- *   dans l'un des trois recalculs. Une différence déjà non établie n'avait rien à faire
+ *   dans l'un des quatre recalculs. Une différence déjà non établie n'avait rien à faire
  *   survivre ; la marquer fragile laisserait croire à un résultat rabaissé.
  * - Un recalcul **qui ne peut plus être calculé** (plus aucune réponse après restriction) ne
  *   confirme rien : il rend le résultat fragile, avec son motif. Une absence de confirmation
@@ -19,7 +24,11 @@ import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type St
 import type { UniteAnalyse } from "./filtre.ts";
 import type { Run } from "./types.ts";
 
-export type Recalcul = "echantillon_humain" | "items_contestes" | "formulations_orientees";
+export type Recalcul =
+  | "echantillon_humain"
+  | "items_contestes"
+  | "formulations_orientees"
+  | "reponses_tronquees";
 
 export interface RecalculRobustesse {
   readonly recalcul: Recalcul;
@@ -51,6 +60,11 @@ export function exclureFormulationsOrientees(unites: readonly UniteAnalyse[]): U
   return unites.filter((u) => u.registre !== "oriente");
 }
 
+/** §8(d) : les réponses tronquées, lues sur `UniteAnalyse.tronquee` (`normalise.troncature`, §6). */
+export function exclureReponsesTronquees(unites: readonly UniteAnalyse[]): UniteAnalyse[] {
+  return unites.filter((u) => !u.tronquee);
+}
+
 export function evaluerRobustesse(
   unitesA: readonly UniteAnalyse[],
   unitesB: readonly UniteAnalyse[],
@@ -72,12 +86,13 @@ interface Restriction {
   readonly restreindre: (unites: readonly UniteAnalyse[]) => UniteAnalyse[];
 }
 
-/** Ordre figé : (a), (b), (c) du §8, dans cet ordre, pour que le rapport soit comparable d'un run à l'autre. */
+/** Ordre figé : (a), (b), (c), (d) du §8, dans cet ordre, pour que le rapport soit comparable d'un run à l'autre. */
 function restrictions(run: Run): readonly Restriction[] {
   return [
     { recalcul: "echantillon_humain", restreindre: restreindreEchantillonHumain },
     { recalcul: "items_contestes", restreindre: (unites) => exclureItemsContestes(unites, run) },
     { recalcul: "formulations_orientees", restreindre: exclureFormulationsOrientees },
+    { recalcul: "reponses_tronquees", restreindre: exclureReponsesTronquees },
   ];
 }
 

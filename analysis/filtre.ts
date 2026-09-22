@@ -72,12 +72,6 @@ export interface EntreesAnalyse {
   readonly items: readonly Item[];
   readonly reponses: readonly Reponse[];
   readonly verdicts: readonly Verdict[];
-  /**
-   * §6 et schema/README.md, point ouvert 4 : l'entrée des réponses tronquées dans les métriques
-   * primaires n'est pas tranchée par le protocole. Aucun défaut n'est donc proposé ici :
-   * l'appelant dit ce qu'il fait, et le dit dans le fichier de run.
-   */
-  readonly inclure_tronquees: boolean;
 }
 
 export function estDuRun(objet: { readonly contexte: ContexteMesure }): boolean {
@@ -102,8 +96,7 @@ export function assembler(entrees: EntreesAnalyse): UniteAnalyse[] {
   const unites: UniteAnalyse[] = [];
   for (const verdict of filtrerContexteRun(entrees.verdicts)) {
     if (verdict.objet_note.type !== "reponse") continue;
-    const unite = uniteDepuis(verdict, index, entrees.inclure_tronquees);
-    if (unite !== null) unites.push(unite);
+    unites.push(uniteDepuis(verdict, index));
   }
   return unites;
 }
@@ -117,14 +110,14 @@ function indexer(entrees: EntreesAnalyse): IndexEntrees {
   };
 }
 
-function uniteDepuis(
-  verdict: Verdict,
-  index: IndexEntrees,
-  inclureTronquees: boolean,
-): UniteAnalyse | null {
+/**
+ * §8 (protocole 0.3) : une réponse tronquée « est notée sur ce qu'elle contient et entre dans les
+ * métriques primaires ». Elle est donc toujours assemblée ; `tronquee` reste porté par l'unité,
+ * parce que le recalcul de robustesse (d) l'exclut (`robustesse.ts`).
+ */
+function uniteDepuis(verdict: Verdict, index: IndexEntrees): UniteAnalyse {
   const reponse = reponseNotee(verdict, index);
   const tronquee = projection(reponse).troncature;
-  if (tronquee && !inclureTronquees) return null;
   return composer(verdict, reponse, contexteQuestion(reponse, index), tronquee);
 }
 
