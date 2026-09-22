@@ -13,6 +13,60 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-22 — Lot collecte, sous-lot C1 : socle Python et archivage (`pipeline/collecte/`, `schema/collecte.schema.json`, `docs/CONTRATS.md` §5)
+
+### 1. Deux sources au contenu identique gardent une seule fiche, et la seconde disparaît — *moyenne*
+
+Le manifeste est indexé par le SHA-256 du document. Si deux entrées de `config/sources.toml` servent
+les mêmes octets (un programme commun hébergé à deux adresses, un PDF repris par deux candidats), la
+seconde ressort « déjà collectée ». Son `candidat_id`, son `tier` et sa `date_source` ne sont écrits
+nulle part.
+
+**Pourquoi ça casse.** Le corpus examiné d'un item d'absence (§4) se reconstruit depuis les
+manifestes. Il y manquera une source que l'auteur avait bien listée pour ce candidat, sans aucune
+erreur. Le rapport de collecte la mentionne, mais le code de sortie reste 0.
+
+**Ce qu'il faut faire.** À décider par l'auteur : au minimum, signaler la collision et sortir en
+erreur ; au mieux, un index source → sha256 en plus du manifeste par contenu.
+
+### 2. Un archivage Wayback en échec ne peut plus être repris — *moyenne*
+
+Le manifeste est immuable, et une recollecte du même contenu s'arrête sur « déjà collecté » avant
+d'appeler la Wayback Machine. Une source dont Save Page Now a échoué garde donc `echec_archivage`
+pour toujours.
+
+**Pourquoi ça casse.** Une source sans `archive_url` ne peut pas s'afficher (règle 2). Un échec
+passager de la Wayback Machine au premier passage retire définitivement la source de la mesure, à
+moins de supprimer le manifeste à la main, ce qui contredit son immuabilité.
+
+**Ce qu'il faut faire.** Un fichier de reprise ajouté sans réécriture (`staging/archivages/<sha256>.json`),
+lu en priorité sur le bloc d'échec. À écrire avant le premier lot de collecte réel.
+
+### 3. `candidat_id` n'est vérifié contre aucun périmètre — *basse*
+
+`sources.py` vérifie la forme de l'identifiant, pas son existence dans `config/perimetre.yaml`, faute
+de parseur YAML côté Python.
+
+**Pourquoi ça casse.** Une faute de frappe dans `candidat_id` produit des manifestes rattachés à un
+candidat inexistant. Ce sera visible dès l'extraction ou la validation, mais après la collecte, donc
+après les téléchargements et les demandes Wayback.
+
+**Ce qu'il faut faire.** La vérifier dans le lecteur du périmètre, côté TypeScript, quand il existera.
+
+### 4. Les exemples valides du schéma de collecte sont des copies des fichiers dorés — *basse*
+
+`schema/exemples/collecte/valide-0*.json` recopient `tests/collecte/dore/*.json`. Aucun test ne
+compare les deux.
+
+**Pourquoi ça casse.** Si le manifeste évolue, les fichiers dorés suivent, parce que pytest l'exige,
+mais les exemples du schéma peuvent rester sur l'ancienne forme. Tant que les deux formes sont
+valides, rien ne rougit, et le README montre alors un manifeste que le code ne produit plus.
+
+**Ce qu'il faut faire.** Un test d'égalité entre chaque exemple valide et son fichier doré, ou un seul
+fichier référencé des deux côtés.
+
+---
+
 ## 2026-09-22 — Lot alignement-0-3, CI et protocole 0.4 (`analysis/`, `pipeline/questions/`, `prompts/`, `schema/gabarits.schema.json`, `.github/workflows/`, `docs/PROTOCOLE.md`)
 
 ### ~~1. La symétrie d'un tirage passé dépend désormais de l'état actuel des items~~ — réglé le 2026-09-22 par `items_au_gel[].decision_panel_au_gel` (lot decision-au-gel)
