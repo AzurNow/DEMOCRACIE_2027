@@ -7,7 +7,8 @@
 
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
-import { entreesPour } from "../../pipeline/questions/tirage.ts";
+import { ArbitrageSansDecision, entreesPour } from "../../pipeline/questions/tirage.ts";
+import { ItemIntrouvable } from "../../pipeline/questions/reponse-attendue.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
 import type {
   CodeCondition,
@@ -18,7 +19,19 @@ import type {
   Symetrie,
   Tirage,
 } from "../../pipeline/questions/types.ts";
-import { candidat, completer, graine, itemA, itemF, itemP, mesure, question, run } from "./fabriques.ts";
+import {
+  arbitre,
+  candidat,
+  completer,
+  contestation,
+  graine,
+  itemA,
+  itemF,
+  itemP,
+  mesure,
+  question,
+  run,
+} from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta"];
@@ -194,6 +207,97 @@ describe("items contestés ou en attente", () => {
     expect(
       conditionDe(verifier(SYMETRIQUES, items), "aucun_item_conteste_ou_en_attente").statut,
     ).toBe("rouge");
+  });
+});
+
+/**
+ * §5 : « aucun item contesté ou en attente dans le tirage ». Un item arbitré puis maintenu ou
+ * corrigé n'est ni l'un ni l'autre (annexe E, point 6) : il est admis au gel si, sur l'item, la
+ * dernière décision du panel le réintègre. Le tirage est construit directement par
+ * `entreesPour`, donc sans le filtre de `tirer` : c'est le contrôle de symétrie seul qui juge.
+ */
+describe("items sortis de l'arbitrage du panel", () => {
+  const DATE = "2026-10-05T10:00:00+02:00";
+  const cible = itemsDe("demo-alpha").p1;
+
+  function avecArbitrage(contestations: readonly unknown[]): readonly Item[] {
+    return ITEMS.map((item) => (item.id === cible.id ? arbitre(item, contestations) : item));
+  }
+
+  function conditionArbitrage(items: readonly Item[]) {
+    return conditionDe(verifier(SYMETRIQUES, items), "aucun_item_conteste_ou_en_attente");
+  }
+
+  it("(a) admet un item arbitré maintenu : condition et statut global verts", () => {
+    const items = avecArbitrage([contestation("sa", "maintien", DATE)]);
+    const symetrie = verifier(SYMETRIQUES, items);
+    expect(tirageDe(SYMETRIQUES, items).entrees.some((entree) => entree.grappe_id === cible.id)).toBe(
+      true,
+    );
+    expect(conditionDe(symetrie, "aucun_item_conteste_ou_en_attente").statut).toBe("vert");
+    expect(symetrie.statut_global).toBe("vert");
+  });
+
+  it("(b) admet un item arbitré corrigé : condition et statut global verts", () => {
+    const symetrie = verifier(SYMETRIQUES, avecArbitrage([contestation("sb", "correction", DATE)]));
+    expect(conditionDe(symetrie, "aucun_item_conteste_ou_en_attente").statut).toBe("vert");
+    expect(symetrie.statut_global).toBe("vert");
+  });
+
+  it("(c) passe au rouge pour un item arbitré avec retrait présent au tirage, et le nomme", () => {
+    const condition = conditionArbitrage(avecArbitrage([contestation("sc", "retrait", DATE)]));
+    expect(condition.statut).toBe("rouge");
+    expect(condition.commentaire).toContain(cible.id);
+    expect(condition.commentaire).toContain("retrait");
+  });
+
+  it("(d) passe au rouge pour un item arbitré non évaluable présent au tirage", () => {
+    const condition = conditionArbitrage(
+      avecArbitrage([contestation("sd", "non_evaluabilite", DATE)]),
+    );
+    expect(condition.statut).toBe("rouge");
+    expect(condition.commentaire).toContain(cible.id);
+  });
+
+  it("(e) refuse de noter un item arbitré sans décision du panel par une erreur nommée", () => {
+    expect(() => verifier(SYMETRIQUES, avecArbitrage([]))).toThrow(ArbitrageSansDecision);
+  });
+
+  it("(f) passe au rouge pour un item contesté, même porteur d'un maintien antérieur", () => {
+    const items = ITEMS.map((item) =>
+      item.id === cible.id
+        ? {
+            ...item,
+            statut_contestation: "contestee" as const,
+            contestations: [contestation("sf", "maintien", DATE)],
+          }
+        : item,
+    );
+    expect(conditionArbitrage(items).statut).toBe("rouge");
+  });
+
+  it("passe au rouge pour un item arbitré maintenu dont la validation n'est pas acquise", () => {
+    const items = ITEMS.map((item) =>
+      item.id === cible.id
+        ? { ...arbitre(item, [contestation("sg", "maintien", DATE)]), statut_validation: "en_attente" }
+        : item,
+    );
+    expect(conditionArbitrage(items).statut).toBe("rouge");
+  });
+
+  it("seule la dernière décision compte : maintien puis retrait passe au rouge", () => {
+    const items = avecArbitrage([
+      contestation("sh2", "retrait", "2026-10-20T10:00:00+02:00"),
+      contestation("sh1", "maintien", DATE),
+    ]);
+    expect(conditionArbitrage(items).statut).toBe("rouge");
+  });
+
+  it("refuse de noter un item arbitré au gel absent du jeu d'items", () => {
+    const items = avecArbitrage([contestation("si", "maintien", DATE)]);
+    const tirage = tirageDe(SYMETRIQUES, items);
+    const sansCible = items.filter((item) => item.id !== cible.id);
+    expect(() => verifierSymetrie(tirage, QUESTIONS, sansCible, RUN)).toThrow(ItemIntrouvable);
   });
 });
 

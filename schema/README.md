@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les douze fichiers
+## Les treize fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -22,6 +22,7 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `lecture-comparateur.schema.json` | lecture d'un comparateur | §6, QR9 |
 | `decision.schema.json` | entrée du journal de validation | §4, une ligne du journal append-only écrit par l'interface de validation humaine |
 | `decision-mesure.schema.json` | arbitrage d'une correction de thème | §4, décision de l'auteur sur une demande de correction du thème d'une mesure, publiée dans `validation/mesures/decisions.json` |
+| `gabarits.schema.json` | table des gabarits de questions | §5 (protocole 0.3) : les gabarits sont versionnés dans `prompts/` ; décrit `prompts/gabarits-1.0.0.json`, lu par `pipeline/questions/gabarits.ts` |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -119,7 +120,7 @@ l'item ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 55 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 58 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -136,9 +137,10 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | lecture-comparateur | absence d'affichage portant un extrait · affichage sans extrait · cadence supérieure à une page par seconde |
 | decision | annulation portant une décision · decision=corriger avec corrections vide · item O portant reponses_grille au lieu de reponses_par_etat |
 | decision-mesure | refus sans motif · theme_demande hors des dix thèmes fixes du §3 |
+| gabarits | gabarit sans `positions_exclues` · gabarit présent deux fois |
 
-Vérification faite avec `jsonschema` 4.26 (draft 2020-12) : 12/12 schémas conformes au méta-schéma,
-55/55 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
+depuis, `pnpm check` rejoue le tout : 13 schémas au registre, 58/58 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 
@@ -157,7 +159,8 @@ Ces schémas les rendent *représentables* sans trancher la règle de mesure :
    littéral. Le champ `motif_inexactitude: ajout_fabrique` permet de l'enregistrer dans les deux
    sens ; la règle de classement appartient au prompt du juge et reste à écrire.
 4. **§6, troncature.** Retenu : une réponse tronquée est obtenue et notée telle quelle, avec
-   `normalise.troncature`. Reste à décider si elle entre dans les métriques primaires.
+   `normalise.troncature`. Tranché par le protocole 0.3 (§8) : elle entre dans les métriques
+   primaires, et un recalcul de robustesse (d) l'exclut.
 5. **§12, kappa et seuils.** `taux_echantillon_humain` n'accepte que 0,10 et 0,25, les deux seules
    valeurs prévues par le §7. Tout autre taux exige un amendement, et c'est voulu.
 6. **Annexe A, `obsolescence.date_changement`.** La frontière est portée par un champ unique, et non

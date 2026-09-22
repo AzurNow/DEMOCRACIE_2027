@@ -1,5 +1,5 @@
 /**
- * Les quatre invariants inter-fichiers que JSON Schema ne peut pas exprimer.
+ * Les cinq invariants inter-fichiers que JSON Schema ne peut pas exprimer.
  *
  * `docs/DETTE.md`, entrée « JSON Schema », point 1 : JSON Schema valide un fichier à la fois.
  * Une divergence sur `grappe_id` fausse les grappes du bootstrap du §8, donc tous les
@@ -199,6 +199,92 @@ function violationDeVersion(
       invariant: INVARIANT_VERSION,
       objet: item_id,
       detail: `décisions retenues portant ${empreintes.size} versions différentes : ${[...empreintes].join(", ")}.`,
+    },
+  ];
+}
+
+/* ---------------------------------------- 5. prémisse fausse sur F ou O */
+
+export interface PorteurDePremisse {
+  readonly id: string;
+  readonly items: readonly {
+    readonly reference: { readonly item_id: string };
+    readonly role: string;
+  }[];
+  readonly formulations: readonly { readonly id: string; readonly premisse_fausse?: boolean }[];
+}
+
+export interface ItemType {
+  readonly id: string;
+  readonly type: string;
+}
+
+const INVARIANT_PREMISSE = "une prémisse fausse ne porte que sur un item F ou O";
+
+/** §5 (protocole 0.3) : les seuls types dont la prémisse orientée peut être fausse. */
+const TYPES_A_PREMISSE_FAUSSE: ReadonlySet<string> = new Set(["F", "O"]);
+
+/**
+ * §5 (protocole 0.3) : « Une formulation orientée ne porte une prémisse fausse que sur un item F
+ * ou O […] Le dénominateur de la confirmation de prémisse (section 8) est donc exactement
+ * l'ensemble de ces formulations. » Un drapeau `premisse_fausse: true` sur une question dont
+ * l'item principal est d'un autre type ferait entrer dans ce dénominateur une formulation dont la
+ * prémisse est vraie par construction. Seules les questions portant au moins un drapeau `true`
+ * sont contrôlées ; `false` ou l'absence du champ n'affirment aucune prémisse fausse.
+ */
+export function premisseFausseSurItemFOuO(
+  questions: readonly PorteurDePremisse[],
+  items: readonly ItemType[],
+): readonly Violation[] {
+  const parId = new Map(items.map((item) => [item.id, item]));
+  return questions
+    .flatMap((question) => violationDePremisse(question, parId))
+    .sort((a, b) => (a.objet < b.objet ? -1 : a.objet > b.objet ? 1 : 0));
+}
+
+function violationDePremisse(
+  question: PorteurDePremisse,
+  parId: ReadonlyMap<string, ItemType>,
+): readonly Violation[] {
+  const drapees = question.formulations.filter((formulation) => formulation.premisse_fausse === true);
+  if (drapees.length === 0) return [];
+  const identifiants = drapees.map((formulation) => formulation.id).join(", ");
+  const principaux = question.items.filter((entree) => entree.role === "principal");
+  const premier = principaux[0];
+  if (principaux.length !== 1 || premier === undefined) {
+    return [
+      {
+        invariant: INVARIANT_PREMISSE,
+        objet: question.id,
+        detail: `${principaux.length} items principaux : le type portant la prémisse fausse de ${identifiants} n'est pas vérifiable.`,
+      },
+    ];
+  }
+  return violationDeType(question.id, premier.reference.item_id, identifiants, parId);
+}
+
+function violationDeType(
+  question_id: string,
+  item_id: string,
+  identifiants: string,
+  parId: ReadonlyMap<string, ItemType>,
+): readonly Violation[] {
+  const item = parId.get(item_id);
+  if (item === undefined) {
+    return [
+      {
+        invariant: INVARIANT_PREMISSE,
+        objet: question_id,
+        detail: `item principal ${item_id} introuvable : le type portant la prémisse fausse de ${identifiants} n'est pas vérifiable.`,
+      },
+    ];
+  }
+  if (TYPES_A_PREMISSE_FAUSSE.has(item.type)) return [];
+  return [
+    {
+      invariant: INVARIANT_PREMISSE,
+      objet: question_id,
+      detail: `formulation(s) ${identifiants} à prémisse fausse sur l'item principal ${item_id}, de type ${item.type}.`,
     },
   ];
 }

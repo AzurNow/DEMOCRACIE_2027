@@ -9,8 +9,9 @@
 import { describe, expect, it } from "vitest";
 import { engendrer, MesureIntrouvable, ThemeHorsPerimetre } from "../../pipeline/questions/engendrement.ts";
 import { contientLibelle } from "../../pipeline/questions/libelles.ts";
-import type { QuestionEngendree } from "../../pipeline/questions/types.ts";
-import { itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
+import { ArbitrageSansDecision } from "../../pipeline/questions/tirage.ts";
+import type { Item, QuestionEngendree } from "../../pipeline/questions/types.ts";
+import { arbitre, contestation, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
 const MESURE = mesure({ cle: "tva", libelle: "TVA réduite sur l'énergie" });
 const MESURE_FICTIVE = mesure({ cle: "fictive", libelle: "prime aux marcheurs", fictive: true });
@@ -41,6 +42,91 @@ describe("gabarits engendrés par type d'item", () => {
   });
 });
 
+/**
+ * §5, protocole 0.3 : une position conditionnelle n'engendre ni question fermée ni question
+ * négative, et la restriction vit dans la table des gabarits (`positions_exclues`). Décisions de
+ * l'auteur du 2026-09-22 : Q-ORI porte la même exclusion ; un item O est exclu dès que L'UN de
+ * ses deux états est conditionnel, l'engendrement ne connaissant pas la date du run.
+ */
+describe("position conditionnelle (§5, protocole 0.3)", () => {
+  it("cas 1 : un item P conditionnel n'engendre ni Q-FER ni Q-NEG, mais Q-DIR et Q-ATT", () => {
+    const item = itemP({
+      cle: "p-cond",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "conditionnel",
+    });
+    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ATT", "Q-DIR"]);
+  });
+
+  it("cas 2 et 14 : un item O à l'état antérieur conditionnel n'engendre ni Q-FER ni Q-ORI, mais Q-ACT", () => {
+    const item = itemO({
+      cle: "o-cond-anterieur",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "conditionnel",
+      position_posterieure: "pour",
+    });
+    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT"]);
+  });
+
+  it("cas 3 : un item O à l'état postérieur conditionnel n'engendre ni Q-FER ni Q-ORI", () => {
+    const item = itemO({
+      cle: "o-cond-posterieur",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "pour",
+      position_posterieure: "conditionnel",
+    });
+    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT"]);
+  });
+
+  it("cas 4 et 15 : un item O sans état conditionnel engendre Q-FER et Q-ORI comme avant", () => {
+    const item = itemO({
+      cle: "o-sans-cond",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "contre",
+      position_posterieure: "pour",
+    });
+    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT", "Q-FER", "Q-ORI"]);
+  });
+
+  it("n'exclut rien d'un item P « pour », « contre » ou « sans_objet »", () => {
+    for (const position of ["pour", "contre", "sans_objet"] as const) {
+      const item = itemP({ cle: `p-${position}`, candidat_id: "demo-alpha", mesure: MESURE, position });
+      expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ATT", "Q-DIR", "Q-FER", "Q-NEG"]);
+    }
+  });
+
+  it("garde les identifiants de question, qui ne dépendent que de l'item et du gabarit", () => {
+    const conditionnel = itemP({
+      cle: "p-ident",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position: "conditionnel",
+    });
+    const pour = itemP({ cle: "p-ident", candidat_id: "demo-alpha", mesure: MESURE, position: "pour" });
+    const idsPour = new Map(engendrer([pour], [MESURE]).map((q) => [q.gabarit, q.id]));
+    for (const question of engendrer([conditionnel], [MESURE])) {
+      expect(question.id).toBe(idsPour.get(question.gabarit));
+    }
+  });
+});
+
+describe("version des gabarits", () => {
+  it("cas 13 : épingle prompts/gabarits-1.0.0 dans chaque question engendrée", () => {
+    const items = [
+      itemP({ cle: "v-p", candidat_id: "demo-alpha", mesure: MESURE }),
+      itemO({ cle: "v-o", candidat_id: "demo-alpha", mesure: MESURE }),
+      itemF({ cle: "v-f", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE }),
+    ];
+    const questions = engendrer(items, [MESURE, MESURE_FICTIVE]);
+    expect(questions.length).toBeGreaterThan(0);
+    for (const question of questions) expect(question.version_gabarits).toBe("prompts/gabarits-1.0.0");
+  });
+});
+
 describe("items qui n'engendrent aucune question", () => {
   it("n'engendre rien pour un item à confirmer, source T3 (§4)", () => {
     const item = itemP({
@@ -61,6 +147,68 @@ describe("items qui n'engendrent aucune question", () => {
       statut_contestation: "contestee",
     });
     expect(engendrer([item], [MESURE])).toEqual([]);
+  });
+});
+
+/**
+ * §5 (protocole 0.3) et annexe E, point 6 : un item arbitré revient au tirage si la dernière
+ * décision du panel vaut maintien ou correction. Il doit donc aussi engendrer ses questions ; la
+ * règle est celle du tirage (`contestationPermetLeTirage`), réutilisée et non recopiée.
+ */
+describe("item sorti de l'arbitrage du panel", () => {
+  const P_TOUS = ["Q-ATT", "Q-DIR", "Q-FER", "Q-NEG"];
+  const DATE = "2026-10-05T10:00:00+02:00";
+  const base = itemP({ cle: "p-arbitre", candidat_id: "demo-alpha", mesure: MESURE });
+
+  it("(a) un item arbitré maintenu engendre ses questions", () => {
+    const item = arbitre(base, [contestation("ea", "maintien", DATE)]);
+    expect(codes(engendrer([item], [MESURE]))).toEqual(P_TOUS);
+  });
+
+  it("(b) un item arbitré corrigé engendre ses questions", () => {
+    const item = arbitre(base, [contestation("eb", "correction", DATE)]);
+    expect(codes(engendrer([item], [MESURE]))).toEqual(P_TOUS);
+  });
+
+  it("(c) un item arbitré avec retrait n'engendre rien", () => {
+    const item = arbitre(base, [contestation("ec", "retrait", DATE)]);
+    expect(engendrer([item], [MESURE])).toEqual([]);
+  });
+
+  it("(d) un item arbitré non évaluable n'engendre rien", () => {
+    const item = arbitre(base, [contestation("ed", "non_evaluabilite", DATE)]);
+    expect(engendrer([item], [MESURE])).toEqual([]);
+  });
+
+  it("(e) un item arbitré sans décision du panel lève une erreur nommée", () => {
+    expect(() => engendrer([arbitre(base, [])], [MESURE])).toThrow(ArbitrageSansDecision);
+  });
+
+  it("(f) un item contesté n'engendre rien, même porteur d'un maintien antérieur", () => {
+    const item: Item = {
+      ...base,
+      statut_contestation: "contestee",
+      contestations: [contestation("ef", "maintien", DATE)],
+    };
+    expect(engendrer([item], [MESURE])).toEqual([]);
+  });
+
+  it("seule la dernière décision compte : retrait puis maintien engendre", () => {
+    const item = arbitre(base, [
+      contestation("eg2", "maintien", "2026-10-20T10:00:00+02:00"),
+      contestation("eg1", "retrait", DATE),
+    ]);
+    expect(codes(engendrer([item], [MESURE]))).toEqual(P_TOUS);
+  });
+
+  it("inscrit un item maintenu d'un autre candidat dans la liste attendue d'une Q-ATT", () => {
+    const autre = arbitre(itemP({ cle: "p-arbitre-b", candidat_id: "demo-beta", mesure: MESURE }), [
+      contestation("eh", "maintien", DATE),
+    ]);
+    const attribution = engendrer([base, autre], [MESURE]).find(
+      (question) => question.gabarit === "Q-ATT" && question.grappe_id === base.id,
+    );
+    expect(attribution?.items.map((entree) => entree.reference.item_id)).toEqual([base.id, autre.id]);
   });
 });
 

@@ -9,12 +9,13 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { engendrer } from "../../pipeline/questions/engendrement.ts";
+import { engendrer, referenceDe } from "../../pipeline/questions/engendrement.ts";
 import {
   ItemHorsValidite,
   ReponseAttendueIndecidable,
   reponseAttendue,
 } from "../../pipeline/questions/reponse-attendue.ts";
+import type { QuestionNotable } from "../../pipeline/questions/reponse-attendue.ts";
 import type { CodeGabarit, Item, Mesure, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
@@ -162,7 +163,18 @@ describe("natures attendues par gabarit et par type d'item", () => {
   });
 });
 
-describe("trous du protocole : refus plutôt qu'hypothèse", () => {
+/**
+ * Depuis le protocole 0.3 (§5), l'engendrement ne produit plus de Q-FER, Q-NEG ni Q-ORI sur une
+ * position conditionnelle (`positions_exclues` de `prompts/gabarits-1.0.0.json`, vérifié dans
+ * `engendrement.test.ts`). Les résolveurs gardent leur refus comme filet de sécurité pour une
+ * question qui n'en viendrait pas : ces questions sont donc construites à la main, hors de
+ * l'engendrement, et le refus attendu est le même qu'avant.
+ */
+function questionHorsEngendrement(item: Item, gabarit: CodeGabarit): QuestionNotable {
+  return { gabarit, items: [{ reference: referenceDe(item), role: "principal" }] };
+}
+
+describe("filet de sécurité : refus plutôt qu'hypothèse", () => {
   it("refuse une question négative sur un item P de position conditionnelle", () => {
     const item = itemP({
       cle: "p-conditionnel",
@@ -170,7 +182,7 @@ describe("trous du protocole : refus plutôt qu'hypothèse", () => {
       mesure: MESURE,
       position: "conditionnel",
     });
-    const question = questionDe([item], [MESURE], "Q-NEG");
+    const question = questionHorsEngendrement(item, "Q-NEG");
     expect(() => reponseAttendue(question, [item], GEL)).toThrow(ReponseAttendueIndecidable);
   });
 
@@ -182,7 +194,19 @@ describe("trous du protocole : refus plutôt qu'hypothèse", () => {
       position_posterieure: "conditionnel",
       date_changement: "2026-11-03",
     });
-    const question = questionDe([item], [MESURE], "Q-FER");
+    const question = questionHorsEngendrement(item, "Q-FER");
+    expect(() => reponseAttendue(question, [item], GEL)).toThrow(ReponseAttendueIndecidable);
+  });
+
+  it("refuse une question orientée sur un item O dont l'état en vigueur est conditionnel", () => {
+    const item = itemO({
+      cle: "o-conditionnel-ori",
+      candidat_id: "demo-alpha",
+      mesure: MESURE,
+      position_posterieure: "conditionnel",
+      date_changement: "2026-11-03",
+    });
+    const question = questionHorsEngendrement(item, "Q-ORI");
     expect(() => reponseAttendue(question, [item], GEL)).toThrow(ReponseAttendueIndecidable);
   });
 

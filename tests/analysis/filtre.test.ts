@@ -12,11 +12,7 @@ import { partReponsesManquantes } from "../../analysis/seuils.ts";
 import { entreeTirage, idQuestion, item, question, reponse, run, ulid, verdict } from "./fabriques.ts";
 
 /** Jeu commun : une question, un item P, et ce que l'appelant veut y mettre. */
-function entrees(
-  reponses: ReturnType<typeof reponse>[],
-  verdicts: ReturnType<typeof verdict>[],
-  inclure_tronquees = false,
-) {
+function entrees(reponses: ReturnType<typeof reponse>[], verdicts: ReturnType<typeof verdict>[]) {
   return {
     run: run(),
     entrees_tirage: [entreeTirage()],
@@ -24,7 +20,6 @@ function entrees(
     items: [item()],
     reponses,
     verdicts,
-    inclure_tronquees,
   };
 }
 
@@ -106,10 +101,10 @@ describe("filtre de contexte", () => {
     expect(() => assembler(entrees(reponses, [verdictSurManquante]))).toThrow(/manquante/);
   });
 
-  it("l'inclusion des réponses tronquées est un paramètre explicite, sans valeur par défaut", () => {
-    // §6 et schema/README.md point ouvert 4 : la troncature est enregistrée, son entrée dans les
-    // métriques primaires n'est pas tranchée. Le comportement le plus restrictif est le défaut
-    // d'aucune fonction : l'appelant doit le dire.
+  it("une réponse tronquée est toujours assemblée, marquée tronquée, sans aucun paramètre", () => {
+    // §8 0.3 : une réponse tronquée « est notée sur ce qu'elle contient et entre dans les
+    // métriques primaires ». Son exclusion n'existe que comme recalcul de robustesse (d), qui lit
+    // `tronquee` sur l'unité : le drapeau doit donc y être, fidèle à `normalise.troncature`.
     const reponses = [
       reponse({ id: ulid("r-entiere") }),
       reponse({ id: ulid("r-tronquee"), normalise: { texte: "coupé", liens: [], troncature: true } }),
@@ -119,10 +114,13 @@ describe("filtre de contexte", () => {
       verdict({ id: ulid("v-tronquee"), objet_note: { type: "reponse", id: ulid("r-tronquee") } }),
     ];
 
-    expect(assembler(entrees(reponses, verdicts, false))).toHaveLength(1);
-    const avec = assembler(entrees(reponses, verdicts, true));
-    expect(avec).toHaveLength(2);
-    expect(avec.filter((u) => u.tronquee)).toHaveLength(1);
+    const unites = assembler(entrees(reponses, verdicts));
+
+    expect(unites.map((u) => [u.reponse_id, u.tronquee])).toEqual([
+      [ulid("r-entiere"), false],
+      [ulid("r-tronquee"), true],
+    ]);
+    expect(exactitude(unites)).toEqual({ numerateur: 2, denominateur: 2, valeur: 1 });
   });
 
   it("une réponse, une question, un item ou une entrée de tirage introuvable lève", () => {

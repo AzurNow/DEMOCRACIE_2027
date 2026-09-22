@@ -1,37 +1,26 @@
 /**
- * Effets de condition (§8, QR6/H2/H3).
+ * Effets de condition (§8, protocole 0.3, QR6/H2/H3).
  *
- * « Différences appariées par item entre modes et entre formulations, intervalle par bootstrap
- * en grappes, correction de Holm au sein de chaque famille de comparaisons. »
+ * « Différences appariées par item entre modes et entre formulations, intervalle par bootstrap en
+ * grappes. La famille des formulations compte trois paires : neutre contre familière, neutre
+ * contre orientée, familière contre orientée. Aucune valeur p n'est définie pour cette famille :
+ * la conclusion s'y lit sur l'intervalle de la différence et sur le qualificatif « établie » ou
+ * « non établie » défini plus haut. La correction de Holm ne s'y applique donc pas — elle ne vaut
+ * que pour le test d'asymétrie, seul endroit du protocole où une valeur p est calculée. »
+ *
+ * **Aucune valeur p, dans aucune des deux familles.** Puisque le test d'asymétrie est « le seul
+ * endroit du protocole où une valeur p est calculée », la famille des modes n'en porte pas plus que
+ * celle des formulations. Une comparaison publie sa différence, son intervalle et son qualificatif
+ * — rien d'autre. Holm vit dans `holm.ts` et ne sert qu'à `permutation.ts`.
  *
  * **Appariement par item.** Un item absent de l'un des deux bras sort de la comparaison et est
  * nommé dans `grappes_exclues`. Il n'est jamais remplacé par une moyenne, un zéro ou un report :
  * comparer deux modes sur des items différents ne mesure plus le mode.
- *
- * **Valeur p.** Le §8 impose la correction de Holm ici mais ne dit pas d'où viennent les valeurs
- * p corrigées ; il ne préenregistre pour cette famille qu'un intervalle de percentile bootstrap.
- * La méthode retenue est donc celle qui se lit dans la même distribution que l'intervalle — le
- * percentile bilatéral — et elle est NOMMÉE dans chaque comparaison, par un paramètre obligatoire
- * `methode_valeur_p` : aucun chiffre publié ne peut taire la méthode qui l'a produit. Le point
- * est remonté comme un trou du protocole, pas comblé en silence.
  */
 
-import {
-  differenceEtEchantillon,
-  valeurPBilaterale,
-  type DifferenceTaux,
-  type OptionsBootstrap,
-  type Statistique,
-} from "./bootstrap.ts";
+import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
-import { corrigerHolm, type ValeurP } from "./holm.ts";
 import type { Mode, Registre, Ulid } from "./types.ts";
-
-export type MethodeValeurP = "bootstrap_percentile_bilateral";
-
-export interface OptionsConditions extends OptionsBootstrap {
-  readonly methode_valeur_p: MethodeValeurP;
-}
 
 export interface PaireCondition {
   readonly cle: string;
@@ -45,9 +34,6 @@ export interface ComparaisonCondition {
   readonly grappes_appariees: number;
   /** Items présents dans un seul bras : nommés, jamais complétés. */
   readonly grappes_exclues: readonly Ulid[];
-  readonly valeur_p: number | null;
-  readonly valeur_p_corrigee: number | null;
-  readonly methode_valeur_p: MethodeValeurP;
 }
 
 const MODES: readonly Mode[] = ["web_activee", "web_desactivee"];
@@ -59,49 +45,27 @@ const PAIRES_REGISTRES: readonly (readonly [Registre, Registre])[] = [
   ["familier", "oriente"],
 ];
 
+/** Chaque paire est comparée seule : aucune correction de famille ne s'applique (§8 0.3). */
 export function comparerConditions(
   paires: readonly PaireCondition[],
   statistique: Statistique,
-  options: OptionsConditions,
+  options: OptionsBootstrap,
 ): ComparaisonCondition[] {
-  const brutes = paires.map((paire) => comparerUnePaire(paire, statistique, options));
-  return appliquerHolm(brutes);
+  return paires.map((paire) => comparerUnePaire(paire, statistique, options));
 }
 
 function comparerUnePaire(
   paire: PaireCondition,
   statistique: Statistique,
-  options: OptionsConditions,
+  options: OptionsBootstrap,
 ): ComparaisonCondition {
   const appariement = apparier(paire.a, paire.b);
-  const { difference, echantillon } = differenceEtEchantillon(
-    appariement.a,
-    appariement.b,
-    statistique,
-    options,
-  );
   return {
     cle: paire.cle,
-    difference,
+    difference: differenceAppariee(appariement.a, appariement.b, statistique, options),
     grappes_appariees: appariement.communes.length,
     grappes_exclues: appariement.exclues,
-    valeur_p: echantillon === null ? null : valeurPBilaterale(echantillon),
-    valeur_p_corrigee: null,
-    methode_valeur_p: options.methode_valeur_p,
   };
-}
-
-/** Holm porte sur la famille entière ; les comparaisons sans valeur p n'en font pas partie. */
-function appliquerHolm(comparaisons: readonly ComparaisonCondition[]): ComparaisonCondition[] {
-  const famille: ValeurP[] = [];
-  for (const comparaison of comparaisons) {
-    if (comparaison.valeur_p !== null) famille.push({ cle: comparaison.cle, valeur: comparaison.valeur_p });
-  }
-  const corrigees = new Map(corrigerHolm(famille).map((c) => [c.cle, c.corrigee]));
-  return comparaisons.map((comparaison) => {
-    const corrigee = corrigees.get(comparaison.cle);
-    return { ...comparaison, valeur_p_corrigee: corrigee === undefined ? null : corrigee };
-  });
 }
 
 interface Appariement {

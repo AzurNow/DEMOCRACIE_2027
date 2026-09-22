@@ -1,7 +1,8 @@
 /**
- * Effets de condition (§8, QR6/H2/H3) : « différences appariées par item entre modes et entre
- * formulations, intervalle par bootstrap en grappes, correction de Holm au sein de chaque
- * famille de comparaisons ».
+ * Effets de condition (§8 0.3, QR6/H2/H3) : « Différences appariées par item entre modes et entre
+ * formulations, intervalle par bootstrap en grappes. […] Aucune valeur p n'est définie pour cette
+ * famille […]. La correction de Holm ne s'y applique donc pas — elle ne vaut que pour le test
+ * d'asymétrie, seul endroit du protocole où une valeur p est calculée. »
  */
 
 import { describe, expect, it } from "vitest";
@@ -9,11 +10,10 @@ import { comparerConditions, pairesParFormulation, pairesParMode } from "../../a
 import { exactitude } from "../../analysis/metriques.ts";
 import { grappe, ulid, unite } from "./fabriques.ts";
 
-const OPTIONS = {
-  reechantillonnages: 100,
-  graine: "graine-conditions",
-  methode_valeur_p: "bootstrap_percentile_bilateral",
-} as const;
+const OPTIONS = { reechantillonnages: 100, graine: "graine-conditions" };
+
+/** Les seules clés qu'une comparaison de condition publie : aucune ne porte une valeur p. */
+const CLES_COMPARAISON = ["cle", "difference", "grappes_appariees", "grappes_exclues"];
 
 describe("appariement par item", () => {
   it("exclut de la différence appariée l'item absent de l'un des deux bras, sans le remplacer", () => {
@@ -38,7 +38,6 @@ describe("appariement par item", () => {
     expect(comparaison?.difference.taux_a).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(comparaison?.difference.difference).toBe(1);
     expect(comparaison?.difference.qualificatif).toBe("etablie");
-    expect(comparaison?.methode_valeur_p).toBe("bootstrap_percentile_bilateral");
   });
 
   it("ne rend aucune comparaison quand aucun item n'est commun aux deux bras", () => {
@@ -50,31 +49,62 @@ describe("appariement par item", () => {
     expect(comparaison?.grappes_appariees).toBe(0);
     expect(comparaison?.difference.difference).toBeNull();
     expect(comparaison?.difference.qualificatif).toBeNull();
-    expect(comparaison?.valeur_p).toBeNull();
-    expect(comparaison?.valeur_p_corrigee).toBeNull();
+    expect(comparaison?.difference.intervalle).toBeNull();
   });
 });
 
-describe("familles de comparaisons", () => {
-  it("corrige les valeurs p de Holm au sein de la famille, jamais comparaison par comparaison", () => {
-    // Deux comparaisons dans une même famille : m = 2, donc la plus petite valeur p est
-    // multipliée par 2 (bornée à 1) et la plus grande garde le maximum courant.
+describe("aucune valeur p dans les effets de condition (§8 0.3)", () => {
+  it("une comparaison de modes n'expose que la différence, son appariement et ses exclusions", () => {
+    const jeu = [
+      ...grappe("i1", 1, { mode: "web_activee", categorie: "exacte" }),
+      ...grappe("i1", 1, { mode: "web_desactivee", categorie: "inexacte" }),
+      ...grappe("i2", 1, { mode: "web_activee", categorie: "exacte" }),
+      ...grappe("i2", 1, { mode: "web_desactivee", categorie: "inexacte" }),
+    ];
+
+    const comparaisons = comparerConditions(pairesParMode(jeu), exactitude, OPTIONS);
+
+    expect(comparaisons).toHaveLength(1);
+    expect(Object.keys(comparaisons[0] as object).sort()).toEqual(CLES_COMPARAISON);
+  });
+
+  it("une comparaison de formulations n'expose que la différence, son appariement et ses exclusions", () => {
+    const jeu = [
+      ...grappe("i1", 1, { registre: "neutre", categorie: "exacte" }),
+      ...grappe("i1", 1, { registre: "familier", categorie: "inexacte" }),
+    ];
+
+    const comparaisons = comparerConditions(pairesParFormulation(jeu), exactitude, OPTIONS);
+
+    expect(comparaisons).toHaveLength(1);
+    expect(Object.keys(comparaisons[0] as object).sort()).toEqual(CLES_COMPARAISON);
+  });
+
+  it("une comparaison sans différence calculable n'expose pas davantage de champ de valeur p", () => {
+    const a = grappe("item-a", 1, { mode: "web_activee" });
+    const b = grappe("item-b", 1, { mode: "web_desactivee" });
+
+    const [comparaison] = comparerConditions([{ cle: "outil-alpha:modes", a, b }], exactitude, OPTIONS);
+
+    expect(Object.keys(comparaison as object).sort()).toEqual(CLES_COMPARAISON);
+  });
+
+  it("aucune correction de famille : chaque comparaison vaut ce qu'elle vaut seule", () => {
+    // La correction de Holm « ne s'y applique donc pas ». Comparer une paire seule ou au sein
+    // de sa famille doit donner exactement le même objet.
     const paires = [
       { cle: "outil-alpha", a: grappe("i1", 4, { categorie: "exacte" }), b: grappe("i1", 4, { categorie: "inexacte" }) },
       { cle: "outil-beta", a: grappe("i2", 4, { categorie: "exacte" }), b: grappe("i2", 4, { categorie: "exacte" }) },
     ];
 
-    const comparaisons = comparerConditions(paires, exactitude, OPTIONS);
+    const enFamille = comparerConditions(paires, exactitude, OPTIONS);
+    const uneAUne = paires.flatMap((paire) => comparerConditions([paire], exactitude, OPTIONS));
 
-    expect(comparaisons).toHaveLength(2);
-    const triees = [...comparaisons].sort((x, y) => (x.valeur_p as number) - (y.valeur_p as number));
-    const plusPetite = triees[0];
-    expect(plusPetite?.valeur_p_corrigee).toBeCloseTo(Math.min(1, 2 * (plusPetite?.valeur_p as number)), 12);
-    for (const comparaison of comparaisons) {
-      expect(comparaison.valeur_p_corrigee as number).toBeGreaterThanOrEqual(comparaison.valeur_p as number);
-    }
+    expect(enFamille).toEqual(uneAUne);
   });
+});
 
+describe("familles de comparaisons", () => {
   it("forme la famille des modes par outil, et celle des formulations par outil et par mode", () => {
     const jeu = [
       ...grappe("i1", 1, { outil_id: "outil-alpha", mode: "web_activee", registre: "neutre" }),
@@ -91,5 +121,35 @@ describe("familles de comparaisons", () => {
 
     const formulations = pairesParFormulation(jeu);
     expect(formulations.map((p) => p.cle)).toEqual(["outil-alpha:web_activee:neutre-familier"]);
+  });
+
+  it("la famille des formulations compte exactement les trois paires, dans l'ordre figé, à outil et mode constants", () => {
+    // §8 0.3 : « neutre contre familière, neutre contre orientée, familière contre orientée ».
+    // Deux outils, deux modes, trois registres : 2 × 2 groupes, trois paires chacun, 12 en tout.
+    const outils = ["outil-alpha", "outil-beta"];
+    const modes = ["web_activee", "web_desactivee"] as const;
+    const registres = ["oriente", "familier", "neutre"] as const;
+    const jeu = outils.flatMap((outil_id) =>
+      modes.flatMap((mode) =>
+        registres.flatMap((registre) => grappe("i1", 1, { outil_id, mode, registre })),
+      ),
+    );
+
+    const paires = pairesParFormulation(jeu);
+
+    const attendues = outils.flatMap((outil_id) =>
+      modes.flatMap((mode) =>
+        ["neutre-familier", "neutre-oriente", "familier-oriente"].map((p) => `${outil_id}:${mode}:${p}`),
+      ),
+    );
+    expect(paires.map((p) => p.cle)).toEqual(attendues);
+    for (const paire of paires) {
+      const membres = [...paire.a, ...paire.b];
+      expect(new Set(membres.map((u) => u.outil_id)).size).toBe(1);
+      expect(new Set(membres.map((u) => u.mode)).size).toBe(1);
+      const [premier, second] = (paire.cle.split(":")[2] as string).split("-");
+      expect(paire.a.every((u) => u.registre === premier)).toBe(true);
+      expect(paire.b.every((u) => u.registre === second)).toBe(true);
+    }
   });
 });

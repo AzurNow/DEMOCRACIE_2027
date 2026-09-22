@@ -9,6 +9,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  ArbitrageSansDecision,
+  DecisionsPanelSimultanees,
   empreinteNeutre,
   PART_REPRISE,
   tirer,
@@ -16,7 +18,7 @@ import {
 } from "../../pipeline/questions/tirage.ts";
 import type { TiragePrecedent } from "../../pipeline/questions/tirage.ts";
 import type { Item, Question } from "../../pipeline/questions/types.ts";
-import { candidat, graine, jeu, run, THEMES_DE_TEST } from "./fabriques.ts";
+import { candidat, contestation, graine, jeu, run, THEMES_DE_TEST } from "./fabriques.ts";
 
 const MESURES_PAR_THEME = 10;
 const GEL = "2026-12-01T06:00:00+01:00";
@@ -288,6 +290,122 @@ describe("exclusion des items non tirables", () => {
 
   it("refuse un paramètre de quota qui ne tire rien", () => {
     expect(() => tirage(0)).toThrow(/quota/i);
+  });
+});
+
+/* ------------------------------------------------ item sorti de l'arbitrage */
+
+const ARBITRE = JEU.items[2] as Item;
+
+function avecContestations(contestations: readonly unknown[]): readonly Item[] {
+  return JEU.items.map((item) =>
+    item.id === ARBITRE.id
+      ? { ...item, statut_contestation: "arbitree" as const, contestations }
+      : item,
+  );
+}
+
+function grappesTirees(items: readonly Item[]): readonly string[] {
+  return tirer({
+    questions: JEU.questions,
+    items,
+    mesures: JEU.mesures,
+    run: RUN,
+    graine: graine(),
+    parametres: { questions_par_strate: MESURES_PAR_THEME },
+  }).tirage.entrees.map((entree) => entree.grappe_id);
+}
+
+function tireAvec(contestations: readonly unknown[]): boolean {
+  return grappesTirees(avecContestations(contestations)).includes(ARBITRE.id);
+}
+
+describe("item sorti de l'arbitrage du panel (§5, annexe E point 6)", () => {
+  it("cas 5 : tire un item arbitré dont la dernière décision vaut maintien", () => {
+    expect(tireAvec([contestation("m", "maintien", "2026-10-05T10:00:00+02:00")])).toBe(true);
+  });
+
+  it("cas 5 : tire un item arbitré dont la dernière décision vaut correction", () => {
+    expect(tireAvec([contestation("c", "correction", "2026-10-05T10:00:00+02:00")])).toBe(true);
+  });
+
+  it("cas 6 : ne tire pas un item arbitré dont la dernière décision vaut retrait", () => {
+    expect(tireAvec([contestation("r", "retrait", "2026-10-05T10:00:00+02:00")])).toBe(false);
+  });
+
+  it("cas 6 : ne tire pas un item arbitré dont la dernière décision vaut non-évaluabilité", () => {
+    expect(tireAvec([contestation("n", "non_evaluabilite", "2026-10-05T10:00:00+02:00")])).toBe(
+      false,
+    );
+  });
+
+  it("cas 7 : un retrait puis un maintien rend l'item tirable, quel que soit l'ordre du tableau", () => {
+    const retrait = contestation("7a", "retrait", "2026-10-05T10:00:00+02:00");
+    const maintien = contestation("7b", "maintien", "2026-10-20T10:00:00+02:00");
+    expect(tireAvec([retrait, maintien])).toBe(true);
+    expect(tireAvec([maintien, retrait])).toBe(true);
+  });
+
+  it("cas 7 : un maintien puis un retrait sort l'item, quel que soit l'ordre du tableau", () => {
+    const maintien = contestation("7c", "maintien", "2026-10-05T10:00:00+02:00");
+    const retrait = contestation("7d", "retrait", "2026-10-20T10:00:00+02:00");
+    expect(tireAvec([maintien, retrait])).toBe(false);
+    expect(tireAvec([retrait, maintien])).toBe(false);
+  });
+
+  it("ordonne les décisions sur l'instant, pas sur la chaîne : 10 h à Paris précède 9 h UTC", () => {
+    const retrait = contestation("i1", "retrait", "2026-10-05T10:00:00+02:00");
+    const maintien = contestation("i2", "maintien", "2026-10-05T09:00:00Z");
+    expect(tireAvec([retrait, maintien])).toBe(true);
+  });
+
+  it("refuse deux décisions différentes au même instant plutôt que d'inventer un ordre", () => {
+    const retrait = contestation("s1", "retrait", "2026-10-05T10:00:00+02:00");
+    const maintien = contestation("s2", "maintien", "2026-10-05T08:00:00Z");
+    expect(() => tireAvec([retrait, maintien])).toThrow(DecisionsPanelSimultanees);
+  });
+
+  it("cas 8 : refuse un item arbitré sans aucune contestation par une erreur nommée", () => {
+    expect(() => tireAvec([])).toThrow(ArbitrageSansDecision);
+  });
+
+  it("cas 8 : refuse un item arbitré dont une contestation ne porte aucune décision du panel", () => {
+    const sansDecision = { ...contestation("sd", "maintien", "2026-10-05T10:00:00+02:00") };
+    delete sansDecision["decision_panel"];
+    expect(() => tireAvec([sansDecision])).toThrow(ArbitrageSansDecision);
+    expect(() =>
+      tireAvec([contestation("sd2", "maintien", "2026-10-01T10:00:00+02:00"), sansDecision]),
+    ).toThrow(ArbitrageSansDecision);
+  });
+
+  it("cas 8 : refuse un item arbitré dont le champ contestations est absent", () => {
+    const items = JEU.items.map((item): Item => {
+      if (item.id !== ARBITRE.id) return item;
+      const { contestations: _absent, ...reste } = item;
+      return { ...reste, statut_contestation: "arbitree" };
+    });
+    expect(() => grappesTirees(items)).toThrow(ArbitrageSansDecision);
+  });
+
+  it("refuse une décision du panel hors de l'énumération du schéma", () => {
+    const inconnue = {
+      ...contestation("x", "maintien", "2026-10-05T10:00:00+02:00"),
+      decision_panel: { date: "2026-10-05T10:00:00+02:00", decision: "ajournement", motivation: "m" },
+    };
+    expect(() => tireAvec([inconnue])).toThrow(/ajournement/);
+  });
+
+  it("cas 9 : ne tire jamais un item contesté, même porteur d'une décision de maintien antérieure", () => {
+    const items = JEU.items.map((item) =>
+      item.id === ARBITRE.id
+        ? {
+            ...item,
+            statut_contestation: "contestee" as const,
+            contestations: [contestation("9", "maintien", "2026-10-05T10:00:00+02:00")],
+          }
+        : item,
+    );
+    expect(grappesTirees(items)).not.toContain(ARBITRE.id);
   });
 });
 

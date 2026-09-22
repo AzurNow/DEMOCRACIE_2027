@@ -24,6 +24,7 @@
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { mesureDe, themeDe } from "./engendrement.ts";
+import { contestationPermetLeTirage } from "./contestation.ts";
 import { reponseAttendue } from "./reponse-attendue.ts";
 import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
@@ -98,6 +99,12 @@ export interface DemandeTirage {
   readonly tirage_precedent?: TiragePrecedent;
 }
 
+export {
+  ArbitrageSansDecision,
+  contestationPermetLeTirage,
+  DecisionsPanelSimultanees,
+} from "./contestation.ts";
+
 /** Identifiant conventionnel du groupe des questions d'attribution, sans candidat. */
 const GROUPE_ATTRIBUTION = "";
 
@@ -125,13 +132,19 @@ function themeDeQuestion(question: Question, index: Index): Theme {
   return themeDe(mesureDe(index.mesures, itemPrincipalDe(question, index)));
 }
 
-/** §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question. */
+/**
+ * §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question.
+ * La contestation est évaluée même quand la validation exclut déjà l'item : un arbitrage illisible
+ * se signale toujours, il ne se cache pas derrière un autre motif d'exclusion.
+ */
 function questionTirable(question: Question, index: Index): boolean {
-  return question.items.every((entree) => {
+  const verdicts = question.items.map((entree) => {
     const item = index.items.get(entree.reference.item_id);
     if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
-    return item.statut_validation === "verifie" && item.statut_contestation === "aucune";
+    const contestationAdmise = contestationPermetLeTirage(item);
+    return item.statut_validation === "verifie" && contestationAdmise;
   });
+  return verdicts.every((tirable) => tirable);
 }
 
 /* ------------------------------------------------------- entrées de tirage */

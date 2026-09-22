@@ -162,7 +162,7 @@
         "D4",
         "D5"
       ],
-      "note": "Version 0.3 le 2026-09-20 : D4, D6 et D7 écrits dans les §4, §5, §8, §10 et les annexes B et E, avant gel. Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
+      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur). Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
     },
     {
       "id": "schemas",
@@ -216,7 +216,7 @@
       "id": "ci",
       "titre": "Intégration continue : check et test sur chaque PR",
       "jalon": "J2",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "sonnet",
       "taille": "S",
       "temps_auteur_h": 0.25,
@@ -224,7 +224,7 @@
       "decisions": [
         "D1"
       ],
-      "note": "Sans elle, « testé » reste une déclaration."
+      "note": "Livré le 2026-09-22 (PR #8) : check-et-test sur chaque PR et sur main, Node 22, UTC, actions officielles épinglées par empreinte. Dépôt rendu public le même jour : contrôle obligatoire sur main, administrateurs compris."
     },
     {
       "id": "dette-validation",
@@ -369,7 +369,7 @@
       "id": "alignement-0-3",
       "titre": "Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)",
       "jalon": "J4",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "opus",
       "taille": "M",
       "temps_auteur_h": 0.5,
@@ -378,7 +378,7 @@
         "D6",
         "D7"
       ],
-      "note": "Holm retiré des effets de condition, quatrième recalcul hors tronquées, tronquées incluses d'office, premisse_fausse interdite sur un item P, gabarits déplacés vers prompts/gabarits-1.0.0.json. Tests d'abord, rouges sur le code actuel (DETTE 2026-09-20 protocole 0.3, point 1, haute). Avant le run pilote."
+      "note": "Livré le 2026-09-22 : effets de condition sans valeur p, recalcul (d) hors tronquées, tronquées toujours incluses ; gabarits dans prompts/gabarits-1.0.0.json avec schéma ; conditionnel exclu par la table (Q-FER, Q-NEG, Q-ORI, les deux états d'un item O) ; item arbitré maintenu ou corrigé réintégré à l'engendrement, au tirage et à la symétrie ; invariant de prémisse fausse. Protocole 0.4 pour les deux précisions. Reste : figer la dernière décision du panel au gel (DETTE 2026-09-22, point 1)."
     },
     {
       "id": "site",

@@ -13,9 +13,46 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-22 — Lot alignement-0-3, CI et protocole 0.4 (`analysis/`, `pipeline/questions/`, `prompts/`, `schema/gabarits.schema.json`, `.github/workflows/`, `docs/PROTOCOLE.md`)
+
+### 1. La symétrie d'un tirage passé dépend désormais de l'état actuel des items — *moyenne*
+
+Avant ce lot, `aucun_item_conteste_ou_en_attente` ne lisait que les statuts figés dans
+`tirage.entrees[].items_au_gel`. Pour admettre un item arbitré puis maintenu, `symetrie.ts:motifDArbitrage`
+lit maintenant la dernière décision du panel **sur le fichier d'items passé en argument**, sans la
+borner à `date_gel`. `tirage.schema.json` promet au contraire qu'« une contestation reçue pendant la
+fenêtre ne rend pas rétroactivement le tirage fautif ».
+
+**Pourquoi ça casse.** Un tiers rejoue `pnpm symmetry` sur un run publié avec les items actuels de
+`data/`. Si un item maintenu a depuis reçu une nouvelle contestation encore sans décision, la commande
+lève `ArbitrageSansDecision`. S'il a depuis été retiré, la condition passe au rouge. Le run était
+pourtant conforme au gel. La vérification publique du §9 donnerait un résultat différent de celui de
+l'auteur, sans qu'aucun chiffre soit faux.
+
+**Ce qu'il faut faire.** À décider par l'auteur avant le premier run publié. Soit figer la dernière
+décision du panel dans `items_au_gel`, ce qui change le schéma de tirage mais rend le tirage
+revérifiable seul. Soit ne retenir que les décisions datées au plus tard à `date_gel`. En attendant,
+`pnpm symmetry` ne se lance que sur les items du gel.
+
+### 2. L'import de `pipeline/questions/gabarits.ts` lit un fichier sur disque — *basse*
+
+La table est chargée depuis `prompts/gabarits-1.0.0.json` au moment de l'import, par un chemin
+relatif à `import.meta.url`, et la version est inscrite en dur dans `VERSION_FICHIER`.
+
+**Pourquoi ça casse.** Un empaquetage, un déplacement de `pipeline/`, ou une image conteneur (§9) qui
+n'embarque pas `prompts/`, fait échouer tout module qui importe l'engendrement ou le tirage, y compris
+`pnpm symmetry`. L'échec est bruyant et immédiat. Une nouvelle version des gabarits exige un nouveau
+fichier **et** la modification de `VERSION_FICHIER` : l'oubli de la seconde étape laisse l'ancienne
+table en service, et `version_gabarits` des questions dit alors laquelle.
+
+**Ce qu'il faut faire.** Rien tant que le code tourne depuis le dépôt. Inclure `prompts/` dans l'image
+conteneur du lot hors-code.
+
+---
+
 ## 2026-09-20 — Protocole 0.3 et squelette du périmètre (`docs/PROTOCOLE.md`, `schema/README.md`, `config/perimetre.yaml`, `package.json`)
 
-### 1. Le protocole 0.3 tranche des points que `analysis/` implémente encore autrement — *haute*
+### ~~1. Le protocole 0.3 tranche des points que `analysis/` implémente encore autrement~~ — réglé le 2026-09-22 par le lot alignement-0-3 (l'exactitude des comparateurs, jamais implémentée, suivra la règle 0.3 dès son écriture)
 
 D6 est écrit dans le §8, pas dans le code. `analysis/conditions.ts` applique toujours Holm aux
 effets de condition, alors que le §8 le retire de cette famille. `analysis/robustesse.ts` compte
@@ -256,7 +293,7 @@ forme n'est gardée par aucun test. Un champ renommé dans `validation/domaine/j
 au registre. Petit lot Sonnet, en même temps que le point 4. *Fait ; reste à relier le schéma au code qui
 écrit les journaux, entrée du 2026-09-20, point 1.*
 
-### 6. Les gabarits de questions vivent dans le code, pas dans `prompts/` — *basse*
+### ~~6. Les gabarits de questions vivent dans le code, pas dans `prompts/`~~ — réglé le 2026-09-22 par `prompts/gabarits-1.0.0.json` et `schema/gabarits.schema.json` (lot alignement-0-3)
 
 `pipeline/questions/gabarits.ts` porte les six textes de l'annexe B en table de données, et
 `question.version_gabarits` vaut `"annexe-B/protocole-0.2"`. `CLAUDE.md`, règle 6, dit « aucun
