@@ -1,0 +1,13 @@
+{
+  "sha256_source": "e8908a1eb576580c0e6e2c2f7e631dbc848297930b9f0381b87e24556819fb41",
+  "texte_sha256": "5bfad477d827e689697049236746e93b7eda0547bf32b1970f772b16f32d3aa6",
+  "longueur": 30,
+  "date_extraction": "2026-09-22T14:30:05+02:00",
+  "extracteur": {
+    "outil": "html.parser",
+    "version": "3.12.11",
+    "options": {
+      "regle": "blocs-1"
+    }
+  }
+}

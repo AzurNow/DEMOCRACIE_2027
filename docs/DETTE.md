@@ -13,6 +13,52 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-23 — Lot collecte, sous-lot C2 : texte canonique PDF et HTML (`pipeline/collecte/textes/`, `pipeline/collecte/source.py`, `schema/extraction-texte.schema.json`, `docs/CONTRATS.md` §1, `.gitattributes`)
+
+### 1. Plusieurs textes d'un même document coexistent sans règle qui désigne celui à extraire — *moyenne*
+
+Le texte est rangé sous sa propre empreinte (`staging/textes/<texte_sha256>.txt`) et chaque
+extraction ajoute une fiche `staging/extractions/<sha256_source>/<texte_sha256>.json`. Une montée de
+version de pymupdf, ou une nouvelle règle HTML (`REGLE = "blocs-2"`), fait apparaître un second texte
+du même PDF à côté du premier. `source_de` exige qu'on lui nomme le texte ; rien ne dit lequel.
+
+**Pourquoi ça casse.** Le lot extraction lira le répertoire de fiches. S'il en prend une au hasard
+(ordre du système de fichiers), deux passages produisent des items rattachés à deux textes
+différents du même document. Chaque item reste juste (ses offsets suivent son `texte_sha256`), mais
+les doublons d'item et les déduplications ratées se voient seulement à la validation humaine.
+
+**Ce qu'il faut faire.** Au lot extraction : règle écrite « le texte produit par l'extracteur en
+service (version épinglée dans `uv.lock`, `REGLE` courante) », avec un test à deux fiches. À
+l'auteur : dire si une réextraction invalide les items déjà validés sur l'ancien texte.
+
+### 2. Les textes des sources `publication = "interne"` partent dans Git — *moyenne*
+
+`staging/textes/` est versionné, comme `staging/sources/`. Le texte canonique d'une source que la
+liste marque `interne` (§10, droit d'auteur) y est écrit intégralement, sans distinction : C2 ne lit
+pas la fiche de source, seulement le manifeste de contenu.
+
+**Pourquoi ça casse.** Le jour où le dépôt devient public (§9, publication intégrale), il publie des
+textes que la liste avait justement exclus de la publication. Aucun test ne rougit : rien ne vérifie
+qu'un fichier de `staging/textes/` provient d'une source publique.
+
+**Ce qu'il faut faire.** À décider par l'auteur avant la première collecte réelle : ignorer ces
+textes dans Git (et les verser à l'archive Zenodo seulement si §10 l'autorise), ou les garder hors
+de `staging/`. Puis un test qui croise fiches de source et textes versionnés.
+
+### 3. Un PDF servi sans `Content-Type` exact est refusé — *basse*
+
+Le type se lit dans `type_contenu_recu`, jamais dans les octets (`docs/CONTRATS.md` §1.4). Un
+serveur qui sert un programme en `application/octet-stream`, ou sans en-tête, le fait refuser.
+
+**Pourquoi ça casse.** La source n'a pas de texte et ne peut porter aucun item. C'est visible : ligne
+« REFUSÉ » au rapport de `pnpm textes`, code de sortie 1. Le coût est un aller-retour manuel.
+
+**Ce qu'il faut faire.** Si le cas se présente en collecte réelle, l'auteur tranche entre une
+exception déclarée dans `config/sources.toml` (type attendu par source) et la lecture de la signature
+`%PDF-`. Ne rien deviner d'ici là.
+
+---
+
 ## 2026-09-22 — Lot collecte, sous-lot C1 : socle Python et archivage (`pipeline/collecte/`, `schema/collecte.schema.json`, `docs/CONTRATS.md` §5)
 
 ### ~~1. Deux sources au contenu identique gardent une seule fiche, et la seconde disparaît~~ — réglé le 2026-09-22 par les fiches `staging/sources/par-source/` (C1-bis)
@@ -65,7 +111,7 @@ valides, rien ne rougit, et le README montre alors un manifeste que le code ne p
 **Ce qu'il faut faire.** Un test d'égalité entre chaque exemple valide et son fichier doré, ou un seul
 fichier référencé des deux côtés.
 
-### 5. Lire `archive_url` directement dans un manifeste rend une reprise invisible — *moyenne*
+### ~~5. Lire `archive_url` directement dans un manifeste rend une reprise invisible~~ — réglé le 2026-09-23 par `pipeline/collecte/source.py:source_de`, seul assemblage de `commun#/$defs/source`, et son test de reprise (C2)
 
 Depuis C1-bis, le lien d'archive effectif d'un contenu peut venir du manifeste **ou** d'un fichier
 de reprise, `staging/archivages/<sha256>.json`. `pipeline/collecte/lien_archive.py:archive_url_de()`

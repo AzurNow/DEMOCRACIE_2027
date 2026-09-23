@@ -461,6 +461,32 @@
       "attendu": "invalide",
       "motif": "archive_url qui n'est pas un instantané daté /web/<AAAAMMJJhhmmss>/ mais l'adresse de demande /save/. Un lien d'archive n'est jamais fabriqué : seul un instantané renvoyé par le service en tient lieu.",
       "regle_protocole": "§4, archivage ; CLAUDE.md règle 2"
+    },
+    {
+      "objet": "extraction-texte",
+      "fichier": "extraction-texte/valide-01-pdf.json",
+      "attendu": "valide",
+      "motif": "Fiche d'extraction d'un PDF de deux pages : pymupdf, version et drapeaux consignés, intervalle de chaque page en points de code, séparateur \f exclu. Copie du fichier doré tests/collecte/dore/extraction-pdf.json."
+    },
+    {
+      "objet": "extraction-texte",
+      "fichier": "extraction-texte/valide-02-html.json",
+      "attendu": "valide",
+      "motif": "Fiche d'extraction d'une page HTML : html.parser, règle de rendu versionnée, encodage lu dans le Content-Type. Copie du fichier doré tests/collecte/dore/extraction-html.json."
+    },
+    {
+      "objet": "extraction-texte",
+      "fichier": "extraction-texte/invalide-01-pdf-avec-encodage.json",
+      "attendu": "invalide",
+      "motif": "Fiche pymupdf portant un encodage. Un PDF n'est pas décodé par un codec déclaré : l'encodage n'a de sens que pour une page HTML, et sa présence ici mentirait sur la façon dont le texte a été obtenu.",
+      "regle_protocole": "§4, contrat des artefacts (docs/CONTRATS.md §1.1)"
+    },
+    {
+      "objet": "extraction-texte",
+      "fichier": "extraction-texte/invalide-02-html-sans-encodage.json",
+      "attendu": "invalide",
+      "motif": "Fiche html.parser sans encodage. Un texte HTML dont on ne sait pas comment les octets ont été décodés ne se rejoue pas : l'encodage n'est jamais supposé.",
+      "regle_protocole": "§4, contrat des artefacts (docs/CONTRATS.md §1.3)"
     }
   ]
 }

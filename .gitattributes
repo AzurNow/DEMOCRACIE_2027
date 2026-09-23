@@ -1,0 +1,12 @@
+# Fins de ligne LF dans l'arbre de travail, quelle que soit la configuration de Git (core.autocrlf).
+#
+# Ce n'est pas une préférence de style. Les fichiers dorés, les exemples de schéma et les textes
+# canoniques de staging/textes/ sont comparés octet pour octet ou identifiés par leur SHA-256
+# (docs/CONTRATS.md §1 : fins de ligne LF seulement) ; un checkout Windows qui les convertit en CRLF
+# change leur empreinte et décale tous les offsets d'une unité par ligne.
+# Les fichiers détectés comme binaires restent intacts.
+* text=auto eol=lf
+
+# Textes canoniques : identifiés par le SHA-256 de leurs octets, jamais convertis par Git.
+staging/textes/** -text
+tests/collecte/dore/textes/** -text

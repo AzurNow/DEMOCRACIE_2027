@@ -11,6 +11,7 @@
  *   de diverger en silence.
  * Si l'un des trois côtés dérive, un test rougit.
  */
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -19,6 +20,8 @@ import { chargerManifeste } from "../../outils/schemas/manifeste.ts";
 import { construireRegistre } from "../../outils/schemas/registre.ts";
 import { urnSchema } from "../../outils/schemas/noms.ts";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
+import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
+import { lireTexteCanonique } from "../../validation/io/staging.ts";
 
 const racineSchema = resolve(import.meta.dirname, "../../schema");
 const racineExemples = resolve(racineSchema, "exemples");
@@ -37,9 +40,11 @@ const PAIRES: readonly Paire[] = [
   { dore: "fiche-programme-pdf.json", schema: "fiche-source", exemple: "fiche-source/valide-01-programme-pdf.json" },
   { dore: "fiche-site-parti.json", schema: "fiche-source", exemple: "fiche-source/valide-02-site-parti-redirige.json" },
   { dore: "reprise-archivage.json", schema: "reprise-archivage", exemple: "reprise-archivage/valide-01-reprise-reussie.json" },
+  { dore: "extraction-pdf.json", schema: "extraction-texte", exemple: "extraction-texte/valide-01-pdf.json" },
+  { dore: "extraction-html.json", schema: "extraction-texte", exemple: "extraction-texte/valide-02-html.json" },
 ];
 
-const OBJETS_COLLECTE: readonly NomSchema[] = ["collecte", "fiche-source", "reprise-archivage"];
+const OBJETS_COLLECTE: readonly NomSchema[] = ["collecte", "fiche-source", "reprise-archivage", "extraction-texte"];
 
 /** Paires dont l'exemple n'est pas identique octet pour octet au fichier doré. */
 function divergences(paires: readonly Paire[], dore: string, exemples: string): readonly string[] {
@@ -79,7 +84,7 @@ describe("fichiers dorés produits par pipeline/collecte", () => {
     expect(surDisque).toEqual(PAIRES.map((paire) => paire.dore).sort());
   });
 
-  it("chaque exemple valide de collecte, fiche-source et reprise-archivage a son fichier doré", () => {
+  it("chaque exemple valide de collecte, fiche-source, reprise-archivage et extraction-texte a son fichier doré", () => {
     const manifeste = chargerManifeste(resolve(racineExemples, "manifeste.json"));
     const valides = manifeste.exemples
       .filter((entree) => entree.attendu === "valide" && (OBJETS_COLLECTE as readonly string[]).includes(entree.objet))
@@ -130,6 +135,8 @@ describe("exemples invalides de la collecte : une seule raison chacun", () => {
     { schema: "fiche-source", fichier: "fiche-source/invalide-01-site-parti-sans-mention.json", chemin: "", motCle: "required" },
     { schema: "fiche-source", fichier: "fiche-source/invalide-02-lien-d-archive-dans-la-fiche.json", chemin: "", motCle: "additionalProperties" },
     { schema: "reprise-archivage", fichier: "reprise-archivage/invalide-01-lien-non-date.json", chemin: "/archive_url", motCle: "pattern" },
+    { schema: "extraction-texte", fichier: "extraction-texte/invalide-01-pdf-avec-encodage.json", chemin: "", motCle: "not" },
+    { schema: "extraction-texte", fichier: "extraction-texte/invalide-02-html-sans-encodage.json", chemin: "", motCle: "required" },
   ];
 
   for (const attendue of ATTENDUES) {
@@ -142,4 +149,59 @@ describe("exemples invalides de la collecte : une seule raison chacun", () => {
       expect(raisons.map((erreur) => [erreur.instancePath, erreur.keyword])).toEqual([[attendue.chemin, attendue.motCle]]);
     });
   }
+});
+
+describe("source assemblée par pipeline/collecte/source.py:source_de", () => {
+  const { ajv } = construireRegistre(racineSchema);
+
+  it("sources/source-programme-pdf.json est conforme à commun#/$defs/source", () => {
+    const valider = ajv.getSchema(`${urnSchema("commun")}#/$defs/source`);
+    if (valider === undefined) throw new Error("commun#/$defs/source absent du registre");
+    const valide = valider(lireDore("sources/source-programme-pdf.json"));
+    expect(valider.errors).toBeNull();
+    expect(valide).toBe(true);
+  });
+
+  it("la source et la fiche d'extraction désignent le même texte", () => {
+    const source = lireDore("sources/source-programme-pdf.json");
+    const extraction = lireDore("extraction-pdf.json");
+    expect(source["texte_sha256"]).toBe(extraction["texte_sha256"]);
+    expect(source["sha256"]).toBe(extraction["sha256_source"]);
+  });
+});
+
+const SAUT_DE_LIGNE = String.fromCodePoint(0x0a);
+const LIGATURE_FI = String.fromCodePoint(0xfb01);
+
+describe("texte canonique écrit par Python, relu par l'interface de validation", () => {
+  const extraction = lireDore("extraction-pdf.json");
+  const texteSha = extraction["texte_sha256"] as string;
+  const pages = extraction["pages"] as readonly { numero: number; debut: number; fin: number }[];
+  const texte = lireTexteCanonique(racineDore, texteSha);
+
+  it("lireTexteCanonique le trouve sous son empreinte, qui est bien celle de ses octets", () => {
+    if (texte === null) throw new Error(`textes/${texteSha}.txt absent`);
+    expect(createHash("sha256").update(readFileSync(resolve(racineDore, "textes", `${texteSha}.txt`))).digest("hex")).toBe(texteSha);
+  });
+
+  it("longueur et intervalles de pages comptés en points de code, comme en Python (emoji compris)", () => {
+    if (texte === null) throw new Error("texte absent");
+    const points = Array.from(texte);
+    expect(points.length).toBe(extraction["longueur"]);
+    expect(texte.length).toBe(points.length + 1); // l'emoji compte double en UTF-16
+    expect(points.slice(pages[1]!.debut, pages[1]!.fin).join("")).toBe(`Page deux${SAUT_DE_LIGNE}`);
+  });
+
+  it("testerVerbatim rend les offsets que Python a calculés", () => {
+    if (texte === null) throw new Error("texte absent");
+    const resultat = testerVerbatim("Page deux", texte);
+    expect([resultat.offset_debut, resultat.offset_fin]).toEqual([40, 49]);
+    expect(pages[1]!.debut <= 40 && 49 <= pages[1]!.fin).toBe(true);
+  });
+
+  it("une ligature conservée par l'extraction fait échouer une citation retapée sans elle", () => {
+    if (texte === null) throw new Error("texte absent");
+    expect(testerVerbatim("financement", texte).passe).toBe(false);
+    expect(testerVerbatim(`${LIGATURE_FI}nancement`, texte).offset_debut).toBe(12);
+  });
 });
