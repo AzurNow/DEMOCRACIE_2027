@@ -1,0 +1,31 @@
+{
+  "sha256_source": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
+  "texte_sha256": "d21aed9376a8b169069fc8c12c1684afeaa018510d89c5bcb485325444ae07f0",
+  "longueur": 50,
+  "date_extraction": "2026-09-22T14:45:05+02:00",
+  "extracteur": {
+    "outil": "pymupdf",
+    "version": "1.28.2",
+    "options": {
+      "mode": "text",
+      "drapeaux": 67,
+      "separateur_pages": "\f"
+    }
+  },
+  "pages": [
+    {
+      "numero": 1,
+      "debut": 0,
+      "fin": 39
+    },
+    {
+      "numero": 2,
+      "debut": 40,
+      "fin": 50
+    }
+  ],
+  "encodage": {
+    "nom": "utf-8",
+    "origine": "content-type"
+  }
+}

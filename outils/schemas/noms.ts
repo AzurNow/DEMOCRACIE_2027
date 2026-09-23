@@ -1,7 +1,7 @@
 /**
- * Les seize schémas de `schema/` (voir `schema/README.md`, « Les seize fichiers » : douze avec
+ * Les dix-sept schémas de `schema/` (voir `schema/README.md`, « Les dix-sept fichiers » : douze avec
  * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
- * `fiche-source` et `reprise-archivage`).
+ * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`).
  * Nommés une seule fois
  * ici : tout le reste du module en dérive, jamais d'un `if` par nom.
  *
@@ -20,6 +20,9 @@
  * reprise d'archivage. Python ne valide pas contre le schéma : les fichiers dorés de
  * `tests/collecte/dore/`, reproduits octet pour octet par pytest, sont validés ici par
  * `tests/collecte/dores.test.ts`, qui vérifie aussi que les exemples valides leur sont identiques.
+ *
+ * `extraction-texte` décrit la fiche d'extraction écrite par `pipeline/collecte/textes` (sous-lot C2,
+ * `docs/CONTRATS.md` §1.1), vérifiée de la même façon.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -38,6 +41,7 @@ export const NOMS_SCHEMAS = [
   "collecte",
   "fiche-source",
   "reprise-archivage",
+  "extraction-texte",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

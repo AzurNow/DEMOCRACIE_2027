@@ -10,14 +10,14 @@ moment où un chiffre est faux.
 
 ---
 
-## 1. Texte canonique d'une source — `staging/textes/<sha256_source>.txt`
+## 1. Texte canonique d'une source — `staging/textes/<texte_sha256>.txt`
 
 Le texte extrait d'une source archivée. C'est **lui**, et lui seul, que les offsets d'un test
 verbatim indexent, et c'est lui que l'interface de validation surligne.
 
 | Propriété | Valeur | Pourquoi |
 | --- | --- | --- |
-| Nom du fichier | `<sha256_source>.txt`, où `sha256_source` est `source.sha256` de l'item | L'appariement se fait sur l'empreinte du document archivé, jamais sur son URL, qui peut changer |
+| Nom du fichier | `<texte_sha256>.txt`, l'empreinte du fichier lui-même ; immuable | Une réextraction (autre version de l'extracteur) produit un autre fichier au lieu d'écraser le premier : les offsets des items déjà validés continuent de désigner le texte contre lequel ils ont été vérifiés. Le lien vers le document d'origine passe par la fiche d'extraction (§1.1), jamais par le nom |
 | Encodage | UTF-8, sans BOM | — |
 | Normalisation Unicode | **NFC** | Sans forme fixée, « é » composé et « é » décomposé donnent deux longueurs et deux jeux d'offsets pour le même texte |
 | Fins de ligne | **LF** (`\n`) seulement | CRLF décale tous les offsets d'un fichier d'une unité par ligne |
@@ -37,6 +37,69 @@ toute source contenant des guillemets typographiques.
 (OCR défaillant, transcription erronée) se solde par un rejet de l'item avec le commentaire
 « texte extrait erroné », qui renvoie la source à la réextraction. L'interface n'a aucun chemin
 d'écriture vers `staging/textes/`.
+
+Le texte est écrit tel que l'extracteur le rend, après les deux seules transformations du tableau
+ci-dessus (fins de ligne en LF, puis NFC) : aucun saut de ligne final ajouté, aucun espace retiré,
+aucune ligature, césure ou coquille corrigée. Une citation se vérifie contre ce que le document
+contient, pas contre ce qu'il aurait dû contenir.
+
+### 1.1 Fiche d'extraction — `staging/extractions/<sha256_source>/<texte_sha256>.json`
+
+Décrite par `schema/extraction-texte.schema.json`. Une fiche par document archivé **et** par texte
+qu'on en a tiré ; mêmes règles d'écriture que les fichiers de §5 (JSON UTF-8, deux espaces, ordre des
+clés fixe, saut de ligne final, écriture atomique, immuable). Le texte est écrit **avant** sa fiche :
+une fiche n'existe jamais sans son texte.
+
+| Champ | Contenu |
+| --- | --- |
+| `sha256_source` | empreinte du document archivé (manifeste de §5.4) |
+| `texte_sha256` | empreinte du fichier `.txt` ; nomme la fiche et le texte |
+| `longueur` | nombre de points de code du texte |
+| `date_extraction` | instant de la première extraction qui a produit ce texte |
+| `extracteur` | `{outil, version, options}` : `pymupdf` ou `html.parser`, version exacte, options fixées par le code |
+| `pages` | PDF seulement : `[{numero, debut, fin}]`, intervalle semi-ouvert en points de code de chaque page, séparateur exclu |
+| `encodage` | HTML seulement : `{nom, origine}`, le codec Python employé et d'où il vient (`bom`, `content-type`, `meta`) |
+
+Deux extracteurs qui rendent le même texte donnent la même empreinte : la fiche existante est
+gardée, et elle nomme l'extracteur qui l'a produit en premier.
+
+`pages` sert à l'extraction à remplir `source.page`, obligatoire pour un `programme_pdf` : la page
+d'une citation est celle dont l'intervalle contient `[offset_debut, offset_fin)`. Une citation à
+cheval sur deux pages n'a pas de page unique et est refusée.
+
+### 1.2 Texte d'un PDF — pymupdf
+
+- Chaque page est lue par `page.get_text("text", flags=…)` avec exactement les drapeaux
+  `TEXT_PRESERVE_LIGATURES | TEXT_PRESERVE_WHITESPACE | TEXT_MEDIABOX_CLIP` : ligatures conservées
+  (`ﬁ` reste `ﬁ`), aucune suppression de césure, aucun réordonnancement des blocs.
+- Les pages sont jointes par `\f` (U+000C, un point de code) : ni avant la première, ni après la
+  dernière. Une page dont le texte contient déjà `\f` est une erreur.
+- En-têtes, pieds de page et numéros de page répétés restent dans le texte.
+- Un document dont **toutes** les pages sont vides ou blanches est refusé (« sans couche texte ») :
+  aucune OCR tant qu'elle n'a pas été décidée. Une page blanche parmi d'autres garde son intervalle,
+  vide.
+
+### 1.3 Texte d'une page HTML — `html.parser` de la bibliothèque standard
+
+- **Encodage**, dans l'ordre de la norme WHATWG : marque d'ordre des octets, sinon paramètre
+  `charset` du `Content-Type` reçu (`type_contenu_recu` du manifeste), sinon `<meta charset>` ou
+  `<meta http-equiv="Content-Type">` dans les 1 024 premiers octets. Rien de tout cela : **échec**,
+  jamais une supposition. Comme un navigateur, `iso-8859-1`, `latin1`, `ascii` et `us-ascii` sont
+  lus en `cp1252`. Un octet invalide pour l'encodage retenu est un échec.
+- Le contenu de `script`, `style`, `noscript` et `template` est ignoré, ainsi que les commentaires.
+  Les entités sont décodées (`&nbsp;` donne U+00A0, conservé).
+- Chaque élément de bloc (`p`, `div`, `li`, `h1` à `h6`, `br`, `tr`, `td`, `section`… : liste fermée
+  dans `pipeline/collecte/textes/page_html.py`) marque une coupure de ligne. Dans une ligne, toute suite
+  d'espaces ASCII (espace, tabulation, saut de ligne, retour chariot, saut de page) devient une
+  espace ; les espaces en début et fin de ligne sont retirées ; les lignes vides disparaissent ; les
+  lignes restantes sont jointes par `\n`. `pre` suit la même règle que les autres blocs.
+- Une page dont le texte est vide est refusée.
+
+### 1.4 Autres contenus
+
+Un contenu `audio/*` ou `video/*` attend le sous-lot C3 (transcription, §2) : il est signalé, sans
+échec. Tout autre type reçu, ou un type absent, est un échec nommé : le type se lit dans
+`type_contenu_recu`, jamais dans les octets.
 
 ## 2. Transcription minutée — `staging/transcriptions/<sha256_source>.vtt`
 
@@ -190,9 +253,9 @@ Exactement un des deux derniers est présent. `archive_url` n'est jamais fabriqu
 tient lieu. La sauvegarde est tentée trois fois, espacées de dix secondes.
 
 Ce que le manifeste **ne porte pas** : les métadonnées d'une source (elles sont dans la fiche, §5.5)
-et le texte canonique. `texte_sha256` (§1) sera produit par l'extraction (sous-lot C2) dans un
-fichier à part, apparié par le même `sha256` ; le manifeste étant immuable, il ne peut pas le
-recevoir après coup.
+et le texte canonique. `texte_sha256` (§1) est produit par le sous-lot C2 dans une fiche
+d'extraction à part (§1.1), rangée sous le même `sha256` ; le manifeste étant immuable, il ne peut
+pas le recevoir après coup.
 
 ### 5.5 Fiche de source — `staging/sources/par-source/<cle_source>/<sha256>.json`
 
@@ -248,6 +311,11 @@ de cette source (trois tentatives, comme en §5.4).
 
 Une reprise dont le `sha256` diffère du nom de son fichier, ou un manifeste qui porte les deux
 branches ou aucune, lèvent aussi `ArchivageIncoherent`. Aucun lien n'est jamais inventé.
+
+Le bloc `commun#/$defs/source` d'un item s'assemble, lui, par `pipeline/collecte/source.py:source_de`,
+qui appelle `archive_url_de` et lit la fiche de source, le manifeste et la fiche d'extraction (§1.1) ;
+une source sans lien d'archive effectif y lève `SourceSansArchive`. C'est le seul assemblage : un
+consommateur qui recomposerait la source lui-même manquerait une reprise.
 
 ### 5.8 Cas de collecte
 

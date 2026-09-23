@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-09-22",
+  "date_maj": "2026-09-23",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -266,7 +266,7 @@
       "decisions": [
         "D2"
       ],
-      "note": "Découpé en sous-lots. C1 et C1-bis livrés le 2026-09-22 (PR #11) : socle uv et Python 3.12, téléchargement poli (robots.txt, 1 req/s), archives/ hors Git, SHA-256, Save Page Now avec reprise sans réécriture (staging/archivages/), manifeste de contenu et fiche par source (CONTRATS §5), 106 tests pytest sans réseau, ruff C901 en CI. Jamais lancé sur une vraie source. PROCHAINE ÉTAPE : C2, texte canonique PDF (pymupdf) et HTML (bibliothèque standard), qui lit le lien d'archive par archive_url_de. Puis C3, audio et vidéo. Entrée : config/sources.toml, que seul l'auteur écrit."
+      "note": "Découpé en sous-lots. C1 et C1-bis livrés le 2026-09-22 (PR #11) : socle uv et Python 3.12, téléchargement poli (robots.txt, 1 req/s), archives/ hors Git, SHA-256, Save Page Now avec reprise sans réécriture (staging/archivages/), manifeste de contenu et fiche par source (CONTRATS §5). C2 livré le 2026-09-23 : texte canonique PDF (pymupdf 1.28.2) et HTML (html.parser), rangé sous son empreinte avec une fiche d'extraction (CONTRATS §1.1, schema/extraction-texte), source_de comme seul assemblage de commun#/$defs/source, pnpm textes ; 194 tests pytest sans réseau. Jamais lancé sur une vraie source. PROCHAINE ÉTAPE : C3, audio et vidéo (yt-dlp, faster-whisper, WebVTT, CONTRATS §2). Entrée : config/sources.toml, que seul l'auteur écrit."
     },
     {
       "id": "extraction",
@@ -289,7 +289,7 @@
       "decisions": [
         "D3"
       ],
-      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts."
+      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1)."
     },
     {
       "id": "questions-tirage-symetrie",

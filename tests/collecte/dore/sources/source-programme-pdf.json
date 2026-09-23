@@ -1,0 +1,13 @@
+{
+  "tier": "T1",
+  "url": "https://example.org/programme.pdf",
+  "type_document": "programme_pdf",
+  "page": 1,
+  "sha256": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
+  "texte_sha256": "d21aed9376a8b169069fc8c12c1684afeaa018510d89c5bcb485325444ae07f0",
+  "archive_url": "https://web.archive.org/web/20260922123005/https://example.org/programme.pdf",
+  "date_source": "2026-09-01",
+  "date_collecte": "2026-09-22T14:30:05+02:00",
+  "chemin_local": "archives/14/14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494.pdf",
+  "publication": "publique"
+}

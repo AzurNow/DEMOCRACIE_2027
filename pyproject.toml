@@ -2,14 +2,18 @@
 # TypeScript (package.json). Environnement géré par uv, Python épinglé en 3.12 (décision du
 # 2026-09-22) ; uv.lock est commité et `uv sync --frozen` le rejoue à l'identique.
 #
-# Aucune dépendance d'exécution : la collecte (sous-lot C1) n'utilise que la bibliothèque
-# standard. Dépendances de développement autorisées : pytest et ruff, épinglés.
+# Une seule dépendance d'exécution, épinglée : pymupdf (décision D2), pour le texte canonique des
+# PDF (sous-lot C2). Sa version entre dans chaque fiche d'extraction : la changer peut changer les
+# textes, donc les offsets (docs/CONTRATS.md §1.1). Le reste de la collecte n'utilise que la
+# bibliothèque standard. Dépendances de développement autorisées : pytest et ruff, épinglés.
 [project]
 name = "banc-essai-2027-pipeline"
 version = "0.0.0"
 description = "Pipeline de collecte du Banc d'essai 2027"
 requires-python = "==3.12.*"
-dependencies = []
+dependencies = [
+    "pymupdf==1.28.2",
+]
 
 [dependency-groups]
 dev = [

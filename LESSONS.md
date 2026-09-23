@@ -91,6 +91,13 @@ schéma qui les regarde les refuse. Les corriger a fait tomber huit tests d'un c
 `entree().mesure_id` et `mesure().id` doivent rester égaux pour que l'appariement du registre
 fonctionne — le défaut dormait depuis l'écriture des fabriques.
 
+**Tester une bibliothèque sur l'entrée qu'elle devrait refuser.** Deux défauts muets trouvés par un
+test de refus, aucun par la documentation. `pymupdf.open(stream=…, filetype="pdf")` ignore
+`filetype` quand il reconnaît du HTML : une page servie en `application/pdf` aurait été « extraite »
+par son moteur HTML, sans erreur (garde ajoutée : `document.is_pdf`). Et `codecs.lookup("iso-8859-1").name`
+vaut `iso8859-1`, pas `latin-1` : la règle WHATWG « latin-1 se lit en windows-1252 » ne
+s'appliquait jamais, et l'apostrophe `’` devenait un caractère de contrôle.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -117,6 +124,19 @@ Le trou réel restait ouvert. Les exemples avaient été écrits à la main d'ap
 `JournalAnnotateur.ajouter()` sérialise toujours ce que le type TypeScript accepte, sans rien
 valider : schéma et exemples restent d'accord entre eux pendant que le code s'en éloigne. Ce qui
 garde un objet, c'est le chemin qui va du code qui l'écrit jusqu'au schéma — pas le schéma seul.
+
+**Fixer les fins de ligne dans le dépôt, pas dans la configuration de chacun.** Sans
+`.gitattributes`, `core.autocrlf=true` (réglage par défaut de Git pour Windows) convertissait les
+fichiers dorés en CRLF au checkout : huit tests pytest échouaient sur `main` sous Windows, alors que
+la CI Linux était verte. Le même mécanisme aurait changé l'empreinte et décalé les offsets de chaque
+texte de `staging/textes/`. Un projet qui hache des fichiers texte déclare `eol=lf`, et `-text` pour
+ce qui ne doit jamais être touché.
+
+**Écrire les caractères invisibles par échappement, puis vérifier les octets.** L'outil d'écriture
+de l'agent a transformé `́` en accent combinant brut, et un `\n` dans une chaîne TypeScript en
+vrai saut de ligne (erreur de compilation). Le test restait juste mais illisible : rien ne distingue
+à l'œil `été` composé de `été` décomposé. Pour U+0301, U+00A0, U+00AD, U+FB01 : échappement dans le
+code, `String.fromCodePoint` en TypeScript, et un `grep` sur les octets après écriture.
 
 ## Méthode
 

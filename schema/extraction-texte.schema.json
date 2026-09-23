@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:extraction-texte",
+  "title": "Fiche d'extraction d'un texte canonique",
+  "description": "staging/extractions/<sha256_source>/<texte_sha256>.json, écrite par pipeline/collecte/textes (sous-lot C2) après le texte staging/textes/<texte_sha256>.txt qu'elle décrit, immuable (docs/CONTRATS.md §1.1). Relie un document archivé (manifeste collecte.schema.json) au texte qu'on en a tiré, et dit par quel extracteur, dans quelle version, avec quelles options : sans ces trois faits, une réextraction qui produit un autre texte ne s'explique pas. Le texte est rangé sous sa propre empreinte, jamais sous celle du document : une réextraction ajoute un texte et une fiche, elle n'écrase rien.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sha256_source", "texte_sha256", "longueur", "date_extraction", "extracteur"],
+  "properties": {
+    "sha256_source": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Document archivé dont le texte est tiré : nom du manifeste staging/sources/<sha256_source>.json et du répertoire de cette fiche."
+    },
+    "texte_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte des octets UTF-8 du fichier staging/textes/<texte_sha256>.txt ; nomme aussi cette fiche. C'est la valeur que source.texte_sha256 d'un item reprend."
+    },
+    "longueur": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Nombre de points de code du texte, l'unité des offsets (docs/CONTRATS.md §1). Un texte vide n'est jamais écrit."
+    },
+    "date_extraction": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Instant de la première extraction qui a produit ce texte pour ce document."
+    },
+    "extracteur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil", "version", "options"],
+      "properties": {
+        "outil": { "enum": ["pymupdf", "html.parser"] },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Version exacte de l'outil (pymupdf.__version__, ou la version de Python pour html.parser). Deux versions peuvent rendre deux textes du même document."
+        },
+        "options": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "outil": { "const": "pymupdf" } }, "required": ["outil"] },
+          "then": { "properties": { "options": { "$ref": "#/$defs/options_pymupdf" } } }
+        },
+        {
+          "if": { "properties": { "outil": { "const": "html.parser" } }, "required": ["outil"] },
+          "then": { "properties": { "options": { "$ref": "#/$defs/options_html" } } }
+        }
+      ]
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "PDF seulement. Intervalle semi-ouvert [debut, fin) de chaque page, en points de code, séparateur \\f exclu : fin d'une page + 1 = debut de la suivante. Sert à remplir source.page, obligatoire pour un programme_pdf.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["numero", "debut", "fin"],
+        "properties": {
+          "numero": { "type": "integer", "minimum": 1 },
+          "debut": { "type": "integer", "minimum": 0 },
+          "fin": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "encodage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nom", "origine"],
+      "description": "HTML seulement. Codec Python employé pour décoder les octets archivés, et d'où il vient, dans l'ordre WHATWG. Aucun encodage n'est jamais supposé.",
+      "properties": {
+        "nom": { "type": "string", "minLength": 1 },
+        "origine": { "enum": ["bom", "content-type", "meta"] }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "extracteur": { "properties": { "outil": { "const": "pymupdf" } }, "required": ["outil"] } },
+        "required": ["extracteur"]
+      },
+      "then": { "required": ["pages"], "not": { "required": ["encodage"] } }
+    },
+    {
+      "if": {
+        "properties": { "extracteur": { "properties": { "outil": { "const": "html.parser" } }, "required": ["outil"] } },
+        "required": ["extracteur"]
+      },
+      "then": { "required": ["encodage"], "not": { "required": ["pages"] } }
+    }
+  ],
+  "$defs": {
+    "options_pymupdf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "drapeaux", "separateur_pages"],
+      "properties": {
+        "mode": { "const": "text", "description": "Argument de page.get_text." },
+        "drapeaux": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Valeur numérique de TEXT_PRESERVE_LIGATURES | TEXT_PRESERVE_WHITESPACE | TEXT_MEDIABOX_CLIP pour la version employée."
+        },
+        "separateur_pages": { "const": "\f" }
+      }
+    },
+    "options_html": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regle"],
+      "properties": {
+        "regle": {
+          "type": "string",
+          "pattern": "^blocs-[0-9]+$",
+          "description": "Version de la règle de rendu de docs/CONTRATS.md §1.3 (éléments ignorés, éléments de bloc, espaces), fixée dans pipeline/collecte/textes/page_html.py."
+        }
+      }
+    }
+  }
+}
