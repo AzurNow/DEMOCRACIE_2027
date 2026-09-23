@@ -15,7 +15,7 @@
 
 import { execFileSync } from "node:child_process";
 import { analyserArguments, drapeau, texte } from "./arguments.ts";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
 import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
@@ -44,6 +44,17 @@ interface Verdict {
   readonly lot_id: string;
   readonly item: Item;
   readonly issue: Issue;
+}
+
+/** Un item qu'un lot juge mais que `staging/` ne contient pas : il ne disparaît jamais en silence. */
+interface Introuvable {
+  readonly lot_id: string;
+  readonly item_id: string;
+}
+
+interface EvaluationLot {
+  readonly verdicts: readonly Verdict[];
+  readonly introuvables: readonly Introuvable[];
 }
 
 function lireOptions(): Options {
@@ -95,13 +106,17 @@ function evaluerLot(
   staging: Staging,
   options: Options,
   contexte: Contexte,
-): readonly Verdict[] {
+): EvaluationLot {
   const etats = etatsDuLot(options.decisions, effectif.lot);
   const verdicts: Verdict[] = [];
+  const introuvables: Introuvable[] = [];
 
   for (const reference of effectif.items) {
     const item = staging.items.get(reference.item_id);
-    if (item === undefined) continue;
+    if (item === undefined) {
+      introuvables.push({ lot_id: effectif.lot.lot_id, item_id: reference.item_id });
+      continue;
+    }
     const issue = evaluerPromotion(
       {
         item,
@@ -115,7 +130,31 @@ function evaluerLot(
     );
     verdicts.push({ lot_id: effectif.lot.lot_id, item, issue });
   }
-  return verdicts;
+  return { verdicts, introuvables };
+}
+
+/**
+ * Un item déjà présent dans `data/` n'est jamais réécrit : ce qui y a changé depuis sa promotion
+ * (décision du panel, correction) ne doit pas être écrasé par son état de `staging/`. Relancer
+ * la promotion est donc sans effet sur lui.
+ */
+function dejaDansData(verdict: Verdict, options: Options): boolean {
+  return existsSync(join(options.data, `${verdict.item.id}.json`));
+}
+
+function imprimerEcriturePrevue(promus: readonly Verdict[], options: Options): void {
+  const deja = promus.filter((verdict) => dejaDansData(verdict, options));
+  process.stdout.write(`\nÀ écrire par --ecrire : ${promus.length - deja.length}\n`);
+  process.stdout.write(`Déjà dans data/, non réécrits : ${deja.length}\n`);
+  for (const verdict of deja) process.stdout.write(`  ${verdict.item.id}  [${verdict.lot_id}]\n`);
+}
+
+function imprimerIntrouvables(introuvables: readonly Introuvable[]): void {
+  if (introuvables.length === 0) return;
+  process.stdout.write(`\nItems des lots introuvables dans staging : ${introuvables.length}\n`);
+  for (const introuvable of introuvables) {
+    process.stdout.write(`  ${introuvable.item_id}  [${introuvable.lot_id}]\n`);
+  }
 }
 
 function imprimerRapport(
@@ -150,6 +189,7 @@ function imprimerRapport(
     process.stdout.write(`  ${motif} : ${nombre}\n`);
   }
 
+  imprimerEcriturePrevue(promus, options);
   imprimerDemandesDeCorrection(attentes);
   imprimerSupersessions(effectifs);
   imprimerNonEvaluables(
@@ -225,7 +265,7 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
 
   const promus: string[] = [];
   for (const verdict of verdicts) {
-    if (verdict.issue.sort !== "promouvoir") continue;
+    if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
     const item = verdict.issue.item;
     writeFileSync(join(options.data, `${item.id}.json`), `${JSON.stringify(item, null, 2)}\n`, "utf8");
     promus.push(item.id);
@@ -275,10 +315,21 @@ function principal(): void {
     registre: lireRegistre(options.mesures),
   };
   const effectifs = lotsApresSupersession(lireLots(options.lots));
-  const verdicts = effectifs.flatMap((effectif) => evaluerLot(effectif, staging, options, contexte));
+  const evaluations = effectifs.map((effectif) => evaluerLot(effectif, staging, options, contexte));
+  const verdicts = evaluations.flatMap((evaluation) => evaluation.verdicts);
+  const introuvables = evaluations.flatMap((evaluation) => evaluation.introuvables);
 
   imprimerRapport(verdicts, effectifs, options);
+  imprimerIntrouvables(introuvables);
 
+  if (introuvables.length > 0) {
+    process.stderr.write(
+      "\nDes items jugés sont introuvables dans staging/ : rien n'est écrit tant qu'ils ne sont pas\n" +
+        "retrouvés ou retirés de leur lot.\n",
+    );
+    process.exitCode = 1;
+    return;
+  }
   if (!options.ecrire) {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire pour écrire dans data/.\n");
     return;
