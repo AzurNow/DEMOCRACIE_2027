@@ -74,7 +74,7 @@ class Banc:
         if not self.racine.exists():
             return []
         return sorted(
-            str(chemin.relative_to(self.racine)) for chemin in self.racine.rglob("*") if chemin.is_file()
+            chemin.relative_to(self.racine).as_posix() for chemin in self.racine.rglob("*") if chemin.is_file()
         )
 
     def instantane_des_octets(self) -> dict[str, bytes]:
