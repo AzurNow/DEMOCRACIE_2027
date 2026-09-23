@@ -11,9 +11,23 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { analyserVtt, ErreurVtt, horodatageDebut, secondesDeHorodatage } from "../validation/domaine/webvtt.ts";
+import {
+  analyserVtt,
+  ErreurVtt,
+  horodatageDebut,
+  secondesDeHorodatage,
+  type Cue,
+  type DocumentVtt,
+} from "../validation/domaine/webvtt.ts";
 
 const RACINE_DEPOT = join(import.meta.dirname, "..");
+
+/** Le cue de rang `index`, ou une erreur qui dit lequel manque. */
+function cue(document: DocumentVtt, index: number): Cue {
+  const trouve = document.cues[index];
+  if (trouve === undefined) throw new Error(`cue ${index} absent (${document.cues.length} cues)`);
+  return trouve;
+}
 const VTT_FIXTURE = join(
   RACINE_DEPOT,
   "validation/fixtures/staging-demo/transcriptions/b6db45bad6003978deea167807cc2f9b1d0080b35bacc4c1a8800ad5f6aafd0c.vtt",
@@ -49,13 +63,13 @@ describe("analyserVtt", () => {
     ].join("\n");
     const document = analyserVtt(vtt);
 
-    const longueurEnPointsDeCode = [...document.cues[0]!.texte].length;
-    const longueurEnUnitesUtf16 = document.cues[0]!.texte.length;
+    const longueurEnPointsDeCode = [...cue(document, 0).texte].length;
+    const longueurEnUnitesUtf16 = cue(document, 0).texte.length;
     // 🌍 occupe deux unités UTF-16 pour un seul point de code : les deux longueurs diffèrent,
     // sans quoi ce test ne vérifierait rien.
     expect(longueurEnUnitesUtf16).not.toBe(longueurEnPointsDeCode);
 
-    expect(document.cues[1]!.offset).toBe(longueurEnPointsDeCode + 1);
+    expect(cue(document, 1).offset).toBe(longueurEnPointsDeCode + 1);
   });
 
   it("12. horodatages à deux champs (MM:SS.mmm) et à trois champs (HH:MM:SS.mmm)", () => {
@@ -86,9 +100,9 @@ describe("analyserVtt", () => {
   it("13. un offset dans le deuxième cue rend l'horodatage de début de ce cue, pas du premier", () => {
     const contenu = readFileSync(VTT_FIXTURE, "utf8");
     const document = analyserVtt(contenu);
-    const offsetDansLeDeuxiemeCue = document.cues[1]!.offset + 2;
-    expect(horodatageDebut(document, offsetDansLeDeuxiemeCue)).toBe(document.cues[1]!.debut);
-    expect(horodatageDebut(document, offsetDansLeDeuxiemeCue)).not.toBe(document.cues[0]!.debut);
+    const offsetDansLeDeuxiemeCue = cue(document, 1).offset + 2;
+    expect(horodatageDebut(document, offsetDansLeDeuxiemeCue)).toBe(cue(document, 1).debut);
+    expect(horodatageDebut(document, offsetDansLeDeuxiemeCue)).not.toBe(cue(document, 0).debut);
   });
 
   it("14. offset antérieur au premier cue et offset au-delà du dernier : comportement explicite, jamais inventé", () => {
@@ -133,11 +147,11 @@ describe("analyserVtt", () => {
     const document = analyserVtt(vtt);
 
     expect(document.cues).toHaveLength(3);
-    expect(document.cues[1]!.texte).toBe("");
+    expect(cue(document, 1).texte).toBe("");
     // « Premier cue. » (12 points de code) + 1 saut de ligne = offset 13 pour le cue vide.
-    expect(document.cues[1]!.offset).toBe(13);
+    expect(cue(document, 1).offset).toBe(13);
     // Le cue vide ne contribue que son propre saut de ligne : offset 14 pour le troisième cue.
-    expect(document.cues[2]!.offset).toBe(14);
+    expect(cue(document, 2).offset).toBe(14);
     expect(document.texte).toBe("Premier cue.\n\nTroisieme cue.");
   });
 });

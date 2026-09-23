@@ -71,7 +71,7 @@ async function demarrer(): Promise<void> {
   (document.getElementById("fermer-aide") as HTMLButtonElement).addEventListener("click", () =>
     (document.getElementById("aide") as HTMLDialogElement).close(),
   );
-  rendreAccueil();
+  void rendreAccueil();
 }
 
 function rendreBandeau(fil: string, avancement: string): void {
@@ -200,7 +200,7 @@ function reinitialiserSaisie(): void {
 function reponsesDuBrouillon(brouillon: Brouillon | null): Map<string, boolean> {
   const reponses = new Map(Object.entries(brouillon?.reponses ?? {}));
   for (const [nom, grille] of Object.entries(brouillon?.reponses_par_etat ?? {})) {
-    for (const [cle, valeur] of Object.entries(grille ?? {})) reponses.set(`${nom}.${cle}`, valeur);
+    for (const [cle, valeur] of Object.entries(grille)) reponses.set(`${nom}.${cle}`, valeur);
   }
   return reponses;
 }

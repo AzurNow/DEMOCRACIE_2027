@@ -2,16 +2,23 @@
 
 import type { Brouillon, Diagnostic, Raccourcis, Session, VueItem, VueLot } from "./types.ts";
 
-export interface Echec {
-  statut: number;
-  corps: unknown;
+/** Réponse HTTP en erreur : le statut et le corps renvoyés par le serveur, tels quels. */
+export class EchecApi extends Error {
+  readonly statut: number;
+  readonly corps: unknown;
+
+  constructor(statut: number, corps: unknown) {
+    super(`HTTP ${statut}`);
+    this.statut = statut;
+    this.corps = corps;
+  }
 }
 
 async function demander<T>(chemin: string, options?: RequestInit): Promise<T> {
   const reponse = await fetch(chemin, options);
   const texte = await reponse.text();
   const corps: unknown = texte.length === 0 ? null : JSON.parse(texte);
-  if (!reponse.ok) throw { statut: reponse.status, corps } as Echec;
+  if (!reponse.ok) throw new EchecApi(reponse.status, corps);
   return corps as T;
 }
 
