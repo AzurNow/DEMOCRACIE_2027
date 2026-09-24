@@ -23,8 +23,8 @@
 
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
-import { mesureDe, themeDe } from "./engendrement.ts";
-import { contestationPermetLeTirage, decisionPanelAuGel } from "./contestation.ts";
+import { itemEngendreDesQuestions, mesureDe, themeDe } from "./engendrement.ts";
+import { decisionPanelAuGel } from "./contestation.ts";
 import { reponseAttendue } from "./reponse-attendue.ts";
 import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
@@ -135,15 +135,16 @@ function themeDeQuestion(question: Question, index: Index): Theme {
 
 /**
  * §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question.
- * La contestation est évaluée même quand la validation exclut déjà l'item : un arbitrage illisible
- * se signale toujours, il ne se cache pas derrière un autre motif d'exclusion.
+ * La règle par item est celle de l'engendrement (`itemEngendreDesQuestions`), écrite une seule
+ * fois. Tous les items sont évalués avant de conclure (`map` puis `every`, jamais `every` seul) :
+ * une référence absente ou un arbitrage illisible se signale toujours, il ne se cache pas
+ * derrière un autre motif d'exclusion.
  */
 function questionTirable(question: Question, index: Index): boolean {
   const verdicts = question.items.map((entree) => {
     const item = index.items.get(entree.reference.item_id);
     if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
-    const contestationAdmise = contestationPermetLeTirage(item);
-    return item.statut_validation === "verifie" && contestationAdmise;
+    return itemEngendreDesQuestions(item);
   });
   return verdicts.every((tirable) => tirable);
 }

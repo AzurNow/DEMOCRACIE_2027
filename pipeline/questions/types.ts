@@ -12,6 +12,11 @@
 
 import type { EtatPositionnel, Item, Mesure, TypeItem } from "../../validation/domaine/types.ts";
 
+/*
+ * Chaque liste fermée de ce fichier recopie un `enum` de `schema/` ; son union est dérivée de la
+ * constante, et `tests/enumerations-schemas.test.ts` confronte la constante au schéma.
+ */
+
 export type { EtatPositionnel, Item, Mesure, TypeItem };
 
 /** Les dix thèmes du §3. Une position hors de cette liste n'entre pas dans le tirage. */
@@ -45,7 +50,8 @@ export type Registre = (typeof REGISTRES)[number];
 export const POSITIONS = ["pour", "contre", "conditionnel", "sans_objet"] as const;
 export type Position = (typeof POSITIONS)[number];
 
-export type RoleItem = "principal" | "attendu_dans_liste" | "distracteur" | "contexte";
+export const ROLES_ITEM = ["principal", "attendu_dans_liste", "distracteur", "contexte"] as const;
+export type RoleItem = (typeof ROLES_ITEM)[number];
 
 export const STATUTS_VALIDATION = [
   "en_attente",
@@ -62,7 +68,8 @@ export function estStatutValidation(valeur: string): valeur is StatutValidation 
   return (STATUTS_VALIDATION as readonly string[]).includes(valeur);
 }
 
-export type StatutContestation = "aucune" | "contestee" | "arbitree";
+export const STATUTS_CONTESTATION = ["aucune", "contestee", "arbitree"] as const;
+export type StatutContestation = (typeof STATUTS_CONTESTATION)[number];
 
 /**
  * La dernière décision du panel d'un item arbitré, figée au gel dans le tirage : la symétrie d'un
@@ -139,16 +146,18 @@ export interface Question {
 
 /* -------------------------------------------------------------------- tirage */
 
-export type NatureReponse =
-  | "position"
-  | "absence_de_position"
-  | "oui"
-  | "non"
-  | "liste_candidats"
-  | "aucun_candidat"
-  | "changement_de_position"
-  | "position_anterieure"
-  | "non_avec_correction";
+export const NATURES_REPONSE = [
+  "position",
+  "absence_de_position",
+  "oui",
+  "non",
+  "liste_candidats",
+  "aucun_candidat",
+  "changement_de_position",
+  "position_anterieure",
+  "non_avec_correction",
+] as const;
+export type NatureReponse = (typeof NATURES_REPONSE)[number];
 
 export interface ResolutionTemporelle {
   readonly date_gel: string;
@@ -230,7 +239,8 @@ export const CODES_CONDITION = [
 
 export type CodeCondition = (typeof CODES_CONDITION)[number];
 
-export type StatutSymetrie = "vert" | "ecart_tolere" | "rouge";
+export const STATUTS_SYMETRIE = ["vert", "ecart_tolere", "rouge"] as const;
+export type StatutSymetrie = (typeof STATUTS_SYMETRIE)[number];
 
 export interface DetailCandidat {
   readonly candidat_id: string;

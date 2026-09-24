@@ -5,8 +5,14 @@
  * doit pas pouvoir toucher, même par un type, à ce que le serveur ne lui envoie pas.
  */
 
-export type TypeItem = "P" | "A" | "O" | "F";
-export type Decision = "accepter" | "corriger" | "rejeter" | "non_evaluable";
+/*
+ * Les deux listes fermées qui recopient un `enum` de `schema/` portent une constante dont l'union
+ * est dérivée ; `tests/enumerations-schemas.test.ts` confronte chacune à son schéma.
+ */
+export const TYPES_ITEM = ["P", "A", "O", "F"] as const;
+export type TypeItem = (typeof TYPES_ITEM)[number];
+export const DECISIONS = ["accepter", "corriger", "rejeter", "non_evaluable"] as const;
+export type Decision = (typeof DECISIONS)[number];
 export type CleEmplacement = "assertion" | "anterieur" | "posterieur" | "couverture";
 
 export interface SourceProjetee {

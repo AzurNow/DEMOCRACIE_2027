@@ -16,11 +16,11 @@
  */
 
 import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
+import { gabaritParCode } from "./gabarits.ts";
 import { trouverLibelle } from "./libelles.ts";
 import type {
   CandidatAuGel,
   CodeCondition,
-  CodeGabarit,
   ConditionSymetrie,
   DetailCandidat,
   EntreeTirage,
@@ -306,9 +306,15 @@ function motifDArbitrage(item: ItemAuGel, date_gel: string): string | null {
   return `arbitré, dernière décision du panel « ${decision.decision} »`;
 }
 
+/**
+ * Les questions d'attribution se reconnaissent à la donnée `nomme_candidat` de la table des
+ * gabarits, jamais à leur code : ce sont les seules dont le texte ne doit nommer personne.
+ */
 function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {
-  const attribution: CodeGabarit = "Q-ATT";
-  for (const entree of contexte.entrees.filter((e) => e.gabarit === attribution)) {
+  const attributions = contexte.entrees.filter(
+    (entree) => !gabaritParCode(entree.gabarit).nomme_candidat,
+  );
+  for (const entree of attributions) {
     const question = questionDe(contexte, entree);
     for (const formulation of question.formulations) {
       const libelle = trouverLibelle(formulation.texte, contexte.libelles);
