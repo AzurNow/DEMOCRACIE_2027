@@ -95,7 +95,7 @@ function symetrieDe(questions: readonly Question[]): Symetrie {
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
-    entrees: entreesPour(questionsTirables(questions, ITEMS, GEL), ITEMS, MESURES, GEL),
+    entrees: entreesPour(questionsTirables(questions, ITEMS, RUN), ITEMS, MESURES, RUN),
   };
   return verifierSymetrie(tirage, questions, ITEMS, RUN);
 }

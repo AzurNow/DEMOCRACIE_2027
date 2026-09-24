@@ -101,7 +101,7 @@ function tirageDe(questions: readonly Question[], items: readonly Item[] = ITEMS
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
-    entrees: entreesPour(questions, items, MESURES, GEL),
+    entrees: entreesPour(questions, items, MESURES, RUN),
   };
 }
 
@@ -436,7 +436,7 @@ describe("noms de candidats dans les questions d'attribution", () => {
       run_id: RUN.id,
       date_gel: GEL,
       graine_tirage: graine(),
-      entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], GEL),
+      entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], nommes),
     };
     const symetrie = verifierSymetrie(tirage, [...QUESTIONS, ...engendrees], items, nommes);
     expect(conditionDe(symetrie, "aucun_nom_candidat_dans_q_att").statut).toBe("vert");
@@ -500,7 +500,7 @@ describe("candidats traités à part", () => {
 describe("entrées du tirage sans question correspondante", () => {
   it("refuse de noter la symétrie d'un tirage dont une question est introuvable", () => {
     const orpheline: EntreeTirage = {
-      ...(entreesPour([choisir(itemsDe("demo-alpha").p1, "Q-ATT")], ITEMS, MESURES, GEL)[0] as EntreeTirage),
+      ...(entreesPour([choisir(itemsDe("demo-alpha").p1, "Q-ATT")], ITEMS, MESURES, RUN)[0] as EntreeTirage),
       question_id: "q_" + "0".repeat(32),
     };
     const tirage: Tirage = {

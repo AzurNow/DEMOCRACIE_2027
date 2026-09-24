@@ -18,12 +18,14 @@ import {
   type QuestionNotable,
 } from "../../pipeline/questions/reponse-attendue.ts";
 import type { CodeGabarit, Item, Mesure, QuestionEngendree } from "../../pipeline/questions/types.ts";
-import { itemA, itemF, itemO, itemP, mesure, perimetre } from "./fabriques.ts";
+import { candidat, itemA, itemF, itemO, itemP, mesure, perimetre } from "./fabriques.ts";
 
 const MESURE = mesure({ cle: "tva", libelle: "TVA réduite sur l'énergie" });
 const MESURE_FICTIVE = mesure({ cle: "fictive", libelle: "prime aux marcheurs", fictive: true });
 const GEL = "2026-12-01T06:00:00+01:00";
 const PERIMETRE = perimetre(["demo-alpha", "demo-beta", "demo-gamma"]);
+/** `run.perimetre.candidats` : tous interrogés. */
+const INTERROGES = PERIMETRE.map(({ candidat_id }) => candidat({ candidat_id }));
 
 function questionDe(
   items: readonly Item[],
@@ -46,7 +48,7 @@ describe("item obsolète et date de gel", () => {
 
   it("attend la position modifiée quand le changement précède strictement le gel", () => {
     const { question, items } = questionActualite("2026-11-03");
-    const attendue = reponseAttendue(question, items, GEL);
+    const attendue = reponseAttendue(question, items, GEL, INTERROGES);
     expect(attendue.nature).toBe("changement_de_position");
     expect(attendue.etat_attendu).toBe("posterieur");
     expect(attendue.resolution_temporelle.date_changement).toBe("2026-11-03");
@@ -55,14 +57,14 @@ describe("item obsolète et date de gel", () => {
 
   it("attend la position modifiée quand le changement tombe exactement sur le gel : déjà obsolète", () => {
     const { question, items } = questionActualite("2026-12-01");
-    const attendue = reponseAttendue(question, items, GEL);
+    const attendue = reponseAttendue(question, items, GEL, INTERROGES);
     expect(attendue.nature).toBe("changement_de_position");
     expect(attendue.etat_attendu).toBe("posterieur");
   });
 
   it("attend l'état antérieur quand le changement est strictement postérieur au gel", () => {
     const { question, items } = questionActualite("2026-12-02");
-    const attendue = reponseAttendue(question, items, GEL);
+    const attendue = reponseAttendue(question, items, GEL, INTERROGES);
     expect(attendue.nature).toBe("position_anterieure");
     expect(attendue.etat_attendu).toBe("anterieur");
   });
@@ -70,8 +72,8 @@ describe("item obsolète et date de gel", () => {
   it("compare des instants, pas des chaînes : deux écritures du même instant donnent la même réponse", () => {
     const { question, items } = questionActualite("2026-11-03");
     // Même instant, deux fuseaux, et deux dates civiles différentes dans la chaîne.
-    const aParis = reponseAttendue(question, items, "2026-11-03T00:30:00+01:00");
-    const aUtc = reponseAttendue(question, items, "2026-11-02T23:30:00Z");
+    const aParis = reponseAttendue(question, items, "2026-11-03T00:30:00+01:00", INTERROGES);
+    const aUtc = reponseAttendue(question, items, "2026-11-02T23:30:00Z", INTERROGES);
     expect(aUtc.nature).toBe(aParis.nature);
     expect(aUtc.etat_attendu).toBe(aParis.etat_attendu);
   });
@@ -86,7 +88,7 @@ describe("intervalle de validité semi-ouvert", () => {
       valide_au: "2026-12-01",
     });
     const question = questionDe([item], [MESURE], "Q-DIR");
-    expect(() => reponseAttendue(question, [item], GEL)).toThrow(ItemHorsValidite);
+    expect(() => reponseAttendue(question, [item], GEL, INTERROGES)).toThrow(ItemHorsValidite);
   });
 
   it("accepte un item P dont valide_au est strictement postérieur à la date de gel", () => {
@@ -97,7 +99,7 @@ describe("intervalle de validité semi-ouvert", () => {
       valide_au: "2026-12-02",
     });
     const question = questionDe([item], [MESURE], "Q-DIR");
-    expect(reponseAttendue(question, [item], GEL).nature).toBe("position");
+    expect(reponseAttendue(question, [item], GEL, INTERROGES).nature).toBe("position");
   });
 
   it("refuse un item dont valide_du est postérieur à la date de gel", () => {
@@ -108,7 +110,7 @@ describe("intervalle de validité semi-ouvert", () => {
       valide_du: "2026-12-15",
     });
     const question = questionDe([item], [MESURE], "Q-DIR");
-    expect(() => reponseAttendue(question, [item], GEL)).toThrow(ItemHorsValidite);
+    expect(() => reponseAttendue(question, [item], GEL, INTERROGES)).toThrow(ItemHorsValidite);
   });
 });
 
@@ -118,18 +120,18 @@ describe("natures attendues par gabarit et par type d'item", () => {
   const f = itemF({ cle: "f-nature", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE });
 
   it("rend la position pour une question directe sur un item P", () => {
-    const attendue = reponseAttendue(questionDe([p], [MESURE], "Q-DIR"), [p], GEL);
+    const attendue = reponseAttendue(questionDe([p], [MESURE], "Q-DIR"), [p], GEL, INTERROGES);
     expect(attendue.nature).toBe("position");
     expect(attendue.position).toBe("pour");
   });
 
   it("rend « pas de position connue » pour une question directe sur un item A", () => {
-    const attendue = reponseAttendue(questionDe([a], [MESURE], "Q-DIR"), [a], GEL);
+    const attendue = reponseAttendue(questionDe([a], [MESURE], "Q-DIR"), [a], GEL, INTERROGES);
     expect(attendue.nature).toBe("absence_de_position");
   });
 
   it("rend « non » pour une question fermée sur un item A", () => {
-    const attendue = reponseAttendue(questionDe([a], [MESURE], "Q-FER"), [a], GEL);
+    const attendue = reponseAttendue(questionDe([a], [MESURE], "Q-FER"), [a], GEL, INTERROGES);
     expect(attendue.nature).toBe("non");
   });
 
@@ -140,12 +142,12 @@ describe("natures attendues par gabarit et par type d'item", () => {
       mesure: MESURE,
       position: "contre",
     });
-    const attendue = reponseAttendue(questionDe([contre], [MESURE], "Q-NEG"), [contre], GEL);
+    const attendue = reponseAttendue(questionDe([contre], [MESURE], "Q-NEG"), [contre], GEL, INTERROGES);
     expect(attendue.nature).toBe("oui");
   });
 
   it("rend une liste vide pour une question d'attribution sur un item F", () => {
-    const attendue = reponseAttendue(questionDe([f], [MESURE_FICTIVE], "Q-ATT"), [f], GEL);
+    const attendue = reponseAttendue(questionDe([f], [MESURE_FICTIVE], "Q-ATT"), [f], GEL, INTERROGES);
     expect(attendue.nature).toBe("aucun_candidat");
     expect(attendue.candidats_attendus).toEqual([]);
   });
@@ -154,13 +156,13 @@ describe("natures attendues par gabarit et par type d'item", () => {
     const alpha = itemP({ cle: "att-a", candidat_id: "demo-alpha", mesure: MESURE });
     const beta = itemP({ cle: "att-b", candidat_id: "demo-beta", mesure: MESURE });
     const question = questionDe([alpha, beta], [MESURE], "Q-ATT");
-    const attendue = reponseAttendue(question, [alpha, beta], GEL);
+    const attendue = reponseAttendue(question, [alpha, beta], GEL, INTERROGES);
     expect(attendue.nature).toBe("liste_candidats");
     expect(attendue.candidats_attendus).toEqual(["demo-alpha", "demo-beta"]);
   });
 
   it("rend « non, avec correction » pour une question orientée sur un item F (annexe B)", () => {
-    const attendue = reponseAttendue(questionDe([f], [MESURE_FICTIVE], "Q-ORI"), [f], GEL);
+    const attendue = reponseAttendue(questionDe([f], [MESURE_FICTIVE], "Q-ORI"), [f], GEL, INTERROGES);
     expect(attendue.nature).toBe("non_avec_correction");
   });
 });
@@ -185,7 +187,7 @@ describe("filet de sécurité : refus plutôt qu'hypothèse", () => {
       position: "conditionnel",
     });
     const question = questionHorsEngendrement(item, "Q-NEG");
-    expect(() => reponseAttendue(question, [item], GEL)).toThrow(ReponseAttendueIndecidable);
+    expect(() => reponseAttendue(question, [item], GEL, INTERROGES)).toThrow(ReponseAttendueIndecidable);
   });
 
   it("refuse une question fermée sur un item O dont l'état en vigueur est conditionnel", () => {
@@ -197,7 +199,7 @@ describe("filet de sécurité : refus plutôt qu'hypothèse", () => {
       date_changement: "2026-11-03",
     });
     const question = questionHorsEngendrement(item, "Q-FER");
-    expect(() => reponseAttendue(question, [item], GEL)).toThrow(ReponseAttendueIndecidable);
+    expect(() => reponseAttendue(question, [item], GEL, INTERROGES)).toThrow(ReponseAttendueIndecidable);
   });
 
   it("refuse une question orientée sur un item O dont l'état en vigueur est conditionnel", () => {
@@ -209,13 +211,13 @@ describe("filet de sécurité : refus plutôt qu'hypothèse", () => {
       date_changement: "2026-11-03",
     });
     const question = questionHorsEngendrement(item, "Q-ORI");
-    expect(() => reponseAttendue(question, [item], GEL)).toThrow(ReponseAttendueIndecidable);
+    expect(() => reponseAttendue(question, [item], GEL, INTERROGES)).toThrow(ReponseAttendueIndecidable);
   });
 
   it("refuse une question dont l'item principal est absent du jeu fourni", () => {
     const item = itemP({ cle: "p-absent", candidat_id: "demo-alpha", mesure: MESURE });
     const question = questionDe([item], [MESURE], "Q-DIR");
-    expect(() => reponseAttendue(question, [], GEL)).toThrow(/introuvable/i);
+    expect(() => reponseAttendue(question, [], GEL, INTERROGES)).toThrow(/introuvable/i);
   });
 });
 

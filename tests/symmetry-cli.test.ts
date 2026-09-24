@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { engendrer } from "../pipeline/questions/engendrement.ts";
 import { entreesPour } from "../pipeline/questions/tirage.ts";
-import type { CandidatNomme, Item, Mesure, Question, Tirage } from "../pipeline/questions/types.ts";
+import type { CandidatNomme, Item, Mesure, Question, RunAuGel, Tirage } from "../pipeline/questions/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "./aides/fabriques.ts";
 import { completer, graine, identifiant, itemF, itemP, mesure } from "./questions/fabriques.ts";
@@ -100,7 +100,7 @@ function jeuNominal(): Jeu {
       run_id: identifiant("run:cli"),
       date_gel: GEL,
       graine_tirage: graine(),
-      entrees: entreesPour(questions, items, mesures, GEL),
+      entrees: entreesPour(questions, items, mesures, run as unknown as RunAuGel),
     },
     questions,
     items,

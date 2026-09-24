@@ -23,6 +23,7 @@
 
 import type {
   BlocObsolescence,
+  CandidatAuGel,
   CodeGabarit,
   EtatPositionnel,
   Item,
@@ -163,24 +164,39 @@ export type ListeAuGel =
   | { readonly definie: true; readonly candidats: readonly string[] }
   | { readonly definie: false; readonly candidat_id: string; readonly position: Position };
 
+/**
+ * Ce que la résolution lit du périmètre du run : qui est interrogé. Décision de l'auteur du
+ * 2026-09-24 : seuls les candidats du périmètre interrogés au run (`interroge = true`) comptent. Un
+ * candidat retiré ou hors périmètre n'entre pas dans la liste, et sa position ne rend ni la liste
+ * indéfinie ni contradictoire. Une seule source : `run.perimetre.candidats`, lu ici et nulle part
+ * ailleurs pour cette règle.
+ */
+export type CandidatDuPerimetre = Pick<CandidatAuGel, "candidat_id" | "interroge">;
+
+function candidatsInterroges(perimetre: readonly CandidatDuPerimetre[]): ReadonlySet<string> {
+  return new Set(perimetre.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id));
+}
+
 /** Les seules positions qui décident de la présence dans la liste : « pour » (présent), « contre » (absent). */
 const POSITIONS_TRANCHEES: readonly Position[] = ["pour", "contre"];
 
 /**
- * Positions en vigueur au gel, par candidat, des items principal et `attendu_dans_liste` de la
- * question. Un item hors validité ou sans bloc positionnel n'apporte rien.
+ * Positions en vigueur au gel, par candidat interrogé, des items principal et `attendu_dans_liste`
+ * de la question. Un item hors validité, sans bloc positionnel, ou d'un candidat non interrogé
+ * n'apporte rien.
  */
 function positionsParCandidat(
   entrees: readonly ItemDeQuestion[],
   parId: ReadonlyMap<string, Item>,
-  date_gel: string,
+  gel: GelDuRun,
 ): ReadonlyMap<string, ReadonlySet<Position>> {
   const table = new Map<string, Set<Position>>();
   for (const entree of entrees) {
     if (entree.role !== "principal" && entree.role !== "attendu_dans_liste") continue;
     const item = parId.get(entree.reference.item_id);
     if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
-    const position = positionEnVigueur(item, date_gel);
+    if (!gel.interroges.has(item.candidat_id)) continue;
+    const position = positionEnVigueur(item, gel.date_gel);
     if (position === undefined) continue;
     const siennes = table.get(item.candidat_id);
     if (siennes === undefined) table.set(item.candidat_id, new Set([position]));
@@ -199,12 +215,17 @@ function positionNonTranchee(
   return undefined;
 }
 
-export function listeAttendueAuGel(
+interface GelDuRun {
+  readonly date_gel: string;
+  readonly interroges: ReadonlySet<string>;
+}
+
+function listeAttendueAuGel(
   entrees: readonly ItemDeQuestion[],
   parId: ReadonlyMap<string, Item>,
-  date_gel: string,
+  gel: GelDuRun,
 ): ListeAuGel {
-  const table = positionsParCandidat(entrees, parId, date_gel);
+  const table = positionsParCandidat(entrees, parId, gel);
   const nonTranchee = positionNonTranchee(table);
   if (nonTranchee !== undefined) return { definie: false, ...nonTranchee };
 
@@ -225,8 +246,10 @@ export function listeAttendueDefinie(
   question: QuestionNotable,
   parId: ReadonlyMap<string, Item>,
   date_gel: string,
+  perimetre: readonly CandidatDuPerimetre[],
 ): boolean {
-  return listeAttendueAuGel(question.items, parId, date_gel).definie;
+  const gel = { date_gel, interroges: candidatsInterroges(perimetre) };
+  return listeAttendueAuGel(question.items, parId, gel).definie;
 }
 
 /* -------------------------------------------------------------- résolution */
@@ -237,6 +260,7 @@ interface Contexte {
   readonly items: readonly ItemDeQuestion[];
   readonly parId: ReadonlyMap<string, Item>;
   readonly temporelle: ResolutionTemporelle;
+  readonly interroges: ReadonlySet<string>;
 }
 
 type Resolveur = (contexte: Contexte) => ReponseAttendue;
@@ -246,10 +270,15 @@ export interface QuestionNotable {
   readonly items: readonly ItemDeQuestion[];
 }
 
+/**
+ * `perimetre` : `run.perimetre.candidats`. Seule la Q-ATT le lit (candidats interrogés) ; il est
+ * exigé de tout appel pour qu'aucune résolution ne se fasse sur un périmètre implicite.
+ */
 export function reponseAttendue(
   question: QuestionNotable,
   items: readonly Item[],
   date_gel: string,
+  perimetre: readonly CandidatDuPerimetre[],
 ): ReponseAttendue {
   const parId = new Map(items.map((item) => [item.id, item]));
   const item = itemPrincipal(question, parId);
@@ -271,6 +300,7 @@ export function reponseAttendue(
     items: question.items,
     parId,
     temporelle: temporelleDe(item, date_gel),
+    interroges: candidatsInterroges(perimetre),
   });
 }
 
@@ -362,7 +392,8 @@ function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
  * écrit à la main), et y répondre serait une décision de mesure prise en silence.
  */
 function candidatsAttendus(contexte: Contexte): readonly string[] {
-  const liste = listeAttendueAuGel(contexte.items, contexte.parId, contexte.temporelle.date_gel);
+  const gel = { date_gel: contexte.temporelle.date_gel, interroges: contexte.interroges };
+  const liste = listeAttendueAuGel(contexte.items, contexte.parId, gel);
   if (liste.definie) return liste.candidats;
   throw new ReponseAttendueIndecidable(
     contexte.gabarit,

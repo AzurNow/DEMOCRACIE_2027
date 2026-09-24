@@ -20,12 +20,14 @@ import {
   reponseAttendue,
 } from "../../pipeline/questions/reponse-attendue.ts";
 import { questionsTirables, tirer } from "../../pipeline/questions/tirage.ts";
-import type { Item, Position, QuestionEngendree } from "../../pipeline/questions/types.ts";
+import type { CandidatAuGel, Item, Position, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { candidat, completer, graine, itemF, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta", "demo-gamma"];
 const PERIMETRE = perimetre(CANDIDATS);
+/** `run.perimetre.candidats` du gel : les trois candidats, tous interrogés. */
+const INTERROGES = CANDIDATS.map((candidat_id) => candidat({ candidat_id }));
 const MESURE = mesure({ cle: "att-gel", libelle: "tarif social de l'eau" });
 const MESURE_FICTIVE = mesure({ cle: "att-gel-fictive", libelle: "prime aux marcheurs", fictive: true });
 
@@ -38,8 +40,12 @@ function attributionSur(principal: Item, items: readonly Item[]): QuestionEngend
   return trouvee;
 }
 
-function listeAttendue(principal: Item, items: readonly Item[]): readonly string[] | undefined {
-  return reponseAttendue(attributionSur(principal, items), items, GEL).candidats_attendus;
+function listeAttendue(
+  principal: Item,
+  items: readonly Item[],
+  candidats: readonly CandidatAuGel[] = INTERROGES,
+): readonly string[] | undefined {
+  return reponseAttendue(attributionSur(principal, items), items, GEL, candidats).candidats_attendus;
 }
 
 function p(candidat_id: string, position: Position, cle = `${candidat_id}-${position}`): Item {
@@ -63,7 +69,7 @@ describe("liste attendue d'une Q-ATT, résolue au gel", () => {
     const beta = p("demo-beta", "pour");
     const gamma = o("demo-gamma", "contre", "pour", "2026-10-01");
     const items = [alpha, beta, gamma];
-    const attendue = reponseAttendue(attributionSur(alpha, items), items, GEL);
+    const attendue = reponseAttendue(attributionSur(alpha, items), items, GEL, INTERROGES);
     expect(attendue.nature).toBe("liste_candidats");
     expect(attendue.candidats_attendus).toEqual(["demo-beta", "demo-gamma"]);
   });
@@ -154,15 +160,15 @@ describe("liste attendue d'une Q-ATT, résolue au gel", () => {
     const items = [alpha, beta];
     const question = attributionSur(alpha, items);
     const parId = new Map(items.map((item) => [item.id, item]));
-    expect(listeAttendueDefinie(question, parId, GEL)).toBe(true);
-    const attendue = reponseAttendue(question, items, GEL);
+    expect(listeAttendueDefinie(question, parId, GEL, INTERROGES)).toBe(true);
+    const attendue = reponseAttendue(question, items, GEL, INTERROGES);
     expect(attendue.nature).toBe("liste_candidats");
     expect(attendue.candidats_attendus).toEqual([]);
   });
 
   it("cas 6 : item F → « aucun », inchangé", () => {
     const fictif = itemF({ cle: "att-gel-f", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE });
-    const attendue = reponseAttendue(attributionSur(fictif, [fictif]), [fictif], GEL);
+    const attendue = reponseAttendue(attributionSur(fictif, [fictif]), [fictif], GEL, INTERROGES);
     expect(attendue.nature).toBe("aucun_candidat");
     expect(attendue.candidats_attendus).toEqual([]);
   });
@@ -178,7 +184,7 @@ describe("liste attendue d'une Q-ATT, résolue au gel", () => {
     const gamma = p("demo-gamma", "pour");
     const gammaContre = o("demo-gamma", "pour", "contre", "2026-10-01");
     const items = [beta, gamma, gammaContre];
-    expect(() => reponseAttendue(attributionSur(beta, items), items, GEL)).toThrow(PositionsContradictoires);
+    expect(() => reponseAttendue(attributionSur(beta, items), items, GEL, INTERROGES)).toThrow(PositionsContradictoires);
   });
 });
 
@@ -201,16 +207,16 @@ describe("cas 4 : Q-ATT non tirable quand un candidat est « conditionnel » ou 
     const principal = items[0] as Item;
     const question = attributionSur(principal, items);
     const parId = new Map(items.map((item) => [item.id, item]));
-    expect(listeAttendueDefinie(question, parId, GEL)).toBe(false);
-    expect(() => reponseAttendue(question, items, GEL)).toThrow(ReponseAttendueIndecidable);
+    expect(listeAttendueDefinie(question, parId, GEL, INTERROGES)).toBe(false);
+    expect(() => reponseAttendue(question, items, GEL, INTERROGES)).toThrow(ReponseAttendueIndecidable);
   });
 
   it("un état conditionnel qui n'est PAS en vigueur au gel ne rend pas la question non tirable", () => {
     const items = [p("demo-alpha", "pour"), o("demo-beta", "conditionnel", "pour", "2026-10-01")];
     const question = attributionSur(items[0] as Item, items);
     const parId = new Map(items.map((item) => [item.id, item]));
-    expect(listeAttendueDefinie(question, parId, GEL)).toBe(true);
-    expect(reponseAttendue(question, items, GEL).candidats_attendus).toEqual(["demo-alpha", "demo-beta"]);
+    expect(listeAttendueDefinie(question, parId, GEL, INTERROGES)).toBe(true);
+    expect(reponseAttendue(question, items, GEL, INTERROGES).candidats_attendus).toEqual(["demo-alpha", "demo-beta"]);
   });
 
   /**
@@ -247,7 +253,7 @@ describe("cas 4 : Q-ATT non tirable quand un candidat est « conditionnel » ou 
 
     it("la règle de tirabilité écarte les Q-ATT de la mesure, et elles seules", () => {
       expect(bloquees).toHaveLength(2);
-      const tirables = questionsTirables(questions, items, GEL).map((question) => question.id);
+      const tirables = questionsTirables(questions, items, RUN).map((question) => question.id);
       expect(tirables).toEqual([admise?.id]);
     });
 
@@ -262,5 +268,86 @@ describe("cas 4 : Q-ATT non tirable quand un candidat est « conditionnel » ou 
     it("le tirage reste reproductible pour une graine donnée", () => {
       expect(JSON.stringify(tirerAvec(20261201))).toBe(JSON.stringify(tirerAvec(20261201)));
     });
+  });
+});
+
+/**
+ * Décision de l'auteur du 2026-09-24 (question 4.1 du rapport) : seuls les candidats du périmètre
+ * interrogés au run comptent, dans la liste comme dans la tirabilité et la détection de positions
+ * contradictoires. Le périmètre est celui du run (`run.perimetre.candidats`), seule source.
+ */
+describe("périmètre du run : seuls les candidats interrogés comptent", () => {
+  const RETIRE = [
+    candidat({ candidat_id: "demo-alpha" }),
+    candidat({ candidat_id: "demo-beta" }),
+    candidat({ candidat_id: "demo-gamma", statut_au_gel: "retire", interroge: false }),
+  ];
+  const HORS_PERIMETRE = [candidat({ candidat_id: "demo-alpha" }), candidat({ candidat_id: "demo-beta" })];
+
+  it("un candidat retiré « pour » est absent de la liste", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "pour");
+    expect(listeAttendue(beta, [beta, gamma], RETIRE)).toEqual(["demo-beta"]);
+  });
+
+  it("un candidat hors périmètre « pour » est absent de la liste", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "pour");
+    expect(listeAttendue(beta, [beta, gamma], HORS_PERIMETRE)).toEqual(["demo-beta"]);
+  });
+
+  it("un candidat retiré « conditionnel » ne bloque pas la Q-ATT", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "conditionnel");
+    const items = [beta, gamma];
+    const question = attributionSur(beta, items);
+    const parId = new Map(items.map((item) => [item.id, item]));
+    expect(listeAttendueDefinie(question, parId, GEL, RETIRE)).toBe(true);
+    expect(listeAttendue(beta, items, RETIRE)).toEqual(["demo-beta"]);
+  });
+
+  it("un candidat hors périmètre « sans_objet » ne bloque pas la Q-ATT", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "sans_objet");
+    const items = [beta, gamma];
+    const parId = new Map(items.map((item) => [item.id, item]));
+    expect(listeAttendueDefinie(attributionSur(beta, items), parId, GEL, HORS_PERIMETRE)).toBe(true);
+  });
+
+  it("un candidat interrogé « conditionnel » bloque toujours la Q-ATT", () => {
+    const beta = p("demo-beta", "pour");
+    const alpha = p("demo-alpha", "conditionnel");
+    const items = [beta, alpha];
+    const question = attributionSur(beta, items);
+    const parId = new Map(items.map((item) => [item.id, item]));
+    expect(listeAttendueDefinie(question, parId, GEL, RETIRE)).toBe(false);
+    expect(() => reponseAttendue(question, items, GEL, RETIRE)).toThrow(ReponseAttendueIndecidable);
+  });
+
+  it("les positions contradictoires d'un candidat retiré ne sont pas examinées", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "pour");
+    const gammaContre = o("demo-gamma", "pour", "contre", "2026-10-01");
+    expect(listeAttendue(beta, [beta, gamma, gammaContre], RETIRE)).toEqual(["demo-beta"]);
+  });
+
+  it("par le tirage : la Q-ATT bloquée seulement par un retiré est tirée, sans le retiré dans la liste", () => {
+    const beta = p("demo-beta", "pour");
+    const gamma = p("demo-gamma", "conditionnel");
+    const items = [beta, gamma];
+    const questions = engendrer(items, [MESURE], PERIMETRE)
+      .map(completer)
+      .filter((question) => question.gabarit === "Q-ATT");
+    const resultat = tirer({
+      questions,
+      items,
+      mesures: [MESURE],
+      run: run(RETIRE, GEL),
+      graine: graine(),
+      parametres: { questions_par_strate: 10 },
+    });
+    const listes = resultat.tirage.entrees.map((entree) => entree.reponse_attendue.candidats_attendus);
+    expect(listes.length).toBeGreaterThan(0);
+    for (const liste of listes) expect(liste).toEqual(["demo-beta"]);
   });
 });

@@ -27,6 +27,7 @@ import { itemEngendreDesQuestions, mesureDe, themeDe } from "./engendrement.ts";
 import { decisionPanelAuGel } from "./contestation.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import { listeAttendueDefinie, reponseAttendue } from "./reponse-attendue.ts";
+import type { CandidatDuPerimetre } from "./reponse-attendue.ts";
 import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
   CandidatAuGel,
@@ -107,6 +108,14 @@ export {
   DecisionsPanelSimultanees,
 } from "./contestation.ts";
 
+/**
+ * Ce que la tirabilité et la résolution lisent du run : l'instant du gel et le périmètre (qui est
+ * interrogé). Les deux viennent du même objet, jamais de deux sources séparées.
+ */
+export type GelDuRun = Pick<RunAuGel, "date_gel"> & {
+  readonly perimetre: { readonly candidats: readonly CandidatDuPerimetre[] };
+};
+
 /** Identifiant conventionnel du groupe des questions d'attribution, sans candidat. */
 const GROUPE_ATTRIBUTION = "";
 
@@ -148,7 +157,7 @@ function themeDeQuestion(question: Question, index: Index): Theme {
  *   définie au gel, c'est-à-dire si un candidat y a une position en vigueur « conditionnel » ou
  *   « sans_objet » (`reponse-attendue.ts:listeAttendueDefinie`).
  */
-function questionTirable(question: Question, items: ReadonlyMap<string, Item>, date_gel: string): boolean {
+function questionTirable(question: Question, items: ReadonlyMap<string, Item>, run: GelDuRun): boolean {
   const verdicts = question.items.map((entree) => {
     const item = items.get(entree.reference.item_id);
     if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
@@ -156,21 +165,21 @@ function questionTirable(question: Question, items: ReadonlyMap<string, Item>, d
   });
   if (!verdicts.every((tirable) => tirable)) return false;
   if (gabaritParCode(question.gabarit).nomme_candidat) return true;
-  return listeAttendueDefinie(question, items, date_gel);
+  return listeAttendueDefinie(question, items, run.date_gel, run.perimetre.candidats);
 }
 
 /**
- * Utilitaire public : les questions que la règle de tirabilité admet au gel, dans leur ordre. C'est
- * le filtre que `tirer` applique avant tout usage de la graine ; un tirage construit à la main
+ * Utilitaire public : les questions que la règle de tirabilité admet au gel du run, dans leur ordre.
+ * C'est le filtre que `tirer` applique avant tout usage de la graine ; un tirage construit à la main
  * (`entreesPour`) ne contient que des questions qui le passent.
  */
 export function questionsTirables(
   questions: readonly Question[],
   items: readonly Item[],
-  date_gel: string,
+  run: GelDuRun,
 ): readonly Question[] {
   const parId = new Map(items.map((item) => [item.id, item]));
-  return questions.filter((question) => questionTirable(question, parId, date_gel));
+  return questions.filter((question) => questionTirable(question, parId, run));
 }
 
 /* ------------------------------------------------------- entrées de tirage */
@@ -210,16 +219,17 @@ function itemAuGel(entree: Question["items"][number], index: Index, date_gel: st
 function entreeDe(
   question: Question,
   index: Index,
-  date_gel: string,
+  run: GelDuRun,
   precedent: TiragePrecedent | undefined,
 ): EntreeTirage {
+  const items = [...index.items.values()];
   const socle = {
     question_id: question.id,
     theme: themeDeQuestion(question, index),
     gabarit: question.gabarit,
     grappe_id: question.grappe_id,
-    items_au_gel: question.items.map((entree) => itemAuGel(entree, index, date_gel)),
-    reponse_attendue: reponseAttendue(question, [...index.items.values()], date_gel),
+    items_au_gel: question.items.map((entree) => itemAuGel(entree, index, run.date_gel)),
+    reponse_attendue: reponseAttendue(question, items, run.date_gel, run.perimetre.candidats),
     ...(question.candidat_id === undefined ? {} : { candidat_id: question.candidat_id }),
   };
 
@@ -233,19 +243,22 @@ function entreeDe(
   };
 }
 
-/** Utilitaire public : construit les entrées d'un ensemble de questions déjà choisi. */
+/**
+ * Utilitaire public : construit les entrées d'un ensemble de questions déjà choisi, au gel du run
+ * (sa date et son périmètre : une seule source pour les deux).
+ */
 export function entreesPour(
   questions: readonly Question[],
   items: readonly Item[],
   mesures: readonly Mesure[],
-  date_gel: string,
+  run: GelDuRun,
   precedent?: TiragePrecedent,
 ): readonly EntreeTirage[] {
   const index: Index = {
     items: new Map(items.map((item) => [item.id, item])),
     mesures: new Map(mesures.map((mesure) => [mesure.id, mesure])),
   };
-  return questions.map((question) => entreeDe(question, index, date_gel, precedent));
+  return questions.map((question) => entreeDe(question, index, run, precedent));
 }
 
 /** Reconstruit l'entrée du run suivant à partir d'un tirage publié et de ses questions. */
@@ -415,7 +428,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
 
   const index = indexer(demande);
   const tirables = demande.questions.filter((question) =>
-    questionTirable(question, index.items, demande.run.date_gel),
+    questionTirable(question, index.items, demande.run),
   );
   const interroges = demande.run.perimetre.candidats.filter((candidat) => candidat.interroge);
   const groupes = grouperParCandidat(tirables, interroges);
@@ -509,7 +522,7 @@ function tirerGroupeCandidat(
     precedent: demande.tirage_precedent,
   });
   const entrees = resultat.choisies.map((question) =>
-    entreeDe(question, index, demande.run.date_gel, demande.tirage_precedent),
+    entreeDe(question, index, demande.run, demande.tirage_precedent),
   );
   return {
     entrees,
@@ -546,7 +559,7 @@ function tirerGroupeAttribution(
   });
   return {
     entrees: resultat.choisies.map((question) =>
-      entreeDe(question, index, demande.run.date_gel, demande.tirage_precedent),
+      entreeDe(question, index, demande.run, demande.tirage_precedent),
     ),
     strates_vides: resultat.strates_vides,
   };
