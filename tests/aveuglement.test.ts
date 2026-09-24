@@ -31,7 +31,7 @@ let items: Item[];
 
 beforeEach(() => {
   bac = creerBac();
-  items = [itemP(), itemP({ id: "01JBANCESSAI00000000ITEMZZ", candidat_id: "demo-beta" })];
+  items = [itemP(), itemP({ id: "01JBANCESSA1000000001TEMZZ", candidat_id: "demo-beta" })];
   for (const item of items) {
     bac.ecrireItem(item);
     bac.ecrireMesure(mesurePour(item));
@@ -211,7 +211,7 @@ describe("la table de routes est celle que le serveur applique", () => {
 describe("projection de l'item", () => {
   it("n'expose ni l'identité du modèle extracteur, ni l'accord des deux extractions", () => {
     const item = itemP({
-      id: "01JBANCESSAI0000000ITEMEXT",
+      id: "01JBANCESSA100000001TEMEXT",
       assertion: {
         ...(itemP().assertion as NonNullable<Item["assertion"]>),
         extraction: {

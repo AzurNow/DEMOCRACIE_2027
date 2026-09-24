@@ -19,7 +19,7 @@ const RACINE = resolve(import.meta.dirname, "..");
 
 function poserItem(bac: Bac, suffixe: string): Item {
   const item = itemP({
-    id: `01JBANCESSAI00000ITEM${suffixe}`,
+    id: `01JBANCESSA1000000000TEM${suffixe}`,
     candidat_id: `demo-${suffixe}`,
     mesure_id: `01JBANCESSA90000000MESVR${suffixe}`,
   });
@@ -54,7 +54,7 @@ function simuler(bac: Bac) {
 describe("item d'un lot introuvable dans staging", () => {
   const bac = creerBac();
   const present = poserItem(bac, "71");
-  const disparu = itemP({ id: "01JBANCESSAI00000ITEM72", candidat_id: "demo-72", mesure_id: present.mesure_id });
+  const disparu = itemP({ id: "01JBANCESSA1000000000TEM72", candidat_id: "demo-72", mesure_id: present.mesure_id });
   bac.ecrireLot(lotDe("lot-007", [present, disparu]));
   accepterParLesDeux(bac, present, "lot-007");
   accepterParLesDeux(bac, disparu, "lot-007");

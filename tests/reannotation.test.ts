@@ -252,7 +252,7 @@ interface Jugement {
 
 function poserItem(bac: Bac, suffixe: string): Item {
   const item = itemP({
-    id: `01JBANCESSAI00000ITEM${suffixe}`,
+    id: `01JBANCESSA1000000000TEM${suffixe}`,
     candidat_id: `demo-${suffixe}`,
     mesure_id: `01JBANCESSA90000000MESVR${suffixe}`,
   });

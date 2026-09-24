@@ -332,7 +332,7 @@ interface Demande {
  */
 function poserDemande(bac: Bac, demande: Demande): Item {
   const item = itemP({
-    id: `01JBANCESSAI00000ITEM${demande.suffixe}`,
+    id: `01JBANCESSA1000000000TEM${demande.suffixe}`,
     candidat_id: `demo-${demande.suffixe}`,
     mesure_id: `01JBANCESSA90000000MESVR${demande.suffixe}`,
   });
@@ -453,7 +453,7 @@ describe("rapport de `pnpm promote`", () => {
       const decisions: readonly Decision[] = ["accepter", "accepter", "non_evaluable"];
       const items = decisions.map((sens, rang) => {
         const item = itemP({
-          id: `01JBANCESSAI00000ITEM6${rang}`,
+          id: `01JBANCESSA1000000000TEM6${rang}`,
           candidat_id: `demo-${rang}`,
           mesure_id: `01JBANCESSA90000000MESVR6${rang}`,
         });

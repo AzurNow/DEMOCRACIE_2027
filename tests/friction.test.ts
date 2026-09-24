@@ -93,7 +93,7 @@ describe("la grille est exigée quelle que soit la décision", () => {
     item,
     visite: 1,
     horodatage: "2026-09-20T10:00:00+02:00",
-    identifiant: "01JBANCESSAIDECISION000099",
+    identifiant: "01JBANCESSA1DEC1S10N000099",
   });
 
   it("refuse un rejet sans grille, comme elle refuserait une acceptation sans grille", () => {

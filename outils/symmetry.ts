@@ -2,20 +2,31 @@
  * `pnpm symmetry` — contrôle bloquant avant un run.
  *
  * §5 : « le pipeline refuse de lancer un run si l'une de ces conditions échoue ». Cette commande
- * est ce refus : elle sort avec le code 1 dès qu'une condition de symétrie est rouge ou qu'un
- * invariant inter-fichiers est violé, et n'écrit rien.
+ * est ce refus : elle sort avec le code 1 dès qu'une condition de symétrie est rouge, qu'un
+ * invariant inter-fichiers est violé ou qu'un fichier lu n'est pas conforme à son schéma, et
+ * n'écrit rien.
  *
  *   pnpm symmetry --tirage=runs/2026-12-01/tirage.json \
  *                 --questions=runs/2026-12-01/questions.json \
- *                 --items=data/items.json \
+ *                 --items=data/items \
+ *                 --mesures=runs/2026-12-01/mesures.json \
  *                 --run=runs/2026-12-01/run.json
  *
- * Les fichiers de questions et d'items sont des tableaux JSON ; un répertoire n'est pas lu, pour
- * que le fichier contrôlé soit exactement celui qui sera publié.
+ * Les cinq options sont obligatoires. `--items` désigne un répertoire, un fichier JSON par item :
+ * c'est la disposition de `data/items/`, lue en ordre de nom de fichier. Les questions et les
+ * mesures sont des tableaux JSON. `--mesures` n'est pas facultatif : sans lui, l'invariant
+ * « un item F pointe une mesure fictive » ne serait pas contrôlé, et la règle 4 de CLAUDE.md
+ * interdit qu'un contrôle de la barrière se saute.
+ *
+ * Chaque objet lu — tirage, questions, items, mesures, run — est confronté à son JSON Schema
+ * avant tout contrôle : une entrée non conforme arrête la commande avec le code 1.
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { analyserArguments, obligatoire } from "./arguments.ts";
+import { valider } from "./schemas/valider.ts";
+import type { NomSchema } from "./schemas/noms.ts";
 import {
   grappeSuitItemPrincipal,
   itemsFictifsPointentMesureFictive,
@@ -37,29 +48,59 @@ interface Entrees {
   readonly tirage: Tirage;
   readonly questions: readonly Question[];
   readonly items: readonly Item[];
-  /** `undefined` quand `--mesures` n'est pas fourni : l'invariant est alors annoncé non contrôlé. */
-  readonly mesures: readonly Mesure[] | undefined;
+  readonly mesures: readonly Mesure[];
   readonly run: RunAuGel;
 }
 
-function lireJson<T>(chemin: string): T {
-  return JSON.parse(readFileSync(chemin, "utf8")) as T;
+function lireJson(chemin: string): unknown {
+  return JSON.parse(readFileSync(chemin, "utf8"));
+}
+
+function lireObjet<T>(nom: NomSchema, chemin: string): T {
+  return valider<T>(nom, lireJson(chemin), chemin);
+}
+
+/** Un tableau JSON dont chaque élément est validé, avec son rang dans la provenance. */
+function lireTableau<T>(nom: NomSchema, chemin: string): readonly T[] {
+  const brut = lireJson(chemin);
+  if (!Array.isArray(brut)) throw new Error(`${chemin} : un tableau JSON de « ${nom} » est attendu.`);
+  return brut.map((valeur: unknown, rang) => valider<T>(nom, valeur, `${chemin}, élément ${rang}`));
+}
+
+/**
+ * Un répertoire d'items, un fichier par item, en ordre de nom : l'ordre de lecture ne dépend pas
+ * du système de fichiers. Un répertoire sans item est une erreur : un contrôle qui ne porte sur
+ * rien n'est pas un contrôle vert.
+ */
+function lireRepertoireItems(repertoire: string): readonly Item[] {
+  const fichiers = readdirSync(repertoire)
+    .filter((nom) => nom.endsWith(".json"))
+    .sort();
+  if (fichiers.length === 0) {
+    throw new Error(`${repertoire} : aucun fichier d'item (*.json). Rien à contrôler n'est une erreur.`);
+  }
+  return fichiers.map((nom) => lireObjet<Item>("item", join(repertoire, nom)));
 }
 
 function lireEntrees(): Entrees {
   const table = analyserArguments(process.argv.slice(2));
-  const mesures = table.get("mesures");
-  return {
-    tirage: lireJson<Tirage>(obligatoire(table, "tirage", "le tirage gelé du run")),
-    questions: lireJson<readonly Question[]>(
-      obligatoire(table, "questions", "les questions publiées du run"),
+  const chemins = {
+    tirage: obligatoire(table, "tirage", "le tirage gelé du run"),
+    questions: obligatoire(table, "questions", "les questions publiées du run"),
+    items: obligatoire(table, "items", "le répertoire des items de référence, un fichier par item"),
+    mesures: obligatoire(
+      table,
+      "mesures",
+      "le référentiel des mesures, sans lequel l'invariant « item F ⇒ mesure fictive » n'est pas contrôlé",
     ),
-    items: lireJson<readonly Item[]>(obligatoire(table, "items", "les items de référence")),
-    // Sans référentiel de mesures, l'invariant « item F ⇒ mesure fictive » n'est pas
-    // vérifiable. Il est alors annoncé comme non contrôlé, jamais supposé vert et jamais
-    // rendu rouge par l'absence même du fichier.
-    mesures: mesures === undefined ? undefined : lireJson<readonly Mesure[]>(mesures),
-    run: lireJson<RunAuGel>(obligatoire(table, "run", "le périmètre et la date de gel du run")),
+    run: obligatoire(table, "run", "le périmètre et la date de gel du run"),
+  };
+  return {
+    tirage: lireObjet<Tirage>("tirage", chemins.tirage),
+    questions: lireTableau<Question>("question", chemins.questions),
+    items: lireRepertoireItems(chemins.items),
+    mesures: lireTableau<Mesure>("mesure", chemins.mesures),
+    run: lireObjet<RunAuGel>("run", chemins.run),
   };
 }
 
@@ -78,7 +119,6 @@ function violations(entrees: Entrees): readonly Violation[] {
   // §5 (protocole 0.3) : une prémisse fausse hors d'un item F ou O fausserait le dénominateur de
   // la confirmation de prémisse (§8). Les questions et les items suffisent à le vérifier.
   const premisses = premisseFausseSurItemFOuO(entrees.questions, entrees.items);
-  if (entrees.mesures === undefined) return [...grappes, ...premisses];
   return [
     ...grappes,
     ...premisses,
@@ -101,13 +141,8 @@ function imprimerSymetrie(symetrie: Symetrie): void {
   process.stdout.write(`  statut global : ${symetrie.statut_global}\n\n`);
 }
 
-function imprimerInvariants(liste: readonly Violation[], entrees: Entrees): void {
+function imprimerInvariants(liste: readonly Violation[]): void {
   process.stdout.write("Invariants inter-fichiers\n");
-  if (entrees.mesures === undefined) {
-    process.stdout.write(
-      "  non contrôlé : « un item F pointe une mesure fictive » — passer --mesures=<fichier>\n",
-    );
-  }
   if (liste.length === 0) {
     process.stdout.write("  aucune violation\n\n");
     return;
@@ -124,7 +159,7 @@ function principal(): void {
   const liste = violations(entrees);
 
   imprimerSymetrie(symetrie);
-  imprimerInvariants(liste, entrees);
+  imprimerInvariants(liste);
 
   if (symetrie.statut_global === "rouge" || liste.length > 0) {
     process.stderr.write("Le run ne peut pas être lancé : voir ci-dessus (§5).\n");

@@ -27,8 +27,8 @@ function appeler(contexte: Contexte, nom: string, params: readonly string[] = []
 beforeEach(() => {
   bac = creerBac();
   items = [
-    itemP({ id: "01JBANCESSAI0000000ITEM0A1", candidat_id: "demo-alpha" }),
-    itemP({ id: "01JBANCESSAI0000000ITEM0B2", candidat_id: "demo-beta" }),
+    itemP({ id: "01JBANCESSA100000001TEM0A1", candidat_id: "demo-alpha" }),
+    itemP({ id: "01JBANCESSA100000001TEM0B2", candidat_id: "demo-beta" }),
   ];
   for (const item of items) {
     bac.ecrireItem(item);
@@ -83,9 +83,28 @@ describe("porte d'entraînement (§4)", () => {
   });
 });
 
+/**
+ * Un item « contestee » porte au moins une contestation (`item.schema.json`) : sans elle, la
+ * lecture de `staging/` le refuse désormais comme non conforme.
+ */
+function contester(item: Item): Item {
+  return {
+    ...item,
+    statut_contestation: "contestee",
+    contestations: [
+      {
+        id: "01JBANCESSA1C0NTESTAT10N01",
+        date_reception: "2026-09-25T09:00:00+02:00",
+        texte: "Texte de contestation fictif.",
+        contestataire_type: "campagne",
+      },
+    ],
+  };
+}
+
 describe("item contesté (§4, droit de réponse)", () => {
   it("sort du lot dès l'affichage, et le retrait est journalisé une seule fois", () => {
-    const conteste = { ...(items[0] as Item), statut_contestation: "contestee" as const };
+    const conteste = contester(items[0] as Item);
     bac.ecrireItem(conteste);
     const contexte = bac.contexte("a1");
 
@@ -101,7 +120,7 @@ describe("item contesté (§4, droit de réponse)", () => {
   });
 
   it("refuse aussi la décision sur un item contesté", () => {
-    const conteste = { ...(items[0] as Item), statut_contestation: "contestee" as const };
+    const conteste = contester(items[0] as Item);
     bac.ecrireItem(conteste);
     const reponse = appeler(bac.contexte("a1"), "decision", [], {
       lot_id: "ent-001",
@@ -116,7 +135,7 @@ describe("item contesté (§4, droit de réponse)", () => {
   });
 
   it("l'item retiré sort du dénominateur du kappa, et n'est pas compté comme un désaccord", () => {
-    const conteste = { ...(items[0] as Item), statut_contestation: "contestee" as const };
+    const conteste = contester(items[0] as Item);
     bac.ecrireItem(conteste);
 
     // Les deux annotateurs décident l'item restant, et rencontrent l'item contesté.
