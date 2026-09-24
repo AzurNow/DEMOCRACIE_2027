@@ -132,6 +132,12 @@ la CI Linux était verte. Le même mécanisme aurait changé l'empreinte et déc
 texte de `staging/textes/`. Un projet qui hache des fichiers texte déclare `eol=lf`, et `-text` pour
 ce qui ne doit jamais être touché.
 
+**Traiter « fichier binaire » sur un source comme une alarme.** La revue du 2026-09-23 a trouvé le
+défaut le plus grave de la passe parce que `grep` refusait d'afficher `validation/domaine/alea.ts` :
+un NUL brut y sépare les composants de toutes les graines (tirage, bootstrap, lots). À l'écran il
+ressemblait à une espace ; pour Git, le fichier était binaire, donc ses diffs invisibles en PR. Aucun
+signal mesurable ne l'aurait relevé : il faut regarder ce que les outils refusent de montrer.
+
 **Écrire les caractères invisibles par échappement, puis vérifier les octets.** L'outil d'écriture
 de l'agent a transformé `́` en accent combinant brut, et un `\n` dans une chaîne TypeScript en
 vrai saut de ligne (erreur de compilation). Le test restait juste mais illisible : rien ne distingue
