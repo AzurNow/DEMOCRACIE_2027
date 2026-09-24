@@ -11,10 +11,14 @@
  *    ou une ligne modifiée à la main arrêtent l'interface avec un message précis. Ignorer une
  *    ligne illisible ferait disparaître une décision sans que personne ne le sache, dans le
  *    seul fichier qui prouve ce que les annotateurs ont fait.
+ *
+ * Chaque ligne lue, et chaque entrée avant son ajout, est confrontée à `decision.schema.json`.
+ * Une entrée non conforme n'est jamais écrite : le fichier reste inchangé, octet pour octet.
  */
 
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { valider } from "../../outils/schemas/valider.ts";
 import { empreinteCoherente } from "../domaine/decision.ts";
 import type { EntreeJournal } from "../domaine/types.ts";
 
@@ -82,8 +86,10 @@ export class JournalAnnotateur {
         `Entrée refusée : elle porte l'annotateur ${entree.annotateur_id}, ce journal est celui de ${this.#annotateur_id}.`,
       );
     }
+    const chemin = this.chemin(lot_id);
+    valider("decision", entree, `entrée à ajouter à ${chemin}`);
     mkdirSync(this.#repertoire, { recursive: true });
-    appendFileSync(this.chemin(lot_id), `${JSON.stringify(entree)}\n`, { encoding: "utf8", flag: "a" });
+    appendFileSync(chemin, `${JSON.stringify(entree)}\n`, { encoding: "utf8", flag: "a" });
   }
 
   /** Lots pour lesquels cet annotateur a déjà écrit au moins une entrée. */
@@ -106,7 +112,7 @@ function analyser(contenu: string, chemin: string): readonly EntreeJournal[] {
   const entrees: EntreeJournal[] = [];
   const lignes = contenu.slice(0, -1).split("\n");
   lignes.forEach((ligne, index) => {
-    const entree = JSON.parse(ligne) as EntreeJournal;
+    const entree = valider<EntreeJournal>("decision", JSON.parse(ligne), `${chemin}, ligne ${index + 1}`);
     if (!empreinteCoherente(entree)) throw new LigneAlteree(chemin, index + 1);
     entrees.push(entree);
   });

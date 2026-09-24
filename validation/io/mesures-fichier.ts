@@ -11,12 +11,16 @@
  *    malformée arrêtent la commande. Ignorer une ligne fautive ferait disparaître un arbitrage
  *    sans que personne ne le sache, et un item serait promu ou retenu sans raison traçable.
  *
+ * Chaque entrée est confrontée à `decision-mesure.schema.json`, à la lecture comme avant
+ * l'écriture, puis à `validerEntreeRegistre`, qui en construit la valeur typée.
+ *
  * Un fichier **absent** est en revanche un registre vide, et non une erreur : aucune décision
  * n'a encore été prise. C'est une absence, pas une donnée manquante.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { valider } from "../../outils/schemas/valider.ts";
 import {
   validerEntreeRegistre,
   type DecisionCorrectionMesure,
@@ -44,7 +48,11 @@ export function lireRegistre(repertoire: string): RegistreCorrectionsMesure {
   const chemin = cheminRegistre(repertoire);
   if (!existsSync(chemin)) return [];
   const brut = analyser(readFileSync(chemin, "utf8"), chemin);
-  return brut.map((valeur, index) => validerEntreeRegistre(valeur, `${chemin}, entrée ${index + 1}`));
+  return brut.map((valeur, index) => validerEntree(valeur, `${chemin}, entrée ${index + 1}`));
+}
+
+function validerEntree(valeur: unknown, provenance: string): DecisionCorrectionMesure {
+  return validerEntreeRegistre(valider("decision-mesure", valeur, provenance), provenance);
 }
 
 function analyser(contenu: string, chemin: string): readonly unknown[] {
@@ -69,7 +77,7 @@ export function ajouterAuRegistre(
   repertoire: string,
   entree: DecisionCorrectionMesure,
 ): RegistreCorrectionsMesure {
-  const validee = validerEntreeRegistre(entree, "décision à enregistrer");
+  const validee = validerEntree(entree, `décision à enregistrer dans ${cheminRegistre(repertoire)}`);
   const registre = [...lireRegistre(repertoire), validee];
   mkdirSync(repertoire, { recursive: true });
   writeFileSync(cheminRegistre(repertoire), `${JSON.stringify(registre, null, 2)}\n`, "utf8");

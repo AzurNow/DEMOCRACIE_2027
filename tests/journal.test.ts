@@ -24,9 +24,9 @@ let items: Item[];
 beforeEach(() => {
   bac = creerBac();
   items = [
-    itemP({ id: "01JBANCESSAI0000000ITEM0A1", candidat_id: "demo-alpha" }),
-    itemP({ id: "01JBANCESSAI0000000ITEM0B2", candidat_id: "demo-beta" }),
-    itemP({ id: "01JBANCESSAI0000000ITEM0C3", candidat_id: "demo-gamma" }),
+    itemP({ id: "01JBANCESSA100000001TEM0A1", candidat_id: "demo-alpha" }),
+    itemP({ id: "01JBANCESSA100000001TEM0B2", candidat_id: "demo-beta" }),
+    itemP({ id: "01JBANCESSA100000001TEM0C3", candidat_id: "demo-gamma" }),
   ];
   for (const item of items) bac.ecrireItem(item);
 });
@@ -57,7 +57,7 @@ describe("append-only", () => {
     journal.ajouter(
       "lot-001",
       construireAnnulation({
-        identifiant: "01JBANCESSAIANNULATION0001",
+        identifiant: "01JBANCESSA1ANNV1AT10N0001",
         annotateur_id: "a1",
         lot_id: "lot-001",
         lot_nature: "reel",
@@ -186,7 +186,7 @@ describe("reprise de session", () => {
     journal.ajouter(
       "lot-001",
       construireAnnulation({
-        identifiant: "01JBANCESSAIANNULATION0002",
+        identifiant: "01JBANCESSA1ANNV1AT10N0002",
         annotateur_id: "a1",
         lot_id: "lot-001",
         lot_nature: "reel",
@@ -210,7 +210,7 @@ describe("reprise de session", () => {
     journal.ajouter(
       "lot-001",
       construireRetrait({
-        identifiant: "01JBANCESSAIRETRAIT0000001",
+        identifiant: "01JBANCESSA1RETRA1T0000001",
         annotateur_id: "a1",
         lot_id: "lot-001",
         lot_nature: "reel",

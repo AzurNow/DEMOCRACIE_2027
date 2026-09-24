@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-09-23.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-09-24.
 
 ## Décisions en attente
 
@@ -11,6 +11,14 @@ Aucune décision en attente.
 ### D1 — Brancher une intégration continue GitHub Actions qui exécute `pnpm check` et `pnpm test` sur chaque PR ?
 
 **Décision du 2026-09-20 :** GitHub Actions sur chaque PR : `pnpm check` et `pnpm test`, un seul fichier de workflow, aucune dépendance npm. C'est la seule preuve publique que les tests bloquants du §5 le sont réellement.
+
+### D10 — Valider chaque donnée contre son JSON Schema à l'exécution, ce qui fait passer ajv dans les dépendances d'exécution ?
+
+**Décision du 2026-09-24 :** ajv et ajv-formats en dependencies (8.20.0, 3.0.1), valider(nom, valeur, provenance) sur le registre existant à chaque frontière qui a un schéma. Manifestes de lot et brouillons, sans schéma, restent hors champ.
+
+### D11 — pnpm symmetry peut-il sortir en succès sans avoir contrôlé l'invariant « item F ⇒ mesure fictive » ?
+
+**Décision du 2026-09-24 :** --mesures obligatoire, l'état « non contrôlé » disparaît ; --items désigne un répertoire, un fichier par item, lu en ordre de nom.
 
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 

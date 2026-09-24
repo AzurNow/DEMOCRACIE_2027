@@ -28,10 +28,12 @@
     "check:py": "uv run ruff check pipeline tests",
     "test:py": "uv run pytest"
   },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "ajv": "8.20.0",
-    "ajv-formats": "3.0.1",
     "eslint": "10.10.0",
     "eslint-plugin-sonarjs": "4.2.1",
     "typescript": "^5.7.2",

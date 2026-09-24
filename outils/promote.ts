@@ -9,6 +9,11 @@
  * La commande ne commite pas : elle imprime la commande de commit, avec la liste des
  * identifiants promus. C'est l'humain qui signe.
  *
+ * Chaque item à promouvoir est confronté à `item.schema.json` **après** application des
+ * corrections et **avant** toute écriture. Un seul item non conforme est nommé au rapport, avec
+ * les chemins fautifs, et bloque l'écriture comme un item introuvable : code de sortie non nul,
+ * rien n'est écrit dans `data/`.
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -28,6 +33,7 @@ import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
 import { chargerStaging, mesureDe, type Staging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
+import { erreurDeSchema, valider } from "./schemas/valider.ts";
 
 interface Options {
   readonly ecrire: boolean;
@@ -50,6 +56,13 @@ interface Verdict {
 interface Introuvable {
   readonly lot_id: string;
   readonly item_id: string;
+}
+
+/** Un item à promouvoir que ses corrections ont rendu non conforme à `item.schema.json`. */
+interface NonConforme {
+  readonly lot_id: string;
+  readonly item_id: string;
+  readonly erreur: string;
 }
 
 interface EvaluationLot {
@@ -154,6 +167,31 @@ function imprimerIntrouvables(introuvables: readonly Introuvable[]): void {
   process.stdout.write(`\nItems des lots introuvables dans staging : ${introuvables.length}\n`);
   for (const introuvable of introuvables) {
     process.stdout.write(`  ${introuvable.item_id}  [${introuvable.lot_id}]\n`);
+  }
+}
+
+function cheminDansData(item: Item, options: Options): string {
+  return join(options.data, `${item.id}.json`);
+}
+
+/** Les items que `--ecrire` écrirait, confrontés au schéma dans l'état exact où ils le seraient. */
+function nonConformes(verdicts: readonly Verdict[], options: Options): readonly NonConforme[] {
+  const trouves: NonConforme[] = [];
+  for (const verdict of verdicts) {
+    if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
+    const item = verdict.issue.item;
+    const erreur = erreurDeSchema("item", item, cheminDansData(item, options));
+    if (erreur !== null) trouves.push({ lot_id: verdict.lot_id, item_id: item.id, erreur: erreur.message });
+  }
+  return trouves;
+}
+
+function imprimerNonConformes(liste: readonly NonConforme[]): void {
+  if (liste.length === 0) return;
+  process.stdout.write(`\nItems à promouvoir non conformes au schéma : ${liste.length}\n`);
+  for (const nonConforme of liste) {
+    process.stdout.write(`  ${nonConforme.item_id}  [${nonConforme.lot_id}]\n`);
+    process.stdout.write(`${nonConforme.erreur.replace(/^/gm, "    ")}\n`);
   }
 }
 
@@ -267,7 +305,10 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
   for (const verdict of verdicts) {
     if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
     const item = verdict.issue.item;
-    writeFileSync(join(options.data, `${item.id}.json`), `${JSON.stringify(item, null, 2)}\n`, "utf8");
+    const chemin = cheminDansData(item, options);
+    // Dernière frontière avant `data/` : déjà contrôlé par `nonConformes`, revalidé ici pour
+    // qu'aucune écriture n'échappe au schéma, quel que soit le chemin qui y mène.
+    writeFileSync(chemin, `${JSON.stringify(valider<Item>("item", item, chemin), null, 2)}\n`, "utf8");
     promus.push(item.id);
   }
 
@@ -319,13 +360,24 @@ function principal(): void {
   const verdicts = evaluations.flatMap((evaluation) => evaluation.verdicts);
   const introuvables = evaluations.flatMap((evaluation) => evaluation.introuvables);
 
+  const fautifs = nonConformes(verdicts, options);
+
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
+  imprimerNonConformes(fautifs);
 
   if (introuvables.length > 0) {
     process.stderr.write(
       "\nDes items jugés sont introuvables dans staging/ : rien n'est écrit tant qu'ils ne sont pas\n" +
         "retrouvés ou retirés de leur lot.\n",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  if (fautifs.length > 0) {
+    process.stderr.write(
+      "\nDes items à promouvoir ne sont pas conformes à schema/item.schema.json : rien n'est écrit\n" +
+        "dans data/ tant que leurs corrections ne sont pas reprises.\n",
     );
     process.exitCode = 1;
     return;

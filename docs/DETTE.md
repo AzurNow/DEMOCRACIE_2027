@@ -13,6 +13,64 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-24 — Lot 3 de la revue : validation de schéma à l'exécution, barrière de symétrie complète (`outils/schemas/valider.ts`, `validation/io/`, `validation/serveur/routes.ts`, `outils/promote.ts`, `outils/symmetry.ts`)
+
+### 1. Une évolution de schéma sans migration des données arrête l'interface, la promotion et la barrière — *moyenne*
+
+`valider()` est désormais appelé à chaque lecture de `staging/items`, `staging/mesures`, des
+journaux et du registre des mesures. Un seul fichier non conforme interrompt le chargement entier
+(`chargerStaging`, `analyser()` du journal), y compris pour les items qui n'ont rien à voir.
+
+**Pourquoi ça casse.** Un amendement qui resserre `item.schema.json` ou `decision.schema.json`
+(un champ devenu obligatoire, une énumération réduite) rend illisibles des journaux append-only
+déjà écrits et publiés, qu'on n'a pas le droit de réécrire (`docs/CONTRATS.md` §4). L'interface
+ne démarre plus, `pnpm promote` et `pnpm symmetry` sortent en erreur. C'est bruyant, mais la
+réparation suppose une règle de versionnement des schémas qui n'existe pas.
+
+**Ce qu'il faut faire.** Avant tout amendement qui touche un schéma lu à l'exécution : décider
+(auteur) si les objets portent la version de schéma qui les a validés, ou si un amendement
+n'a le droit que d'élargir. Aucun code tant que le premier amendement de ce type n'est pas sur la table.
+
+### 2. `pnpm symmetry --mesures` attend un tableau JSON que rien ne produit — *moyenne*
+
+`--items` lit maintenant `data/items/`, un fichier par item. `--mesures` est obligatoire mais
+reste un tableau JSON, alors que `staging/mesures/` range un fichier par mesure et que `data/`
+n'a pas encore de mesures validées.
+
+**Pourquoi ça casse.** Au premier run, quelqu'un assemblera le tableau à la main pour franchir
+la barrière. Un tableau incomplet (une mesure oubliée) fait lever l'invariant « item F ⇒ mesure
+fictive » sur un item qui est pourtant correct, ou pire, un tableau assemblé depuis `staging/`
+contrôle des mesures non validées.
+
+**Ce qu'il faut faire.** Au lot qui fixera où vivent les mesures validées : lire ce répertoire
+comme pour les items, avec le même test « répertoire vide ⇒ code 1 ».
+
+### 3. Trois fabriques de test restent non conformes à leur schéma, faute d'avoir franchi une frontière — *basse*
+
+`tests/aides/fabriques.ts` : `itemO()` a une source T2 sans `extrait` ni
+`transcription_verifiee_*` ; `mesure({ fictive: true })` n'a ni `origine_fictive` ni
+`verification_fictivite`. `tests/questions/fabriques.ts` : les items « verifie » ont
+`validations: []` et `historique: []`, `mesure()` n'a pas d'historique.
+
+**Pourquoi ça casse.** Le premier test qui fera passer l'une d'elles par `valider()` échouera sur
+un champ sans rapport avec ce qu'il vise, et son auteur croira la règle fausse.
+
+**Ce qu'il faut faire.** Les rendre conformes dans le lot qui les fera passer par une frontière,
+avec un test « la fabrique produit un objet conforme » comme celui de `tests/symmetry-cli.test.ts`.
+
+### 4. Deux textes affirment que le registre des mesures n'a pas de validation de schéma — *basse*
+
+La `description` de `schema/decision-mesure.schema.json` dit que `validerEntreeRegistre()`
+« reste la frontière d'exécution », la docstring de `validation/domaine/corrections-mesure.ts`
+que « le registre n'a pas de JSON Schema ». Les deux sont faux depuis ce lot.
+
+**Pourquoi ça casse.** Un contributeur qui les croit retire l'appel à `valider()` comme redondant,
+ou ajoute une troisième garde.
+
+**Ce qu'il faut faire.** Corriger les deux textes au prochain lot qui touche ces fichiers.
+
+---
+
 ## 2026-09-23 — Lot collecte, sous-lot C2 : texte canonique PDF et HTML (`pipeline/collecte/textes/`, `pipeline/collecte/source.py`, `schema/extraction-texte.schema.json`, `docs/CONTRATS.md` §1, `.gitattributes`)
 
 ### 1. Plusieurs textes d'un même document coexistent sans règle qui désigne celui à extraire — *moyenne*
@@ -203,7 +261,7 @@ des deux listes.
 
 ## 2026-09-20 — Lot schemas-decision : `decision` et `decision-mesure` au registre, manifestes de lots validés (`schema/`, `outils/schemas/`, `validation/io/`)
 
-### 1. Le journal de validation est gardé par ses exemples, pas par le code qui l'écrit — *moyenne*
+### ~~1. Le journal de validation est gardé par ses exemples, pas par le code qui l'écrit~~ — réglé le 2026-09-24 par `valider("decision", …)` à la lecture et avant chaque ajout (lot 3 de la revue)
 
 `decision.schema.json` est au registre ajv avec six exemples, et `pnpm check` les vérifie. Ce qui
 manque est le lien entre le schéma et le code : `JournalAnnotateur.ajouter()` sérialise ce que le
@@ -240,7 +298,7 @@ jeter un lot dont la graine et la composition étaient la garantie de reproducti
 un second appelant que `pnpm lots` apparaît. Les fonctions existent déjà (`validerNature`,
 `validerReannotation`) : c'est un appel, pas un mécanisme.
 
-### 3. La moitié des identifiants de fixtures reste hors de l'alphabet Crockford — *basse*
+### ~~3. La moitié des identifiants de fixtures reste hors de l'alphabet Crockford~~ — réglé le 2026-09-24 par la mise en conformité des fabriques et des tests (lot 3 de la revue)
 
 Cette session a corrigé les identifiants de **mesure** des fabriques de test (`I` et `U`, hors
 Crockford base32) parce que le schéma neuf les refusait. Ceux des **items** portent le même défaut

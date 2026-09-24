@@ -42,8 +42,21 @@ export function source(surcharges: Partial<Source> = {}): Source {
   };
 }
 
+/**
+ * `mesure.schema.json` exige un historique, que le type `Mesure` de l'interface ne lit pas : la
+ * fabrique le porte pour que la mesure passe la validation de schéma à la lecture de `staging/`.
+ */
+const HISTORIQUE_MESURE = [
+  {
+    date: "2026-09-03T10:00:00+02:00",
+    changement: "création",
+    commit: "a".repeat(40),
+    version_resultante: 1,
+  },
+];
+
 export function mesure(surcharges: Partial<Mesure> = {}): Mesure {
-  const socle: Mesure = {
+  const socle = {
     id: "01JBANCESSA90000000MESVRE1",
     version: 1,
     empreinte: "3".repeat(64),
@@ -51,6 +64,7 @@ export function mesure(surcharges: Partial<Mesure> = {}): Mesure {
     theme: "fiscalite_pouvoir_achat",
     formulation_canonique: "ramener la TVA sur les produits énergétiques à 5,5 %",
     fictive: false,
+    historique: HISTORIQUE_MESURE,
     ...surcharges,
   };
   return socle;
@@ -58,7 +72,7 @@ export function mesure(surcharges: Partial<Mesure> = {}): Mesure {
 
 export function itemP(surcharges: Partial<Item> = {}): Item {
   const socle: Item = {
-    id: "01JBANCESSAI00000000ITEM01",
+    id: "01JBANCESSA1000000001TEM01",
     version: 1,
     empreinte: "0".repeat(64),
     type: "P",
@@ -95,7 +109,7 @@ export function itemA(surcharges: Partial<Item> = {}): Item {
   const { assertion: _ignore, ...sansAssertion } = itemP();
   const socle: Item = {
     ...sansAssertion,
-    id: "01JBANCESSAI00000000ITEM02",
+    id: "01JBANCESSA1000000001TEM02",
     type: "A",
     absence: {
       source_couverture_theme: source(),
@@ -112,7 +126,7 @@ export function itemO(surcharges: Partial<Item> = {}): Item {
   const { assertion: _ignore, ...sansAssertion } = itemP();
   const socle: Item = {
     ...sansAssertion,
-    id: "01JBANCESSAI00000000ITEM03",
+    id: "01JBANCESSA1000000001TEM03",
     type: "O",
     obsolescence: {
       date_changement: "2026-11-03",
@@ -139,7 +153,7 @@ export function itemF(surcharges: Partial<Item> = {}): Item {
   const { assertion: _ignore, ...sansAssertion } = itemP();
   const socle: Item = {
     ...sansAssertion,
-    id: "01JBANCESSAI00000000ITEM04",
+    id: "01JBANCESSA1000000001TEM04",
     type: "F",
     mesure_id: "01JBANCESSA90000000MESVRE2",
     ...surcharges,
@@ -197,7 +211,7 @@ function champsQuestionsSpecifiques(
 export function decision(options: OptionsDecision): EntreeDecision {
   compteur += 1;
   const socle = {
-    id: `01JBANCESSAIDECISION${String(compteur).padStart(6, "0")}`,
+    id: `01JBANCESSA1DEC1S10N${String(compteur).padStart(6, "0")}`,
     journal_version: 1,
     type_entree: "decision" as const,
     annotateur_id: options.annotateur_id,

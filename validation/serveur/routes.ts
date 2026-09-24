@@ -11,6 +11,7 @@
  * qui la tient de l'environnement.
  */
 
+import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { diagnostiquerLot } from "../domaine/analyse-lot.ts";
 import {
   construireAnnulation,
@@ -249,6 +250,12 @@ function enregistrerDecision(contexte: Contexte, _params: readonly string[], cor
     },
   );
   if (!construite.ok) return { statut: 422, corps: { ok: false, manquements: construite.manquements } };
+
+  // L'entrée que le corps de la requête va devenir, confrontée à son schéma avant tout ajout
+  // (revue du 2026-09-23, constat 2 : `decision: "approuver"` était écrit au journal, puis compté
+  // « non évaluable » dans le kappa). Non conforme : HTTP 400, rien n'est écrit.
+  const nonConforme = erreurDeSchema("decision", construite.entree, "requête POST /api/decisions");
+  if (nonConforme !== null) return { statut: 400, corps: { ok: false, erreur: nonConforme.message } };
 
   contexte.journal.ajouter(lot.lot_id, construite.entree);
   contexte.brouillons.effacer();
