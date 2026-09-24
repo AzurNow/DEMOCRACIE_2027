@@ -5,6 +5,8 @@ Cas limites 4, 5, 6, 11, 12, 13, et la redirection hors http(s).
 
 from __future__ import annotations
 
+from itertools import pairwise
+
 import pytest
 
 from pipeline.collecte.politesse import (
@@ -109,7 +111,7 @@ def test_deux_url_du_meme_hote_sont_espacees_d_au_moins_une_seconde(horloge: Hor
 
     instants = [instant for _url, instant, _en_tetes in transport.requetes]
     assert len(instants) == 3
-    assert all(suivant - precedent >= 1.0 for precedent, suivant in zip(instants, instants[1:]))
+    assert all(suivant - precedent >= 1.0 for precedent, suivant in pairwise(instants))
     assert horloge.sommeils == [1.0, 1.0]
 
 

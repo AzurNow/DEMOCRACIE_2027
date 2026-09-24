@@ -178,6 +178,8 @@ describe("texte canonique écrit par Python, relu par l'interface de validation"
   const texteSha = extraction["texte_sha256"] as string;
   const pages = extraction["pages"] as readonly { numero: number; debut: number; fin: number }[];
   const texte = lireTexteCanonique(racineDore, texteSha);
+  const pageDeux = pages[1];
+  if (pageDeux === undefined) throw new Error("extraction-pdf.json doit décrire deux pages");
 
   it("lireTexteCanonique le trouve sous son empreinte, qui est bien celle de ses octets", () => {
     if (texte === null) throw new Error(`textes/${texteSha}.txt absent`);
@@ -189,14 +191,14 @@ describe("texte canonique écrit par Python, relu par l'interface de validation"
     const points = Array.from(texte);
     expect(points.length).toBe(extraction["longueur"]);
     expect(texte.length).toBe(points.length + 1); // l'emoji compte double en UTF-16
-    expect(points.slice(pages[1]!.debut, pages[1]!.fin).join("")).toBe(`Page deux${SAUT_DE_LIGNE}`);
+    expect(points.slice(pageDeux.debut, pageDeux.fin).join("")).toBe(`Page deux${SAUT_DE_LIGNE}`);
   });
 
   it("testerVerbatim rend les offsets que Python a calculés", () => {
     if (texte === null) throw new Error("texte absent");
     const resultat = testerVerbatim("Page deux", texte);
     expect([resultat.offset_debut, resultat.offset_fin]).toEqual([40, 49]);
-    expect(pages[1]!.debut <= 40 && 49 <= pages[1]!.fin).toBe(true);
+    expect(pageDeux.debut <= 40 && 49 <= pageDeux.fin).toBe(true);
   });
 
   it("une ligature conservée par l'extraction fait échouer une citation retapée sans elle", () => {

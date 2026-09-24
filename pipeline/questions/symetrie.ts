@@ -31,7 +31,6 @@ import type {
   RunAuGel,
   StatutSymetrie,
   Symetrie,
-  Theme,
   Tirage,
 } from "./types.ts";
 import { REGISTRES } from "./types.ts";

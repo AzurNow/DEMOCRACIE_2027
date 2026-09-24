@@ -121,6 +121,7 @@ pnpm run:dry           # run complet en mode simulé, sans appel API
 pnpm run:live          # run réel — jamais lancé par un agent
 pnpm analyze           # métriques §8 sur un run existant
 pnpm build:site        # génération du site statique
+pnpm proprete          # signaux de propreté, matière de la revue de code (non bloquant)
 ```
 
 Avant de proposer un commit : `pnpm check && pnpm test` doivent passer. Tu les lances toi-même, tu
@@ -178,3 +179,7 @@ et tu m'as dit en deux lignes ce qui pourrait casser plus tard à cause de ce ch
 Une **session** est terminée quand, en plus, `docs/DETTE.md` et `LESSONS.md` sont à jour. La
 procédure exacte est dans la compétence `cloture-de-session` : invoque-la, ne l'improvise pas.
 Contributeurs humains : `.claude/skills/cloture-de-session/SKILL.md` se lit aussi à la main.
+
+De temps en temps, et avant un gros lot, une **revue de code** complète (robustesse, structure,
+lisibilité, tests, cohérence documentaire) : compétence `revue-de-code`, rapport daté dans
+`docs/revues/`. Elle ne corrige rien sans accord.

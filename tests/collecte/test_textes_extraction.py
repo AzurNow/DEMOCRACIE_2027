@@ -169,6 +169,7 @@ def test_refus_d_extraction_nomme_et_rien_ecrit(racine: Path, horloge: HorlogeFa
     [resultat] = extraire_tout(dependances(racine, horloge))
 
     assert isinstance(resultat, Refuse)
+    assert resultat.sha256_source == sha
     assert "aucun encodage déclaré" in resultat.motif
     assert not (racine / "staging" / "textes").exists()
 

@@ -146,6 +146,19 @@
       "recommandation": "Option 1 sur les trois points. Aucun ne bloque le 15 novembre, mais (1) doit être écrit avant qu'un annotateur ne quitte le projet en cours de campagne.",
       "retenu": "Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.",
       "date_decision": "2026-09-20"
+    },
+    {
+      "id": "D9",
+      "statut": "tranchee",
+      "question": "Durcir le lint au-delà des deux règles de complexité fixées le 2026-09-18 ?",
+      "contexte": "La revue de code reproductible (compétence revue-de-code, pnpm proprete) cherche à la main des défauts que des règles sans nouvelle dépendance attrapent seules : promesse oubliée, switch non exhaustif, conversion de type ou condition inutile, variable morte, any, assertion non nulle ; côté Python, nom inconnu, import mort et pièges du langage. Un essai sur le dépôt donnait 21 constats TypeScript et 2 Python, dont une promesse non gérée dans le client de validation.",
+      "options": [
+        "Ajouter des règles typées de typescript-eslint (déjà installé) et les familles F et B de ruff (déjà installé), en erreur, sans preset ni règle de style.",
+        "Garder les deux règles de complexité et laisser ces défauts à la revue manuelle."
+      ],
+      "recommandation": "Option 1 : aucune dépendance nouvelle, un coût d'adoption de 23 corrections, et des défauts attrapés à chaque PR plutôt qu'à chaque revue.",
+      "retenu": "Option 1 : typescript-eslint typé (no-unused-vars, no-floating-promises, no-misused-promises, await-thenable, only-throw-error, switch-exhaustiveness-check, no-unnecessary-type-assertion, no-unnecessary-condition, no-explicit-any, no-non-null-assertion, eqeqeq, no-fallthrough) et ruff C901, F, B. Toujours aucune règle de style.",
+      "date_decision": "2026-09-23"
     }
   ],
   "lots": [
@@ -209,8 +222,10 @@
       "taille": "M",
       "temps_auteur_h": 0.5,
       "depend_de": [],
-      "decisions": [],
-      "note": "Livré le 2026-09-18 : ajv sur les exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. decision.schema.json enregistré le 2026-09-20. Reste : catégoriser les avertissements ajv strict (DETTE 2026-09-18, point 4)."
+      "decisions": [
+        "D9"
+      ],
+      "note": "Livré le 2026-09-18 : ajv sur les exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. decision.schema.json enregistré le 2026-09-20. Reste : catégoriser les avertissements ajv strict (DETTE 2026-09-18, point 4). Le 2026-09-23 (D9) : lint durci (typescript-eslint typé, ruff F et B), pnpm proprete et compétence revue-de-code pour une revue reproductible, rapports dans docs/revues/."
     },
     {
       "id": "ci",

@@ -1,7 +1,7 @@
 /**
- * Cas limites de la configuration ESLint à deux règles : un test par seuil, sur du code construit en
- * mémoire et vérifié par l'API Linter, jamais par un processus. La configuration est redéclarée ici
- * à l'identique de `eslint.config.js` (voir docs/DETTE.md).
+ * Cas limites des deux règles de complexité : un test par seuil, sur du code construit en mémoire
+ * et vérifié par l'API Linter, jamais par un processus. Ces deux règles sont redéclarées ici à
+ * l'identique de `eslint.config.js`, sans les règles typées (D9), qui exigent un projet TypeScript.
  */
 
 import { Linter } from "eslint";

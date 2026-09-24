@@ -21,5 +21,5 @@ export function tenterValidationIsolee(nom: NomSchema, racineSchema: string): vo
   if (validateur === undefined) {
     throw new Error(`schéma "${nom}" non enregistré après addSchema : ne devrait pas arriver.`);
   }
-  validateur({});
+  void validateur({});
 }

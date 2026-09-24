@@ -202,7 +202,7 @@ export function decision(options: OptionsDecision): EntreeDecision {
     type_entree: "decision" as const,
     annotateur_id: options.annotateur_id,
     lot_id: avecDefaut(options.lot_id, "lot-001"),
-    lot_nature: avecDefaut(options.lot_nature, "reel" as NatureLot),
+    lot_nature: avecDefaut(options.lot_nature, "reel"),
     item_id: options.item.id,
     item_version: avecDefaut(options.item_version, options.item.version),
     item_empreinte: avecDefaut(options.item_empreinte, options.item.empreinte),

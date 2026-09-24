@@ -40,6 +40,10 @@ Aucune décision en attente.
 
 **Décision du 2026-09-20 :** Option 1 sur les trois points : héritage des annotateurs gardé, une autre paire supposerait un amendement au §4 disant quel kappa compte ; clé du registre élargie seulement si le §4 ouvre un jour la correction d'autre chose que le thème ; conventions d'identifiant de réannotation et de date par défaut entérinées dans schema/README.md.
 
+### D9 — Durcir le lint au-delà des deux règles de complexité fixées le 2026-09-18 ?
+
+**Décision du 2026-09-23 :** Option 1 : typescript-eslint typé (no-unused-vars, no-floating-promises, no-misused-promises, await-thenable, only-throw-error, switch-exhaustiveness-check, no-unnecessary-type-assertion, no-unnecessary-condition, no-explicit-any, no-non-null-assertion, eqeqeq, no-fallthrough) et ruff C901, F, B. Toujours aucune règle de style.
+
 ## Arbre
 
 Légende : couleur par niveau de preuve — T0 gris, T1 ambre, T2 bleu, T3 vert, T4 bleu foncé ; une décision en attente est un hexagone rouge. Arête pleine (`-->`) = dépendance bloquante ; arête pointillée (`-.->`) = dépendance informative seulement.

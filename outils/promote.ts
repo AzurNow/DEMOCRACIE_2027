@@ -19,7 +19,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
 import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
-import { rejouer, type EtatAnnotateur } from "../validation/domaine/journal.ts";
+import type { EtatAnnotateur } from "../validation/domaine/journal.ts";
 import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
 import { evaluerPromotion, type Issue } from "../validation/domaine/promotion.ts";
 import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
