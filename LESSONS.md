@@ -238,6 +238,13 @@ tests mêlant les deux ; le premier commit, pris seul, ne compilait pas. Il a fa
 rejouer chaque commit dans un répertoire propre. Le brief disait « garde les deux travaux
 séparables » ; il fallait dire quels fichiers.
 
+**Rebasculer soi-même la base d'une pile de PR avant de dire de fusionner.** Le 2026-09-24, les
+PR #13 à #16 étaient empilées, chacune visant la branche de la précédente. Fusionnées dans l'ordre
+sans supprimer les branches, #14, #15 et #16 ont atterri dans leur branche parente : `main` n'a reçu
+que #13, et il a fallu une PR de rattrapage (#17). GitHub ne rebascule une PR vers `main` que si sa
+base est supprimée. Avant de donner l'ordre de fusion : `gh pr edit <n> --base main` sur chaque PR
+de la pile, ou une seule PR depuis le sommet.
+
 **`eslint .` parcourt les worktrees des sous-agents.** Ils vivent sous `.claude/worktrees/`, à
 l'intérieur du dépôt, et ESLint y a signalé quatre fonctions déjà découpées, en double, depuis des
 copies périmées. Le répertoire est désormais ignoré par ESLint et par Git ; la surprise aurait été

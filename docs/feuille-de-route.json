@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-09-23",
+  "date_maj": "2026-09-24",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -159,6 +159,33 @@
       "recommandation": "Option 1 : aucune dépendance nouvelle, un coût d'adoption de 23 corrections, et des défauts attrapés à chaque PR plutôt qu'à chaque revue.",
       "retenu": "Option 1 : typescript-eslint typé (no-unused-vars, no-floating-promises, no-misused-promises, await-thenable, only-throw-error, switch-exhaustiveness-check, no-unnecessary-type-assertion, no-unnecessary-condition, no-explicit-any, no-non-null-assertion, eqeqeq, no-fallthrough) et ruff C901, F, B. Toujours aucune règle de style.",
       "date_decision": "2026-09-23"
+    },
+    {
+      "id": "D10",
+      "statut": "tranchee",
+      "question": "Valider chaque donnée contre son JSON Schema à l'exécution, ce qui fait passer ajv dans les dépendances d'exécution ?",
+      "contexte": "Revue du 2026-09-23, constat 2 : staging, journal, requêtes de l'interface, entrées de pnpm symmetry et item écrit dans data/ par pnpm promote étaient lus par JSON.parse(...) as T. Une décision « approuver » était acceptée et comptée « non évaluable » dans le kappa publié.",
+      "options": [
+        "ajv et ajv-formats en dependencies, mêmes versions, une seule fonction valider() à chaque frontière.",
+        "Valider seulement l'item écrit dans data/.",
+        "Gardes TypeScript écrites à la main, sans ajv à l'exécution."
+      ],
+      "recommandation": "Option 1 : aucune bibliothèque nouvelle, et c'est ce que CLAUDE.md exige déjà.",
+      "retenu": "ajv et ajv-formats en dependencies (8.20.0, 3.0.1), valider(nom, valeur, provenance) sur le registre existant à chaque frontière qui a un schéma. Manifestes de lot et brouillons, sans schéma, restent hors champ.",
+      "date_decision": "2026-09-24"
+    },
+    {
+      "id": "D11",
+      "statut": "tranchee",
+      "question": "pnpm symmetry peut-il sortir en succès sans avoir contrôlé l'invariant « item F ⇒ mesure fictive » ?",
+      "contexte": "Revue du 2026-09-23, constat 9 : sans --mesures, l'invariant était annoncé « non contrôlé » et la barrière pouvait sortir à 0. La règle 4 interdit qu'un test de symétrie se saute. --items attendait un tableau que rien ne produit.",
+      "options": [
+        "--mesures obligatoire ; --items lit data/items/ directement.",
+        "L'invariant n'est pas un test de symétrie et sort de la barrière."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "--mesures obligatoire, l'état « non contrôlé » disparaît ; --items désigne un répertoire, un fichier par item, lu en ordre de nom.",
+      "date_decision": "2026-09-24"
     }
   ],
   "lots": [
@@ -223,9 +250,10 @@
       "temps_auteur_h": 0.5,
       "depend_de": [],
       "decisions": [
+        "D10",
         "D9"
       ],
-      "note": "Livré le 2026-09-18 : ajv sur les exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. decision.schema.json enregistré le 2026-09-20. Reste : catégoriser les avertissements ajv strict (DETTE 2026-09-18, point 4). Le 2026-09-23 (D9) : lint durci (typescript-eslint typé, ruff F et B), pnpm proprete et compétence revue-de-code pour une revue reproductible, rapports dans docs/revues/."
+      "note": "Livré le 2026-09-18 : ajv sur les exemples, ESLint à deux règles, pnpm check complet. Aucune fonction de mesure ne dépassait les seuils. decision.schema.json enregistré le 2026-09-20. Reste : catégoriser les avertissements ajv strict (DETTE 2026-09-18, point 4). Le 2026-09-23 (D9) : lint durci (typescript-eslint typé, ruff F et B), pnpm proprete et compétence revue-de-code pour une revue reproductible, rapports dans docs/revues/. Le 2026-09-24 (D10) : validation de schéma à l'exécution à chaque frontière, outils/schemas/valider.ts."
     },
     {
       "id": "ci",
@@ -316,9 +344,10 @@
       "temps_auteur_h": 2,
       "depend_de": [],
       "decisions": [
+        "D11",
         "D7"
       ],
-      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote."
+      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire."
     },
     {
       "id": "interrogation",
