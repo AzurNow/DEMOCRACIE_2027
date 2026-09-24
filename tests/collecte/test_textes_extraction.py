@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 from pipeline.collecte.textes.extraction import (
-    AttendC3,
     DejaExtrait,
     Extrait,
     Refuse,
@@ -100,17 +100,97 @@ def test_texte_present_sans_fiche_la_fiche_est_ajoutee(racine: Path, horloge: Ho
     assert extraire_tout(dependances(racine, horloge)) == [Extrait(sha, SHA_TEXTE_HTML, "html.parser")]
 
 
-def test_audio_et_video_attendent_c3_sans_echec(racine: Path, horloge: HorlogeFactice) -> None:
+def _transcription(racine: Path, sha: str, vtt: bytes, vtt_sha256: str | None = None) -> None:
+    """`.vtt` et fiche de transcription tels que `pnpm transcriptions` les laisse (champs utiles seuls)."""
+    repertoire = racine / "staging" / "transcriptions"
+    repertoire.mkdir(parents=True, exist_ok=True)
+    (repertoire / f"{sha}.vtt").write_bytes(vtt)
+    empreinte = vtt_sha256 if vtt_sha256 is not None else hashlib.sha256(vtt).hexdigest()
+    (repertoire / f"{sha}.json").write_text(json.dumps({"sha256_source": sha, "vtt_sha256": empreinte}), "utf-8")
+
+
+VTT = "WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nPremière phrase.\n\n01:00:01.500 --> 01:00:03.000\ne\N{COMBINING ACUTE ACCENT}te\N{COMBINING ACUTE ACCENT}\n".encode()
+TEXTE_VTT = "Première phrase.\n\N{LATIN SMALL LETTER E WITH ACUTE}t\N{LATIN SMALL LETTER E WITH ACUTE}"
+SHA_TEXTE_VTT = hashlib.sha256(TEXTE_VTT.encode()).hexdigest()
+
+
+def test_audio_et_video_texte_derive_du_vtt(racine: Path, horloge: HorlogeFactice) -> None:
+    """Cas limite 10 de C3 : la branche audio/vidéo produit le texte dérivé quand le `.vtt` existe."""
     sha_audio = deposer(racine, b"ID3 audio", "audio/mpeg")
     sha_video = deposer(racine, b"\x00\x00video", "video/mp4")
+    for sha in (sha_audio, sha_video):
+        _transcription(racine, sha, VTT)
 
     resultats = extraire_tout(dependances(racine, horloge))
 
     assert sorted(resultats, key=lambda r: r.sha256_source) == sorted(
-        [AttendC3(sha_audio, "audio/mpeg"), AttendC3(sha_video, "video/mp4")], key=lambda r: r.sha256_source
+        [Extrait(sha_audio, SHA_TEXTE_VTT, "webvtt"), Extrait(sha_video, SHA_TEXTE_VTT, "webvtt")],
+        key=lambda r: r.sha256_source,
     )
+    assert texte_ecrit(racine, SHA_TEXTE_VTT) == TEXTE_VTT.encode()
+    assert fiche_extraction(racine, sha_audio, SHA_TEXTE_VTT) == {
+        "sha256_source": sha_audio,
+        "texte_sha256": SHA_TEXTE_VTT,
+        "longueur": len(TEXTE_VTT),
+        "date_extraction": "2026-09-22T14:30:05+02:00",
+        "extracteur": {"outil": "webvtt", "version": VERSION_PYTHON_FIGEE, "options": {"regle": "vtt-1"}},
+        "vtt_sha256": hashlib.sha256(VTT).hexdigest(),
+    }
     assert code_de_sortie(resultats) == 0
+
+
+def test_audio_sans_vtt_erreur_nommee_jamais_un_succes(racine: Path, horloge: HorlogeFactice) -> None:
+    """Cas limite 10 de C3 : sans transcription, la branche refuse au lieu d'attendre en silence."""
+    sha = deposer(racine, b"ID3 audio", "audio/mpeg")
+
+    resultats = extraire_tout(dependances(racine, horloge))
+
+    assert resultats == [
+        Refuse(sha, f"transcription absente : staging/transcriptions/{sha}.vtt (lancer pnpm transcriptions)")
+    ]
+    assert code_de_sortie(resultats) == 1
     assert not (racine / "staging" / "textes").exists()
+
+
+def test_vtt_sans_fiche_de_transcription_refus(racine: Path, horloge: HorlogeFactice) -> None:
+    sha = deposer(racine, b"ID3 audio", "audio/mpeg")
+    _transcription(racine, sha, VTT)
+    (racine / "staging" / "transcriptions" / f"{sha}.json").unlink()
+
+    assert extraire_tout(dependances(racine, horloge)) == [
+        Refuse(sha, f"transcription sans fiche : staging/transcriptions/{sha}.json absente")
+    ]
+
+
+def test_vtt_altere_depuis_sa_fiche_refus(racine: Path, horloge: HorlogeFactice) -> None:
+    sha = deposer(racine, b"ID3 audio", "audio/mpeg")
+    _transcription(racine, sha, VTT, vtt_sha256="0" * 64)
+
+    [resultat] = extraire_tout(dependances(racine, horloge))
+
+    assert isinstance(resultat, Refuse)
+    assert resultat.motif.startswith(f"transcription altérée : staging/transcriptions/{sha}.vtt")
+    assert not (racine / "staging" / "textes").exists()
+
+
+def test_vtt_illisible_refus_nomme(racine: Path, horloge: HorlogeFactice) -> None:
+    sha = deposer(racine, b"ID3 audio", "audio/mpeg")
+    _transcription(racine, sha, b"WEBVTT\n\n00:00:00.000 --> 00:00:01.000\n<v A>Bonjour\n")
+
+    [resultat] = extraire_tout(dependances(racine, horloge))
+
+    assert isinstance(resultat, Refuse)
+    assert resultat.motif.startswith("transcription illisible : balise ou entité")
+
+
+def test_vtt_non_utf8_refus_nomme(racine: Path, horloge: HorlogeFactice) -> None:
+    sha = deposer(racine, b"ID3 audio", "audio/mpeg")
+    _transcription(racine, sha, b"WEBVTT\n\n00:00:00.000 --> 00:00:01.000\n\xe9t\xe9\n")
+
+    [resultat] = extraire_tout(dependances(racine, horloge))
+
+    assert isinstance(resultat, Refuse)
+    assert resultat.motif.startswith("transcription illisible : octet non UTF-8")
 
 
 def test_sans_content_type_refus_jamais_devine(racine: Path, horloge: HorlogeFactice) -> None:
@@ -204,11 +284,10 @@ def test_rapport_une_ligne_par_contenu_et_bilan() -> None:
         [
             Extrait("a" * 64, "b" * 64, "pymupdf"),
             DejaExtrait("c" * 64, "d" * 64),
-            AttendC3("e" * 64, "audio/mpeg"),
             Refuse("f" * 64, "PDF sans couche texte"),
         ]
     )
     lignes = rapport.splitlines()
     assert lignes[0] == f"extrait         {'a' * 64}  → {'b' * 64} (pymupdf)"
-    assert lignes[3] == f"REFUSÉ          {'f' * 64}  PDF sans couche texte"
-    assert lignes[-1] == "bilan : 1 extrait(s), 1 déjà extrait(s), 1 en attente de C3, 1 refusé(s)"
+    assert lignes[2] == f"REFUSÉ          {'f' * 64}  PDF sans couche texte"
+    assert lignes[-1] == "bilan : 1 extrait(s), 1 déjà extrait(s), 1 refusé(s)"

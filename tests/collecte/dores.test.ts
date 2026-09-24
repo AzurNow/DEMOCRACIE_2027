@@ -21,7 +21,8 @@ import { construireRegistre } from "../../outils/schemas/registre.ts";
 import { urnSchema } from "../../outils/schemas/noms.ts";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
-import { lireTexteCanonique } from "../../validation/io/staging.ts";
+import { analyserVtt, horodatageDebut } from "../../validation/domaine/webvtt.ts";
+import { lireTexteCanonique, lireTranscription } from "../../validation/io/staging.ts";
 
 const racineSchema = resolve(import.meta.dirname, "../../schema");
 const racineExemples = resolve(racineSchema, "exemples");
@@ -42,9 +43,21 @@ const PAIRES: readonly Paire[] = [
   { dore: "reprise-archivage.json", schema: "reprise-archivage", exemple: "reprise-archivage/valide-01-reprise-reussie.json" },
   { dore: "extraction-pdf.json", schema: "extraction-texte", exemple: "extraction-texte/valide-01-pdf.json" },
   { dore: "extraction-html.json", schema: "extraction-texte", exemple: "extraction-texte/valide-02-html.json" },
+  { dore: "manifeste-video.json", schema: "collecte", exemple: "collecte/valide-03-video-yt-dlp.json" },
+  { dore: "manifeste-audio.json", schema: "collecte", exemple: "collecte/valide-04-audio-yt-dlp.json" },
+  { dore: "fiche-video.json", schema: "fiche-source", exemple: "fiche-source/valide-03-enregistrement-video.json" },
+  { dore: "fiche-audio.json", schema: "fiche-source", exemple: "fiche-source/valide-04-enregistrement-audio.json" },
+  { dore: "extraction-vtt.json", schema: "extraction-texte", exemple: "extraction-texte/valide-03-webvtt.json" },
+  { dore: "transcription.json", schema: "transcription", exemple: "transcription/valide-01-video.json" },
 ];
 
-const OBJETS_COLLECTE: readonly NomSchema[] = ["collecte", "fiche-source", "reprise-archivage", "extraction-texte"];
+const OBJETS_COLLECTE: readonly NomSchema[] = [
+  "collecte",
+  "fiche-source",
+  "reprise-archivage",
+  "extraction-texte",
+  "transcription",
+];
 
 /** Paires dont l'exemple n'est pas identique octet pour octet au fichier doré. */
 function divergences(paires: readonly Paire[], dore: string, exemples: string): readonly string[] {
@@ -84,7 +97,7 @@ describe("fichiers dorés produits par pipeline/collecte", () => {
     expect(surDisque).toEqual(PAIRES.map((paire) => paire.dore).sort());
   });
 
-  it("chaque exemple valide de collecte, fiche-source, reprise-archivage et extraction-texte a son fichier doré", () => {
+  it("chaque exemple valide de collecte, fiche-source, reprise-archivage, extraction-texte et transcription a son fichier doré", () => {
     const manifeste = chargerManifeste(resolve(racineExemples, "manifeste.json"));
     const valides = manifeste.exemples
       .filter((entree) => entree.attendu === "valide" && (OBJETS_COLLECTE as readonly string[]).includes(entree.objet))
@@ -137,6 +150,14 @@ describe("exemples invalides de la collecte : une seule raison chacun", () => {
     { schema: "reprise-archivage", fichier: "reprise-archivage/invalide-01-lien-non-date.json", chemin: "/archive_url", motCle: "pattern" },
     { schema: "extraction-texte", fichier: "extraction-texte/invalide-01-pdf-avec-encodage.json", chemin: "", motCle: "not" },
     { schema: "extraction-texte", fichier: "extraction-texte/invalide-02-html-sans-encodage.json", chemin: "", motCle: "required" },
+    { schema: "extraction-texte", fichier: "extraction-texte/invalide-03-webvtt-sans-vtt-sha256.json", chemin: "", motCle: "required" },
+    {
+      schema: "transcription",
+      fichier: "transcription/invalide-01-temperature-non-nulle.json",
+      chemin: "/parametres/decodage/temperature",
+      motCle: "const",
+    },
+    { schema: "transcription", fichier: "transcription/invalide-02-revision-non-epinglee.json", chemin: "/modele/revision", motCle: "pattern" },
   ];
 
   for (const attendue of ATTENDUES) {
@@ -205,5 +226,40 @@ describe("texte canonique écrit par Python, relu par l'interface de validation"
     if (texte === null) throw new Error("texte absent");
     expect(testerVerbatim("financement", texte).passe).toBe(false);
     expect(testerVerbatim(`${LIGATURE_FI}nancement`, texte).offset_debut).toBe(12);
+  });
+});
+
+describe("transcription écrite par Python, relue par l'interface de validation (C3)", () => {
+  const transcription = lireDore("transcription.json");
+  const extraction = lireDore("extraction-vtt.json");
+  const shaSource = transcription["sha256_source"] as string;
+  const vtt = lireTranscription(racineDore, shaSource);
+  const texte = lireTexteCanonique(racineDore, extraction["texte_sha256"] as string);
+
+  it("lireTranscription trouve le .vtt sous l'empreinte du média, et ses octets sont ceux que les fiches nomment", () => {
+    if (vtt === null) throw new Error(`transcriptions/${shaSource}.vtt absent`);
+    const empreinte = createHash("sha256")
+      .update(readFileSync(resolve(racineDore, "transcriptions", `${shaSource}.vtt`)))
+      .digest("hex");
+    expect(empreinte).toBe(transcription["vtt_sha256"]);
+    expect(empreinte).toBe(extraction["vtt_sha256"]);
+    expect(extraction["sha256_source"]).toBe(shaSource);
+  });
+
+  it("le texte que TypeScript dérive du .vtt est, au point de code près, celui que Python a écrit", () => {
+    if (vtt === null || texte === null) throw new Error("transcription ou texte absent");
+    const document = analyserVtt(vtt);
+    expect(document.texte).toBe(texte);
+    expect(Array.from(texte).length).toBe(extraction["longueur"]);
+    expect(document.cues).toHaveLength(transcription["cues"] as number);
+  });
+
+  it("un offset du texte dérivé retombe sur l'horodatage de son cue, frontière comprise (NFD, emoji)", () => {
+    if (vtt === null) throw new Error("transcription absente");
+    const document = analyserVtt(vtt);
+    expect(horodatageDebut(document, 0)).toBeCloseTo(3598.24, 6);
+    expect(horodatageDebut(document, 29)).toBeCloseTo(3598.24, 6); // saut de ligne de jonction
+    expect(horodatageDebut(document, 30)).toBe(3602); // « Seconde », mêmes offsets qu'en Python
+    expect(horodatageDebut(document, 47)).toBe(3602); // « fin. », après l'emoji
   });
 });

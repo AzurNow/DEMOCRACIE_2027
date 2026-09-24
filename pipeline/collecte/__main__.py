@@ -1,8 +1,9 @@
 """`uv run python -m pipeline.collecte config/sources.toml` (ou `pnpm collecte config/sources.toml`).
 
-Codes de sortie : 0 si chaque source est collectée, déjà collectée, rattachée par une fiche à un
+Les sources `enregistrement_audio` et `enregistrement_video` sont téléchargées par yt-dlp
+(`media.py`), toutes les autres par HTTP. Codes de sortie : 0 si chaque source est collectée, déjà collectée, rattachée par une fiche à un
 contenu déjà archivé, ou si son archivage a été repris ; 1 si au moins une source a échoué (HTTP,
-robots.txt, réseau, réponse vide) ou n'a pas pu être sauvegardée sur la Wayback Machine, à la
+robots.txt, réseau, réponse vide, yt-dlp) ou n'a pas pu être sauvegardée sur la Wayback Machine, à la
 première collecte comme à la reprise ; 2 si la liste des sources est refusée, auquel cas rien n'a
 été téléchargé.
 """
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from pipeline.collecte.collecte import Dependances, code_de_sortie, collecter, formater_rapport
 from pipeline.collecte.horloge import HorlogeSysteme
+from pipeline.collecte.media import YtDlp, telechargeurs_media
 from pipeline.collecte.politesse import Cadence, ClientPoli
 from pipeline.collecte.reseau import TransportUrllib
 from pipeline.collecte.sources import RACINE_DEPOT, ListeSourcesInvalide, lire_sources
@@ -29,11 +31,13 @@ CODE_LISTE_REFUSEE = 2
 def dependances_reelles(racine: Path) -> Dependances:
     horloge = HorlogeSysteme()
     cadence = Cadence(horloge)
+    client = ClientPoli(TransportUrllib(delai_s=DELAI_SOURCES_S), cadence)
     return Dependances(
-        client=ClientPoli(TransportUrllib(delai_s=DELAI_SOURCES_S), cadence),
+        client=client,
         archiveur=ArchiveurWayback(TransportUrllib(delai_s=DELAI_WAYBACK_S), cadence, horloge),
         horloge=horloge,
         racine=racine,
+        medias=telechargeurs_media(client, YtDlp(), racine),
     )
 
 

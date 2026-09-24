@@ -1,7 +1,8 @@
 /**
- * Les dix-sept schémas de `schema/` (voir `schema/README.md`, « Les dix-sept fichiers » : douze avec
+ * Les dix-huit schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
  * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
- * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`).
+ * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`, dix-huit avec
+ * `transcription`).
  * Nommés une seule fois
  * ici : tout le reste du module en dérive, jamais d'un `if` par nom.
  *
@@ -23,6 +24,9 @@
  *
  * `extraction-texte` décrit la fiche d'extraction écrite par `pipeline/collecte/textes` (sous-lot C2,
  * `docs/CONTRATS.md` §1.1), vérifiée de la même façon.
+ *
+ * `transcription` décrit la fiche de transcription écrite par `pipeline/collecte/transcription`
+ * (sous-lot C3, `docs/CONTRATS.md` §2.2), vérifiée de la même façon.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -42,6 +46,7 @@ export const NOMS_SCHEMAS = [
   "fiche-source",
   "reprise-archivage",
   "extraction-texte",
+  "transcription",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

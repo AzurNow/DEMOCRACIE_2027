@@ -1,0 +1,9 @@
+{
+  "sha256": "7fb77c7c3c27116dce6df8430f0b7832a506b6a9ced83554a06a7027a5a9c3ff",
+  "chemin_local": "archives/7f/7fb77c7c3c27116dce6df8430f0b7832a506b6a9ced83554a06a7027a5a9c3ff.m4a",
+  "taille_octets": 25,
+  "type_contenu_recu": "audio/mp4",
+  "date_premiere_collecte": "2026-09-22T14:30:05+02:00",
+  "url_soumise": "https://example.org/radio/entretien",
+  "archive_url": "https://web.archive.org/web/20260922123007/https://example.org/radio/entretien"
+}

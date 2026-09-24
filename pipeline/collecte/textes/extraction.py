@@ -2,7 +2,9 @@
 
 Pour chaque manifeste `staging/sources/<sha256>.json` : le type se lit dans `type_contenu_recu`
 (`docs/CONTRATS.md` §1.4), la copie locale est relue et son empreinte revérifiée, l'extracteur du
-type rend un texte, puis le texte et sa fiche sont écrits s'ils manquent. Un refus n'arrête pas le
+type rend un texte, puis le texte et sa fiche sont écrits s'ils manquent. Un contenu audio ou vidéo
+n'a pas d'extracteur propre : son texte est dérivé de sa transcription (sous-lot C3,
+`docs/CONTRATS.md` §2), dont l'empreinte est revérifiée contre sa fiche ; sans transcription, refus. Un refus n'arrête pas le
 lot : il est nommé dans le rapport et rend le code de sortie non nul. Rien n'est jamais réécrit.
 """
 
@@ -18,18 +20,20 @@ from pipeline.collecte.horloge import Horloge, instant_iso
 from pipeline.collecte.manifeste import REPERTOIRE_MANIFESTES, serialiser
 from pipeline.collecte.textes.fiche import Extraction, chemin_fiche_extraction, chemin_texte, construire_fiche_extraction
 from pipeline.collecte.textes.refus import ExtractionRefusee
+from pipeline.collecte.transcription.fiche import chemin_fiche_transcription, chemin_vtt, est_media
 
 ExtracteurPdf = Callable[[bytes], Extraction]
 ExtracteurHtml = Callable[[bytes, str | None], Extraction]
+ExtracteurVtt = Callable[[bytes], Extraction]
 
 GENRE_PDF = "pdf"
 GENRE_HTML = "html"
+GENRE_TRANSCRIPTION = "transcription"
 GENRES: dict[str, str] = {
     "application/pdf": GENRE_PDF,
     "text/html": GENRE_HTML,
     "application/xhtml+xml": GENRE_HTML,
 }
-PREFIXES_C3 = ("audio/", "video/")
 
 
 @dataclass(frozen=True)
@@ -38,6 +42,7 @@ class Dependances:
     horloge: Horloge
     extraire_pdf: ExtracteurPdf
     extraire_html: ExtracteurHtml
+    extraire_vtt: ExtracteurVtt
 
 
 @dataclass(frozen=True)
@@ -56,21 +61,13 @@ class DejaExtrait:
 
 
 @dataclass(frozen=True)
-class AttendC3:
-    """Audio ou vidéo : le texte sera dérivé de la transcription (sous-lot C3). Pas un échec."""
-
-    sha256_source: str
-    type_contenu: str
-
-
-@dataclass(frozen=True)
 class Refuse:
     sha256_source: str
     motif: str
 
 
-ResultatTexte = Extrait | DejaExtrait | AttendC3 | Refuse
-REUSSIS = (Extrait, DejaExtrait, AttendC3)
+ResultatTexte = Extrait | DejaExtrait | Refuse
+REUSSIS = (Extrait, DejaExtrait)
 
 
 @dataclass(frozen=True)
@@ -103,7 +100,23 @@ def _octets_verifies(contenu: Contenu, racine: Path) -> bytes:
     return octets
 
 
+def _vtt_verifie(sha256: str, racine: Path) -> bytes:
+    """Octets du `.vtt`, après vérification contre l'empreinte que sa fiche de transcription consigne."""
+    vtt, fiche = racine / chemin_vtt(sha256), racine / chemin_fiche_transcription(sha256)
+    if not vtt.exists():
+        raise ExtractionRefusee(f"transcription absente : {chemin_vtt(sha256)} (lancer pnpm transcriptions)")
+    if not fiche.exists():
+        raise ExtractionRefusee(f"transcription sans fiche : {chemin_fiche_transcription(sha256)} absente")
+    octets = vtt.read_bytes()
+    attendue = json.loads(fiche.read_text(encoding="utf-8"))["vtt_sha256"]
+    if empreinte(octets) != attendue:
+        raise ExtractionRefusee(f"transcription altérée : {chemin_vtt(sha256)} n'a plus l'empreinte {attendue}")
+    return octets
+
+
 def _extraire(genre: str, contenu: Contenu, deps: Dependances) -> Extraction:
+    if genre == GENRE_TRANSCRIPTION:
+        return deps.extraire_vtt(_vtt_verifie(contenu.sha256, deps.racine))
     octets = _octets_verifies(contenu, deps.racine)
     if genre == GENRE_PDF:
         return deps.extraire_pdf(octets)
@@ -131,12 +144,12 @@ def _consigner(contenu: Contenu, extraction: Extraction, deps: Dependances) -> R
     return Extrait(contenu.sha256, extraction.texte.sha256, extraction.outil)
 
 
-def _genre(contenu: Contenu) -> str | AttendC3:
+def _genre(contenu: Contenu) -> str:
     if contenu.type_contenu is None:
         raise ExtractionRefusee("aucun Content-Type reçu : type inconnu, jamais deviné")
+    if est_media(contenu.type_contenu):
+        return GENRE_TRANSCRIPTION
     media = type_media(contenu.type_contenu)
-    if media.startswith(PREFIXES_C3):
-        return AttendC3(contenu.sha256, contenu.type_contenu)
     if media not in GENRES:
         raise ExtractionRefusee(f"type de contenu non pris en charge : {contenu.type_contenu}")
     return GENRES[media]
@@ -144,10 +157,7 @@ def _genre(contenu: Contenu) -> str | AttendC3:
 
 def extraire_contenu(contenu: Contenu, deps: Dependances) -> ResultatTexte:
     try:
-        genre = _genre(contenu)
-        if isinstance(genre, AttendC3):
-            return genre
-        return _consigner(contenu, _extraire(genre, contenu, deps), deps)
+        return _consigner(contenu, _extraire(_genre(contenu), contenu, deps), deps)
     except ExtractionRefusee as refus:
         return Refuse(contenu.sha256, refus.motif)
 
@@ -172,14 +182,12 @@ def _ligne(etiquette: str, sha256_source: str, reste: str) -> str:
 LIGNES: dict[type, Callable[..., str]] = {
     Extrait: lambda r: _ligne("extrait", r.sha256_source, f"→ {r.texte_sha256} ({r.outil})"),
     DejaExtrait: lambda r: _ligne("déjà extrait", r.sha256_source, f"→ {r.texte_sha256}"),
-    AttendC3: lambda r: _ligne("attend C3", r.sha256_source, r.type_contenu),
     Refuse: lambda r: _ligne("REFUSÉ", r.sha256_source, r.motif),
 }
 
 LIBELLES_BILAN: dict[type, str] = {
     Extrait: "extrait(s)",
     DejaExtrait: "déjà extrait(s)",
-    AttendC3: "en attente de C3",
     Refuse: "refusé(s)",
 }
 

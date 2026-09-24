@@ -1,0 +1,11 @@
+{
+  "url": "https://example.org/radio/entretien",
+  "url_finale": "https://example.org/debat-2026?v=1",
+  "candidat_id": "candidat-a",
+  "tier": "T2",
+  "type_document": "enregistrement_audio",
+  "date_source": "2026-09-12",
+  "publication": "publique",
+  "sha256": "7fb77c7c3c27116dce6df8430f0b7832a506b6a9ced83554a06a7027a5a9c3ff",
+  "date_collecte": "2026-09-22T14:30:05+02:00"
+}

@@ -13,6 +13,7 @@ from datetime import date
 from pathlib import Path
 
 from pipeline.collecte.collecte import Dependances
+from pipeline.collecte.media import ExtracteurMedia, MediaTelecharge, telechargeurs_media
 from pipeline.collecte.politesse import Cadence, ClientPoli
 from pipeline.collecte.sources import Source
 from pipeline.collecte.wayback import ArchivageReussi, Resultat
@@ -57,17 +58,27 @@ class ArchiveurFactice:
         return self.resultats.pop(0)
 
 
+class YtDlpInattendu:
+    def telecharger(self, url: str, genre: str, repertoire: Path) -> MediaTelecharge:
+        raise AssertionError(f"téléchargement yt-dlp non prévu par le test : {url}")
+
+
 @dataclass
 class Banc:
     horloge: HorlogeFactice
     transport: TransportFactice
     archiveur: ArchiveurFactice
     racine: Path
+    media: ExtracteurMedia = field(default_factory=YtDlpInattendu)
 
     def dependances(self) -> Dependances:
         client = ClientPoli(self.transport, Cadence(self.horloge, 1.0))
         return Dependances(
-            client=client, archiveur=self.archiveur, horloge=self.horloge, racine=self.racine
+            client=client,
+            archiveur=self.archiveur,
+            horloge=self.horloge,
+            racine=self.racine,
+            medias=telechargeurs_media(client, self.media, self.racine),
         )
 
     def fichiers(self) -> list[str]:
@@ -87,6 +98,7 @@ def banc(
     horloge: HorlogeFactice,
     routes: dict[str, Route],
     archivages: list[Resultat] | None = None,
+    media: ExtracteurMedia | None = None,
 ) -> Banc:
     resultats = archivages if archivages is not None else [ArchivageReussi(INSTANTANE)] * 5
     return Banc(
@@ -94,6 +106,7 @@ def banc(
         transport=TransportFactice(horloge, {ROBOTS: ROBOTS_OUVERT, **routes}),
         archiveur=ArchiveurFactice(list(resultats)),
         racine=racine,
+        media=media if media is not None else YtDlpInattendu(),
     )
 
 

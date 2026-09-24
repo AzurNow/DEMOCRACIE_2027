@@ -56,9 +56,10 @@ une fiche n'existe jamais sans son texte.
 | `texte_sha256` | empreinte du fichier `.txt` ; nomme la fiche et le texte |
 | `longueur` | nombre de points de code du texte |
 | `date_extraction` | instant de la première extraction qui a produit ce texte |
-| `extracteur` | `{outil, version, options}` : `pymupdf` ou `html.parser`, version exacte, options fixées par le code |
+| `extracteur` | `{outil, version, options}` : `pymupdf`, `html.parser` ou `webvtt` (texte dérivé d'une transcription, §2), version exacte, options fixées par le code |
 | `pages` | PDF seulement : `[{numero, debut, fin}]`, intervalle semi-ouvert en points de code de chaque page, séparateur exclu |
 | `encodage` | HTML seulement : `{nom, origine}`, le codec Python employé et d'où il vient (`bom`, `content-type`, `meta`) |
+| `vtt_sha256` | audio et vidéo seulement : empreinte du `.vtt` dont le texte est dérivé (§2) |
 
 Deux extracteurs qui rendent le même texte donnent la même empreinte : la fiche existante est
 gardée, et elle nomme l'extracteur qui l'a produit en premier.
@@ -97,8 +98,10 @@ cheval sur deux pages n'a pas de page unique et est refusée.
 
 ### 1.4 Autres contenus
 
-Un contenu `audio/*` ou `video/*` attend le sous-lot C3 (transcription, §2) : il est signalé, sans
-échec. Tout autre type reçu, ou un type absent, est un échec nommé : le type se lit dans
+Un contenu `audio/*` ou `video/*` n'a pas d'extracteur propre : son texte est dérivé de sa
+transcription (§2), après vérification du `.vtt` contre l'empreinte que sa fiche de transcription
+consigne. Transcription absente, fiche absente ou `.vtt` altéré : échec nommé, jamais un succès
+silencieux. Tout autre type reçu, ou un type absent, est un échec nommé : le type se lit dans
 `type_contenu_recu`, jamais dans les octets.
 
 ## 2. Transcription minutée — `staging/transcriptions/<sha256_source>.vtt`
@@ -126,6 +129,75 @@ Seconde phrase de l'extrait.
 ```
 
 Texte canonique dérivé : `Première phrase de l'extrait.\nSeconde phrase de l'extrait.`
+
+**Règle de dérivation** (`vtt-1`, `pipeline/collecte/textes/transcription_vtt.py`, identique à
+`validation/domaine/webvtt.ts` qui relit les mêmes fichiers) :
+
+- blocs séparés par une ligne vide ; CRLF lu comme LF, un CR isolé est un échec ;
+- l'en-tête `WEBVTT` et ses métadonnées sont ignorés, comme les blocs `NOTE`, `STYLE` et `REGION`,
+  qui ne réservent aucun offset ;
+- dans un cue, les lignes avant la flèche (identifiant) et les réglages après la borne de fin sont
+  ignorés ; le texte du cue est sa charge utile telle qu'écrite, **lignes jointes par `\n`**, en NFC ;
+- un cue sans texte, ou dont le texte contient `<` ou `&` (balise ou entité WebVTT), est un échec :
+  l'interface garderait la balise dans le texte, la retirer ici donnerait deux jeux d'offsets.
+
+Un offset tombe dans le dernier cue dont le premier point de code le précède ou l'égale : le `\n`
+qui joint deux cues appartient au premier.
+
+### 2.1 Copie locale d'un enregistrement — yt-dlp
+
+Une source `enregistrement_audio` ou `enregistrement_video` pointe une page ; `pnpm collecte` la
+copie par yt-dlp (`pipeline/collecte/media.py`) au lieu d'un téléchargement HTTP, puis suit §5 à
+l'identique (SHA-256, `archives/`, Wayback de la page listée, manifeste, fiche). `robots.txt` de la
+page est vérifié avant d'appeler yt-dlp ; yt-dlp espace ses requêtes d'au moins une seconde et porte
+le User-Agent de la collecte.
+
+- Un seul fichier tel que servi, jamais une fusion ni un post-traitement : pour la vidéo, le
+  meilleur format qui porte déjà l'image et le son ; pour l'audio, le meilleur flux audio seul.
+  « Meilleur » est l'ordre de yt-dlp. Un format sans codec déclaré, ou servi par fragments (HLS,
+  DASH), n'est pas admissible. Aucun format admissible : échec nommé.
+- `type_contenu_recu` n'est pas ici un en-tête HTTP (yt-dlp n'en expose pas) : c'est le type du
+  conteneur retenu, lu dans une table fermée (`media.TYPES_MEDIA`, par exemple `mp4` vidéo →
+  `video/mp4`, `m4a` → `audio/mp4`). Conteneur hors table : échec, jamais une supposition.
+- `url_finale` de la fiche est la page que yt-dlp a effectivement lue (`webpage_url`).
+- Le média n'entre jamais dans Git (`archives/`, §10 du protocole).
+
+### 2.2 Production du `.vtt` et fiche de transcription — `staging/transcriptions/<sha256_source>.json`
+
+`pnpm transcriptions` (`pipeline/collecte/transcription`) transcrit en local, avec faster-whisper,
+chaque contenu `audio/*` ou `video/*` collecté qui n'a pas encore de `.vtt`.
+
+- **Modèle** : `large-v3-turbo` au format CTranslate2, dépôt Hugging Face et révision (hash de
+  commit) épinglés dans `pipeline/collecte/transcription/poids.py` avec la taille et l'empreinte de
+  chaque fichier de poids. Les poids sont téléchargés au premier lancement dans `modeles/` (hors
+  Git), puis vérifiés **avant tout chargement** à chaque lancement ; un fichier absent ou d'empreinte
+  fausse arrête tout (code de sortie 2), jamais retéléchargé en silence. Ensuite tout tourne hors
+  ligne.
+- **Paramètres** : fixés dans `pipeline/collecte/transcription/modele.py` et écrits tels quels dans
+  la fiche (CPU, `int8`, langue `fr`, température 0 seule, VAD désactivée…).
+- **Écriture du `.vtt`** : un cue par segment, `HH:MM:SS.mmm --> HH:MM:SS.mmm`, sans identifiant ;
+  le texte du segment perd ses espaces de début et de fin, rien d'autre. Un segment vide ou blanc est
+  exclu et compté (`segments_exclus`), jamais écrit en cue vide. Un texte contenant un saut de ligne,
+  `-->`, `<` ou `&`, ou des segments hors d'ordre ou chevauchants : refus, rien n'est écrit. Aucun
+  segment porteur de texte : refus, aucun `.vtt` vide.
+- **Non-réécriture** : un `.vtt` existant n'est **jamais** réécrit, même si une nouvelle
+  transcription différerait ; il est signalé « déjà transcrite ». Le `.vtt` est écrit avant sa fiche
+  (une fiche n'existe jamais sans lui) ; un `.vtt` sans fiche, ou une fiche sans `.vtt`, est un refus
+  nommé : aucune fiche n'est reconstituée après coup.
+
+Fiche décrite par `schema/transcription.schema.json`, mêmes règles d'écriture qu'en §5 (JSON UTF-8,
+deux espaces, ordre des clés fixe, saut de ligne final, écriture atomique, immuable) :
+
+| Champ | Contenu |
+| --- | --- |
+| `sha256_source` | empreinte du média archivé ; nomme le `.vtt` et la fiche |
+| `vtt_sha256` | empreinte des octets du `.vtt` |
+| `date_transcription` | instant de la transcription |
+| `duree_audio_s` | durée du flux audio décodé, en secondes |
+| `cues`, `segments_exclus` | nombre de cues écrits, nombre de segments vides ou blancs exclus |
+| `modele` | `{alias, depot, revision, fichiers: [{nom, sha256}]}` : SHA-256 de chaque fichier de poids chargé, calculé sur le disque |
+| `moteur` | `{faster_whisper, ctranslate2}` : versions exactes |
+| `parametres` | `{chargement, decodage}` : arguments de `WhisperModel` et de `transcribe`, tous écrits |
 
 ## 3. Copie locale d'une source — `source.chemin_local`
 
@@ -242,7 +314,7 @@ saut de ligne final, écriture atomique. **Immuable une fois écrit.**
 | `sha256` | empreinte des octets archivés ; c'est aussi le nom du fichier |
 | `chemin_local` | chemin de l'archive, relatif à la racine du dépôt |
 | `taille_octets` | nombre d'octets reçus, au moins 1 |
-| `type_contenu_recu` | en-tête `Content-Type` tel que reçu à la première collecte, ou `null` s'il manquait |
+| `type_contenu_recu` | en-tête `Content-Type` tel que reçu à la première collecte, ou `null` s'il manquait ; pour un enregistrement copié par yt-dlp, type du conteneur retenu (§2.1) |
 | `date_premiere_collecte` | instant de fin du premier téléchargement qui a produit ces octets, ISO 8601 avec décalage |
 | `url_soumise` | URL soumise à Save Page Now : l'`url` listée (jamais `url_finale`) de la source qui a servi ces octets en premier |
 | `archive_url` | instantané daté renvoyé par Save Page Now — **ou** — |

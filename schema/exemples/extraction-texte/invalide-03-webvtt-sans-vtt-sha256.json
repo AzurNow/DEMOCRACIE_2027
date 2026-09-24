@@ -1,0 +1,13 @@
+{
+  "sha256_source": "256493da755d7c95ea24fe7c43873db560fab161201ea96519d9794961fa8b65",
+  "texte_sha256": "c5b2c3fc4821ab5f6597ae28e546e1147f92e18da62aa888e7a910b92b3b30e5",
+  "longueur": 51,
+  "date_extraction": "2026-09-22T16:10:00+02:00",
+  "extracteur": {
+    "outil": "webvtt",
+    "version": "3.12.11",
+    "options": {
+      "regle": "vtt-1"
+    }
+  }
+}

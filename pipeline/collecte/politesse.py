@@ -124,7 +124,7 @@ class ClientPoli:
         courante = url
         for _etape in range(self._max_redirections + 1):
             if verifier_robots:
-                self._verifier_robots(courante)
+                self.verifier_robots(courante)
             reponse = self._envoyer(courante)
             if reponse.statut not in STATUTS_REDIRECTION:
                 return reponse, courante
@@ -138,7 +138,9 @@ class ClientPoli:
         except ErreurReseau as erreur:
             raise EchecCollecte(str(erreur)) from erreur
 
-    def _verifier_robots(self, url: str) -> None:
+    def verifier_robots(self, url: str) -> None:
+        """Lève `EchecCollecte` si `robots.txt` interdit l'URL ou n'a pas pu être lu. Public pour les
+        téléchargements qui ne passent pas par ce client (yt-dlp, `media.py`)."""
         origine = _origine(url)
         if origine not in self._robots:
             self._robots[origine] = self._lire_robots(origine)

@@ -3,7 +3,7 @@
 - `staging/textes/<texte_sha256>.txt` : le texte, rangé sous sa propre empreinte ;
 - `staging/extractions/<sha256_source>/<texte_sha256>.json` (`schema/extraction-texte.schema.json`) :
   le lien vers le document archivé, l'extracteur, sa version, ses options, et selon le cas les pages
-  (PDF) ou l'encodage (HTML).
+  (PDF), l'encodage (HTML) ou l'empreinte du `.vtt` dont le texte est dérivé (audio et vidéo).
 
 L'ordre des clés est fixé ici par construction ; la sérialisation est celle de `manifeste.serialiser`.
 """
@@ -30,7 +30,7 @@ class Encodage:
 @dataclass(frozen=True)
 class Extraction:
     """Ce qu'un extracteur rend : un texte canonique et de quoi le rejouer. Exactement un de
-    `pages` (PDF) et `encodage` (HTML) est renseigné."""
+    `pages` (PDF), `encodage` (HTML) et `vtt_sha256` (audio et vidéo) est renseigné."""
 
     texte: TexteCanonique
     outil: str
@@ -38,6 +38,7 @@ class Extraction:
     options: dict[str, object]
     pages: tuple[Page, ...] | None = None
     encodage: Encodage | None = None
+    vtt_sha256: str | None = None
 
 
 def chemin_texte(texte_sha256: str) -> PurePosixPath:
@@ -53,7 +54,9 @@ def _bloc_specifique(extraction: Extraction) -> dict[str, object]:
         return {"pages": [{"numero": p.numero, "debut": p.debut, "fin": p.fin} for p in extraction.pages]}
     if extraction.encodage is not None:
         return {"encodage": {"nom": extraction.encodage.nom, "origine": extraction.encodage.origine}}
-    raise ValueError(f"extraction {extraction.outil} sans pages ni encodage")
+    if extraction.vtt_sha256 is not None:
+        return {"vtt_sha256": extraction.vtt_sha256}
+    raise ValueError(f"extraction {extraction.outil} sans pages, encodage ni vtt_sha256")
 
 
 def construire_fiche_extraction(sha256_source: str, extraction: Extraction, date_extraction: str) -> dict[str, object]:

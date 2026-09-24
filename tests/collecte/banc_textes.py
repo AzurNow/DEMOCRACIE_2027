@@ -2,8 +2,9 @@
 
 `deposer` écrit une copie locale et son manifeste comme la collecte les aurait laissés, sans passer
 par le réseau. `extracteur_pdf_factice` rend deux pages fixes : le PDF réel n'est exercé que par
-`test_textes_pdf.py`. `extracteur_html_fige` appelle le vrai `extraire_html` mais fige la version de
-Python, pour que les fichiers dorés ne dépendent pas de la machine.
+`test_textes_pdf.py`. `extracteur_html_fige` et `extracteur_vtt_fige` appellent les vrais
+extracteurs mais figent la version de Python, pour que les fichiers dorés ne dépendent pas de la
+machine.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from pipeline.collecte.textes.extraction import Dependances
 from pipeline.collecte.textes.fiche import Extraction
 from pipeline.collecte.textes.page_html import extraire_html
 from pipeline.collecte.textes.pages import SEPARATEUR_PAGES, joindre_pages
+from pipeline.collecte.textes.transcription_vtt import extraire_vtt
 from tests.collecte.doubles import HorlogeFactice
 
 VERSION_PYMUPDF_FIGEE = "1.28.2"
@@ -35,8 +37,12 @@ def extracteur_html_fige(octets: bytes, type_contenu: str | None) -> Extraction:
     return dataclasses.replace(extraire_html(octets, type_contenu), version=VERSION_PYTHON_FIGEE)
 
 
+def extracteur_vtt_fige(octets: bytes) -> Extraction:
+    return dataclasses.replace(extraire_vtt(octets), version=VERSION_PYTHON_FIGEE)
+
+
 def dependances(racine: Path, horloge: HorlogeFactice) -> Dependances:
-    return Dependances(racine, horloge, extracteur_pdf_factice, extracteur_html_fige)
+    return Dependances(racine, horloge, extracteur_pdf_factice, extracteur_html_fige, extracteur_vtt_fige)
 
 
 def deposer(racine: Path, octets: bytes, type_contenu: str | None, extension: str = ".bin") -> str:
