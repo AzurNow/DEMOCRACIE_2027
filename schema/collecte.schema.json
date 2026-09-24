@@ -27,7 +27,7 @@
     "type_contenu_recu": {
       "type": ["string", "null"],
       "minLength": 1,
-      "description": "En-tête Content-Type tel que reçu à la première collecte, paramètres compris. null si le serveur n'en a envoyé aucun : absent et visible, jamais deviné."
+      "description": "En-tête Content-Type tel que reçu à la première collecte, paramètres compris. null si le serveur n'en a envoyé aucun : absent et visible, jamais deviné. Pour un enregistrement copié par yt-dlp, qui n'expose pas d'en-tête, type du conteneur retenu, lu dans une table fermée (docs/CONTRATS.md §2.1)."
     },
     "date_premiere_collecte": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",

@@ -10,7 +10,7 @@ Par source, selon le SHA-256 des octets reçus :
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Protocol
@@ -18,6 +18,7 @@ from typing import Protocol
 from pipeline.collecte.archivage import chemin_archive, ecrire_atomiquement, empreinte, extension_pour
 from pipeline.collecte.horloge import Horloge, instant_iso
 from pipeline.collecte.lien_archive import archive_url_de
+from pipeline.collecte.media import GENRES_MEDIA
 from pipeline.collecte.manifeste import (
     chemin_fiche,
     chemin_manifeste,
@@ -43,6 +44,8 @@ class Dependances:
     horloge: Horloge
     racine: Path
     """Racine du dépôt : `archives/` et `staging/sources/` s'y trouvent, `chemin_local` y est relatif."""
+    medias: Mapping[str, Telechargeur]
+    """Un téléchargeur yt-dlp par `type_document` d'enregistrement (`media.GENRES_MEDIA`)."""
 
 
 @dataclass(frozen=True)
@@ -187,9 +190,17 @@ def _consigner(source: Source, telechargement: Telechargement, date_collecte: st
     return _archiver_nouveau_contenu(source, telechargement, sha256, date_collecte, deps)
 
 
+def _telechargeur(source: Source, deps: Dependances) -> Telechargeur:
+    """Un enregistrement passe par yt-dlp, tout le reste par HTTP. Un téléchargeur de média manquant
+    est une erreur de montage (KeyError), jamais un repli silencieux sur HTTP."""
+    if source.type_document in GENRES_MEDIA:
+        return deps.medias[source.type_document]
+    return deps.client
+
+
 def collecter_source(source: Source, deps: Dependances) -> ResultatSource:
     try:
-        telechargement = deps.client.telecharger(source.url)
+        telechargement = _telechargeur(source, deps).telecharger(source.url)
     except EchecCollecte as echec:
         return Refusee(source.url, echec.motif)
     date_collecte = instant_iso(deps.horloge.maintenant())

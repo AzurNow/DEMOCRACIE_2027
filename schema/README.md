@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les dix-sept fichiers
+## Les dix-huit fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -26,7 +26,8 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `collecte.schema.json` | manifeste de contenu collecté | §4, collecte horodatée et archivée : `staging/sources/<sha256>.json`, les faits d'un document archivé une seule fois (empreinte, copie locale, archivage Wayback), écrit par `pipeline/collecte` (Python), format dans `docs/CONTRATS.md` §5 |
 | `fiche-source.schema.json` | fiche d'une source listée | §4 : `staging/sources/par-source/<cle_source>/<sha256>.json`, une par entrée de `config/sources.toml` et par contenu obtenu, pour qu'aucune source ne perde ses métadonnées quand deux servent les mêmes octets ; avec le manifeste de contenu qu'elle pointe, alimente champ pour champ `commun#/$defs/source` |
 | `reprise-archivage.schema.json` | reprise d'un archivage Wayback | §4 et règle 2 de `CLAUDE.md` : `staging/archivages/<sha256>.json`, écrit sans réécrire le manifeste quand une collecte ultérieure des mêmes octets réussit la sauvegarde qui avait échoué |
-| `extraction-texte.schema.json` | fiche d'extraction d'un texte canonique | §4, contrat des artefacts : `staging/extractions/<sha256_source>/<texte_sha256>.json`, écrite par `pipeline/collecte/textes` (sous-lot C2) après le texte qu'elle décrit ; dit quel extracteur, dans quelle version et avec quelles options a produit le texte, et donne les pages d'un PDF (`source.page`) ou l'encodage d'une page HTML. Format dans `docs/CONTRATS.md` §1.1 |
+| `extraction-texte.schema.json` | fiche d'extraction d'un texte canonique | §4, contrat des artefacts : `staging/extractions/<sha256_source>/<texte_sha256>.json`, écrite par `pipeline/collecte/textes` (sous-lot C2) après le texte qu'elle décrit ; dit quel extracteur, dans quelle version et avec quelles options a produit le texte, et donne les pages d'un PDF (`source.page`) ou l'encodage d'une page HTML. Format dans `docs/CONTRATS.md` §1.1 ; pour un enregistrement audio ou vidéo (outil `webvtt`, sous-lot C3), nomme le `.vtt` dont le texte est dérivé |
+| `transcription.schema.json` | fiche de transcription d'un enregistrement | §4, contrat des artefacts : `staging/transcriptions/<sha256_source>.json`, écrite par `pipeline/collecte/transcription` (sous-lot C3) après le `.vtt` qu'elle décrit ; trace le modèle, le dépôt et la révision des poids, l'empreinte de chaque fichier de poids, les versions du moteur et les paramètres de décodage, parce que la transcription n'est pas reproductible à l'octet et n'est jamais refaite. Format dans `docs/CONTRATS.md` §2.2 |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -124,7 +125,7 @@ l'item ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 74 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 83 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -145,10 +146,11 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | collecte | `archive_url` et `echec_archivage` à la fois · manifeste sans `url_soumise` |
 | fiche-source | site de parti sans `site_parti_tient_lieu_de_campagne` · fiche portant `archive_url` |
 | reprise-archivage | `archive_url` qui n'est pas un instantané daté |
-| extraction-texte | fiche pymupdf portant un `encodage` · fiche html.parser sans `encodage` |
+| extraction-texte | fiche pymupdf portant un `encodage` · fiche html.parser sans `encodage` · fiche webvtt sans `vtt_sha256` |
+| transcription | température de décodage non nulle · révision des poids qui n'est pas un hash de commit |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 17 schémas au registre, 74/74 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 18 schémas au registre, 83/83 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

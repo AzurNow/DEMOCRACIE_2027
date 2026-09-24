@@ -1,0 +1,79 @@
+{
+  "sha256_source": "256493da755d7c95ea24fe7c43873db560fab161201ea96519d9794961fa8b65",
+  "vtt_sha256": "31939c6aee85a63ece4bf0cd993e9d84767c81645d2871521ba2ed9aebbdbfbf",
+  "date_transcription": "2026-09-22T16:02:41+02:00",
+  "duree_audio_s": 3612.37,
+  "cues": 2,
+  "segments_exclus": 1,
+  "modele": {
+    "alias": "large-v3-turbo",
+    "depot": "dropbox-dash/faster-whisper-large-v3-turbo",
+    "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf",
+    "fichiers": [
+      {
+        "nom": "model.bin",
+        "sha256": "e76620f83d5f5b69efd3d87e3dc180c1bd21df9fbebacfd4335e5e1efcc018da"
+      },
+      {
+        "nom": "config.json",
+        "sha256": "49306df60f50851f1de4f5f86e8b29e6db3d2c39e6f36a562bfdebb2d137d989"
+      },
+      {
+        "nom": "preprocessor_config.json",
+        "sha256": "23dfcc550bef92d3e8db579d452e7bf81a0371642dc4c0e0ef7f49673ae2d3da"
+      },
+      {
+        "nom": "tokenizer.json",
+        "sha256": "a150aaf310ce9733658e78c9ad48a58195c538b2f18c359a00b552526a1a7fc2"
+      },
+      {
+        "nom": "vocabulary.json",
+        "sha256": "57bfe644248e6094544c2ef904f061cd2348941139952bb3825bcaa494171276"
+      }
+    ]
+  },
+  "moteur": {
+    "faster_whisper": "1.2.1",
+    "ctranslate2": "4.8.2"
+  },
+  "parametres": {
+    "chargement": {
+      "device": "cpu",
+      "compute_type": "int8",
+      "cpu_threads": 4,
+      "num_workers": 1
+    },
+    "decodage": {
+      "language": "fr",
+      "task": "transcribe",
+      "temperature": 0.2,
+      "beam_size": 5,
+      "best_of": 1,
+      "patience": 1.0,
+      "length_penalty": 1.0,
+      "repetition_penalty": 1.0,
+      "no_repeat_ngram_size": 0,
+      "compression_ratio_threshold": 2.4,
+      "log_prob_threshold": -1.0,
+      "no_speech_threshold": 0.6,
+      "condition_on_previous_text": false,
+      "prompt_reset_on_temperature": 0.5,
+      "initial_prompt": null,
+      "prefix": null,
+      "suppress_blank": true,
+      "suppress_tokens": [
+        -1
+      ],
+      "without_timestamps": false,
+      "max_initial_timestamp": 1.0,
+      "word_timestamps": false,
+      "multilingual": false,
+      "vad_filter": false,
+      "max_new_tokens": null,
+      "chunk_length": null,
+      "clip_timestamps": "0",
+      "hallucination_silence_threshold": null,
+      "hotwords": null
+    }
+  }
+}

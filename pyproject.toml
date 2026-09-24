@@ -2,17 +2,27 @@
 # TypeScript (package.json). Environnement géré par uv, Python épinglé en 3.12 (décision du
 # 2026-09-22) ; uv.lock est commité et `uv sync --frozen` le rejoue à l'identique.
 #
-# Une seule dépendance d'exécution, épinglée : pymupdf (décision D2), pour le texte canonique des
-# PDF (sous-lot C2). Sa version entre dans chaque fiche d'extraction : la changer peut changer les
-# textes, donc les offsets (docs/CONTRATS.md §1.1). Le reste de la collecte n'utilise que la
-# bibliothèque standard. Dépendances de développement autorisées : pytest et ruff, épinglés.
+# Trois dépendances d'exécution, épinglées (décision D2) :
+# - pymupdf, pour le texte canonique des PDF (sous-lot C2). Sa version entre dans chaque fiche
+#   d'extraction : la changer peut changer les textes, donc les offsets (docs/CONTRATS.md §1.1) ;
+# - yt-dlp, pour la copie locale des enregistrements audio et vidéo (sous-lot C3) : un seul fichier
+#   déjà fusionné, sans ffmpeg système ni post-traitement (docs/CONTRATS.md §2.1) ;
+# - faster-whisper, pour la transcription locale de ces enregistrements (sous-lot C3), sans API
+#   hébergée. Sa version, celle de ctranslate2 et la révision des poids entrent dans chaque fiche de
+#   transcription (docs/CONTRATS.md §2.2). Elle tire av (décodage audio sans ffmpeg système),
+#   ctranslate2, tokenizers, huggingface-hub (téléchargement des poids épinglés) et onnxruntime
+#   (VAD, que ce dépôt n'active pas, mais dont faster-whisper fait une dépendance obligatoire).
+# Le reste de la collecte n'utilise que la bibliothèque standard. Dépendances de développement
+# autorisées : pytest et ruff, épinglés.
 [project]
 name = "banc-essai-2027-pipeline"
 version = "0.0.0"
 description = "Pipeline de collecte du Banc d'essai 2027"
 requires-python = "==3.12.*"
 dependencies = [
+    "faster-whisper==1.2.1",
     "pymupdf==1.28.2",
+    "yt-dlp==2026.8.19",
 ]
 
 [dependency-groups]

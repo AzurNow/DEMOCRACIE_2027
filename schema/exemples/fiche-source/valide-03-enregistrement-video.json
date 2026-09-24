@@ -1,0 +1,11 @@
+{
+  "url": "https://example.org/debat-2026",
+  "url_finale": "https://example.org/debat-2026?v=1",
+  "candidat_id": "candidat-a",
+  "tier": "T2",
+  "type_document": "enregistrement_video",
+  "date_source": "2026-09-10",
+  "publication": "publique",
+  "sha256": "256493da755d7c95ea24fe7c43873db560fab161201ea96519d9794961fa8b65",
+  "date_collecte": "2026-09-22T14:30:05+02:00"
+}

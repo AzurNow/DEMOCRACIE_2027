@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:transcription",
+  "title": "Fiche de transcription d'un enregistrement audio ou vidéo",
+  "description": "staging/transcriptions/<sha256_source>.json, écrite par pipeline/collecte/transcription (sous-lot C3) après la transcription staging/transcriptions/<sha256_source>.vtt qu'elle décrit, immuable (docs/CONTRATS.md §2.2). La transcription est produite en local par faster-whisper et n'est pas reproductible à l'octet d'une machine à l'autre : le .vtt est écrit une fois et jamais réécrit, et cette fiche trace tout ce qui l'a produit (modèle, dépôt et révision des poids, empreinte de chaque fichier de poids, versions du moteur, paramètres de chargement et de décodage, date). Sans elle, un .vtt ne s'explique pas et ne se rejoue pas.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sha256_source",
+    "vtt_sha256",
+    "date_transcription",
+    "duree_audio_s",
+    "cues",
+    "segments_exclus",
+    "modele",
+    "moteur",
+    "parametres"
+  ],
+  "properties": {
+    "sha256_source": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Média archivé transcrit : nom du manifeste staging/sources/<sha256_source>.json, du .vtt et de cette fiche."
+    },
+    "vtt_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte des octets UTF-8 du fichier .vtt écrit. L'extraction du texte dérivé la revérifie avant de lire le .vtt."
+    },
+    "date_transcription": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Instant de la transcription, qui n'a lieu qu'une fois par média."
+    },
+    "duree_audio_s": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Durée du flux audio décodé, en secondes, telle que faster-whisper la rend."
+    },
+    "cues": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Nombre de cues écrits. Une transcription sans cue n'est jamais écrite."
+    },
+    "segments_exclus": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Segments rendus par le modèle dont le texte était vide ou blanc : exclus du .vtt, jamais écrits en cue vide, et comptés ici pour que l'exclusion reste visible."
+    },
+    "modele": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alias", "depot", "revision", "fichiers"],
+      "properties": {
+        "alias": { "type": "string", "minLength": 1, "description": "Nom du modèle, par exemple large-v3-turbo." },
+        "depot": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "description": "Dépôt Hugging Face des poids au format CTranslate2, propriétaire/nom."
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Hash de commit du dépôt, épinglé dans le code. Jamais un nom de branche : une branche bouge, un commit non."
+        },
+        "fichiers": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Chaque fichier de poids chargé, avec le SHA-256 calculé sur le disque après vérification contre l'empreinte épinglée.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["nom", "sha256"],
+            "properties": {
+              "nom": { "type": "string", "minLength": 1 },
+              "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    },
+    "moteur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["faster_whisper", "ctranslate2"],
+      "properties": {
+        "faster_whisper": { "type": "string", "minLength": 1 },
+        "ctranslate2": { "type": "string", "minLength": 1 }
+      }
+    },
+    "parametres": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chargement", "decodage"],
+      "properties": {
+        "chargement": {
+          "type": "object",
+          "required": ["device", "compute_type"],
+          "description": "Arguments de WhisperModel, tels que passés.",
+          "properties": {
+            "device": { "const": "cpu", "description": "Aucun GPU requis (décision du 2026-09-24)." },
+            "compute_type": { "type": "string", "minLength": 1 }
+          }
+        },
+        "decodage": {
+          "type": "object",
+          "required": ["language", "task", "temperature", "vad_filter", "beam_size", "condition_on_previous_text"],
+          "description": "Arguments de WhisperModel.transcribe, tels que passés, y compris ceux qui gardent leur valeur par défaut : une montée de version de faster-whisper ne les change pas en silence.",
+          "properties": {
+            "language": { "const": "fr" },
+            "task": { "const": "transcribe" },
+            "temperature": {
+              "const": 0,
+              "description": "Température 0 seule, sans repli vers une température plus haute (décision du 2026-09-24)."
+            },
+            "vad_filter": { "type": "boolean" },
+            "beam_size": { "type": "integer", "minimum": 1 },
+            "condition_on_previous_text": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,9 @@
 # Les fichiers détectés comme binaires restent intacts.
 * text=auto eol=lf
 
-# Textes canoniques : identifiés par le SHA-256 de leurs octets, jamais convertis par Git.
+# Textes canoniques et transcriptions : identifiés par le SHA-256 de leurs octets (texte_sha256,
+# vtt_sha256), jamais convertis par Git.
 staging/textes/** -text
 tests/collecte/dore/textes/** -text
+staging/transcriptions/*.vtt -text
+tests/collecte/dore/transcriptions/** -text
