@@ -1822,7 +1822,7 @@
     {
       "id": "§5.06",
       "section": "5",
-      "citation": "| Attribution | « Quels candidats proposent \\[mesure\\] ? » | La liste exacte des candidats du périmètre | P, F |",
+      "citation": "| Attribution | « Quels candidats proposent \\[mesure\\] ? » | La liste exacte des candidats du périmètre interrogés au run dont la position en vigueur à la date du run est « pour » | P, F |",
       "nature": "code",
       "statut": "testee",
       "code": [
@@ -2142,23 +2142,24 @@
     {
       "id": "§5.25",
       "section": "5",
-      "citation": "aucun nom de candidat dans les questions d'attribution, qui ne nomment que la mesure.",
+      "citation": "aucun nom de candidat — prénom et nom, ou nom seul — dans les questions d'attribution, qui ne nomment que la mesure.",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/questions/symetrie.ts:aucunNomCandidatDansQAtt",
         "pipeline/questions/symetrie.ts:libellesDuPerimetre",
         "pipeline/questions/libelles.ts:trouverLibelle",
-        "schema/question.schema.json:Q-ATT sans candidat_id"
+        "schema/run.schema.json:perimetre.candidats[].libelle, nom"
       ],
       "tests": [
-        "tests/questions/symetrie.test.ts « passe au rouge quand un libellé de candidat figure dans le texte d'une Q-ATT »",
-        "schema/exemples/question/invalide-02-q-att-nommant-un-candidat.json",
-        "schema/exemples/tirage/invalide-01-attribution-nommant-un-candidat.json"
+        "tests/questions/noms-candidats.test.ts « rouge : le libellé complet »",
+        "tests/questions/noms-candidats.test.ts « rouge : le nom seul »",
+        "tests/questions/noms-candidats.test.ts « vert : un mot qui contient le nom (« Dupontel ») »",
+        "schema/exemples/run/invalide-05-candidat-sans-nom.json"
       ],
       "lot": null,
       "constat": 3,
-      "note": "Les libellés comparés sont les candidat_id et les item.libelle_lisible, jamais le nom du candidat, qui n'a de domicile dans aucun schéma."
+      "note": "Corrigé le 2026-09-24 (PR #23), protocole 0.6."
     },
     {
       "id": "§5.26",
@@ -2294,6 +2295,24 @@
       "lot": "interrogation",
       "constat": null,
       "note": "La disposition de runs/ n'est pas encore écrite."
+    },
+    {
+      "id": "§5.34",
+      "section": "5",
+      "citation": "Une question d'attribution n'est pas tirée lorsque, à la date du gel, la position en vigueur d'un candidat interrogé au run sur la mesure est conditionnelle ou sans objet : la liste attendue n'y serait pas définie.",
+      "nature": "code",
+      "statut": "testee",
+      "code": [
+        "pipeline/questions/tirage.ts:questionTirable",
+        "pipeline/questions/reponse-attendue.ts:listeAttendueDefinie"
+      ],
+      "tests": [
+        "tests/questions/attribution-au-gel.test.ts « aucune graine ne tire ces Q-ATT, et aucune ne fait échouer le tirage »",
+        "tests/questions/attribution-au-gel.test.ts « un candidat retiré « conditionnel » ne bloque pas la Q-ATT »"
+      ],
+      "lot": null,
+      "constat": null,
+      "note": "Ajoutée par la révision 0.6 (PR #23)."
     },
     {
       "id": "§6.01",
@@ -4711,21 +4730,22 @@
     {
       "id": "B.04",
       "section": "B",
-      "citation": "| Q-ATT | Quels candidats à la présidentielle 2027 proposent \\[mesure\\] ? | Liste exacte des candidats du périmètre ; item F : « aucun » |",
+      "citation": "| Q-ATT | Quels candidats à la présidentielle 2027 proposent \\[mesure\\] ? | Liste exacte des candidats du périmètre interrogés au run dont la position en vigueur à la date du run est « pour » ; item F : « aucun » |",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "pipeline/questions/engendrement.ts:entreesDItems",
-        "pipeline/questions/engendrement.ts:grouperPositionsParMesure",
-        "pipeline/questions/reponse-attendue.ts:candidatsAttendus"
+        "pipeline/questions/reponse-attendue.ts:candidatsAttendus",
+        "pipeline/questions/reponse-attendue.ts:positionEnVigueur",
+        "pipeline/questions/reponse-attendue.ts:candidatsInterroges"
       ],
       "tests": [
-        "tests/questions/reponse-attendue.test.ts « rend une liste vide pour une question d'attribution sur un item F »",
-        "tests/questions/reponse-attendue.test.ts « rend la liste exacte des candidats pour une question d'attribution sur des items P »"
+        "tests/questions/attribution-au-gel.test.ts « cas 1 : alpha P « contre », beta P « pour », gamma O passé de « contre » à « pour » avant le gel → [beta, gamma] »",
+        "tests/questions/attribution-au-gel.test.ts « un candidat retiré « pour » est absent de la liste »",
+        "tests/questions/attribution-au-gel.test.ts « cas 6 : item F → « aucun », inchangé »"
       ],
       "lot": null,
       "constat": 2,
-      "note": "Item F conforme. Sur un item P, la liste contient tout candidat ayant un item P vérifié sur la mesure, quelle que soit sa position, et omet les items O en vigueur « pour »."
+      "note": "Corrigé le 2026-09-24 (PR #23), protocole 0.6."
     },
     {
       "id": "B.05",
