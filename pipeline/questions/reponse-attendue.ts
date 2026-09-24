@@ -83,7 +83,17 @@ export function instantDeDateCivile(date: string): number {
   return millisecondes;
 }
 
+/**
+ * Motif de `commun#/$defs/instant` : ISO 8601 avec décalage obligatoire. `Date.parse` lit un
+ * horodatage sans décalage dans le fuseau de la machine ; le vérifier d'abord rend le résultat
+ * indépendant de la machine qui calcule.
+ */
+const INSTANT_AVEC_DECALAGE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2}|Z)$/;
+
 export function instantDe(horodatage: string): number {
+  if (!INSTANT_AVEC_DECALAGE.test(horodatage)) {
+    throw new Error(`Instant sans décalage horaire explicite, ou mal formé : ${horodatage}`);
+  }
   const millisecondes = Date.parse(horodatage);
   if (Number.isNaN(millisecondes)) throw new Error(`Instant illisible : ${horodatage}`);
   return millisecondes;

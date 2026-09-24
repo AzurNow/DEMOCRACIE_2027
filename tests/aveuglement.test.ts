@@ -11,6 +11,7 @@
  * kappa ne peut pas être affiché. Un bit par lot, jamais par item.
  */
 
+import { sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ROUTES, trouverRoute } from "../validation/serveur/routes.ts";
 import { creerBac, lotDe, mesurePour, type Bac } from "./aides/bac.ts";
@@ -177,7 +178,7 @@ describe("l'identité ne peut pas venir d'une requête", () => {
 
   it("le journal d'un annotateur ne peut pas désigner le fichier d'un autre", () => {
     const journal = bac.journal("a1");
-    expect(journal.chemin("lot-001")).toContain("/a1/");
+    expect(journal.chemin("lot-001")).toContain(`${sep}a1${sep}`);
     expect(() => journal.chemin("../a2/lot-001")).toThrow(/Identifiant de lot invalide/);
   });
 });

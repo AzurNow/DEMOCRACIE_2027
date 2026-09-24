@@ -23,6 +23,11 @@ candidat, à trier ensuite (`tri.md`). Les exemples sont tirés de ce dépôt.
 - **Le résultat est-il déterministe ?** Horloge injectée, ordre de parcours de répertoire trié, pas
   d'itération sur un `Set`/`dict` dont l'ordre dépendrait d'autre chose que de l'insertion.
 - **Les écritures sont-elles atomiques et non destructives** là où le protocole exige l'immuabilité ?
+  Relancer une commande d'écriture deux fois doit être sans effet, ou refusé.
+- **Le source ne contient-il que ce qu'on voit ?** Un caractère de contrôle écrit brut (NUL,
+  échappement, espace insécable dans du code) se lit comme autre chose, et un NUL fait classer le
+  fichier comme binaire par Git : ses diffs disparaissent des PR. Revue du 2026-09-23 : la
+  dérivation de toutes les graines en dépendait. `grep -laP '\x00'` sur les fichiers suivis.
 
 ## 2. Structure
 

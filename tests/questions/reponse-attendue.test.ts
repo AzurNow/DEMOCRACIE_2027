@@ -11,11 +11,12 @@
 import { describe, expect, it } from "vitest";
 import { engendrer, referenceDe } from "../../pipeline/questions/engendrement.ts";
 import {
+  instantDe,
   ItemHorsValidite,
   ReponseAttendueIndecidable,
   reponseAttendue,
+  type QuestionNotable,
 } from "../../pipeline/questions/reponse-attendue.ts";
-import type { QuestionNotable } from "../../pipeline/questions/reponse-attendue.ts";
 import type { CodeGabarit, Item, Mesure, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
@@ -215,4 +216,19 @@ describe("filet de sécurité : refus plutôt qu'hypothèse", () => {
     const question = questionDe([item], [MESURE], "Q-DIR");
     expect(() => reponseAttendue(question, [], GEL)).toThrow(/introuvable/i);
   });
+});
+
+describe("instant du gel : un décalage explicite, sinon refus", () => {
+  it("un instant avec décalage ou en UTC est lu", () => {
+    expect(instantDe("2026-12-01T10:00:00+01:00")).toBe(Date.UTC(2026, 11, 1, 9));
+    expect(instantDe("2026-12-01T09:00:00Z")).toBe(Date.UTC(2026, 11, 1, 9));
+    expect(instantDe("2026-12-01T09:00:00.250Z")).toBe(Date.UTC(2026, 11, 1, 9, 0, 0, 250));
+  });
+
+  it.each(["2026-12-01T10:00:00", "2026-12-01", "01/12/2026 10:00", "2026-12-01 10:00:00+01:00"])(
+    "« %s » est refusé : il serait lu dans le fuseau de la machine, ou pas du tout",
+    (horodatage) => {
+      expect(() => instantDe(horodatage)).toThrow(/décalage/);
+    },
+  );
 });
