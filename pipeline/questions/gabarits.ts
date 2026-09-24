@@ -227,8 +227,8 @@ export class LibelleCandidatAbsent extends Error {
 
   constructor(gabarit: CodeGabarit) {
     super(
-      `Le gabarit ${gabarit} nomme un candidat et aucun libelle_lisible n'est disponible sur ` +
-        `l'item principal. Aucun libellé par défaut n'est substitué.`,
+      `Le gabarit ${gabarit} nomme un candidat et le candidat de l'item principal n'a pas de ` +
+        `libellé dans le périmètre du run. Aucun libellé par défaut n'est substitué.`,
     );
     this.name = "LibelleCandidatAbsent";
     this.gabarit = gabarit;

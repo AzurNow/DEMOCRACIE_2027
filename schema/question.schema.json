@@ -24,7 +24,7 @@
     "items": {
       "type": "array",
       "minItems": 1,
-      "description": "Plusieurs items de référence peuvent être pertinents pour une même question. Q-ATT (\"Quels candidats proposent [mesure] ?\") porte par construction sur tous les items P de la mesure dans le périmètre, plus l'attente \"aucun\" pour un item F. Le squelette de prompt juge de l'annexe D, qui ne prend qu'un item, était donc insuffisant.",
+      "description": "Plusieurs items de référence peuvent être pertinents pour une même question. Q-ATT (\"Quels candidats proposent [mesure] ?\") porte par construction sur tous les items vérifiés qui donnent une position sur la mesure (P et O), plus l'attente \"aucun\" pour un item F ; la liste attendue se résout au gel, sur leurs positions en vigueur (annexe B, protocole 0.6), et vit dans le tirage. Le squelette de prompt juge de l'annexe D, qui ne prend qu'un item, était donc insuffisant.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -34,7 +34,7 @@
           "role": {
             "type": "string",
             "enum": ["principal", "attendu_dans_liste", "distracteur", "contexte"],
-            "description": "principal : l'item qui définit la question et la grappe. attendu_dans_liste : item P d'un autre candidat devant figurer dans la réponse à une Q-ATT. distracteur : item proche servant à détecter la mauvaise attribution. contexte : fourni au juge sans attente propre."
+            "description": "principal : l'item qui définit la question et la grappe. attendu_dans_liste : item P ou O de la mesure d'une Q-ATT, dont la position EN VIGUEUR AU GEL décide si son candidat figure dans la liste attendue (\"pour\" : présent ; \"contre\" ou hors validité : absent) ; le rôle seul ne dit donc pas que le candidat est attendu, tirage.reponse_attendue.candidats_attendus fait foi. distracteur : item proche servant à détecter la mauvaise attribution. contexte : fourni au juge sans attente propre."
           }
         }
       },

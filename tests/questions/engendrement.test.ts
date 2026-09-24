@@ -11,10 +11,11 @@ import { engendrer, MesureIntrouvable, ThemeHorsPerimetre } from "../../pipeline
 import { contientLibelle } from "../../pipeline/questions/libelles.ts";
 import { ArbitrageSansDecision } from "../../pipeline/questions/tirage.ts";
 import type { Item, QuestionEngendree } from "../../pipeline/questions/types.ts";
-import { arbitre, contestation, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
+import { arbitre, contestation, itemA, itemF, itemO, itemP, mesure, nomme, perimetre } from "./fabriques.ts";
 
 const MESURE = mesure({ cle: "tva", libelle: "TVA réduite sur l'énergie" });
 const MESURE_FICTIVE = mesure({ cle: "fictive", libelle: "prime aux marcheurs", fictive: true });
+const PERIMETRE = perimetre(["demo-alpha", "demo-beta", "demo-gamma"]);
 
 function codes(questions: readonly QuestionEngendree[]): readonly string[] {
   return questions.map((question) => question.gabarit).sort();
@@ -23,22 +24,22 @@ function codes(questions: readonly QuestionEngendree[]): readonly string[] {
 describe("gabarits engendrés par type d'item", () => {
   it("engendre exactement Q-DIR, Q-FER, Q-ATT et Q-NEG pour un item P", () => {
     const item = itemP({ cle: "p1", candidat_id: "demo-alpha", mesure: MESURE });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ATT", "Q-DIR", "Q-FER", "Q-NEG"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ATT", "Q-DIR", "Q-FER", "Q-NEG"]);
   });
 
   it("engendre exactement Q-DIR et Q-FER pour un item A", () => {
     const item = itemA({ cle: "a1", candidat_id: "demo-alpha", mesure: MESURE });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-DIR", "Q-FER"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-DIR", "Q-FER"]);
   });
 
   it("engendre exactement Q-FER, Q-ORI et Q-ACT pour un item O", () => {
     const item = itemO({ cle: "o1", candidat_id: "demo-alpha", mesure: MESURE });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT", "Q-FER", "Q-ORI"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ACT", "Q-FER", "Q-ORI"]);
   });
 
   it("engendre exactement Q-ATT et Q-ORI pour un item F", () => {
     const item = itemF({ cle: "f1", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE });
-    expect(codes(engendrer([item], [MESURE_FICTIVE]))).toEqual(["Q-ATT", "Q-ORI"]);
+    expect(codes(engendrer([item], [MESURE_FICTIVE], PERIMETRE))).toEqual(["Q-ATT", "Q-ORI"]);
   });
 });
 
@@ -56,7 +57,7 @@ describe("position conditionnelle (§5, protocole 0.3)", () => {
       mesure: MESURE,
       position: "conditionnel",
     });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ATT", "Q-DIR"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ATT", "Q-DIR"]);
   });
 
   it("cas 2 et 14 : un item O à l'état antérieur conditionnel n'engendre ni Q-FER ni Q-ORI, mais Q-ACT", () => {
@@ -67,7 +68,7 @@ describe("position conditionnelle (§5, protocole 0.3)", () => {
       position: "conditionnel",
       position_posterieure: "pour",
     });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ACT"]);
   });
 
   it("cas 3 : un item O à l'état postérieur conditionnel n'engendre ni Q-FER ni Q-ORI", () => {
@@ -78,7 +79,7 @@ describe("position conditionnelle (§5, protocole 0.3)", () => {
       position: "pour",
       position_posterieure: "conditionnel",
     });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ACT"]);
   });
 
   it("cas 4 et 15 : un item O sans état conditionnel engendre Q-FER et Q-ORI comme avant", () => {
@@ -89,13 +90,13 @@ describe("position conditionnelle (§5, protocole 0.3)", () => {
       position: "contre",
       position_posterieure: "pour",
     });
-    expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ACT", "Q-FER", "Q-ORI"]);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ACT", "Q-FER", "Q-ORI"]);
   });
 
   it("n'exclut rien d'un item P « pour », « contre » ou « sans_objet »", () => {
     for (const position of ["pour", "contre", "sans_objet"] as const) {
       const item = itemP({ cle: `p-${position}`, candidat_id: "demo-alpha", mesure: MESURE, position });
-      expect(codes(engendrer([item], [MESURE]))).toEqual(["Q-ATT", "Q-DIR", "Q-FER", "Q-NEG"]);
+      expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(["Q-ATT", "Q-DIR", "Q-FER", "Q-NEG"]);
     }
   });
 
@@ -107,8 +108,8 @@ describe("position conditionnelle (§5, protocole 0.3)", () => {
       position: "conditionnel",
     });
     const pour = itemP({ cle: "p-ident", candidat_id: "demo-alpha", mesure: MESURE, position: "pour" });
-    const idsPour = new Map(engendrer([pour], [MESURE]).map((q) => [q.gabarit, q.id]));
-    for (const question of engendrer([conditionnel], [MESURE])) {
+    const idsPour = new Map(engendrer([pour], [MESURE], PERIMETRE).map((q) => [q.gabarit, q.id]));
+    for (const question of engendrer([conditionnel], [MESURE], PERIMETRE)) {
       expect(question.id).toBe(idsPour.get(question.gabarit));
     }
   });
@@ -121,7 +122,7 @@ describe("version des gabarits", () => {
       itemO({ cle: "v-o", candidat_id: "demo-alpha", mesure: MESURE }),
       itemF({ cle: "v-f", candidat_id: "demo-alpha", mesure: MESURE_FICTIVE }),
     ];
-    const questions = engendrer(items, [MESURE, MESURE_FICTIVE]);
+    const questions = engendrer(items, [MESURE, MESURE_FICTIVE], PERIMETRE);
     expect(questions.length).toBeGreaterThan(0);
     for (const question of questions) expect(question.version_gabarits).toBe("prompts/gabarits-1.0.0");
   });
@@ -136,7 +137,7 @@ describe("items qui n'engendrent aucune question", () => {
       tier: "T3",
       statut_validation: "a_confirmer",
     });
-    expect(engendrer([item], [MESURE])).toEqual([]);
+    expect(engendrer([item], [MESURE], PERIMETRE)).toEqual([]);
   });
 
   it("n'engendre rien pour un item contesté (§5 : aucun item contesté dans le tirage)", () => {
@@ -146,7 +147,7 @@ describe("items qui n'engendrent aucune question", () => {
       mesure: MESURE,
       statut_contestation: "contestee",
     });
-    expect(engendrer([item], [MESURE])).toEqual([]);
+    expect(engendrer([item], [MESURE], PERIMETRE)).toEqual([]);
   });
 });
 
@@ -162,26 +163,26 @@ describe("item sorti de l'arbitrage du panel", () => {
 
   it("(a) un item arbitré maintenu engendre ses questions", () => {
     const item = arbitre(base, [contestation("ea", "maintien", DATE)]);
-    expect(codes(engendrer([item], [MESURE]))).toEqual(P_TOUS);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(P_TOUS);
   });
 
   it("(b) un item arbitré corrigé engendre ses questions", () => {
     const item = arbitre(base, [contestation("eb", "correction", DATE)]);
-    expect(codes(engendrer([item], [MESURE]))).toEqual(P_TOUS);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(P_TOUS);
   });
 
   it("(c) un item arbitré avec retrait n'engendre rien", () => {
     const item = arbitre(base, [contestation("ec", "retrait", DATE)]);
-    expect(engendrer([item], [MESURE])).toEqual([]);
+    expect(engendrer([item], [MESURE], PERIMETRE)).toEqual([]);
   });
 
   it("(d) un item arbitré non évaluable n'engendre rien", () => {
     const item = arbitre(base, [contestation("ed", "non_evaluabilite", DATE)]);
-    expect(engendrer([item], [MESURE])).toEqual([]);
+    expect(engendrer([item], [MESURE], PERIMETRE)).toEqual([]);
   });
 
   it("(e) un item arbitré sans décision du panel lève une erreur nommée", () => {
-    expect(() => engendrer([arbitre(base, [])], [MESURE])).toThrow(ArbitrageSansDecision);
+    expect(() => engendrer([arbitre(base, [])], [MESURE], PERIMETRE)).toThrow(ArbitrageSansDecision);
   });
 
   it("(f) un item contesté n'engendre rien, même porteur d'un maintien antérieur", () => {
@@ -190,7 +191,7 @@ describe("item sorti de l'arbitrage du panel", () => {
       statut_contestation: "contestee",
       contestations: [contestation("ef", "maintien", DATE)],
     };
-    expect(engendrer([item], [MESURE])).toEqual([]);
+    expect(engendrer([item], [MESURE], PERIMETRE)).toEqual([]);
   });
 
   it("seule la dernière décision compte : retrait puis maintien engendre", () => {
@@ -198,14 +199,14 @@ describe("item sorti de l'arbitrage du panel", () => {
       contestation("eg2", "maintien", "2026-10-20T10:00:00+02:00"),
       contestation("eg1", "retrait", DATE),
     ]);
-    expect(codes(engendrer([item], [MESURE]))).toEqual(P_TOUS);
+    expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(P_TOUS);
   });
 
   it("inscrit un item maintenu d'un autre candidat dans la liste attendue d'une Q-ATT", () => {
     const autre = arbitre(itemP({ cle: "p-arbitre-b", candidat_id: "demo-beta", mesure: MESURE }), [
       contestation("eh", "maintien", DATE),
     ]);
-    const attribution = engendrer([base, autre], [MESURE]).find(
+    const attribution = engendrer([base, autre], [MESURE], PERIMETRE).find(
       (question) => question.gabarit === "Q-ATT" && question.grappe_id === base.id,
     );
     expect(attribution?.items.map((entree) => entree.reference.item_id)).toEqual([base.id, autre.id]);
@@ -218,7 +219,7 @@ describe("question d'attribution", () => {
   const gamma = itemP({ cle: "att-c", candidat_id: "demo-gamma", mesure: MESURE });
 
   it("porte les items P vérifiés des autres candidats de la mesure et aucun candidat_id", () => {
-    const questions = engendrer([alpha, beta, gamma], [MESURE]);
+    const questions = engendrer([alpha, beta, gamma], [MESURE], PERIMETRE);
     const attribution = questions.filter((question) => question.gabarit === "Q-ATT");
     expect(attribution).toHaveLength(3);
 
@@ -236,7 +237,7 @@ describe("question d'attribution", () => {
       mesure: MESURE,
       statut_contestation: "contestee",
     });
-    const questions = engendrer([alpha, beta, conteste], [MESURE]);
+    const questions = engendrer([alpha, beta, conteste], [MESURE], PERIMETRE);
     const attribution = questions.find((question) => question.gabarit === "Q-ATT");
     expect(attribution?.items).toHaveLength(2);
   });
@@ -253,7 +254,7 @@ describe("question d'attribution", () => {
       mesure: mesureAmbigue,
       libelle_lisible: "Camille Alpha",
     });
-    const attribution = engendrer([item], [mesureAmbigue]).find((q) => q.gabarit === "Q-ATT");
+    const attribution = engendrer([item], [mesureAmbigue], PERIMETRE).find((q) => q.gabarit === "Q-ATT");
     if (attribution === undefined) throw new Error("Aucune Q-ATT engendrée pour cet item.");
 
     expect(attribution.texte_neutre).toContain("verser une prime alpha aux ménages");
@@ -264,7 +265,7 @@ describe("question d'attribution", () => {
 describe("grappe et intégrité des entrées", () => {
   it("fixe grappe_id sur l'identifiant de l'item principal", () => {
     const item = itemP({ cle: "p-grappe", candidat_id: "demo-alpha", mesure: MESURE });
-    for (const question of engendrer([item], [MESURE])) {
+    for (const question of engendrer([item], [MESURE], PERIMETRE)) {
       const principal = question.items.find((entree) => entree.role === "principal");
       expect(question.grappe_id).toBe(principal?.reference.item_id);
       expect(question.grappe_id).toBe(item.id);
@@ -272,13 +273,8 @@ describe("grappe et intégrité des entrées", () => {
   });
 
   it("nomme le candidat dans le texte des cinq gabarits hors attribution", () => {
-    const item = itemP({
-      cle: "p-libelle",
-      candidat_id: "demo-alpha",
-      mesure: MESURE,
-      libelle_lisible: "Camille Alpha",
-    });
-    for (const question of engendrer([item], [MESURE])) {
+    const item = itemP({ cle: "p-libelle", candidat_id: "demo-alpha", mesure: MESURE });
+    for (const question of engendrer([item], [MESURE], [nomme("demo-alpha", "Camille Alpha", "Alpha")])) {
       const attendu = question.gabarit !== "Q-ATT";
       expect(question.texte_neutre.includes("Camille Alpha")).toBe(attendu);
       expect(question.candidat_id === undefined).toBe(!attendu);
@@ -290,11 +286,11 @@ describe("refus explicites", () => {
   it("refuse un item dont la mesure porte un thème hors des dix", () => {
     const horsListe = mesure({ cle: "hors", theme: "sport_et_loisirs" });
     const item = itemP({ cle: "p-hors", candidat_id: "demo-alpha", mesure: horsListe });
-    expect(() => engendrer([item], [horsListe])).toThrow(ThemeHorsPerimetre);
+    expect(() => engendrer([item], [horsListe], PERIMETRE)).toThrow(ThemeHorsPerimetre);
   });
 
   it("refuse un item dont la mesure est absente du référentiel", () => {
     const item = itemP({ cle: "p-orphelin", candidat_id: "demo-alpha", mesure: MESURE });
-    expect(() => engendrer([item], [])).toThrow(MesureIntrouvable);
+    expect(() => engendrer([item], [], PERIMETRE)).toThrow(MesureIntrouvable);
   });
 });

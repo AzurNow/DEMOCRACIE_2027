@@ -29,12 +29,14 @@ import {
   itemF,
   itemP,
   mesure,
+  perimetre,
   question,
   run,
 } from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta"];
+const PERIMETRE = perimetre(CANDIDATS);
 
 const MESURE_P1 = mesure({ cle: "p1", theme: "fiscalite_pouvoir_achat", libelle: "tarif de base" });
 const MESURE_P2 = mesure({ cle: "p2", theme: "retraites", libelle: "durée de cotisation" });
@@ -54,7 +56,7 @@ const ITEMS: readonly Item[] = CANDIDATS.flatMap((candidat_id) => [
   itemF({ cle: `${candidat_id}-f`, candidat_id, mesure: MESURE_F }),
 ]);
 
-const QUESTIONS: readonly Question[] = engendrer(ITEMS, MESURES).map(completer);
+const QUESTIONS: readonly Question[] = engendrer(ITEMS, MESURES, PERIMETRE).map(completer);
 const RUN = run(CANDIDATS.map((candidat_id) => candidat({ candidat_id })), GEL);
 
 function choisir(item: Item, gabarit: CodeGabarit): Question {
@@ -405,6 +407,11 @@ describe("noms de candidats dans les questions d'attribution", () => {
     expect(symetrie.statut_global).toBe("rouge");
   });
 
+  /*
+   * Depuis le protocole 0.6, le nom seul est cherché : un mot de la mesure ÉGAL au nom de famille
+   * serait une fuite (`noms-candidats.test.ts`). Un morceau de mot, lui, n'en est pas une : le nom
+   * « Alphand » n'est pas trouvé dans « prime alpha ».
+   */
   it("reste vert quand le libellé de la mesure contient seulement un morceau d'un nom", () => {
     const mesureAmbigue = mesure({
       cle: "prime-alpha",
@@ -412,14 +419,16 @@ describe("noms de candidats dans les questions d'attribution", () => {
       libelle: "prime alpha",
       formulation_canonique: "verser une prime alpha aux ménages",
     });
-    const item = itemP({
-      cle: "ambigu",
-      candidat_id: "demo-alpha",
-      mesure: mesureAmbigue,
-      libelle_lisible: "Camille Alpha",
-    });
+    const item = itemP({ cle: "ambigu", candidat_id: "demo-alpha", mesure: mesureAmbigue });
     const items = [...ITEMS, item];
-    const engendrees = engendrer(items, [...MESURES, mesureAmbigue]).map(completer);
+    const nommes = run(
+      [
+        candidat({ candidat_id: "demo-alpha", libelle: "Camille Alphand", nom: "Alphand" }),
+        candidat({ candidat_id: "demo-beta" }),
+      ],
+      GEL,
+    );
+    const engendrees = engendrer(items, [...MESURES, mesureAmbigue], nommes.perimetre.candidats).map(completer);
     const attribution = engendrees.find(
       (candidate) => candidate.grappe_id === item.id && candidate.gabarit === "Q-ATT",
     ) as Question;
@@ -429,7 +438,7 @@ describe("noms de candidats dans les questions d'attribution", () => {
       graine_tirage: graine(),
       entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], GEL),
     };
-    const symetrie = verifierSymetrie(tirage, [...QUESTIONS, ...engendrees], items, RUN);
+    const symetrie = verifierSymetrie(tirage, [...QUESTIONS, ...engendrees], items, nommes);
     expect(conditionDe(symetrie, "aucun_nom_candidat_dans_q_att").statut).toBe("vert");
   });
 });

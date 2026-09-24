@@ -18,18 +18,19 @@ import {
   type QuestionNotable,
 } from "../../pipeline/questions/reponse-attendue.ts";
 import type { CodeGabarit, Item, Mesure, QuestionEngendree } from "../../pipeline/questions/types.ts";
-import { itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
+import { itemA, itemF, itemO, itemP, mesure, perimetre } from "./fabriques.ts";
 
 const MESURE = mesure({ cle: "tva", libelle: "TVA réduite sur l'énergie" });
 const MESURE_FICTIVE = mesure({ cle: "fictive", libelle: "prime aux marcheurs", fictive: true });
 const GEL = "2026-12-01T06:00:00+01:00";
+const PERIMETRE = perimetre(["demo-alpha", "demo-beta", "demo-gamma"]);
 
 function questionDe(
   items: readonly Item[],
   mesures: readonly Mesure[],
   gabarit: CodeGabarit,
 ): QuestionEngendree {
-  const trouvee = engendrer(items, mesures).find((question) => question.gabarit === gabarit);
+  const trouvee = engendrer(items, mesures, PERIMETRE).find((question) => question.gabarit === gabarit);
   if (trouvee === undefined) throw new Error(`Aucune question ${gabarit} engendrée pour ce jeu.`);
   return trouvee;
 }

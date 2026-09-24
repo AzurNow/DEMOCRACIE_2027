@@ -25,7 +25,8 @@ import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { itemEngendreDesQuestions, mesureDe, themeDe } from "./engendrement.ts";
 import { decisionPanelAuGel } from "./contestation.ts";
-import { reponseAttendue } from "./reponse-attendue.ts";
+import { gabaritParCode } from "./gabarits.ts";
+import { listeAttendueDefinie, reponseAttendue } from "./reponse-attendue.ts";
 import { ItemIntrouvable } from "./reponse-attendue.ts";
 import type {
   CandidatAuGel,
@@ -134,19 +135,42 @@ function themeDeQuestion(question: Question, index: Index): Theme {
 }
 
 /**
- * §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question.
- * La règle par item est celle de l'engendrement (`itemEngendreDesQuestions`), écrite une seule
- * fois. Tous les items sont évalués avant de conclure (`map` puis `every`, jamais `every` seul) :
- * une référence absente ou un arbitrage illisible se signale toujours, il ne se cache pas
- * derrière un autre motif d'exclusion.
+ * Règle de tirabilité, évaluée sur toutes les questions AVANT que la graine ne serve : une question
+ * écartée ici l'est quelle que soit la graine.
+ *
+ * - §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question. La
+ *   règle par item est celle de l'engendrement (`itemEngendreDesQuestions`), écrite une seule fois.
+ *   Tous les items sont évalués avant de conclure (`map` puis `every`, jamais `every` seul) : une
+ *   référence absente ou un arbitrage illisible se signale toujours, il ne se cache pas derrière un
+ *   autre motif d'exclusion.
+ * - §5 et annexe B (protocole 0.6) : une question qui ne nomme aucun candidat (donnée
+ *   `nomme_candidat` de la table, jamais son code) n'est pas tirée si sa liste attendue n'est pas
+ *   définie au gel, c'est-à-dire si un candidat y a une position en vigueur « conditionnel » ou
+ *   « sans_objet » (`reponse-attendue.ts:listeAttendueDefinie`).
  */
-function questionTirable(question: Question, index: Index): boolean {
+function questionTirable(question: Question, items: ReadonlyMap<string, Item>, date_gel: string): boolean {
   const verdicts = question.items.map((entree) => {
-    const item = index.items.get(entree.reference.item_id);
+    const item = items.get(entree.reference.item_id);
     if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
     return itemEngendreDesQuestions(item);
   });
-  return verdicts.every((tirable) => tirable);
+  if (!verdicts.every((tirable) => tirable)) return false;
+  if (gabaritParCode(question.gabarit).nomme_candidat) return true;
+  return listeAttendueDefinie(question, items, date_gel);
+}
+
+/**
+ * Utilitaire public : les questions que la règle de tirabilité admet au gel, dans leur ordre. C'est
+ * le filtre que `tirer` applique avant tout usage de la graine ; un tirage construit à la main
+ * (`entreesPour`) ne contient que des questions qui le passent.
+ */
+export function questionsTirables(
+  questions: readonly Question[],
+  items: readonly Item[],
+  date_gel: string,
+): readonly Question[] {
+  const parId = new Map(items.map((item) => [item.id, item]));
+  return questions.filter((question) => questionTirable(question, parId, date_gel));
 }
 
 /* ------------------------------------------------------- entrées de tirage */
@@ -390,7 +414,9 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
   }
 
   const index = indexer(demande);
-  const tirables = demande.questions.filter((question) => questionTirable(question, index));
+  const tirables = demande.questions.filter((question) =>
+    questionTirable(question, index.items, demande.run.date_gel),
+  );
   const interroges = demande.run.perimetre.candidats.filter((candidat) => candidat.interroge);
   const groupes = grouperParCandidat(tirables, interroges);
 

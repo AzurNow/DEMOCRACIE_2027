@@ -1,5 +1,5 @@
 {
-  "id": "45BA12PKAC7CZTYF0FKW29YE3D",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -51,7 +51,6 @@
       {
         "candidat_id": "cand-a",
         "libelle": "Alix Fictif-A",
-        "nom": "Fictif-A",
         "statut_au_gel": "actif",
         "preuves_inclusion": [
           {
@@ -160,7 +159,7 @@
   "taux_echantillon_humain": 0.1,
   "kappa_paire_juges": 0.81,
   "symetrie": {
-    "statut_global": "rouge",
+    "statut_global": "vert",
     "conditions": [
       {
         "code": "nombre_questions_par_candidat",
