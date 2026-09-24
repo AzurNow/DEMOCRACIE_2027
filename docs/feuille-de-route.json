@@ -347,7 +347,7 @@
         "D11",
         "D7"
       ],
-      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire."
+      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas."
     },
     {
       "id": "interrogation",

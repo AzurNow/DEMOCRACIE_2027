@@ -182,6 +182,10 @@ function texteDe(item: Item, mesure: Mesure, gabarit: Gabarit): string {
  * Q-ATT attend « la liste exacte des candidats du périmètre » : les items P vérifiés des AUTRES
  * candidats sur la même mesure y figurent en `attendu_dans_liste`. Pour un item fictif, la
  * liste est vide, ce qui est exactement l'attente « aucun » de l'annexe B.
+ *
+ * Le gabarit d'attribution se reconnaît à sa donnée `nomme_candidat`, jamais à son code : dans
+ * la table, seul le gabarit qui ne nomme aucun candidat attend une liste de candidats, et le
+ * chargeur de `gabarits.ts` lie `nomme_candidat` à la présence de `[candidat]` dans le texte.
  */
 function entreesDItems(
   item: Item,
@@ -189,7 +193,7 @@ function entreesDItems(
   positionsParMesure: ReadonlyMap<string, readonly Item[]>,
 ): readonly ItemDeQuestion[] {
   const principal: ItemDeQuestion = { reference: referenceDe(item), role: "principal" };
-  if (gabarit.code !== "Q-ATT") return [principal];
+  if (gabarit.nomme_candidat) return [principal];
 
   // Une mesure sans aucun item P du périmètre — le cas d'une mesure fictive — n'a pas de groupe.
   const groupe = positionsParMesure.get(item.mesure_id);

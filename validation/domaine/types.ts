@@ -7,9 +7,16 @@
  * blanche, pas un filtre.
  */
 
-export type TypeItem = "P" | "A" | "O" | "F";
+/*
+ * Les listes fermées qui recopient un `enum` de `schema/` portent une constante dont l'union est
+ * dérivée ; `tests/enumerations-schemas.test.ts` confronte chacune à son schéma.
+ */
 
-export type Decision = "accepter" | "corriger" | "rejeter" | "non_evaluable";
+export const TYPES_ITEM = ["P", "A", "O", "F"] as const;
+export type TypeItem = (typeof TYPES_ITEM)[number];
+
+export const DECISIONS = ["accepter", "corriger", "rejeter", "non_evaluable"] as const;
+export type Decision = (typeof DECISIONS)[number];
 
 /**
  * Les trois catégories du kappa publié. Dérivées de la décision : c'est le devenir de l'item
@@ -19,7 +26,8 @@ export type Decision = "accepter" | "corriger" | "rejeter" | "non_evaluable";
  */
 export type CategorieKappa = "retenu" | "rejete" | "non_evaluable";
 
-export type NatureLot = "entrainement" | "reel" | "reannotation";
+export const NATURES_LOT = ["entrainement", "reel", "reannotation"] as const;
+export type NatureLot = (typeof NATURES_LOT)[number];
 
 export type CleGrille =
   | "citation_fidele"

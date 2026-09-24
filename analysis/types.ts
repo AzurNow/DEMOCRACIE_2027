@@ -21,51 +21,67 @@ export type EmpreinteSha256 = string;
  * §8, garde-fou structurel : seul `run` alimente les métriques. Les autres contextes existent
  * dans les données (pilote, jeu d'or, réponses permutées du test contrefactuel du §7).
  */
-export type ContexteMesure = "run" | "pilote" | "jeu_or" | "contrefactuel_candidat" | "contrefactuel_outil";
+/*
+ * Chaque liste fermée ci-dessous recopie un `enum` de `schema/` ; son union est dérivée de la
+ * constante, et `tests/enumerations-schemas.test.ts` confronte la constante au schéma.
+ */
 
-export type TypeItem = "P" | "A" | "O" | "F";
+export const CONTEXTES_MESURE = [
+  "run",
+  "pilote",
+  "jeu_or",
+  "contrefactuel_candidat",
+  "contrefactuel_outil",
+] as const;
+export type ContexteMesure = (typeof CONTEXTES_MESURE)[number];
 
-export type Gabarit = "Q-DIR" | "Q-FER" | "Q-ATT" | "Q-NEG" | "Q-ORI" | "Q-ACT";
+export const TYPES_ITEM = ["P", "A", "O", "F"] as const;
+export type TypeItem = (typeof TYPES_ITEM)[number];
 
-export type Registre = "neutre" | "familier" | "oriente";
+export const CODES_GABARIT = ["Q-DIR", "Q-FER", "Q-ATT", "Q-NEG", "Q-ORI", "Q-ACT"] as const;
+export type Gabarit = (typeof CODES_GABARIT)[number];
 
-export type Theme =
-  | "fiscalite_pouvoir_achat"
-  | "retraites"
-  | "travail_emploi"
-  | "sante"
-  | "education"
-  | "securite_justice"
-  | "immigration"
-  | "ecologie_energie"
-  | "institutions_democratie"
-  | "europe_defense_international";
+export const REGISTRES = ["neutre", "familier", "oriente"] as const;
+export type Registre = (typeof REGISTRES)[number];
 
-export type Mode = "web_activee" | "web_desactivee";
+export const THEMES = [
+  "fiscalite_pouvoir_achat",
+  "retraites",
+  "travail_emploi",
+  "sante",
+  "education",
+  "securite_justice",
+  "immigration",
+  "ecologie_energie",
+  "institutions_democratie",
+  "europe_defense_international",
+] as const;
+export type Theme = (typeof THEMES)[number];
 
-export type Canal = "api" | "application";
+export const MODES = ["web_activee", "web_desactivee"] as const;
+export type Mode = (typeof MODES)[number];
 
-export type CategorieRetenue = "exacte" | "inexacte" | "non_reponse" | "indeterminee";
+export const CANAUX = ["api", "application"] as const;
+export type Canal = (typeof CANAUX)[number];
 
-export type Drapeau =
-  | "fabrication"
-  | "mauvaise_attribution"
-  | "obsolescence"
-  | "deformation"
-  | "confirmation_premisse";
+export const CATEGORIES_RETENUES = ["exacte", "inexacte", "non_reponse", "indeterminee"] as const;
+export type CategorieRetenue = (typeof CATEGORIES_RETENUES)[number];
 
 /** Ordre figé : il fixe l'ordre de la répartition des drapeaux parmi les inexactes (§8). */
-export const DRAPEAUX: readonly Drapeau[] = [
+export const DRAPEAUX = [
   "fabrication",
   "mauvaise_attribution",
   "obsolescence",
   "deformation",
   "confirmation_premisse",
-];
+] as const;
+export type Drapeau = (typeof DRAPEAUX)[number];
 
-export type StatutReponse = "obtenue" | "manquante";
+export const STATUTS_REPONSE = ["obtenue", "manquante"] as const;
+export type StatutReponse = (typeof STATUTS_REPONSE)[number];
 
-export type RoleItem = "principal" | "attendu_dans_liste" | "distracteur" | "contexte";
+export const ROLES_ITEM = ["principal", "attendu_dans_liste", "distracteur", "contexte"] as const;
+export type RoleItem = (typeof ROLES_ITEM)[number];
 
 /** Les trois booléens qui portent exactement la métrique « sourçage valide » du §8. */
 export interface SourcageRetenu {

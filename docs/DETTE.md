@@ -13,6 +13,38 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-24 — Lot 4 de la revue : listes du protocole confrontées aux schémas, règles écrites une fois (`analysis/types.ts`, `pipeline/questions/`, `validation/domaine/types.ts`, `validation/client/types.ts`, `tests/enumerations-schemas.test.ts`)
+
+### 1. La symétrie lit `nomme_candidat` dans la table de gabarits courante, pas dans celle du tirage — *moyenne*
+
+`symetrie.ts` reconnaît les questions d'attribution par `gabaritParCode(entree.gabarit).nomme_candidat`.
+`gabaritParCode` lit la table chargée par `gabarits.ts` (`VERSION_FICHIER`), pas la version
+`version_gabarits` portée par les questions du tirage contrôlé.
+
+**Pourquoi ça casse.** Une version 1.1.0 des gabarits qui change `nomme_candidat` d'un gabarit fait
+changer le verdict de `pnpm symmetry` rejoué sur un tirage déjà gelé et publié en 1.0.0. Le tiers
+qui vérifie (§9) obtient un autre résultat que l'auteur, sans qu'aucun chiffre du tirage ait bougé.
+
+**Ce qu'il faut faire.** Au lot qui introduira une deuxième version des gabarits : charger la table
+par `version_gabarits` de la question, et refuser une version inconnue. Rien avant.
+
+### 2. Trois copies de listes fermées restent privées, donc hors du test d'accord — *basse*
+
+`analysis/conditions.ts:39` (`MODES`, typée `readonly Mode[]`, peut être un sous-ensemble sans que
+rien ne le voie), `validation/io/lots-fichier.ts:13` (`NATURES_CONNUES`),
+`pipeline/questions/contestation.ts:60` (`REINTEGRATION_PAR_DECISION`, table fermée sur
+`decision_panel.decision`). Les clés de grille `CleGrille` et `CleSpecifique` sont des noms de
+propriétés de `decision.schema.json`, pas des `enum`, et ne sont pas confrontées non plus.
+
+**Pourquoi ça casse.** Un mode ou une nature de lot ajoutés au schéma par amendement passent le test
+d'accord (les listes publiques sont à jour) mais restent refusés ou ignorés par ces copies privées.
+
+**Ce qu'il faut faire.** Remplacer les deux premières par les constantes exportées (`MODES`,
+`NATURES_LOT`), exporter la table de réintégration et l'ajouter au test, étendre le test aux clés de
+propriétés de la grille. Un petit lot, sans changement de comportement.
+
+---
+
 ## 2026-09-24 — Lot 3 de la revue : validation de schéma à l'exécution, barrière de symétrie complète (`outils/schemas/valider.ts`, `validation/io/`, `validation/serveur/routes.ts`, `outils/promote.ts`, `outils/symmetry.ts`)
 
 ### 1. Une évolution de schéma sans migration des données arrête l'interface, la promotion et la barrière — *moyenne*
