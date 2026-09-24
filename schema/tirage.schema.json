@@ -155,7 +155,7 @@
           "type": "array",
           "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
           "uniqueItems": true,
-          "description": "Q-ATT : la liste exacte des candidats du périmètre proposant la mesure. Vide pour un item fictif."
+          "description": "Q-ATT : la liste exacte des candidats dont la position en vigueur au gel sur la mesure est « pour » (annexe B, protocole 0.6). Vide pour un item fictif, et pour une mesure dont aucun candidat n'est « pour » au gel."
         },
         "resolution_temporelle": {
           "type": "object",

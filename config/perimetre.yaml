@@ -52,6 +52,7 @@ tirage:
 #
 #   - candidat_id: cle-stable-minuscules   # jamais inventée par un script
 #     libelle: "Prénom Nom"
+#     nom: "Nom"                     # nom de famille seul, cherché par la barrière de symétrie (§5)
 #     declaration:
 #       url: "…"
 #       date: "AAAA-MM-JJ"

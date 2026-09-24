@@ -166,6 +166,8 @@
             "additionalProperties": false,
             "required": [
               "candidat_id",
+              "libelle",
+              "nom",
               "statut_au_gel",
               "items_p_verifies",
               "sous_seuil",
@@ -174,6 +176,18 @@
             "properties": {
               "candidat_id": {
                 "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+              },
+              "libelle": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Prénom et nom du candidat tels qu'affichés, saisis par l'auteur. Remplit [candidat] dans les gabarits qui nomment un candidat (annexe B), et la barrière « aucun nom de candidat dans les questions d'attribution » (§5) le cherche. Seul domicile du nom d'un candidat : item.libelle_lisible est l'étiquette de l'item, pas un nom."
+              },
+              "nom": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Nom de famille seul, saisi par l'auteur et jamais dérivé du libellé (particules, noms composés et noms d'usage ne se découpent pas mécaniquement). §5 (protocole 0.6) : la barrière des questions d'attribution cherche aussi le nom seul."
               },
               "statut_au_gel": {
                 "type": "string",

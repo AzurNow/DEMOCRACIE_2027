@@ -280,6 +280,20 @@
       "regle_protocole": "§4, couverture minimale ; §8, seuils de non-publication"
     },
     {
+      "objet": "run",
+      "fichier": "run/invalide-04-candidat-sans-libelle.json",
+      "attendu": "invalide",
+      "motif": "Candidat du périmètre sans libellé. Le libellé remplit [candidat] dans les gabarits qui nomment un candidat, et la barrière des questions d'attribution le cherche : sans lui, une question nominative ne s'engendre pas et une Q-ATT qui nomme le candidat passe la barrière.",
+      "regle_protocole": "§5, garanties de symétrie ; annexe B"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-05-candidat-sans-nom.json",
+      "attendu": "invalide",
+      "motif": "Candidat du périmètre sans nom de famille seul. §5 (protocole 0.6) : la barrière vise « prénom et nom, ou nom seul » ; sans le nom saisi, une Q-ATT qui ne cite que le nom de famille passerait la barrière, et le dériver du libellé serait une hypothèse (particules, noms composés).",
+      "regle_protocole": "§5, garanties de symétrie"
+    },
+    {
       "objet": "lecture-comparateur",
       "fichier": "lecture-comparateur/valide-01-position-affichee.json",
       "attendu": "valide",

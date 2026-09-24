@@ -10,14 +10,20 @@
  * silencieuse que le projet prétend mesurer chez les autres.
  */
 
-import type { EtatPositionnel, Item, Mesure, TypeItem } from "../../validation/domaine/types.ts";
+import type {
+  BlocObsolescence,
+  EtatPositionnel,
+  Item,
+  Mesure,
+  TypeItem,
+} from "../../validation/domaine/types.ts";
 
 /*
  * Chaque liste fermée de ce fichier recopie un `enum` de `schema/` ; son union est dérivée de la
  * constante, et `tests/enumerations-schemas.test.ts` confronte la constante au schéma.
  */
 
-export type { EtatPositionnel, Item, Mesure, TypeItem };
+export type { BlocObsolescence, EtatPositionnel, Item, Mesure, TypeItem };
 
 /** Les dix thèmes du §3. Une position hors de cette liste n'entre pas dans le tirage. */
 export const THEMES = [
@@ -211,8 +217,19 @@ export interface Tirage {
 
 /* ----------------------------------------------------------------------- run */
 
-export interface CandidatAuGel {
+/**
+ * Le nom d'un candidat, saisi par l'auteur dans le périmètre du run : `libelle` (prénom et nom tels
+ * qu'affichés) remplit `[candidat]` dans les gabarits qui le nomment, et la barrière « aucun nom de
+ * candidat dans les Q-ATT » (§5, protocole 0.6) cherche `libelle` ET `nom`. Deux champs saisis,
+ * jamais l'un dérivé de l'autre.
+ */
+export interface CandidatNomme {
   readonly candidat_id: string;
+  readonly libelle: string;
+  readonly nom: string;
+}
+
+export interface CandidatAuGel extends CandidatNomme {
   readonly statut_au_gel: "actif" | "nouveau" | "retire";
   readonly items_p_verifies: number;
   readonly sous_seuil: boolean;

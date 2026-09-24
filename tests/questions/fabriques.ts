@@ -15,6 +15,7 @@ import { empreinteContenuNotant, sha256 } from "../../validation/domaine/emprein
 import type { Item, Mesure, Source } from "../../validation/domaine/types.ts";
 import type {
   CandidatAuGel,
+  CandidatNomme,
   CodeGabarit,
   Formulation,
   GraineTirage,
@@ -239,16 +240,36 @@ export function question(options: OptionsQuestion): Question {
 
 export interface OptionsCandidat {
   readonly candidat_id: string;
+  readonly libelle?: string;
+  readonly nom?: string;
   readonly statut_au_gel?: CandidatAuGel["statut_au_gel"];
   readonly items_p_verifies?: number;
   readonly sous_seuil?: boolean;
   readonly interroge?: boolean;
 }
 
+/**
+ * Libellé et nom fictifs d'un candidat de test, saisis séparément comme dans un vrai périmètre
+ * (aucun des deux n'est tiré de l'autre dans le code testé). Ils ne ressemblent à aucune mesure des
+ * jeux de test : sinon la barrière « aucun nom de candidat dans les Q-ATT » rougirait par accident.
+ */
+export function nomme(candidat_id: string, libelle?: string, nom?: string): CandidatNomme {
+  return {
+    candidat_id,
+    libelle: libelle ?? `Libellé ${candidat_id}`,
+    nom: nom ?? `Nom-${candidat_id}`,
+  };
+}
+
+/** Le périmètre nommé de candidats aux libellé et nom par défaut, pour `engendrer`. */
+export function perimetre(candidat_ids: readonly string[]): readonly CandidatNomme[] {
+  return candidat_ids.map((candidat_id) => nomme(candidat_id));
+}
+
 export function candidat(options: OptionsCandidat): CandidatAuGel {
   const effectif = options.items_p_verifies ?? 31;
   return {
-    candidat_id: options.candidat_id,
+    ...nomme(options.candidat_id, options.libelle, options.nom),
     statut_au_gel: options.statut_au_gel ?? "actif",
     items_p_verifies: effectif,
     sous_seuil: options.sous_seuil ?? effectif < 10,
@@ -331,7 +352,11 @@ export function jeu(options: OptionsJeu): Jeu {
         });
       }),
   );
-  return { items, mesures, questions: engendrer(items, mesures).map(completer) };
+  return {
+    items,
+    mesures,
+    questions: engendrer(items, mesures, perimetre(options.candidats)).map(completer),
+  };
 }
 
 function themeManquant(options: OptionsJeu, candidat_id: string, theme: string): boolean {

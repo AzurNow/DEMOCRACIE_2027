@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { engendrer } from "../pipeline/questions/engendrement.ts";
 import { entreesPour } from "../pipeline/questions/tirage.ts";
-import type { Item, Mesure, Question, Tirage } from "../pipeline/questions/types.ts";
+import type { CandidatNomme, Item, Mesure, Question, RunAuGel, Tirage } from "../pipeline/questions/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "./aides/fabriques.ts";
 import { completer, graine, identifiant, itemF, itemP, mesure } from "./questions/fabriques.ts";
@@ -81,24 +81,26 @@ interface Jeu {
 function jeuNominal(): Jeu {
   const items = [ITEM_P, ITEM_F];
   const mesures = [MESURE_P, MESURE_F];
-  const engendrees = engendrer(items, mesures).map(completer);
-  const questions = [choisir(engendrees, ITEM_P, "Q-DIR"), choisir(engendrees, ITEM_F, "Q-ORI")];
   const exempleRun = JSON.parse(
     readFileSync(join(RACINE, "schema/exemples/run/valide-01-mensuel-publie.json"), "utf8"),
   ) as Record<string, unknown> & { perimetre: { candidats: Record<string, unknown>[] } };
   const candidatExemple = exempleRun.perimetre.candidats[0] as Record<string, unknown>;
+  const candidatDuRun = { ...candidatExemple, candidat_id: CANDIDAT };
   const run = {
     ...exempleRun,
     id: identifiant("run:cli"),
     date_gel: GEL,
-    perimetre: { ...exempleRun.perimetre, candidats: [{ ...candidatExemple, candidat_id: CANDIDAT }] },
+    perimetre: { ...exempleRun.perimetre, candidats: [candidatDuRun] },
   };
+  // Le libellé qui remplit [candidat] est celui du périmètre du run écrit sur disque.
+  const engendrees = engendrer(items, mesures, [candidatDuRun as unknown as CandidatNomme]).map(completer);
+  const questions = [choisir(engendrees, ITEM_P, "Q-DIR"), choisir(engendrees, ITEM_F, "Q-ORI")];
   return {
     tirage: {
       run_id: identifiant("run:cli"),
       date_gel: GEL,
       graine_tirage: graine(),
-      entrees: entreesPour(questions, items, mesures, GEL),
+      entrees: entreesPour(questions, items, mesures, run as unknown as RunAuGel),
     },
     questions,
     items,
@@ -210,6 +212,23 @@ describe("7. pnpm symmetry", () => {
     expect(resultat.erreur).toContain(fichier);
     expect(resultat.erreur).toContain("« item »");
   });
+
+  it.each(["libelle", "nom"])(
+    "un candidat du périmètre sans « %s » : run refusé par son schéma, code 1",
+    (champ) => {
+      const jeu = jeuNominal();
+      const perimetre = jeu.run["perimetre"] as { candidats: Record<string, unknown>[] };
+      const candidats = perimetre.candidats.map((candidat) => {
+        const { [champ]: _retire, ...reste } = candidat;
+        return reste;
+      });
+      const resultat = symmetry(poser({ ...jeu, run: { ...jeu.run, perimetre: { ...perimetre, candidats } } }));
+      expect(resultat.status).toBe(1);
+      expect(resultat.erreur).toContain("« run »");
+      expect(resultat.erreur).toContain(champ);
+      expect(resultat.sortie).not.toContain("Contrôles verts");
+    },
+  );
 
   it("lit le répertoire d'items en ordre de nom : le premier fichier fautif signalé est le premier par nom", () => {
     const options = poser(jeuNominal());

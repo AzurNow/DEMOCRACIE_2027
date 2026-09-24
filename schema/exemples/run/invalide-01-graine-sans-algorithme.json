@@ -49,6 +49,8 @@
     "candidats": [
       {
         "candidat_id": "cand-a",
+        "libelle": "Alix Fictif-A",
+        "nom": "Fictif-A",
         "statut_au_gel": "actif",
         "preuves_inclusion": [
           {
@@ -77,6 +79,8 @@
       },
       {
         "candidat_id": "cand-b",
+        "libelle": "Bastien Fictif-B",
+        "nom": "Fictif-B",
         "statut_au_gel": "nouveau",
         "preuves_inclusion": [
           {
@@ -98,6 +102,8 @@
       },
       {
         "candidat_id": "cand-d",
+        "libelle": "Dominique Fictif-D",
+        "nom": "Fictif-D",
         "statut_au_gel": "retire",
         "items_p_verifies": 22,
         "sous_seuil": false,

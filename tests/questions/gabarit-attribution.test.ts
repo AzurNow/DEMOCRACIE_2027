@@ -20,7 +20,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
-import { entreesPour } from "../../pipeline/questions/tirage.ts";
+import { entreesPour, questionsTirables } from "../../pipeline/questions/tirage.ts";
 import type { Item, Question, Symetrie } from "../../pipeline/questions/types.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import {
@@ -32,17 +32,29 @@ import {
   itemO,
   itemP,
   mesure,
+  perimetre,
   question,
   run,
 } from "./fabriques.ts";
 
-/* Relevées le 2026-09-24 sur le code d'avant la correction (décision sur `gabarit.code`). */
-const EMPREINTE_ENGENDREMENT = "da299e0596204790fb8b302851848678d143fa784386004aa385cbd9dd0ad2af";
-const EMPREINTE_SYMETRIE_VERTE = "73f6c7f4796bae525ee653612c96ec71d8f79accf497f011182508710c0294ee";
-const EMPREINTE_SYMETRIE_ROUGE = "975a9757664233938c8e813ee89d585ab91e96deb2ff7cff2df110db94036b1c";
+/*
+ * Relevées le 2026-09-24 sur le code d'avant la correction (décision sur `gabarit.code`), puis
+ * relevées à nouveau le même jour pour les constats 2 et 3 de la conformité (protocole 0.6), après
+ * comparaison champ à champ des deux sorties :
+ * - engendrement : seul `texte_neutre` des 20 questions nominatives change, « Candidat demo-x »
+ *   (ancien `item.libelle_lisible` des fabriques) devenant « Libellé demo-x » (`libelle` du
+ *   périmètre du run) ; aucune autre différence, Q-ATT comprises ;
+ * - symétrie verte et rouge : les deux Q-ATT de la mesure conditionnelle ne sont plus tirables, le
+ *   tirage perd ces deux entrées et `part_items_a_f_minimale.mesure` passe de 8/26 à 8/24 (vert)
+ *   et de 8/27 à 8/25 (rouge) ; statuts et autres conditions inchangés.
+ */
+const EMPREINTE_ENGENDREMENT = "508133d16b4ce08d16d265c64072bdfd3bdb9ad16cf615db8a83db15a79d7f64";
+const EMPREINTE_SYMETRIE_VERTE = "b9833739c9003e95a1b95bfa93d59f8920c2e1fb802eaebb94896c21d4765ef5";
+const EMPREINTE_SYMETRIE_ROUGE = "6056af6b1241ab8ea684b270f73ed00e7df9ab70baddb203dcf9379e5ddf12a9";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta"];
+const PERIMETRE = perimetre(CANDIDATS);
 
 const PARTAGEE = mesure({ cle: "attr-partagee", theme: "fiscalite_pouvoir_achat" });
 const CONDITIONNELLE = mesure({ cle: "attr-conditionnelle", theme: "retraites" });
@@ -69,16 +81,21 @@ const ITEMS: readonly Item[] = CANDIDATS.flatMap((candidat_id) => [
   itemF({ cle: `attr-${candidat_id}-f`, candidat_id, mesure: FICTIVE }),
 ]);
 
-const ENGENDREES = engendrer(ITEMS, MESURES);
+const ENGENDREES = engendrer(ITEMS, MESURES, PERIMETRE);
 const QUESTIONS: readonly Question[] = ENGENDREES.map(completer);
 const RUN = run(CANDIDATS.map((candidat_id) => candidat({ candidat_id })), GEL);
 
+/**
+ * Le tirage de toutes les questions que la règle de tirabilité admet au gel : un tirage ne contient
+ * jamais de question non tirable. Depuis le protocole 0.6, les deux Q-ATT de la mesure
+ * conditionnelle ne le sont plus (constat 2 de la conformité du 2026-09-24).
+ */
 function symetrieDe(questions: readonly Question[]): Symetrie {
   const tirage = {
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
-    entrees: entreesPour(questions, ITEMS, MESURES, GEL),
+    entrees: entreesPour(questionsTirables(questions, ITEMS, RUN), ITEMS, MESURES, RUN),
   };
   return verifierSymetrie(tirage, questions, ITEMS, RUN);
 }

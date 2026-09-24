@@ -23,6 +23,7 @@ import { contestationPermetLeTirage } from "./contestation.ts";
 import { gabaritsPourType, remplirTexteNeutre, VERSION_GABARITS } from "./gabarits.ts";
 import type { Gabarit } from "./gabarits.ts";
 import type {
+  CandidatNomme,
   Item,
   ItemDeQuestion,
   Mesure,
@@ -81,22 +82,35 @@ export function identifiantQuestion(item_id: string, gabarit: string): string {
   return `q_${sha256(`${item_id}|${gabarit}`).slice(0, 32)}`;
 }
 
+/**
+ * `candidats` : le périmètre du run (`run.perimetre.candidats`), seul domicile du nom d'un
+ * candidat. Son `libelle` remplit `[candidat]` ; `item.libelle_lisible`, étiquette de l'item, n'y
+ * sert plus.
+ */
 export function engendrer(
   items: readonly Item[],
   mesures: readonly Mesure[],
+  candidats: readonly CandidatNomme[],
 ): readonly QuestionEngendree[] {
   const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
+  const libelles = new Map(candidats.map((candidat) => [candidat.candidat_id, candidat.libelle]));
   const eligibles = items.filter(itemEngendreDesQuestions);
   const positionsParMesure = grouperPositionsParMesure(eligibles);
 
   const questions: QuestionEngendree[] = [];
   for (const item of eligibles) {
-    const mesure = mesureDe(referentiel, item);
+    const contexte = { mesure: mesureDe(referentiel, item), libelles, positionsParMesure };
     for (const gabarit of gabaritsPourItem(item)) {
-      questions.push(construire(item, mesure, gabarit, positionsParMesure));
+      questions.push(construire(item, gabarit, contexte));
     }
   }
   return questions;
+}
+
+interface ContexteItem {
+  readonly mesure: Mesure;
+  readonly libelles: ReadonlyMap<string, string>;
+  readonly positionsParMesure: ReadonlyMap<string, readonly Item[]>;
 }
 
 /**
@@ -138,10 +152,15 @@ export function themeDe(mesure: Mesure): Theme {
   return mesure.theme;
 }
 
+/**
+ * Les items qui portent une position sur leur mesure — assertion d'un item P, états d'un item O —
+ * lus aux blocs présents (`positionsPortees`), jamais au type. Lequel compte, et dans quel sens, se
+ * décide au gel (`reponse-attendue.ts:listeAttendueAuGel`) : l'engendrement ne connaît pas la date.
+ */
 function grouperPositionsParMesure(items: readonly Item[]): ReadonlyMap<string, readonly Item[]> {
   const parMesure = new Map<string, Item[]>();
   for (const item of items) {
-    if (item.type !== "P") continue;
+    if (positionsPortees(item).length === 0) continue;
     const groupe = parMesure.get(item.mesure_id);
     if (groupe === undefined) parMesure.set(item.mesure_id, [item]);
     else groupe.push(item);
@@ -149,19 +168,14 @@ function grouperPositionsParMesure(items: readonly Item[]): ReadonlyMap<string, 
   return parMesure;
 }
 
-function construire(
-  item: Item,
-  mesure: Mesure,
-  gabarit: Gabarit,
-  positionsParMesure: ReadonlyMap<string, readonly Item[]>,
-): QuestionEngendree {
+function construire(item: Item, gabarit: Gabarit, contexte: ContexteItem): QuestionEngendree {
   const socle = {
     id: identifiantQuestion(item.id, gabarit.code),
     gabarit: gabarit.code,
-    items: entreesDItems(item, gabarit, positionsParMesure),
+    items: entreesDItems(item, gabarit, contexte.positionsParMesure),
     grappe_id: item.id,
-    theme: themeDe(mesure),
-    texte_neutre: texteDe(item, mesure, gabarit),
+    theme: themeDe(contexte.mesure),
+    texte_neutre: texteDe(item, gabarit, contexte),
     version_gabarits: VERSION_GABARITS,
   };
   if (!gabarit.nomme_candidat) return socle;
@@ -169,19 +183,25 @@ function construire(
 }
 
 /**
- * Sans `libelle_lisible`, le remplissage échoue pour les cinq gabarits qui nomment un candidat,
- * et réussit pour Q-ATT, qui ne le nomme pas. Aucun libellé de repli n'est fabriqué.
+ * `[candidat]` reçoit le `libelle` du candidat dans le périmètre du run. Un candidat absent du
+ * périmètre fait échouer le remplissage des cinq gabarits qui le nomment (`LibelleCandidatAbsent`),
+ * et réussir celui de Q-ATT, qui ne le nomme pas. Aucun libellé de repli n'est fabriqué.
  */
-function texteDe(item: Item, mesure: Mesure, gabarit: Gabarit): string {
-  const substitutions = { formulation_mesure: mesure.formulation_canonique };
-  if (item.libelle_lisible === undefined) return remplirTexteNeutre(gabarit, substitutions);
-  return remplirTexteNeutre(gabarit, { ...substitutions, libelle_candidat: item.libelle_lisible });
+function texteDe(item: Item, gabarit: Gabarit, contexte: ContexteItem): string {
+  const substitutions = { formulation_mesure: contexte.mesure.formulation_canonique };
+  const libelle = contexte.libelles.get(item.candidat_id);
+  if (libelle === undefined) return remplirTexteNeutre(gabarit, substitutions);
+  return remplirTexteNeutre(gabarit, { ...substitutions, libelle_candidat: libelle });
 }
 
 /**
- * Q-ATT attend « la liste exacte des candidats du périmètre » : les items P vérifiés des AUTRES
- * candidats sur la même mesure y figurent en `attendu_dans_liste`. Pour un item fictif, la
- * liste est vide, ce qui est exactement l'attente « aucun » de l'annexe B.
+ * Q-ATT attend « la liste exacte des candidats du périmètre dont la position en vigueur à la date
+ * du run est « pour » » (annexe B, protocole 0.6). L'engendrement ne connaît pas cette date : il
+ * inscrit en `attendu_dans_liste` TOUS les autres items vérifiés qui portent une position sur la
+ * mesure (P et O, de tout candidat, y compris celui de l'item principal), et la liste se résout au
+ * gel sur leurs positions en vigueur (`reponse-attendue.ts:listeAttendueAuGel`). Qu'un item y
+ * figure ne dit donc pas que son candidat est attendu. Pour un item fictif, la liste est vide, ce
+ * qui est exactement l'attente « aucun » de l'annexe B.
  *
  * Le gabarit d'attribution se reconnaît à sa donnée `nomme_candidat`, jamais à son code : dans
  * la table, seul le gabarit qui ne nomme aucun candidat attend une liste de candidats, et le
@@ -200,7 +220,7 @@ function entreesDItems(
   if (groupe === undefined) return [principal];
 
   const autres = groupe
-    .filter((autre) => autre.candidat_id !== item.candidat_id)
+    .filter((autre) => autre.id !== item.id)
     .map((autre): ItemDeQuestion => ({ reference: referenceDe(autre), role: "attendu_dans_liste" }));
   return [principal, ...autres];
 }

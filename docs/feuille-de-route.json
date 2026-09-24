@@ -202,7 +202,7 @@
         "D4",
         "D5"
       ],
-      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur), 0.5 le 2026-09-24 (transcriptions T2 font foi telles que publiées). Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
+      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur), 0.5 le 2026-09-24 (transcriptions T2 font foi telles que publiées), 0.6 le 2026-09-24 (attribution au gel, candidats interrogés, nom seul). Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
     },
     {
       "id": "schemas",
@@ -347,7 +347,7 @@
         "D11",
         "D7"
       ],
-      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas."
+      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas. Conformité n° 2 et 3 (2026-09-24, protocole 0.6) : liste d'attribution au gel sur les candidats interrogés, noms des candidats portés par le run (libelle, nom)."
     },
     {
       "id": "interrogation",

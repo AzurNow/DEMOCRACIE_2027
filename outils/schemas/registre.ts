@@ -26,7 +26,7 @@ export interface Registre {
  * draft 2020-12 utilisé par les schémas, passe en strict: "log" et dis-le, ne modifie pas le
  * schéma »). Les dix-huit schémas combinent `if`/`then`/`else`, `not` et `contains` à travers des
  * branches que l'heuristique statique de ajv ne peut pas suivre ; en `strict: true`, le premier
- * appel de validation lève une exception avant d'atteindre le premier des 83 exemples. Les
+ * appel de validation lève une exception avant d'atteindre le premier des 85 exemples. Les
  * avertissements sont collectés, jamais imprimés ligne à ligne (une centaine par run) : seul leur
  * nombre apparaît dans le rapport.
  */

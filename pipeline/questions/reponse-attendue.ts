@@ -22,6 +22,8 @@
  */
 
 import type {
+  BlocObsolescence,
+  CandidatAuGel,
   CodeGabarit,
   EtatPositionnel,
   Item,
@@ -74,6 +76,25 @@ export class ReponseAttendueIndecidable extends Error {
   }
 }
 
+/**
+ * Un même candidat porte, au gel, deux positions en vigueur incompatibles sur la mesure (« pour »
+ * par un item, « contre » par un autre). Le protocole ne dit pas laquelle fait foi : refus, jamais
+ * de choix silencieux. Levée avant le tirage, par la règle de tirabilité, donc quelle que soit la
+ * graine.
+ */
+export class PositionsContradictoires extends Error {
+  readonly candidat_id: string;
+
+  constructor(candidat_id: string, positions: readonly Position[]) {
+    super(
+      `Le candidat ${candidat_id} porte au gel plusieurs positions en vigueur sur la même mesure ` +
+        `(${positions.join(", ")}) : la liste attendue d'une question d'attribution est indécidable.`,
+    );
+    this.name = "PositionsContradictoires";
+    this.candidat_id = candidat_id;
+  }
+}
+
 /* ----------------------------------------------------------------- instants */
 
 /** Une date civile est ramenée à minuit UTC : voir la convention en tête de module. */
@@ -111,6 +132,126 @@ export function etatEnVigueur(date_changement: string, date_gel: string): "anter
   return instantDe(date_gel) >= instantDeDateCivile(date_changement) ? "posterieur" : "anterieur";
 }
 
+/** L'état d'un item O qui fait foi au gel, selon `etatEnVigueur` : une règle, un seul endroit. */
+export function etatObsolescenceAuGel(obsolescence: BlocObsolescence, date_gel: string): EtatPositionnel {
+  const etat = etatEnVigueur(obsolescence.date_changement, date_gel);
+  return etat === "posterieur" ? obsolescence.etat_posterieur : obsolescence.etat_anterieur;
+}
+
+/**
+ * La position qu'un item donne à son candidat à l'instant du gel, lue dans les blocs présents et
+ * jamais dans le type : l'assertion d'un item P, l'état en vigueur d'un item O. `undefined` pour un
+ * item hors de sa fenêtre de validité (`estEnVigueur`) ou sans bloc positionnel (items A et F) : il
+ * ne dit rien de la position du candidat au gel.
+ */
+export function positionEnVigueur(item: Item, date_gel: string): Position | undefined {
+  if (!estEnVigueur(item, date_gel)) return undefined;
+  if (item.obsolescence !== undefined) return positionDe(etatObsolescenceAuGel(item.obsolescence, date_gel));
+  if (item.assertion === undefined) return undefined;
+  return positionDe(item.assertion);
+}
+
+/* ------------------------------------------------ liste d'une attribution */
+
+/**
+ * Annexe B et §5 (protocole 0.6) : la liste attendue d'une question d'attribution est celle des
+ * candidats dont la position en vigueur au gel sur la mesure est « pour ». Elle n'est pas définie
+ * dès qu'un candidat y a une position « conditionnel » ou « sans_objet » : la question n'est alors
+ * pas tirée (`listeAttendueDefinie`, appelée par la règle de tirabilité avant tout usage de la
+ * graine).
+ */
+export type ListeAuGel =
+  | { readonly definie: true; readonly candidats: readonly string[] }
+  | { readonly definie: false; readonly candidat_id: string; readonly position: Position };
+
+/**
+ * Ce que la résolution lit du périmètre du run : qui est interrogé. Décision de l'auteur du
+ * 2026-09-24 : seuls les candidats du périmètre interrogés au run (`interroge = true`) comptent. Un
+ * candidat retiré ou hors périmètre n'entre pas dans la liste, et sa position ne rend ni la liste
+ * indéfinie ni contradictoire. Une seule source : `run.perimetre.candidats`, lu ici et nulle part
+ * ailleurs pour cette règle.
+ */
+export type CandidatDuPerimetre = Pick<CandidatAuGel, "candidat_id" | "interroge">;
+
+function candidatsInterroges(perimetre: readonly CandidatDuPerimetre[]): ReadonlySet<string> {
+  return new Set(perimetre.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id));
+}
+
+/** Les seules positions qui décident de la présence dans la liste : « pour » (présent), « contre » (absent). */
+const POSITIONS_TRANCHEES: readonly Position[] = ["pour", "contre"];
+
+/**
+ * Positions en vigueur au gel, par candidat interrogé, des items principal et `attendu_dans_liste`
+ * de la question. Un item hors validité, sans bloc positionnel, ou d'un candidat non interrogé
+ * n'apporte rien.
+ */
+function positionsParCandidat(
+  entrees: readonly ItemDeQuestion[],
+  parId: ReadonlyMap<string, Item>,
+  gel: GelDuRun,
+): ReadonlyMap<string, ReadonlySet<Position>> {
+  const table = new Map<string, Set<Position>>();
+  for (const entree of entrees) {
+    if (entree.role !== "principal" && entree.role !== "attendu_dans_liste") continue;
+    const item = parId.get(entree.reference.item_id);
+    if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
+    if (!gel.interroges.has(item.candidat_id)) continue;
+    const position = positionEnVigueur(item, gel.date_gel);
+    if (position === undefined) continue;
+    const siennes = table.get(item.candidat_id);
+    if (siennes === undefined) table.set(item.candidat_id, new Set([position]));
+    else siennes.add(position);
+  }
+  return table;
+}
+
+function positionNonTranchee(
+  table: ReadonlyMap<string, ReadonlySet<Position>>,
+): { readonly candidat_id: string; readonly position: Position } | undefined {
+  for (const [candidat_id, positions] of [...table.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    const hors = [...positions].sort().find((position) => !POSITIONS_TRANCHEES.includes(position));
+    if (hors !== undefined) return { candidat_id, position: hors };
+  }
+  return undefined;
+}
+
+interface GelDuRun {
+  readonly date_gel: string;
+  readonly interroges: ReadonlySet<string>;
+}
+
+function listeAttendueAuGel(
+  entrees: readonly ItemDeQuestion[],
+  parId: ReadonlyMap<string, Item>,
+  gel: GelDuRun,
+): ListeAuGel {
+  const table = positionsParCandidat(entrees, parId, gel);
+  const nonTranchee = positionNonTranchee(table);
+  if (nonTranchee !== undefined) return { definie: false, ...nonTranchee };
+
+  const candidats: string[] = [];
+  for (const [candidat_id, positions] of table) {
+    if (positions.size > 1) throw new PositionsContradictoires(candidat_id, [...positions].sort());
+    if (positions.has("pour")) candidats.push(candidat_id);
+  }
+  return { definie: true, candidats: candidats.sort() };
+}
+
+/**
+ * Règle de tirabilité d'une question d'attribution, évaluée avant le tirage : sa liste attendue
+ * est-elle définie au gel ? L'appelant la réserve aux gabarits qui ne nomment aucun candidat
+ * (donnée `nomme_candidat` de la table) ; pour un item F, sans position, elle est toujours définie.
+ */
+export function listeAttendueDefinie(
+  question: QuestionNotable,
+  parId: ReadonlyMap<string, Item>,
+  date_gel: string,
+  perimetre: readonly CandidatDuPerimetre[],
+): boolean {
+  const gel = { date_gel, interroges: candidatsInterroges(perimetre) };
+  return listeAttendueAuGel(question.items, parId, gel).definie;
+}
+
 /* -------------------------------------------------------------- résolution */
 
 interface Contexte {
@@ -119,6 +260,7 @@ interface Contexte {
   readonly items: readonly ItemDeQuestion[];
   readonly parId: ReadonlyMap<string, Item>;
   readonly temporelle: ResolutionTemporelle;
+  readonly interroges: ReadonlySet<string>;
 }
 
 type Resolveur = (contexte: Contexte) => ReponseAttendue;
@@ -128,10 +270,15 @@ export interface QuestionNotable {
   readonly items: readonly ItemDeQuestion[];
 }
 
+/**
+ * `perimetre` : `run.perimetre.candidats`. Seule la Q-ATT le lit (candidats interrogés) ; il est
+ * exigé de tout appel pour qu'aucune résolution ne se fasse sur un périmètre implicite.
+ */
 export function reponseAttendue(
   question: QuestionNotable,
   items: readonly Item[],
   date_gel: string,
+  perimetre: readonly CandidatDuPerimetre[],
 ): ReponseAttendue {
   const parId = new Map(items.map((item) => [item.id, item]));
   const item = itemPrincipal(question, parId);
@@ -153,6 +300,7 @@ export function reponseAttendue(
     items: question.items,
     parId,
     temporelle: temporelleDe(item, date_gel),
+    interroges: candidatsInterroges(perimetre),
   });
 }
 
@@ -200,8 +348,7 @@ function etatObsolescence(contexte: Contexte): EtatPositionnel {
       "bloc d'obsolescence absent",
     );
   }
-  const etat = etatEnVigueur(obsolescence.date_changement, contexte.temporelle.date_gel);
-  return etat === "posterieur" ? obsolescence.etat_posterieur : obsolescence.etat_anterieur;
+  return etatObsolescenceAuGel(obsolescence, contexte.temporelle.date_gel);
 }
 
 /**
@@ -239,15 +386,20 @@ function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
   );
 }
 
+/**
+ * Filet de sécurité : la règle de tirabilité écarte avant le tirage toute question d'attribution
+ * dont la liste n'est pas définie au gel. Une telle question n'arrive ici que d'ailleurs (fichier
+ * écrit à la main), et y répondre serait une décision de mesure prise en silence.
+ */
 function candidatsAttendus(contexte: Contexte): readonly string[] {
-  const identifiants = contexte.items
-    .filter((entree) => entree.role === "principal" || entree.role === "attendu_dans_liste")
-    .map((entree) => {
-      const item = contexte.parId.get(entree.reference.item_id);
-      if (item === undefined) throw new ItemIntrouvable(entree.reference.item_id);
-      return item.candidat_id;
-    });
-  return [...new Set(identifiants)].sort();
+  const gel = { date_gel: contexte.temporelle.date_gel, interroges: contexte.interroges };
+  const liste = listeAttendueAuGel(contexte.items, contexte.parId, gel);
+  if (liste.definie) return liste.candidats;
+  throw new ReponseAttendueIndecidable(
+    contexte.gabarit,
+    contexte.item.type,
+    `position « ${liste.position} » en vigueur au gel pour ${liste.candidat_id} : liste attendue non définie`,
+  );
 }
 
 /* ------------------------------------------------------ table des résolveurs */

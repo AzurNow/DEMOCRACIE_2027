@@ -13,6 +13,45 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-24 — Conformité, lot tirage : attribution résolue au gel, noms des candidats (`pipeline/questions/`, `schema/run.schema.json`, `docs/PROTOCOLE.md` 0.6)
+
+### 1. Un item P resté ouvert à côté de l'item O qui le remplace bloque tous les runs — *moyenne*
+
+`reponse-attendue.ts:listeAttendueAuGel` lève `PositionsContradictoires` quand un candidat interrogé
+porte au gel deux positions incompatibles sur une mesure. C'est le cas dès qu'un item O remplace un
+item P sans que `valide_au` du P ait été fermé.
+
+**Pourquoi ça casse.** L'erreur est levée par la règle de tirabilité, avant la graine : un seul oubli
+de date dans `data/` arrête le tirage entier, pour toutes les mesures. C'est bruyant, mais tardif.
+
+**Ce qu'il faut faire.** Ajouter l'invariant « un candidat n'a qu'une position en vigueur par mesure »
+à `pnpm symmetry` et à la promotion, pour qu'il se voie au moment où l'item O entre dans `data/`.
+
+### 2. La liste d'attribution dépend de `interroge`, que rien ne recoupe — *moyenne*
+
+La liste attendue d'une Q-ATT et sa tirabilité ne lisent que les candidats avec `interroge = true`
+dans `run.perimetre.candidats[]`. Un appelant qui construit le périmètre à la main, ou un run où
+`interroge` est mal renseigné, raccourcit la liste sans signal.
+
+**Pourquoi ça casse.** Un candidat interrogé marqué `false` par erreur sort de toutes les listes
+attendues : un outil qui le cite à juste titre est noté en fabrication ou en mauvaise attribution.
+
+**Ce qu'il faut faire.** Au lot qui écrira le run à partir de `config/perimetre.yaml` : dériver
+`interroge` de `statut_au_gel`, jamais saisi deux fois, avec un test d'accord.
+
+### 3. Une Q-ATT non tirable disparaît du rapport de tirage sans être comptée — *basse*
+
+Comme les items contestés, les Q-ATT écartées parce qu'un candidat est « conditionnel » ou
+« sans_objet » au gel ne sont comptées nulle part dans `RapportTirage`.
+
+**Pourquoi ça casse.** Si beaucoup de mesures ont un candidat conditionnel, la part des Q-ATT fond
+sans que le rapport du run le dise, et la comparaison entre gabarits (§8) perd sa base.
+
+**Ce qu'il faut faire.** Compter les questions écartées par motif dans le rapport de tirage (rejoint
+le constat de conformité n° 36).
+
+---
+
 ## 2026-09-24 — Lot collecte, sous-lot C3 : audio, vidéo, transcription locale (`pipeline/collecte/media.py`, `pipeline/collecte/transcription/`, `pipeline/collecte/textes/transcription_vtt.py`, `schema/transcription.schema.json`, `docs/CONTRATS.md` §2, `docs/PROTOCOLE.md` 0.5)
 
 ### 1. Un média est lu entier en mémoire avant d'être archivé — *moyenne*
