@@ -13,6 +13,56 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-24 — Lot collecte, sous-lot C3 : audio, vidéo, transcription locale (`pipeline/collecte/media.py`, `pipeline/collecte/transcription/`, `pipeline/collecte/textes/transcription_vtt.py`, `schema/transcription.schema.json`, `docs/CONTRATS.md` §2, `docs/PROTOCOLE.md` 0.5)
+
+### 1. Un média est lu entier en mémoire avant d'être archivé — *moyenne*
+
+`Telechargement.corps` porte les octets du média, comme pour un PDF. Un débat de deux heures en
+vidéo pèse 1 à 2 Go, autant en mémoire vive, plus la copie de l'empreinte.
+
+**Pourquoi ça casse.** La collecte d'une longue vidéo échoue par manque de mémoire, ou fait échouer
+les autres sources du même passage. C'est visible, mais seulement au premier vrai débat collecté.
+
+**Ce qu'il faut faire.** Avant la première collecte de sources T2 longues : laisser yt-dlp écrire
+dans un fichier temporaire sous `archives/`, calculer l'empreinte en flux, puis renommer.
+
+### 2. Un seul « & » ou « < » dans un segment fait refuser toute la transcription d'un média — *basse*
+
+`webvtt.py` refuse ces caractères, parce que l'analyseur TypeScript (`validation/domaine/webvtt.ts`)
+n'interprète pas les entités : les échapper donnerait deux textes dérivés différents, donc deux jeux
+d'offsets.
+
+**Pourquoi ça casse.** Un orateur qui cite « A & B » ou un chiffre avec « < » rend la source entière
+intranscriptible. L'erreur est nommée, mais la source T2 est perdue tant que la règle ne change pas.
+
+**Ce qu'il faut faire.** Au premier cas réel : échapper à l'écriture, déséchapper dans les deux
+analyseurs en même temps, passer la règle en `vtt-2`. Les `.vtt` déjà produits en `vtt-1` restent.
+
+### 3. yt-dlp est épinglé, les plateformes ne le sont pas — *moyenne*
+
+`yt-dlp==2026.8.19`. YouTube et les autres plateformes changent régulièrement leurs formats et leurs
+protections ; yt-dlp publie des correctifs en conséquence, souvent plusieurs fois par mois.
+
+**Pourquoi ça casse.** Une source vidéo ressort « sans format admissible » ou en erreur de
+téléchargement. C'est bruyant. Mais une montée de version de yt-dlp peut aussi changer le format
+retenu, donc les octets et l'empreinte d'un média recollecté.
+
+**Ce qu'il faut faire.** Monter yt-dlp par un commit dédié quand une collecte échoue, jamais en
+passant. Les médias déjà archivés ne sont pas recollectés (non-réécriture de C1).
+
+### 4. Les transcriptions des sources `interne` partent dans Git — *moyenne*
+
+Même cause que le point 2 de C2 (textes) : `staging/transcriptions/` est versionné et ne lit pas
+`publication`. Le §10 publie « la transcription de l'extrait », pas la transcription intégrale.
+
+**Pourquoi ça casse.** Le dépôt est public : la transcription intégrale d'un enregistrement T2 est
+publiée dès son commit.
+
+**Ce qu'il faut faire.** À trancher par l'auteur avec le point 2 de C2, avant la première collecte
+réelle d'une source `interne`.
+
+---
+
 ## 2026-09-24 — Lot 4 de la revue : listes du protocole confrontées aux schémas, règles écrites une fois (`analysis/types.ts`, `pipeline/questions/`, `validation/domaine/types.ts`, `validation/client/types.ts`, `tests/enumerations-schemas.test.ts`)
 
 ### 1. La symétrie lit `nomme_candidat` dans la table de gabarits courante, pas dans celle du tirage — *moyenne*
