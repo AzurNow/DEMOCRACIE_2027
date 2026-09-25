@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:diagnostic-lot",
+  "title": "Diagnostic de lot publié",
+  "description": "Un calcul du kappa d'un lot de validation, tel qu'écrit par `pnpm diagnostics` dans `validation/diagnostics/<lot_id>/<instant>.json` (§4, accord inter-annotateurs ; §9, « diagnostics de lot (kappa, accord observé, effectif, lien de réannotation) », JSON, ajout seul). Un fichier par calcul, jamais réécrit : un calcul qui diffère du précédent en produit un nouveau, daté. Les valeurs viennent toutes de `validation/domaine/analyse-lot.ts:diagnostiquerLot`, seul endroit où le kappa est calculé. Aucun identifiant d'item, aucune décision, aucun annotateur : des agrégats.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lot_id",
+    "nature",
+    "date_calcul",
+    "accord_observe",
+    "n",
+    "exclus_contestation",
+    "taille_lot",
+    "taille_attendue",
+    "taille_conforme",
+    "reannote",
+    "date_calibration",
+    "supersede_par"
+  ],
+
+  "properties": {
+    "lot_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+
+    "nature": {
+      "type": "string",
+      "enum": ["entrainement", "reel", "reannotation"],
+      "description": "Nature du lot, recopiée de son manifeste."
+    },
+
+    "date_calcul": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+      "description": "Instant du calcul. Le dénominateur dépend des contestations à cet instant (§4, 0.8) : sans lui, deux calculs du même lot ne se distinguent pas."
+    },
+
+    "kappa": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1,
+      "description": "Kappa de Cohen non pondéré sur trois catégories (§4). Absent quand il n'est pas défini, jamais remplacé par 0 ou par 1 : c'est alors `motif_indefini` qui est présent."
+    },
+
+    "motif_indefini": {
+      "type": "string",
+      "enum": ["aucun_item_commun", "accord_attendu_maximal"],
+      "description": "Pourquoi le kappa n'est pas défini (§4). Présent si et seulement si `kappa` est absent."
+    },
+
+    "accord_observe": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Publié dans tous les cas (§4). `null` seulement quand aucun item n'est commun aux deux annotateurs : il n'y a alors rien à observer."
+    },
+
+    "n": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Effectif publié avec le kappa : paires de décisions comparées, contestations déduites (§4)."
+    },
+
+    "exclus_contestation": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Items du lot sortis du dénominateur parce qu'une contestation les visait au calcul (§4, 0.8). Un décompte : le diagnostic ne nomme aucun item."
+    },
+
+    "taille_lot": { "type": "integer", "minimum": 1, "description": "Items du manifeste, contestations comprises." },
+
+    "taille_attendue": { "type": "integer", "minimum": 1, "description": "Taille fixée par le §4 pour ce lot (50 réel, 30 entraînement, celle du lot d'origine pour une réannotation)." },
+
+    "taille_conforme": {
+      "type": "boolean",
+      "description": "Faux pour un lot écrit avant que les lots ne soient composés pleins : son kappa n'a pas la variance d'un kappa sur la taille attendue et ne se lit pas comme tel (§12)."
+    },
+
+    "reannote": {
+      "oneOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" }, { "type": "null" }],
+      "description": "Lot d'origine que ce lot réannote, `null` sinon. Avec `supersede_par`, le lien de réannotation publié au titre du §9."
+    },
+
+    "date_calibration": {
+      "oneOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" }, { "type": "null" }],
+      "description": "Date de la séance de calibration d'un lot de réannotation, sans laquelle son kappa n'est pas interprétable (§4). `null` pour un autre lot."
+    },
+
+    "supersede_par": {
+      "oneOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" }, { "type": "null" }],
+      "description": "Lot de réannotation qui supersède celui-ci au calcul, `null` s'il est le dernier maillon. Seul un diagnostic à `null` compte pour les critères du §12 (§4)."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§4 : un kappa indéfini est publié comme absent avec son motif ; un kappa défini n'en porte pas.",
+      "oneOf": [
+        { "required": ["kappa"], "not": { "required": ["motif_indefini"] } },
+        { "required": ["motif_indefini"], "not": { "required": ["kappa"] } }
+      ]
+    },
+    {
+      "$comment": "Aucun item commun : ni accord observé ni effectif.",
+      "if": { "properties": { "motif_indefini": { "const": "aucun_item_commun" } }, "required": ["motif_indefini"] },
+      "then": { "properties": { "accord_observe": { "type": "null" }, "n": { "const": 0 } } },
+      "else": { "properties": { "accord_observe": { "type": "number" }, "n": { "minimum": 1 } } }
+    },
+    {
+      "$comment": "§4 : un lot de réannotation porte la référence du lot d'origine et la date de calibration ; un autre lot ne porte ni l'une ni l'autre.",
+      "if": { "properties": { "nature": { "const": "reannotation" } }, "required": ["nature"] },
+      "then": { "properties": { "reannote": { "type": "string" }, "date_calibration": { "type": "string" } } },
+      "else": { "properties": { "reannote": { "type": "null" }, "date_calibration": { "type": "null" } } }
+    }
+  ]
+}

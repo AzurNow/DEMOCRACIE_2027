@@ -523,6 +523,45 @@
       "regle_protocole": "§3, dix thèmes fixes"
     },
     {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/valide-01-lot-supersede.json",
+      "attendu": "valide",
+      "motif": "Lot réel sous 0,80, supersédé par son lot de réannotation : publié (§4, le lot d'origine reste publié), avec supersede_par qui l'écarte des critères du §12."
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/valide-02-reannotation-contestation.json",
+      "attendu": "valide",
+      "motif": "Lot de réannotation, dernier maillon : référence du lot d'origine, date de calibration, un item contesté sorti du dénominateur (n = 49 pour 50 items)."
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/valide-03-kappa-indefini.json",
+      "attendu": "valide",
+      "motif": "Kappa indéfini (accord attendu par hasard maximal) : publié absent avec son motif, l'accord observé publié quand même (§4)."
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-01-kappa-zero-et-motif.json",
+      "attendu": "invalide",
+      "motif": "Kappa indéfini remplacé par 0 à côté de son motif. §4 : un kappa indéfini est publié comme absent, jamais remplacé par 0 ou par 1.",
+      "regle_protocole": "§4, accord inter-annotateurs"
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-02-sans-lien-de-reannotation.json",
+      "attendu": "invalide",
+      "motif": "Diagnostic sans supersede_par. §9 publie le lien de réannotation, et sans lui la sélection du kappa du §12 ne sait pas si le lot compte encore.",
+      "regle_protocole": "§4, réannotation ; §9, objets publiés"
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-03-reannotation-sans-calibration.json",
+      "attendu": "invalide",
+      "motif": "Lot de réannotation sans date de calibration. §4 : sans elle, son kappa n'est pas interprétable.",
+      "regle_protocole": "§4, réannotation"
+    },
+    {
       "objet": "gabarits",
       "fichier": "gabarits/valide-01-six-gabarits.json",
       "attendu": "valide",

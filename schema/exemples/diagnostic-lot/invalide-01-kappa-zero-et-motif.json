@@ -1,0 +1,16 @@
+{
+  "lot_id": "lot-004",
+  "nature": "reel",
+  "date_calcul": "2026-10-21T09:00:00+02:00",
+  "kappa": 0,
+  "motif_indefini": "accord_attendu_maximal",
+  "accord_observe": 1,
+  "n": 50,
+  "exclus_contestation": 0,
+  "taille_lot": 50,
+  "taille_attendue": 50,
+  "taille_conforme": true,
+  "reannote": null,
+  "date_calibration": null,
+  "supersede_par": null
+}
