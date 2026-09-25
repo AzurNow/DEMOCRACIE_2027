@@ -9,6 +9,7 @@
  * conforme arrête le chargement en nommant le fichier, il n'est ni ignoré ni complété.
  */
 
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { NomSchema } from "../../outils/schemas/noms.ts";
@@ -46,13 +47,38 @@ function chargerJson<T>(
 }
 
 /**
+ * Un texte canonique dont les octets ne donnent plus l'empreinte qui le nomme : modifié à la
+ * main, tronqué, remplacé. Rien n'en est montré ni indexé (§4, docs/CONTRATS.md §1 et §3).
+ */
+export class TexteCanoniqueAltere extends Error {
+  override readonly name = "TexteCanoniqueAltere";
+  readonly chemin: string;
+  readonly attendue: string;
+  readonly obtenue: string;
+
+  constructor(chemin: string, attendue: string, obtenue: string) {
+    super(`Texte canonique altéré : ${chemin} (attendue ${attendue}, obtenue ${obtenue})`);
+    this.chemin = chemin;
+    this.attendue = attendue;
+    this.obtenue = obtenue;
+  }
+}
+
+/**
  * Texte canonique d'une source, indexé par l'empreinte du texte lui-même. Renvoie `null` quand
  * il manque : l'appelant décide quoi en dire, mais personne n'invente un texte de substitution.
+ *
+ * L'empreinte est recalculée à chaque lecture, comme `servirArchive` le fait pour l'archive : un
+ * `.txt` retouché sous son nom d'origine lève `TexteCanoniqueAltere` au lieu d'être surligné ou de
+ * servir de référence à une correction de citation.
  */
 export function lireTexteCanonique(racine: string, texte_sha256: string): string | null {
   const chemin = join(racine, "textes", `${texte_sha256}.txt`);
   if (!existsSync(chemin)) return null;
-  return readFileSync(chemin, "utf8");
+  const octets = readFileSync(chemin);
+  const obtenue = createHash("sha256").update(octets).digest("hex");
+  if (obtenue !== texte_sha256) throw new TexteCanoniqueAltere(chemin, texte_sha256, obtenue);
+  return octets.toString("utf8");
 }
 
 export function lireTranscription(racine: string, source_sha256: string): string | null {

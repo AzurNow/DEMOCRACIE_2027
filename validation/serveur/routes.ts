@@ -26,7 +26,13 @@ import { ordreAffichage, tailleAttendue } from "../domaine/lot.ts";
 import { ulid } from "../domaine/ulid.ts";
 import type { Item, ItemDuLot, Lot } from "../domaine/types.ts";
 import { servirArchive } from "../io/archives.ts";
-import { lireTexteCanonique, lireTranscription, mesureDe, type Staging } from "../io/staging.ts";
+import {
+  lireTexteCanonique,
+  lireTranscription,
+  mesureDe,
+  TexteCanoniqueAltere,
+  type Staging,
+} from "../io/staging.ts";
 import { enumerationCommune } from "../io/referentiels.ts";
 import type { Contexte } from "./contexte.ts";
 import { emplacement, emplacementDuChemin } from "./emplacements.ts";
@@ -353,6 +359,31 @@ function servirSource(contexte: Contexte, params: readonly string[]): Reponse {
   return { statut: 200, binaire: servie.contenu, type_mime: servie.type_mime };
 }
 
+/* ------------------------------------------------------- texte canonique */
+
+/**
+ * Enveloppe des routes qui lisent un texte canonique. Un texte altéré (empreinte divergente)
+ * refuse la réponse entière, comme `servirSource` pour l'archive : rien n'est montré, rien n'est
+ * enregistré. Toute autre erreur remonte telle quelle.
+ */
+function refuserTexteAltere(gestionnaire: Route["gestionnaire"]): Route["gestionnaire"] {
+  return (contexte, params, corps) => {
+    try {
+      return gestionnaire(contexte, params, corps);
+    } catch (erreur) {
+      if (!(erreur instanceof TexteCanoniqueAltere)) throw erreur;
+      return {
+        statut: 409,
+        corps: {
+          erreur: "Texte canonique non conforme : rien n'est affiché ni enregistré.",
+          motif: "empreinte_divergente",
+          detail: `attendue ${erreur.attendue}, obtenue ${erreur.obtenue}`,
+        },
+      };
+    }
+  };
+}
+
 /* ----------------------------------------------------------- raccourcis */
 
 function raccourcis(): Reponse {
@@ -408,9 +439,14 @@ export const ROUTES: readonly Route[] = [
     nom: "item",
     methode: "GET",
     motif: /^\/api\/lots\/([^/]+)\/items\/([^/]+)$/,
-    gestionnaire: vueItem,
+    gestionnaire: refuserTexteAltere(vueItem),
   },
-  { nom: "decision", methode: "POST", motif: /^\/api\/decisions$/, gestionnaire: enregistrerDecision },
+  {
+    nom: "decision",
+    methode: "POST",
+    motif: /^\/api\/decisions$/,
+    gestionnaire: refuserTexteAltere(enregistrerDecision),
+  },
   { nom: "annulation", methode: "POST", motif: /^\/api\/annulations$/, gestionnaire: annuler },
   { nom: "brouillon-lire", methode: "GET", motif: /^\/api\/brouillon$/, gestionnaire: lireBrouillon },
   { nom: "brouillon-ecrire", methode: "POST", motif: /^\/api\/brouillon$/, gestionnaire: ecrireBrouillon },
