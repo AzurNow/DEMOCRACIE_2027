@@ -165,6 +165,46 @@ describe("nombre de questions par candidat", () => {
   });
 });
 
+/**
+ * §5 : « même répartition des gabarits et des formulations par candidat, à une question près ».
+ * Le nombre total de questions par candidat reste égal : seule la répartition entre gabarits
+ * bouge, sur les mêmes items, donc sur les mêmes thèmes.
+ */
+describe("répartition des gabarits et des formulations", () => {
+  /** Les questions symétriques d'alpha, dont les Q-DIR des items désignés deviennent des Q-NEG. */
+  function alphaAvecNegatives(cles: readonly ("p1" | "p2")[]): readonly Question[] {
+    const jeu = itemsDe("demo-alpha");
+    const remplacees = new Set(cles.map((cle) => choisir(jeu[cle], "Q-DIR").id));
+    return [
+      ...questionsSymetriques("demo-alpha").filter((q) => !remplacees.has(q.id)),
+      ...cles.map((cle) => choisir(jeu[cle], "Q-NEG")),
+      ...questionsSymetriques("demo-beta"),
+      choisir(jeu.p1, "Q-ATT"),
+    ];
+  }
+
+  it("reste verte à un écart d'une question sur un gabarit", () => {
+    // alpha : 2 Q-DIR, 1 Q-NEG ; beta : 3 Q-DIR, 0 Q-NEG. Écart d'une question sur deux gabarits.
+    const symetrie = verifier(alphaAvecNegatives(["p1"]));
+    const condition = conditionDe(symetrie, "repartition_gabarits_formulations");
+    expect(condition.statut).toBe("vert");
+    expect(condition.mesure).toBe(1);
+    expect(condition.seuil).toBe(1);
+    expect(symetrie.statut_global).toBe("vert");
+  });
+
+  it("passe au rouge à un écart de deux questions sur un gabarit, à nombre total égal", () => {
+    // alpha : 1 Q-DIR, 2 Q-NEG ; beta : 3 Q-DIR, 0 Q-NEG. Six questions chacun.
+    const symetrie = verifier(alphaAvecNegatives(["p1", "p2"]));
+    const condition = conditionDe(symetrie, "repartition_gabarits_formulations");
+    expect(conditionDe(symetrie, "nombre_questions_par_candidat").statut).toBe("vert");
+    expect(conditionDe(symetrie, "repartition_themes").statut).toBe("vert");
+    expect(condition.statut).toBe("rouge");
+    expect(condition.mesure).toBe(2);
+    expect(symetrie.statut_global).toBe("rouge");
+  });
+});
+
 describe("répartition par thème", () => {
   it("tolère l'écart, l'imprime par candidat, et ne passe jamais au rouge", () => {
     const jeuBeta = itemsDe("demo-beta");

@@ -80,6 +80,25 @@ describe("statistique et valeur p", () => {
     expect(PERMUTATIONS_PRODUCTION).toBe(10000);
   });
 
+  it("prend pour référence l'exactitude globale pondérée, pas la moyenne des candidats, quand leurs effectifs diffèrent", () => {
+    // A : 10 classées, 10 exactes (1). B : 30 classées, 1 exacte (1/30).
+    // Globale pondérée : 11/40 = 0,275 ⇒ écart maximal |1 − 0,275| = 0,725 (candidat A).
+    // Moyenne des candidats : (1 + 1/30)/2 ≈ 0,5167 ⇒ écart maximal ≈ 0,4833. Les deux diffèrent.
+    const jeu = [
+      ...items("candidat-a", 10, true),
+      ...items("candidat-b", 1, true, "b-exactes"),
+      ...items("candidat-b", 29, false, "b-inexactes"),
+    ];
+    const globale = 11 / 40;
+    const moyenneDesCandidats = (1 + 1 / 30) / 2;
+
+    const resultat = testHomogeneiteCandidats(jeu, OPTIONS);
+
+    expect(resultat?.exactitude_outil).toEqual({ numerateur: 11, denominateur: 40, valeur: globale });
+    expect(resultat?.statistique_observee).toBeCloseTo(1 - globale, 12);
+    expect(resultat?.statistique_observee).not.toBeCloseTo(1 - moyenneDesCandidats, 6);
+  });
+
   it("ne teste rien quand il n'y a pas deux candidats à comparer", () => {
     expect(testHomogeneiteCandidats([], OPTIONS)).toBeNull();
     expect(testHomogeneiteCandidats(items("candidat-a", 3, true), OPTIONS)).toBeNull();
