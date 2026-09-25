@@ -184,8 +184,10 @@ function annulable(contexte: Contexte, lot_id: string): { id: string; item_id: s
 }
 
 /**
- * §4, droit de réponse : une contestation retire l'item du lot en cours, immédiatement. Le
- * retrait est journalisé, une fois, pour que le dénominateur du kappa reste auditable.
+ * §4, droit de réponse : une contestation retire l'item du lot en cours, immédiatement. Garde-fou
+ * d'affichage : l'annotateur ne voit ni ne décide un item contesté. Le retrait est journalisé une
+ * fois, pour tracer ce que l'annotateur a rencontré et pour sa progression ; il ne décide **pas**
+ * du dénominateur du kappa, que `diagnostiquerLot` lit sur le statut de l'item au calcul.
  */
 function retirerSiConteste(contexte: Contexte, lot: Lot, item: Item): Reponse | null {
   if (item.statut_contestation === "aucune") return null;

@@ -4,7 +4,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { rejouer } from "../validation/domaine/journal.ts";
@@ -159,6 +159,85 @@ describe("item contesté (§4, droit de réponse)", () => {
     };
     expect(corps.les_deux_ont_fini).toBe(true);
     expect(corps.kappa.n).toBe(1);
+  });
+});
+
+/** Contenu octet pour octet de chaque fichier de journal, par chemin relatif. */
+function instantaneJournaux(): Map<string, Buffer> {
+  const racine = join(bac.racine, "validation/decisions");
+  const fichiers = readdirSync(racine, { recursive: true, withFileTypes: true }).filter((entree) => entree.isFile());
+  return new Map(
+    fichiers.map((entree) => {
+      const chemin = join(entree.parentPath, entree.name);
+      return [chemin, readFileSync(chemin)];
+    }),
+  );
+}
+
+function decideTout(annotateur: string): void {
+  for (const item of items) {
+    bac.journal(annotateur).ajouter(
+      "lot-002",
+      decision({ annotateur_id: annotateur, item, decision: "accepter", lot_id: "lot-002" }),
+    );
+  }
+}
+
+describe("contestation au calcul du kappa, par la route (§4, constat 9)", () => {
+  it("un item contesté après les deux décisions sort du kappa sans que personne ne l'affiche", () => {
+    decideTout("a1");
+    decideTout("a2");
+    bac.ecrireItem(contester(items[0] as Item));
+
+    const corps = appeler(bac.contexte("a1"), "diagnostic", ["lot-002"]).corps as {
+      les_deux_ont_fini: boolean;
+      kappa: { n: number };
+      exclus_contestation: number;
+    };
+    expect(corps.les_deux_ont_fini).toBe(true);
+    expect(corps.kappa.n).toBe(1);
+    expect(corps.exclus_contestation).toBe(1);
+  });
+
+  it("le diagnostic laisse les journaux inchangés octet pour octet, décisions de l'item exclu comprises", () => {
+    decideTout("a1");
+    decideTout("a2");
+    bac.ecrireItem(contester(items[0] as Item));
+    const avant = instantaneJournaux();
+    expect(avant.size).toBe(2);
+
+    appeler(bac.contexte("a1"), "diagnostic", ["lot-002"]);
+
+    expect(instantaneJournaux()).toEqual(avant);
+    const decisionsExclues = bac
+      .journal("a1")
+      .lire("lot-002")
+      .filter((entree) => entree.item_id === (items[0] as Item).id);
+    expect(decisionsExclues).toHaveLength(1);
+  });
+
+  it("un item arbitré (maintien) sort aussi du kappa, sans nommer l'item", () => {
+    decideTout("a1");
+    decideTout("a2");
+    const conteste = contester(items[0] as Item);
+    const contestation = (conteste.contestations as readonly Record<string, unknown>[])[0];
+    bac.ecrireItem({
+      ...conteste,
+      statut_contestation: "arbitree",
+      contestations: [
+        {
+          ...contestation,
+          decision_panel: { date: "2026-10-01T09:00:00+02:00", decision: "maintien", motivation: "Motif fictif." },
+        },
+      ],
+    });
+
+    const reponse = appeler(bac.contexte("a1"), "diagnostic", ["lot-002"]);
+    const corps = reponse.corps as { kappa: { n: number }; exclus_contestation: number };
+    expect(reponse.statut).toBe(200);
+    expect(corps.kappa.n).toBe(1);
+    expect(corps.exclus_contestation).toBe(1);
+    expect(JSON.stringify(corps).includes((items[0] as Item).id)).toBe(false);
   });
 });
 
