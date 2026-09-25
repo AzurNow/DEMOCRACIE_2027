@@ -8,7 +8,7 @@
  * fautif. Rien n'est complété, corrigé ni ignoré : ajv est réglé sans `useDefaults`,
  * `coerceTypes` ni `removeAdditional` (`registre.ts`), il ne touche donc pas à la valeur.
  *
- * Le registre des dix-neuf schémas est construit **une fois par processus**, au premier appel, à
+ * Le registre des vingt schémas est construit **une fois par processus**, au premier appel, à
  * partir de `schema/` situé par rapport à ce fichier et non au répertoire courant : un outil lancé
  * depuis un autre répertoire, ou un bac d'essai qui porte sa propre copie partielle de
  * `schema/commun.schema.json`, valide contre les mêmes schémas que le dépôt.

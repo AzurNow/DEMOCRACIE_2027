@@ -1,5 +1,5 @@
 /**
- * Les dix-neuf schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
+ * Les vingt schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
  * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
  * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`, dix-huit avec
  * `transcription`).
@@ -31,6 +31,10 @@
  * `diagnostic-lot` décrit un calcul du kappa d'un lot, écrit en ajout seul par `pnpm diagnostics`
  * dans `validation/diagnostics/` et publié au titre du §9 (conformité 2026-09-24, n° 16) : le
  * dix-neuvième schéma.
+ *
+ * `decision-arbitrage` décrit une entrée du registre des décisions d'arbitrage,
+ * `validation/arbitrage/decisions.json`, écrite en ajout seul par `pnpm arbitrer` et relue par
+ * `pnpm promote` (§4, règle de concordance, protocole 0.10 ; conformité n° 18) : le vingtième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -52,6 +56,7 @@ export const NOMS_SCHEMAS = [
   "extraction-texte",
   "transcription",
   "diagnostic-lot",
+  "decision-arbitrage",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

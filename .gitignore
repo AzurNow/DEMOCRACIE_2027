@@ -5,6 +5,10 @@ validation/client/dist/
 # donc hors du journal append-only et hors du dépôt.
 validation/brouillons/
 
+# File d'arbitrage : instantané dérivé, réécrit à chaque `pnpm promote --ecrire` et recalculable à
+# tout moment. Les décisions vivent dans le registre versionné validation/arbitrage/decisions.json.
+validation/arbitrage/file.json
+
 # Journal corrompu mis en quarantaine par la détection d'écriture interrompue.
 *.incomplet
 

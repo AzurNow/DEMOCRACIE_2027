@@ -24,18 +24,20 @@ import { commandeGit, commitCourant, ecriturePermise } from "./garde-fous-git.ts
 import { ItemFictifEnDouble, verifierFictifUnique } from "../validation/domaine/fictif-unique.ts";
 import { resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
-import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
-import type { EtatAnnotateur } from "../validation/domaine/journal.ts";
-import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
-import { evaluerPromotion, type Issue } from "../validation/domaine/promotion.ts";
-import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
+import { DecisionArbitrageRefusee } from "../validation/domaine/arbitrage.ts";
+import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-mesure.ts";
+import type { LotEffectif } from "../validation/domaine/lot.ts";
+import type { Issue } from "../validation/domaine/promotion.ts";
+import type { Item, Lot } from "../validation/domaine/types.ts";
+import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
 import { ecrireFileArbitrage } from "../validation/io/file-arbitrage.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
-import { chargerStaging, mesureDe, type Staging } from "../validation/io/staging.ts";
+import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
+import { evaluerLots, type Introuvable, type Verdict } from "./evaluation-lots.ts";
 import { erreurDeSchema } from "./schemas/valider.ts";
 
 interface Options {
@@ -49,28 +51,11 @@ interface Options {
   readonly arbitrage: string;
 }
 
-interface Verdict {
-  readonly lot_id: string;
-  readonly item: Item;
-  readonly issue: Issue;
-}
-
-/** Un item qu'un lot juge mais que `staging/` ne contient pas : il ne disparaît jamais en silence. */
-interface Introuvable {
-  readonly lot_id: string;
-  readonly item_id: string;
-}
-
 /** Un item à promouvoir que ses corrections ont rendu non conforme à `item.schema.json`. */
 interface NonConforme {
   readonly lot_id: string;
   readonly item_id: string;
   readonly erreur: string;
-}
-
-interface EvaluationLot {
-  readonly verdicts: readonly Verdict[];
-  readonly introuvables: readonly Introuvable[];
 }
 
 function lireOptions(): Options {
@@ -87,58 +72,6 @@ function lireOptions(): Options {
     data: texte(table, "data", resolve(racine, "data/items")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
   };
-}
-
-function decisionsActives(etats: ReadonlyMap<string, EtatAnnotateur>, item_id: string): EntreeDecision[] {
-  const actives: EntreeDecision[] = [];
-  for (const etat of etats.values()) {
-    const decision = etat.decisions.get(item_id);
-    if (decision !== undefined) actives.push(decision);
-  }
-  return actives;
-}
-
-interface Contexte {
-  readonly commit: string;
-  readonly horodatage: string;
-  readonly registre: RegistreCorrectionsMesure;
-}
-
-/**
- * Un lot n'est évalué que sur les items qu'il juge encore : ceux qu'aucun lot de réannotation
- * postérieur ne reprend (§4, supersession). Le lot d'origine reste lu, publié et diagnostiqué ;
- * ses décisions ne comptent simplement plus pour les items rejugés.
- */
-function evaluerLot(
-  effectif: LotEffectif,
-  staging: Staging,
-  options: Options,
-  contexte: Contexte,
-): EvaluationLot {
-  const etats = etatsDuLot(options.decisions, effectif.lot);
-  const verdicts: Verdict[] = [];
-  const introuvables: Introuvable[] = [];
-
-  for (const reference of effectif.items) {
-    const item = staging.items.get(reference.item_id);
-    if (item === undefined) {
-      introuvables.push({ lot_id: effectif.lot.lot_id, item_id: reference.item_id });
-      continue;
-    }
-    const issue = evaluerPromotion(
-      {
-        item,
-        mesure: mesureDe(staging, item),
-        lot_id: effectif.lot.lot_id,
-        lot_nature: effectif.lot.nature,
-        decisions: decisionsActives(etats, item.id),
-        registre_corrections_mesure: contexte.registre,
-      },
-      contexte,
-    );
-    verdicts.push({ lot_id: effectif.lot.lot_id, item, issue });
-  }
-  return { verdicts, introuvables };
 }
 
 /**
@@ -230,6 +163,7 @@ function imprimerRapport(
   for (const verdict of arbitrages) {
     const issue = verdict.issue as Extract<Issue, { sort: "arbitrage" }>;
     process.stdout.write(`  ${verdict.item.id}  ${issue.motif}${motifDuRefus(issue)}  [${verdict.lot_id}]\n`);
+    imprimerDecisionInapplicable(issue);
   }
 
   process.stdout.write(`\nEn attente : ${attentes.length}\n`);
@@ -249,6 +183,13 @@ function imprimerRapport(
     effectifs.map((effectif) => effectif.lot),
     options,
   );
+}
+
+/** Une décision d'arbitrage qui vise l'item sans s'y appliquer : l'item reste en arbitrage, et on dit pourquoi. */
+function imprimerDecisionInapplicable(issue: Extract<Issue, { sort: "arbitrage" }>): void {
+  if (issue.decision_inapplicable === undefined) return;
+  process.stdout.write(`    décision d'arbitrage ${issue.decision_inapplicable.decision_id} inapplicable :\n`);
+  for (const motif of issue.decision_inapplicable.motifs) process.stdout.write(`      ${motif}\n`);
 }
 
 /** §4 : « Une demande refusée envoie l'item en arbitrage, avec le motif du refus. » */
@@ -342,17 +283,17 @@ function principal(): void {
   const options = lireOptions();
   if (options.ecrire && !ecriturePermise(options.racine)) return;
 
-  const staging = chargerStaging(options.staging);
-  // Le registre est **lu**, jamais écrit ici : seul `pnpm mesures --ecrire` y ajoute une décision.
-  const contexte = {
+  // Les deux registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
+  // --ecrire` y ajoutent les décisions.
+  const { effectifs, verdicts, introuvables } = evaluerLots({
+    staging: chargerStaging(options.staging),
+    lots: lireLots(options.lots),
+    repertoire_decisions: options.decisions,
+    registre_mesures: lireRegistre(options.mesures),
+    registre_arbitrage: lireRegistreArbitrage(options.arbitrage),
     commit: commitCourant(options.racine),
     horodatage: instantLocal(new Date()),
-    registre: lireRegistre(options.mesures),
-  };
-  const effectifs = lotsApresSupersession(lireLots(options.lots));
-  const evaluations = effectifs.map((effectif) => evaluerLot(effectif, staging, options, contexte));
-  const verdicts = evaluations.flatMap((evaluation) => evaluation.verdicts);
-  const introuvables = evaluations.flatMap((evaluation) => evaluation.introuvables);
+  });
 
   const fautifs = nonConformes(verdicts, options);
 
@@ -390,7 +331,8 @@ try {
   // §4 : « une acceptation enregistrée sans mesure modifiée est une erreur bloquante ». Elle
   // arrête la commande plutôt que de promouvoir un item validé contre un thème inexistant.
   // §5 (protocole 0.9) : un second item F vérifié sur une mesure fictive déjà portée, de même.
-  if (!(erreur instanceof CorrectionMesureIncoherente) && !(erreur instanceof ItemFictifEnDouble)) throw erreur;
-  process.stderr.write(`\n${erreur.message}\n`);
+  const attendues = [CorrectionMesureIncoherente, ItemFictifEnDouble, DecisionArbitrageRefusee];
+  if (!attendues.some((classe) => erreur instanceof classe)) throw erreur;
+  process.stderr.write(`\n${(erreur as Error).message}\n`);
   process.exitCode = 1;
 }
