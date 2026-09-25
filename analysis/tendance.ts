@@ -17,7 +17,7 @@
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import type { IdentifiantCourt, Mode, Question } from "./types.ts";
-import { signatureQuestion } from "../pipeline/questions/signature.ts";
+import { questionsAuTexteChange, signatureQuestion } from "../pipeline/questions/signature.ts";
 
 export interface EtatRun {
   readonly unites: readonly UniteAnalyse[];
@@ -69,6 +69,27 @@ export function tendanceParOutilEtMode(
       difference: differenceAppariee(apres, avant, statistique, { ...options, cle: [...options.cle, outil_id, mode] }),
     };
   });
+}
+
+/**
+ * La tendance d'un run : les lignes par outil et mode, et le nombre, publié au niveau du run, des
+ * questions sorties de la comparaison parce qu'un de leurs textes a changé (§8, protocole 0.9).
+ */
+export interface TendanceDuRun {
+  readonly questions_texte_change: number;
+  readonly par_outil_et_mode: readonly TendanceOutilEtMode[];
+}
+
+export function tendanceDuRun(
+  premier: EtatRun,
+  dernier: EtatRun,
+  statistique: Statistique,
+  options: OptionsBootstrap,
+): TendanceDuRun {
+  return {
+    questions_texte_change: questionsAuTexteChange(premier.questions, dernier.questions).length,
+    par_outil_et_mode: tendanceParOutilEtMode(premier, dernier, statistique, options),
+  };
 }
 
 interface Cellule {

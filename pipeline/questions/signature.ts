@@ -27,3 +27,23 @@ export function signatureQuestion(question: QuestionSignable): string {
   const empreintes = question.formulations.map((formulation) => formulation.empreinte_texte).sort();
   return `${question.id}\0${empreintes.join("\0")}`;
 }
+
+/**
+ * §8 (protocole 0.9) : « une question dont un texte a changé sort de la comparaison, et leur
+ * nombre est publié ». Les identifiants présents aux deux runs dont la signature diffère, triés.
+ * Une question absente de l'un des deux runs n'est pas une question au texte changé : elle est
+ * neuve, ou retirée.
+ */
+export function questionsAuTexteChange(
+  premier: readonly QuestionSignable[],
+  dernier: readonly QuestionSignable[],
+): readonly string[] {
+  const signaturesDernier = new Map(dernier.map((question) => [question.id, signatureQuestion(question)]));
+  return premier
+    .filter((question) => {
+      const apres = signaturesDernier.get(question.id);
+      return apres !== undefined && apres !== signatureQuestion(question);
+    })
+    .map((question) => question.id)
+    .sort();
+}
