@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:envoi-notification",
+  "title": "Envoi d'une notification à une campagne",
+  "description": "Une ligne de `validation/notifications/envois.jsonl`, journal publié en ajout seul écrit par `pnpm notifier` (Python, `pipeline/notification/`) seul (protocole 0.10, §4 : « Chaque envoi, réussi ou non, est journalisé et publié » ; « une campagne reçoit un seul courriel par envoi, qui liste les items concernés »). Un courriel par campagne et par exécution, qui regroupe les notifications dues de ses items. Une ligne `en_cours` est écrite et synchronisée sur disque avant l'envoi ; la ligne d'issue (`envoyee` ou `echec`) suit, avec le même `envoi_id`. Une ligne `en_cours` sans issue est une interruption : l'envoi est indéterminé et n'est jamais renvoyé seul. `destinataire` est l'adresse de contact générique que la campagne ou son parti publie, déclarée avec sa preuve dans le périmètre du run : jamais une personne nommée (§10).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["envoi_id", "notification_ids", "candidat_id", "tentative", "date", "etat", "destinataire", "preuve_sha256", "message_id", "code_smtp", "erreur"],
+  "properties": {
+    "envoi_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 des identifiants de notifications triés, joints par un saut de ligne. Le Message-ID en dérive : un même regroupement renvoyé porte le même Message-ID."
+    },
+    "notification_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+    },
+    "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+    "tentative": { "type": "integer", "minimum": 1 },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "etat": { "type": "string", "enum": ["en_cours", "envoyee", "echec", "sans_destinataire_connu"] },
+    "destinataire": {
+      "type": ["string", "null"],
+      "pattern": "^[^@\\s]+@[^@\\s]+$",
+      "description": "Adresse générique publiée par la campagne ; null sans adresse connue."
+    },
+    "preuve_sha256": {
+      "anyOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }, { "type": "null" }],
+      "description": "sha256 des octets exacts du message soumis au serveur d'envoi."
+    },
+    "message_id": { "type": ["string", "null"], "pattern": "^<[^<>\\s]+@[^<>\\s]+>$" },
+    "code_smtp": { "type": ["integer", "null"], "minimum": 200, "maximum": 599 },
+    "erreur": { "type": ["string", "null"], "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "$comment": "Un envoi tenté a un destinataire, un message et sa preuve.",
+      "if": { "properties": { "etat": { "enum": ["en_cours", "envoyee", "echec"] } }, "required": ["etat"] },
+      "then": {
+        "properties": {
+          "destinataire": { "type": "string" },
+          "preuve_sha256": { "type": "string" },
+          "message_id": { "type": "string" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "etat": { "const": "envoyee" } }, "required": ["etat"] },
+      "then": { "properties": { "code_smtp": { "type": "integer" }, "erreur": { "type": "null" } } }
+    },
+    {
+      "if": { "properties": { "etat": { "const": "echec" } }, "required": ["etat"] },
+      "then": { "properties": { "erreur": { "type": "string" } } }
+    },
+    {
+      "$comment": "§4 : « une campagne qui n'en publie aucune n'est pas notifiée, et ce manque est rapporté ».",
+      "if": { "properties": { "etat": { "const": "sans_destinataire_connu" } }, "required": ["etat"] },
+      "then": {
+        "properties": {
+          "destinataire": { "type": "null" },
+          "preuve_sha256": { "type": "null" },
+          "message_id": { "type": "null" },
+          "code_smtp": { "type": "null" }
+        }
+      }
+    }
+  ]
+}

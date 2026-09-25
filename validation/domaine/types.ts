@@ -181,8 +181,27 @@ export interface Item {
   readonly absence?: BlocAbsence;
   readonly obsolescence?: BlocObsolescence;
   readonly validations?: readonly unknown[];
+  /** Posé par `pnpm promote` quand l'item sort d'un arbitrage (§4), jamais autrement. */
+  readonly arbitrage?: BlocArbitrage;
   readonly contestations?: readonly unknown[];
   readonly historique?: readonly unknown[];
+}
+
+export const ISSUES_ARBITRAGE = ["verifie", "rejete", "non_evaluable"] as const;
+export type IssueDecisionArbitrage = (typeof ISSUES_ARBITRAGE)[number];
+
+export const ARBITRES = ["auteur", "panel"] as const;
+export type Arbitre = (typeof ARBITRES)[number];
+
+/** Trace, dans l'item publié, de la décision d'arbitrage qui l'a tranché (`item.schema.json`). */
+export interface BlocArbitrage {
+  readonly decision_id: string;
+  readonly date: string;
+  readonly arbitre: Arbitre;
+  readonly arbitre_seul: boolean;
+  readonly motif: string;
+  readonly issue: IssueDecisionArbitrage;
+  readonly motivation: string;
 }
 
 export interface Mesure {

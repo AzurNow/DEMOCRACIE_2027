@@ -209,20 +209,51 @@
       }
     },
 
+    "arbitrage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_id", "date", "arbitre", "arbitre_seul", "motif", "issue", "motivation"],
+      "description": "§4 (protocole 0.10), règle de concordance : trace de la décision d'arbitrage qui a tranché le désaccord des deux annotateurs, recopiée du registre publié validation/arbitrage/decisions.json (schéma decision-arbitrage) par pnpm promote au moment de la promotion. Absent pour un item promu sur deux décisions concordantes.",
+      "properties": {
+        "decision_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "arbitre": { "type": "string", "enum": ["auteur", "panel"] },
+        "arbitre_seul": {
+          "type": "boolean",
+          "description": "§10 : vrai quand l'auteur a tranché seul une paire « non évaluable » / « rejeter » qui relève du panel, faute de panel constitué."
+        },
+        "motif": {
+          "type": "string",
+          "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee"]
+        },
+        "issue": { "type": "string", "enum": ["verifie", "rejete", "non_evaluable"] },
+        "motivation": { "type": "string", "minLength": 1, "description": "§4 : « avec une motivation publiée »." }
+      }
+    },
+
     "contestations": {
       "type": "array",
       "description": "§4 et annexe E. Le texte est publié tel quel quelle que soit la décision, dans la limite de 1 000 caractères.",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "date_reception", "texte", "contestataire_type"],
+        "required": ["id", "date_reception", "texte", "contestataire_type", "caviardage"],
         "properties": {
           "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
           "date_reception": {
             "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
             "description": "Horodatée à la seconde : c'est elle qui décide si la contestation est antérieure ou postérieure au gel d'un run, donc si l'item était contesté DANS le tirage (§5, §12) ou seulement après."
           },
-          "texte": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "texte": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "§4 (0.10) : publié tel quel, quelle que soit la décision, dans la limite de 1 000 caractères comptés en points de code Unicode après normalisation NFC. Un texte plus long n'est ni tronqué ni résumé : pnpm contester le refuse, et le contestataire est invité à en envoyer une version de 1 000 caractères au plus."
+          },
+          "caviardage": {
+            "type": "boolean",
+            "description": "§4 (0.10) : vrai si les coordonnées d'une personne physique ont été masquées dans le texte, avec une marque visible. Le masquage est fait par l'auteur dans le fichier du texte, jamais par le code, et il est publié par ce booléen."
+          },
           "contestataire_type": {
             "type": "string",
             "enum": ["campagne", "parti", "citoyen", "media", "autre"],
@@ -253,21 +284,6 @@
               }
             }
           }
-        }
-      }
-    },
-
-    "notifications": {
-      "type": "array",
-      "description": "§4 : les campagnes sont notifiées à chaque création, modification ou contestation. Trace sans donnée personnelle : aucun destinataire nominatif dans le dépôt.",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["date", "evenement", "statut_envoi"],
-        "properties": {
-          "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
-          "evenement": { "type": "string", "enum": ["creation", "modification", "contestation"] },
-          "statut_envoi": { "type": "string", "enum": ["envoyee", "echec", "sans_destinataire_connu"] }
         }
       }
     },
@@ -335,13 +351,14 @@
       "then": { "properties": { "statut_validation": { "const": "a_confirmer" } } }
     },
     {
-      "$comment": "§4 : un item est vérifié seulement avec DEUX décisions concordantes.",
+      "$comment": "§4 (protocole 0.10) : un item est vérifié avec DEUX décisions concordantes, ou, après un désaccord, par une décision d'arbitrage d'issue « verifie ». Les deux validations restent publiées, discordantes, à côté du bloc arbitrage qui les a tranchées.",
       "if": { "properties": { "statut_validation": { "const": "verifie" } }, "required": ["statut_validation"] },
       "then": {
         "properties": { "validations": { "minItems": 2 } },
         "anyOf": [
           { "properties": { "validations": { "items": { "properties": { "decision": { "const": "accepter" } } } } } },
-          { "properties": { "validations": { "items": { "properties": { "decision": { "const": "corriger" } } } } } }
+          { "properties": { "validations": { "items": { "properties": { "decision": { "const": "corriger" } } } } } },
+          { "required": ["arbitrage"], "properties": { "arbitrage": { "properties": { "issue": { "const": "verifie" } } } } }
         ]
       }
     },

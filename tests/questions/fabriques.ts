@@ -175,6 +175,8 @@ export function contestation(
     date_reception: "2026-09-25T09:00:00+02:00",
     texte: "Texte de contestation fictif.",
     contestataire_type: "campagne",
+    // Protocole 0.10, §4 : le masquage des coordonnées est publié, booléen exigé par le schéma.
+    caviardage: false,
     decision_panel: { date, decision, motivation: "Motivation fictive du panel." },
   };
 }

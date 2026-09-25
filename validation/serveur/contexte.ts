@@ -14,7 +14,8 @@ import { chargerStaging, type Staging } from "../io/staging.ts";
 import { lireLot, lireLots } from "../io/lots-fichier.ts";
 import { etatsDuLot } from "../io/lecture-croisee.ts";
 import type { EtatAnnotateur } from "../domaine/journal.ts";
-import type { Lot } from "../domaine/types.ts";
+import type { Item, Lot } from "../domaine/types.ts";
+import { lireItemsData } from "../io/data-items.ts";
 
 export interface Configuration {
   readonly racine_depot: string;
@@ -22,6 +23,8 @@ export interface Configuration {
   readonly repertoire_lots: string;
   readonly repertoire_decisions: string;
   readonly repertoire_brouillons: string;
+  /** `data/items/` : lu seulement, pour l'état effectif d'un item publié (statut de contestation). */
+  readonly repertoire_data: string;
   readonly annotateur_id: string;
 }
 
@@ -32,6 +35,8 @@ export interface Contexte {
   readonly brouillons: Brouillons;
   /** Rechargé à chaque appel : une contestation reçue pendant un lot doit retirer l'item tout de suite. */
   staging(): Staging;
+  /** Items publiés, rechargés à chaque appel : une contestation s'écrit dans `data/`, pas dans `staging/`. */
+  itemsData(): ReadonlyMap<string, Item>;
   lots(): readonly Lot[];
   lot(lot_id: string): Lot | null;
   /**
@@ -90,6 +95,7 @@ export function configurationDepuisEnvironnement(env: NodeJS.ProcessEnv, racine:
     repertoire_lots: cheminOuDefaut(env, "BANC_LOTS", resolve(racine, `${base}/lots${suffixe}`)),
     repertoire_decisions: cheminOuDefaut(env, "BANC_DECISIONS", resolve(racine, `${base}/decisions${suffixe}`)),
     repertoire_brouillons: cheminOuDefaut(env, "BANC_BROUILLONS", resolve(racine, `${base}/brouillons${suffixe}`)),
+    repertoire_data: cheminOuDefaut(env, "BANC_DATA", resolve(racine, demo ? "validation/fixtures/data-demo" : "data/items")),
     annotateur_id,
   };
 }
@@ -101,6 +107,7 @@ export function creerContexte(configuration: Configuration): Contexte {
     journal: new JournalAnnotateur(configuration.repertoire_decisions, configuration.annotateur_id),
     brouillons: new Brouillons(configuration.repertoire_brouillons, configuration.annotateur_id),
     staging: () => chargerStaging(configuration.racine_staging),
+    itemsData: () => lireItemsData(configuration.repertoire_data),
     lots: () => lireLots(configuration.repertoire_lots),
     lot: (lot_id: string) => lireLot(configuration.repertoire_lots, lot_id),
     etatsDuLot: (lot: Lot) => etatsDuLot(configuration.repertoire_decisions, lot),

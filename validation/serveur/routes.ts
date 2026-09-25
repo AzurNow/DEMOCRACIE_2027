@@ -34,8 +34,9 @@ import {
   type Staging,
 } from "../io/staging.ts";
 import { enumerationCommune } from "../io/referentiels.ts";
+import { itemsEffectifs, statutContestationEffectif } from "../io/items-effectifs.ts";
 import type { Contexte } from "./contexte.ts";
-import { emplacement, emplacementDuChemin } from "./emplacements.ts";
+import { accesTexteCorrections, emplacement } from "./emplacements.ts";
 import { construireVueItem, construireVueLot, projeterLot } from "./vues.ts";
 
 export interface Reponse {
@@ -127,10 +128,10 @@ function diagnostic(contexte: Contexte, params: readonly string[]): Reponse {
   const lot = contexte.lot(lot_id);
   if (lot === null) return { statut: 404, corps: { erreur: `Lot inconnu : ${lot_id}` } };
 
-  const staging = contexte.staging();
+  // État effectif (§4, 0.8) : un item contesté après sa promotion l'est dans `data/`, pas dans `staging/`.
   const resultat = diagnostiquerLot({
     lot,
-    items: staging.items,
+    items: itemsEffectifs(contexte.staging().items, contexte.itemsData()),
     etats: contexte.etatsDuLot(lot),
     taille_attendue: tailleAttendue(contexte.lots(), lot),
   });
@@ -196,7 +197,8 @@ function annulable(contexte: Contexte, lot_id: string): { id: string; item_id: s
  * du dénominateur du kappa, que `diagnostiquerLot` lit sur le statut de l'item au calcul.
  */
 function retirerSiConteste(contexte: Contexte, lot: Lot, item: Item): Reponse | null {
-  if (item.statut_contestation === "aucune") return null;
+  const statut = statutContestationEffectif(item, contexte.itemsData());
+  if (statut === "aucune") return null;
   const etat = rejouer(contexte.journal.lire(lot.lot_id));
   if (!etat.retires.has(item.id)) {
     contexte.journal.ajouter(
@@ -207,7 +209,7 @@ function retirerSiConteste(contexte: Contexte, lot: Lot, item: Item): Reponse | 
         lot_id: lot.lot_id,
         lot_nature: lot.nature,
         item_id: item.id,
-        motif: `item ${item.statut_contestation}`,
+        motif: `item ${statut}`,
         horodatage: contexte.maintenant(),
       }),
     );
@@ -272,25 +274,7 @@ function enregistrerDecision(contexte: Contexte, _params: readonly string[], cor
 }
 
 function accesCorrections(contexte: Contexte, item: Item) {
-  const acces = accesTextes(contexte);
-  return {
-    texteSource(chemin: string): string | null {
-      const lieu = emplacementDuChemin(chemin);
-      if (lieu === null) return null;
-      const trouve = emplacement(item, lieu);
-      if (trouve === null) return null;
-      return acces.texte(trouve.source.texte_sha256 === undefined ? null : trouve.source.texte_sha256);
-    },
-    offsetsActuels(chemin: string) {
-      const lieu = emplacementDuChemin(chemin);
-      const trouve = lieu === null ? null : emplacement(item, lieu);
-      const test = trouve?.etat?.test_verbatim;
-      return {
-        debut: test?.offset_debut === undefined ? null : test.offset_debut,
-        fin: test?.offset_fin === undefined ? null : test.offset_fin,
-      };
-    },
-  };
+  return accesTexteCorrections(item, accesTextes(contexte).texte);
 }
 
 /** Annuler, c'est écrire une entrée de plus. Rien n'est effacé, jamais. */

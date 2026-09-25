@@ -26,6 +26,7 @@ import {
 import { empreinteContenuNotant } from "./empreinte.ts";
 import { reduireEtats } from "./grille.ts";
 import type {
+  BlocArbitrage,
   Correction,
   Decision,
   EntreeDecision,
@@ -41,13 +42,16 @@ export type MotifAttente =
   | "decisions_insuffisantes"
   | "correction_mesure_en_attente";
 
-export type MotifArbitrage =
-  | "versions_differentes"
-  | "desaccord"
-  | "corrections_divergentes"
-  | "paraphrase_seule"
-  | "confirmation_absence_manquante"
-  | "correction_mesure_refusee";
+/** Confrontée à `decision-arbitrage.schema.json` par `tests/enumerations-schemas.test.ts`. */
+export const MOTIFS_ARBITRAGE = [
+  "versions_differentes",
+  "desaccord",
+  "corrections_divergentes",
+  "paraphrase_seule",
+  "confirmation_absence_manquante",
+  "correction_mesure_refusee",
+] as const;
+export type MotifArbitrage = (typeof MOTIFS_ARBITRAGE)[number];
 
 export type StatutPromu = "verifie" | "rejete" | "non_evaluable";
 
@@ -63,6 +67,11 @@ export interface IssueArbitrage {
   readonly motif: MotifArbitrage;
   /** Motif du refus, sur `correction_mesure_refusee` seulement : §4 l'exige dans l'arbitrage. */
   readonly motif_refus?: string;
+  /**
+   * Décision du registre d'arbitrage qui vise l'item mais ne s'applique pas (version dépassée,
+   * autre désaccord, contenu retenu disparu) : l'item reste en arbitrage, et le rapport dit pourquoi.
+   */
+  readonly decision_inapplicable?: { readonly decision_id: string; readonly motifs: readonly string[] };
 }
 
 /** Ce qu'il faut pour rapporter une demande de correction de thème restée sans décision. */
@@ -248,7 +257,7 @@ function terminal(dossier: Dossier, statut: StatutPromu, options: OptionsPromoti
   return {
     sort: "promouvoir",
     statut,
-    item: appliquerValidations(dossier, dossier.item, statut, options, false),
+    item: appliquerValidations(dossier, dossier.item, statut, options, false, traceConcordance(dossier)),
     corrections_appliquees: false,
   };
 }
@@ -270,7 +279,7 @@ function verifier(
   return {
     sort: "promouvoir",
     statut: "verifie",
-    item: appliquerValidations(dossier, corrige.item, "verifie", options, corrige.modifie),
+    item: appliquerValidations(dossier, corrige.item, "verifie", options, corrige.modifie, traceConcordance(dossier)),
     corrections_appliquees: corrige.modifie,
   };
 }
@@ -327,12 +336,28 @@ function paraphrases(item: Item): readonly (string | null)[] {
 
 /* ------------------------------------------- projection vers item.validations */
 
-function appliquerValidations(
+/** Ce que l'entrée d'historique de la promotion dit de son origine, et le bloc d'arbitrage éventuel. */
+export interface TracePromotion {
+  readonly changement: string;
+  readonly motif: string;
+  readonly arbitrage?: BlocArbitrage;
+}
+
+function traceConcordance(dossier: Dossier): TracePromotion {
+  return { changement: "promotion vers data/", motif: `lot ${dossier.lot_id}, deux décisions concordantes` };
+}
+
+/**
+ * Projection d'un item promu : validations, version, empreinte, confirmation d'absence, historique.
+ * Exportée pour la promotion par arbitrage (`arbitrage.ts`), qui passe sa propre trace.
+ */
+export function appliquerValidations(
   dossier: Dossier,
   item: Item,
   statut: StatutPromu,
   options: OptionsPromotion,
   modifie: boolean,
+  trace: TracePromotion,
 ): Item {
   const validations = dossier.decisions.map((decision) => projeterValidation(decision, item));
   const versionResultante = modifie ? item.version + 1 : item.version;
@@ -349,12 +374,13 @@ function appliquerValidations(
     ...(item.type === "A" && statut === "verifie"
       ? { absence: ajouterConfirmation(dossier, item, options) }
       : {}),
+    ...(trace.arbitrage === undefined ? {} : { arbitrage: trace.arbitrage }),
     historique: [
       ...(item.historique ?? []),
       {
         date: options.horodatage,
-        changement: `promotion vers data/ : ${statut}`,
-        motif: `lot ${dossier.lot_id}, deux décisions concordantes`,
+        changement: `${trace.changement} : ${statut}`,
+        motif: trace.motif,
         commit: options.commit,
         version_resultante: versionResultante,
       },

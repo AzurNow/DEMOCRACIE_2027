@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:decision-arbitrage",
+  "title": "Entrée du registre des décisions d'arbitrage",
+  "description": "Une entrée de `validation/arbitrage/decisions.json`, registre publié en ajout seul (§4, règle de concordance, protocole 0.10). Écrite par `pnpm arbitrer --ecrire`, relue par `pnpm promote`, qui ne promeut un item en arbitrage que si la dernière décision qui le vise porte sur la même version, la même empreinte, le même lot et le même motif. Un désaccord ordinaire est tranché par l'auteur ; la paire « non évaluable » / « rejeter » par le panel, ou par l'auteur marqué `arbitre_seul` tant que le panel n'est pas constitué (§10). L'arbitre choisit un contenu proposé par un annotateur et n'en rédige aucun : `contenu_retenu` nomme ce choix, jamais un texte. Aucune donnée personnelle : l'arbitre est un rôle, pas une personne.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "item_id", "lot_id", "item_version", "item_empreinte", "motif", "issue", "arbitre", "arbitre_seul", "motivation", "date"],
+
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "lot_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+
+    "item_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version de l'item en staging au moment de la décision. Une décision sur une version dépassée ne s'applique pas : l'item reste en arbitrage."
+    },
+    "item_empreinte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+
+    "motif": {
+      "type": "string",
+      "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee"],
+      "description": "Le désaccord tranché, tel que la règle de concordance le produit (`validation/domaine/promotion.ts`). Une décision prise sur un autre motif que celui de l'item au moment de la promotion ne s'applique pas."
+    },
+
+    "issue": { "type": "string", "enum": ["verifie", "rejete", "non_evaluable"] },
+
+    "contenu_retenu": {
+      "type": "string",
+      "pattern": "^(original|correction:[a-z0-9]([a-z0-9_-]{0,62}[a-z0-9])?|paraphrase:[a-z0-9]([a-z0-9_-]{0,62}[a-z0-9])?)$",
+      "description": "Le contenu proposé que l'arbitre retient : `original` (proposé par un « accepter »), `correction:<annotateur>` ou, pour un arbitrage « paraphrase seule » seulement, `paraphrase:<annotateur>`. Présent si et seulement si l'issue est « verifie » : si aucun contenu ne convient, l'arbitre rejette l'item (§4)."
+    },
+
+    "arbitre": { "type": "string", "enum": ["auteur", "panel"] },
+
+    "arbitre_seul": {
+      "type": "boolean",
+      "description": "§10 : vrai quand l'auteur tranche seul une paire qui relève du panel, faute de panel constitué ; la faiblesse est signalée en tête de rapport. Jamais vrai pour une décision du panel."
+    },
+
+    "motivation": { "type": "string", "minLength": 1, "description": "§4 : « avec une motivation publiée ». Lue d'un fichier rédigé par l'arbitre." },
+
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+  },
+
+  "allOf": [
+    {
+      "$comment": "§4 : l'arbitre retient un contenu proposé pour vérifier l'item ; un rejet ou une non-évaluabilité ne retient rien.",
+      "if": { "properties": { "issue": { "const": "verifie" } }, "required": ["issue"] },
+      "then": { "required": ["contenu_retenu"] },
+      "else": { "not": { "required": ["contenu_retenu"] } }
+    },
+    {
+      "$comment": "§10 : arbitre_seul ne qualifie que l'auteur qui tient la place du panel.",
+      "if": { "properties": { "arbitre": { "const": "panel" } }, "required": ["arbitre"] },
+      "then": { "properties": { "arbitre_seul": { "const": false } } }
+    }
+  ]
+}

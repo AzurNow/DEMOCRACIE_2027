@@ -7,6 +7,7 @@
  * qui touche à une source.
  */
 
+import type { AccesTexte } from "../domaine/corrections.ts";
 import type { EtatPositionnel, Item, Source } from "../domaine/types.ts";
 
 export type CleEmplacement = "assertion" | "anterieur" | "posterieur" | "couverture";
@@ -64,6 +65,32 @@ function typeAffichage(source: Source): TypeAffichage {
     return "media";
   }
   return "page";
+}
+
+/**
+ * Accès au texte canonique de la source que vise une correction de citation, et aux offsets
+ * actuels de la citation : ce dont `validerCorrections` a besoin pour rejouer le test verbatim.
+ * Partagé par l'interface de validation et par `pnpm panel` (décision « correction » du panel).
+ */
+export function accesTexteCorrections(item: Item, lireTexte: (texte_sha256: string | null) => string | null): AccesTexte {
+  const lieu = (chemin: string): Emplacement | null => {
+    const cle = emplacementDuChemin(chemin);
+    return cle === null ? null : emplacement(item, cle);
+  };
+  return {
+    texteSource(chemin: string): string | null {
+      const trouve = lieu(chemin);
+      if (trouve === null) return null;
+      return lireTexte(trouve.source.texte_sha256 === undefined ? null : trouve.source.texte_sha256);
+    },
+    offsetsActuels(chemin: string) {
+      const test = lieu(chemin)?.etat?.test_verbatim;
+      return {
+        debut: test?.offset_debut === undefined ? null : test.offset_debut,
+        fin: test?.offset_fin === undefined ? null : test.offset_fin,
+      };
+    },
+  };
 }
 
 /** Emplacement visé par le chemin d'une correction de citation. */

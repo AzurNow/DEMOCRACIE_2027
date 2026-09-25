@@ -1,0 +1,16 @@
+Gabarit provisoire — à réécrire par l'auteur
+Les lignes qui précèdent « Objet : » ne sont jamais envoyées, sauf « Ligne : », gabarit d'une ligne
+de la liste. Tant que la marque ci-dessus figure dans ce fichier, `pnpm notifier --envoyer` refuse
+d'envoyer. Champs : {candidat_id}, {nombre}, {liste} ; dans la ligne : {item_id}, {evenement}, {date}.
+Ligne : - item {item_id} : {evenement}, le {date}
+Objet : Banc d'essai 2027 : {nombre} item(s) publié(s) vous concernant
+
+Bonjour,
+
+Le Banc d'essai 2027 a publié les changements suivants sur des items attribués au candidat
+{candidat_id} :
+
+{liste}
+
+Chaque item publié porte sa source archivée. Toute personne, campagne comprise, peut contester un
+item à l'adresse dédiée publiée en tête du site.

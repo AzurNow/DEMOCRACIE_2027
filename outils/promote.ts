@@ -18,23 +18,28 @@
  *   pnpm promote --ecrire
  */
 
-import { execFileSync } from "node:child_process";
 import { analyserArguments, drapeau, texte } from "./arguments.ts";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { commandeGit, commitCourant, ecriturePermise } from "./garde-fous-git.ts";
 import { ItemFictifEnDouble, verifierFictifUnique } from "../validation/domaine/fictif-unique.ts";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
-import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
-import type { EtatAnnotateur } from "../validation/domaine/journal.ts";
-import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
-import { evaluerPromotion, type Issue } from "../validation/domaine/promotion.ts";
-import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
+import { DecisionArbitrageRefusee } from "../validation/domaine/arbitrage.ts";
+import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-mesure.ts";
+import type { LotEffectif } from "../validation/domaine/lot.ts";
+import type { Issue } from "../validation/domaine/promotion.ts";
+import type { Item, Lot } from "../validation/domaine/types.ts";
+import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
+import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
+import { ecrireFileArbitrage } from "../validation/io/file-arbitrage.ts";
+import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
-import { chargerStaging, mesureDe, type Staging } from "../validation/io/staging.ts";
+import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
-import { erreurDeSchema, valider } from "./schemas/valider.ts";
+import { evaluerLots, type Introuvable, type Verdict } from "./evaluation-lots.ts";
+import { erreurDeSchema } from "./schemas/valider.ts";
 
 interface Options {
   readonly ecrire: boolean;
@@ -45,18 +50,7 @@ interface Options {
   readonly mesures: string;
   readonly data: string;
   readonly arbitrage: string;
-}
-
-interface Verdict {
-  readonly lot_id: string;
-  readonly item: Item;
-  readonly issue: Issue;
-}
-
-/** Un item qu'un lot juge mais que `staging/` ne contient pas : il ne disparaît jamais en silence. */
-interface Introuvable {
-  readonly lot_id: string;
-  readonly item_id: string;
+  readonly notifications: string;
 }
 
 /** Un item à promouvoir que ses corrections ont rendu non conforme à `item.schema.json`. */
@@ -66,14 +60,10 @@ interface NonConforme {
   readonly erreur: string;
 }
 
-interface EvaluationLot {
-  readonly verdicts: readonly Verdict[];
-  readonly introuvables: readonly Introuvable[];
-}
-
 function lireOptions(): Options {
-  const racine = resolve(import.meta.dirname, "..");
   const table = analyserArguments(process.argv.slice(2));
+  // `--racine` : le dépôt dont l'arbre doit être propre et dont HEAD est inscrit (bac d'essai des tests).
+  const racine = texte(table, "racine", resolve(import.meta.dirname, ".."));
   return {
     ecrire: drapeau(table, "ecrire"),
     racine,
@@ -83,68 +73,8 @@ function lireOptions(): Options {
     mesures: texte(table, "mesures", resolve(racine, "validation/mesures")),
     data: texte(table, "data", resolve(racine, "data/items")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
+    notifications: texte(table, "notifications", resolve(racine, "validation/notifications")),
   };
-}
-
-function arbrePropre(racine: string): boolean {
-  const sortie = execFileSync("git", ["status", "--porcelain"], { cwd: racine, encoding: "utf8" });
-  return sortie.trim().length === 0;
-}
-
-function commitCourant(racine: string): string {
-  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: racine, encoding: "utf8" }).trim();
-}
-
-function decisionsActives(etats: ReadonlyMap<string, EtatAnnotateur>, item_id: string): EntreeDecision[] {
-  const actives: EntreeDecision[] = [];
-  for (const etat of etats.values()) {
-    const decision = etat.decisions.get(item_id);
-    if (decision !== undefined) actives.push(decision);
-  }
-  return actives;
-}
-
-interface Contexte {
-  readonly commit: string;
-  readonly horodatage: string;
-  readonly registre: RegistreCorrectionsMesure;
-}
-
-/**
- * Un lot n'est évalué que sur les items qu'il juge encore : ceux qu'aucun lot de réannotation
- * postérieur ne reprend (§4, supersession). Le lot d'origine reste lu, publié et diagnostiqué ;
- * ses décisions ne comptent simplement plus pour les items rejugés.
- */
-function evaluerLot(
-  effectif: LotEffectif,
-  staging: Staging,
-  options: Options,
-  contexte: Contexte,
-): EvaluationLot {
-  const etats = etatsDuLot(options.decisions, effectif.lot);
-  const verdicts: Verdict[] = [];
-  const introuvables: Introuvable[] = [];
-
-  for (const reference of effectif.items) {
-    const item = staging.items.get(reference.item_id);
-    if (item === undefined) {
-      introuvables.push({ lot_id: effectif.lot.lot_id, item_id: reference.item_id });
-      continue;
-    }
-    const issue = evaluerPromotion(
-      {
-        item,
-        mesure: mesureDe(staging, item),
-        lot_id: effectif.lot.lot_id,
-        lot_nature: effectif.lot.nature,
-        decisions: decisionsActives(etats, item.id),
-        registre_corrections_mesure: contexte.registre,
-      },
-      contexte,
-    );
-    verdicts.push({ lot_id: effectif.lot.lot_id, item, issue });
-  }
-  return { verdicts, introuvables };
 }
 
 /**
@@ -153,7 +83,7 @@ function evaluerLot(
  * la promotion est donc sans effet sur lui.
  */
 function dejaDansData(verdict: Verdict, options: Options): boolean {
-  return existsSync(join(options.data, `${verdict.item.id}.json`));
+  return existsSync(cheminItem(options.data, verdict.item.id));
 }
 
 function imprimerEcriturePrevue(promus: readonly Verdict[], options: Options): void {
@@ -172,7 +102,7 @@ function imprimerIntrouvables(introuvables: readonly Introuvable[]): void {
 }
 
 function cheminDansData(item: Item, options: Options): string {
-  return join(options.data, `${item.id}.json`);
+  return cheminItem(options.data, item.id);
 }
 
 /** Les items que `--ecrire` écrirait, confrontés au schéma dans l'état exact où ils le seraient. */
@@ -192,14 +122,7 @@ function nonConformes(verdicts: readonly Verdict[], options: Options): readonly 
  * répertoire absent est un `data/` vide ; un fichier non conforme arrête la commande.
  */
 function itemsDeData(options: Options): readonly Item[] {
-  if (!existsSync(options.data)) return [];
-  return readdirSync(options.data)
-    .filter((nom) => nom.endsWith(".json"))
-    .sort()
-    .map((nom) => {
-      const chemin = join(options.data, nom);
-      return valider<Item>("item", JSON.parse(readFileSync(chemin, "utf8")) as unknown, chemin);
-    });
+  return [...lireItemsData(options.data).values()];
 }
 
 /**
@@ -243,6 +166,7 @@ function imprimerRapport(
   for (const verdict of arbitrages) {
     const issue = verdict.issue as Extract<Issue, { sort: "arbitrage" }>;
     process.stdout.write(`  ${verdict.item.id}  ${issue.motif}${motifDuRefus(issue)}  [${verdict.lot_id}]\n`);
+    imprimerDecisionInapplicable(issue);
   }
 
   process.stdout.write(`\nEn attente : ${attentes.length}\n`);
@@ -262,6 +186,13 @@ function imprimerRapport(
     effectifs.map((effectif) => effectif.lot),
     options,
   );
+}
+
+/** Une décision d'arbitrage qui vise l'item sans s'y appliquer : l'item reste en arbitrage, et on dit pourquoi. */
+function imprimerDecisionInapplicable(issue: Extract<Issue, { sort: "arbitrage" }>): void {
+  if (issue.decision_inapplicable === undefined) return;
+  process.stdout.write(`    décision d'arbitrage ${issue.decision_inapplicable.decision_id} inapplicable :\n`);
+  for (const motif of issue.decision_inapplicable.motifs) process.stdout.write(`      ${motif}\n`);
 }
 
 /** §4 : « Une demande refusée envoie l'item en arbitrage, avec le motif du refus. » */
@@ -326,18 +257,15 @@ function imprimerNonEvaluables(lots: readonly Lot[], options: Options): void {
 }
 
 function ecrire(verdicts: readonly Verdict[], options: Options): void {
-  mkdirSync(options.data, { recursive: true });
-  mkdirSync(options.arbitrage, { recursive: true });
-
   const promus: string[] = [];
   for (const verdict of verdicts) {
     if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
-    const item = verdict.issue.item;
-    const chemin = cheminDansData(item, options);
-    // Dernière frontière avant `data/` : déjà contrôlé par `nonConformes`, revalidé ici pour
-    // qu'aucune écriture n'échappe au schéma, quel que soit le chemin qui y mène.
-    writeFileSync(chemin, `${JSON.stringify(valider<Item>("item", item, chemin), null, 2)}\n`, "utf8");
-    promus.push(item.id);
+    // Seule écriture vers `data/items/` : `creerItem` revalide contre le schéma, quel que soit le
+    // chemin qui y mène, et refuse d'écraser un item déjà publié.
+    creerItem(options.data, verdict.issue.item);
+    // §4 (0.10) : tout ce qui est publié est notifié, rejeté et non évaluable compris.
+    ajouterDues(options.notifications, [notificationDue(verdict.issue.item, "creation")]);
+    promus.push(verdict.issue.item.id);
   }
 
   const file = verdicts
@@ -347,46 +275,31 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
       lot_id: verdict.lot_id,
       motif: (verdict.issue as Extract<Issue, { sort: "arbitrage" }>).motif,
     }));
-  writeFileSync(
-    join(options.arbitrage, "file.json"),
-    `${JSON.stringify({ date: instantLocal(new Date()), entrees: file }, null, 2)}\n`,
-    "utf8",
-  );
+  ecrireFileArbitrage(options.arbitrage, instantLocal(new Date()), file);
 
   process.stdout.write(
     `\n${promus.length} item(s) écrit(s) dans ${options.data}\n` +
       `${file.length} entrée(s) dans la file d'arbitrage.\n\n` +
-      `Rien n'est commité : c'est vous qui signez.\n\n` +
-      `  git add data/items validation/arbitrage\n` +
-      `  git commit -m "data: promotion de ${promus.length} item(s)\n\n` +
-      promus.map((identifiant) => `  ${identifiant}`).join("\n") +
-      `\n"\n`,
+      commandeGit(["data/items", "validation/notifications/dues.jsonl"], `data: promotion de ${promus.length} item(s)`, promus),
   );
 }
 
 function principal(): void {
   const options = lireOptions();
-  if (options.ecrire && !arbrePropre(options.racine)) {
-    process.stderr.write(
-      "Arbre Git non propre. --ecrire inscrit le commit courant dans l'historique de chaque item\n" +
-        "promu ; avec des modifications non commitées à côté, ce commit ne décrirait pas l'état\n" +
-        "du dépôt. Commitez ou remisez, puis relancez.\n",
-    );
-    process.exitCode = 1;
-    return;
-  }
+  if (options.ecrire && !ecriturePermise(options.racine)) return;
 
-  const staging = chargerStaging(options.staging);
-  // Le registre est **lu**, jamais écrit ici : seul `pnpm mesures --ecrire` y ajoute une décision.
-  const contexte = {
+  // Les deux registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
+  // --ecrire` y ajoutent les décisions.
+  const { effectifs, verdicts, introuvables } = evaluerLots({
+    staging: chargerStaging(options.staging),
+    data: lireItemsData(options.data),
+    lots: lireLots(options.lots),
+    repertoire_decisions: options.decisions,
+    registre_mesures: lireRegistre(options.mesures),
+    registre_arbitrage: lireRegistreArbitrage(options.arbitrage),
     commit: commitCourant(options.racine),
     horodatage: instantLocal(new Date()),
-    registre: lireRegistre(options.mesures),
-  };
-  const effectifs = lotsApresSupersession(lireLots(options.lots));
-  const evaluations = effectifs.map((effectif) => evaluerLot(effectif, staging, options, contexte));
-  const verdicts = evaluations.flatMap((evaluation) => evaluation.verdicts);
-  const introuvables = evaluations.flatMap((evaluation) => evaluation.introuvables);
+  });
 
   const fautifs = nonConformes(verdicts, options);
 
@@ -424,7 +337,8 @@ try {
   // §4 : « une acceptation enregistrée sans mesure modifiée est une erreur bloquante ». Elle
   // arrête la commande plutôt que de promouvoir un item validé contre un thème inexistant.
   // §5 (protocole 0.9) : un second item F vérifié sur une mesure fictive déjà portée, de même.
-  if (!(erreur instanceof CorrectionMesureIncoherente) && !(erreur instanceof ItemFictifEnDouble)) throw erreur;
-  process.stderr.write(`\n${erreur.message}\n`);
+  const attendues = [CorrectionMesureIncoherente, ItemFictifEnDouble, DecisionArbitrageRefusee];
+  if (!attendues.some((classe) => erreur instanceof classe)) throw erreur;
+  process.stderr.write(`\n${(erreur as Error).message}\n`);
   process.exitCode = 1;
 }

@@ -728,6 +728,91 @@
       "attendu": "invalide",
       "motif": "Révision des poids « main » au lieu d'un hash de commit. Une branche bouge : la fiche ne dirait plus quels poids ont produit la transcription.",
       "regle_protocole": "§4, contrat des artefacts (docs/CONTRATS.md §2.2)"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/valide-03-verifie-par-arbitrage.json",
+      "attendu": "valide",
+      "motif": "Item vérifié par arbitrage (protocole 0.10, §4) : deux validations discordantes (accepter, rejeter) restent publiées, et le bloc arbitrage d'issue « verifie » porte la décision motivée qui les a tranchées."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-12-verifie-discordant-sans-arbitrage.json",
+      "attendu": "invalide",
+      "motif": "Item vérifié sur deux décisions discordantes sans bloc arbitrage. §4 : vérifié seulement avec deux décisions concordantes, ou par une décision d'arbitrage.",
+      "regle_protocole": "§4, règle de concordance"
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/valide-01-auteur-contenu-original.json",
+      "attendu": "valide",
+      "motif": "Désaccord ordinaire tranché par l'auteur, qui retient le contenu original proposé par un « accepter »."
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/valide-02-auteur-seul-paire-du-panel.json",
+      "attendu": "valide",
+      "motif": "Paire « non évaluable » / « rejeter », qui relève du panel, tranchée par l'auteur marqué arbitre_seul faute de panel constitué (§10) ; aucun contenu retenu."
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/invalide-01-verifie-sans-contenu.json",
+      "attendu": "invalide",
+      "motif": "Issue « verifie » sans contenu retenu. §4 : l'arbitre choisit parmi les contenus proposés ; vérifier sans dire lequel laisserait le contenu promu indéterminé.",
+      "regle_protocole": "§4, règle de concordance"
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/invalide-02-panel-arbitre-seul.json",
+      "attendu": "invalide",
+      "motif": "Décision du panel marquée arbitre_seul. §10 : arbitre_seul signale l'auteur qui tient la place du panel, jamais le panel.",
+      "regle_protocole": "§10, panel d'arbitrage"
+    },
+    {
+      "objet": "decision-arbitrage",
+      "fichier": "decision-arbitrage/invalide-03-rejet-avec-contenu-retenu.json",
+      "attendu": "invalide",
+      "motif": "Rejet qui retient un contenu. §4 : si aucun contenu ne convient, l'arbitre rejette l'item ; un rejet ne retient rien.",
+      "regle_protocole": "§4, règle de concordance"
+    },
+    {
+      "objet": "notification-due",
+      "fichier": "notification-due/valide-01-creation.json",
+      "attendu": "valide",
+      "motif": "Notification due à la création d'un item (promotion), sans adresse : le destinataire est résolu à l'envoi."
+    },
+    {
+      "objet": "notification-due",
+      "fichier": "notification-due/invalide-01-avec-adresse.json",
+      "attendu": "invalide",
+      "motif": "Notification due portant une adresse. §10 : l'adresse de contact n'entre pas dans la file ; elle est résolue au moment de l'envoi depuis le périmètre du run.",
+      "regle_protocole": "§10, données personnelles"
+    },
+    {
+      "objet": "envoi-notification",
+      "fichier": "envoi-notification/valide-01-envoyee.json",
+      "attendu": "valide",
+      "motif": "Envoi réussi : destinataire générique, preuve (empreinte du message), Message-ID et code SMTP."
+    },
+    {
+      "objet": "envoi-notification",
+      "fichier": "envoi-notification/valide-02-sans-destinataire-connu.json",
+      "attendu": "valide",
+      "motif": "Campagne sans adresse de contact publiée : rien n'est envoyé, le manque est journalisé (§4)."
+    },
+    {
+      "objet": "envoi-notification",
+      "fichier": "envoi-notification/invalide-01-envoyee-sans-preuve.json",
+      "attendu": "invalide",
+      "motif": "Envoi déclaré réussi sans empreinte du message. §4 : chaque envoi est journalisé et publié ; sans preuve, le journal n'atteste rien.",
+      "regle_protocole": "§4, droit de réponse"
+    },
+    {
+      "objet": "envoi-notification",
+      "fichier": "envoi-notification/invalide-02-sans-destinataire-avec-adresse.json",
+      "attendu": "invalide",
+      "motif": "« sans destinataire connu » portant une adresse : contradiction, l'envoi aurait dû être tenté.",
+      "regle_protocole": "§4, droit de réponse"
     }
   ]
 }

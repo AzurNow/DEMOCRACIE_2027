@@ -27,6 +27,7 @@ function lireChemins(): Chemins {
   const table = analyserArguments(process.argv.slice(2));
   return {
     staging: texte(table, "staging", resolve(racine, "staging")),
+    data: texte(table, "data", resolve(racine, "data/items")),
     lots: texte(table, "lots", resolve(racine, "validation/lots")),
     decisions: texte(table, "decisions", resolve(racine, "validation/decisions")),
     diagnostics: texte(table, "diagnostics", resolve(racine, "validation/diagnostics")),

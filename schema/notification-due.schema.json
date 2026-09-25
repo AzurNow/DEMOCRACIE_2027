@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:notification-due",
+  "title": "Notification due à une campagne",
+  "description": "Une ligne de `validation/notifications/dues.jsonl`, file publiée en ajout seul (protocole 0.10, §4 « Droit de réponse » : « Les campagnes reçoivent une notification automatique à chaque création, modification ou contestation d'un item les concernant […] Tout ce qui est publié sur un item est notifié, décisions du panel comprises »). Écrite au même `--ecrire` que l'item publié, par `pnpm promote` (création, quel que soit le statut : vérifié, rejeté ou non évaluable), `pnpm contester` (contestation) et `pnpm panel` (décision du panel, correction comprise). Ne porte aucune adresse : le destinataire est résolu au moment de l'envoi, depuis le périmètre du run (`pnpm notifier`). L'identifiant rend l'envoi idempotent : `envois.jsonl` le cite.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "item_id", "candidat_id", "evenement", "date", "commit"],
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "item_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "candidat_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "La campagne notifiée est celle du candidat de l'item. Aucune adresse ici."
+    },
+    "evenement": {
+      "type": "string",
+      "enum": ["creation", "modification", "contestation", "decision_panel"],
+      "description": "« modification » est réservé aux changements d'un item publié hors panel (revérification d'un item A, lot extraction) ; une correction du panel est notifiée comme « decision_panel », un seul événement."
+    },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "commit": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git",
+      "description": "HEAD au moment de l'écriture de l'item, arbre propre : le même commit que l'entrée d'historique de l'item."
+    }
+  }
+}

@@ -9,14 +9,17 @@
 import { diagnostiquerLot } from "../../validation/domaine/analyse-lot.ts";
 import { projeterDiagnostic } from "../../validation/domaine/diagnostic-publie.ts";
 import { tailleAttendue } from "../../validation/domaine/lot.ts";
-import type { Lot } from "../../validation/domaine/types.ts";
+import type { Item, Lot } from "../../validation/domaine/types.ts";
+import { chargerItemsEffectifs } from "../../validation/io/items-effectifs.ts";
 import { ajouterDiagnostic, type IssueEcriture } from "../../validation/io/diagnostics-fichier.ts";
 import { etatsDuLot } from "../../validation/io/lecture-croisee.ts";
 import { lireLots } from "../../validation/io/lots-fichier.ts";
-import { chargerStaging, type Staging } from "../../validation/io/staging.ts";
+import { chargerStaging } from "../../validation/io/staging.ts";
 
 export interface Chemins {
   readonly staging: string;
+  /** `data/items/` : un item contesté après sa promotion l'est là, et sort du dénominateur (§4, 0.8). */
+  readonly data: string;
   readonly lots: string;
   readonly decisions: string;
   readonly diagnostics: string;
@@ -27,10 +30,16 @@ export interface CompteRendu {
   readonly issue: IssueEcriture | "en_attente";
 }
 
-function publierLot(chemins: Chemins, staging: Staging, lots: readonly Lot[], lot: Lot, maintenant: string): CompteRendu {
+function publierLot(
+  chemins: Chemins,
+  items: ReadonlyMap<string, Item>,
+  lots: readonly Lot[],
+  lot: Lot,
+  maintenant: string,
+): CompteRendu {
   const diagnostic = diagnostiquerLot({
     lot,
-    items: staging.items,
+    items,
     etats: etatsDuLot(chemins.decisions, lot),
     taille_attendue: tailleAttendue(lots, lot),
   });
@@ -41,7 +50,7 @@ function publierLot(chemins: Chemins, staging: Staging, lots: readonly Lot[], lo
 
 /** `maintenant` : instant du calcul, avec décalage explicite (`commun#/$defs/instant`). */
 export function publierDiagnostics(chemins: Chemins, maintenant: string): readonly CompteRendu[] {
-  const staging = chargerStaging(chemins.staging);
+  const items = chargerItemsEffectifs(chargerStaging(chemins.staging).items, chemins.data);
   const lots = lireLots(chemins.lots);
-  return lots.map((lot) => publierLot(chemins, staging, lots, lot, maintenant));
+  return lots.map((lot) => publierLot(chemins, items, lots, lot, maintenant));
 }

@@ -39,6 +39,9 @@ beforeEach(() => {
   bac = creerBac();
   chemins = {
     staging: join(bac.racine, "staging"),
+    // Protocole 0.10 (lot contestation-notification, V3) : le statut de contestation se lit sur
+    // l'état effectif, `data/items/` l'emportant sur `staging/`. Absent ici : un data/ vide.
+    data: join(bac.racine, "data/items"),
     lots: join(bac.racine, "validation/lots"),
     decisions: join(bac.racine, "validation/decisions"),
     diagnostics: join(bac.racine, "validation/diagnostics"),
@@ -275,6 +278,8 @@ describe("ajout seul : deux calculs successifs du même lot", () => {
           date_reception: "2026-10-18T09:00:00+02:00",
           texte: "Texte de contestation fictif.",
           contestataire_type: "campagne",
+          // Protocole 0.10, §4 : le masquage des coordonnées est publié, booléen exigé par le schéma.
+          caviardage: false,
         },
       ],
     });

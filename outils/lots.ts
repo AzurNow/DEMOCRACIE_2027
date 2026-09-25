@@ -40,6 +40,7 @@ import {
 } from "../validation/domaine/lot.ts";
 import type { ItemDuLot, Lot, NatureLot } from "../validation/domaine/types.ts";
 import { lireLots, ecrireLot, ecrireLots } from "../validation/io/lots-fichier.ts";
+import { chargerItemsEffectifs } from "../validation/io/items-effectifs.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
@@ -53,6 +54,8 @@ interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
   readonly staging: string;
+  /** `data/items/`, lu pour l'état effectif (un item publié puis contesté n'entre dans aucun lot). */
+  readonly data: string;
   readonly lots: string;
   /** Lot d'origine à réannoter. Chaîne vide : composition ordinaire. */
   readonly reannote: string;
@@ -78,6 +81,7 @@ function lireOptions(bruts: readonly string[]): Options {
     ecrire: drapeau(table, "ecrire"),
     racine,
     staging: texte(table, "staging", resolve(racine, "staging")),
+    data: texte(table, "data", resolve(racine, "data/items")),
     lots: texte(table, "lots", resolve(racine, "validation/lots")),
     reannote,
     calibration: reannote.length === 0 ? null : dateDeCalibration(table),
@@ -112,7 +116,7 @@ function itemsDisponibles(options: Options): readonly ItemDuLot[] {
   }
 
   const disponibles: ItemDuLot[] = [];
-  for (const item of staging.items.values()) {
+  for (const item of chargerItemsEffectifs(staging.items, options.data).values()) {
     if (dejaPris.has(item.id)) continue;
     if (item.statut_validation !== "en_attente") continue;
     if (item.statut_contestation !== "aucune") continue;
