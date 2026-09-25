@@ -14,7 +14,7 @@
 
 import type { GenerateurAleatoire } from "./alea.ts";
 import { ALGORITHME_ALEA, generateur, graineDepuisTexte, melanger } from "./alea.ts";
-import type { ItemDuLot, Lot } from "./types.ts";
+import type { ItemDuLot, Lot, NatureLot } from "./types.ts";
 
 export const ALGORITHME_ORDRE = `ordre-annotateur-v1(${ALGORITHME_ALEA})`;
 
@@ -119,25 +119,136 @@ function distribuerEnAlternance(suite: readonly ItemDuLot[]): readonly ItemDuLot
 /* ------------------------------------------------------------- composition */
 
 /**
- * Découpe une réserve d'items en lots de taille fixe. L'affectation aux lots est elle aussi
- * tirée : composer les lots dans l'ordre du répertoire regrouperait les items d'un même
- * candidat dans un même lot, ce qui rendrait la contrainte d'adjacence infaisable et, surtout,
- * ferait porter le kappa d'un lot sur un seul candidat.
+ * Levée quand la taille demandée pour une composition n'est pas celle du §4 : un kappa calculé
+ * sur un lot d'une autre taille n'a pas la variance de celui d'un lot de 50, et il déciderait
+ * pourtant du §12 comme lui.
+ */
+export class TailleDeLotNonConforme extends Error {
+  readonly nature: NatureLot;
+  readonly demandee: number;
+  readonly attendue: number;
+
+  constructor(nature: NatureLot, demandee: number, attendue: number) {
+    super(
+      `Taille de lot refusée : ${demandee} demandée pour un lot de nature « ${nature} », dont la ` +
+        `taille est fixée à ${attendue} par le §4. Omettre --taille : elle découle de la nature.`,
+    );
+    this.name = "TailleDeLotNonConforme";
+    this.nature = nature;
+    this.demandee = demandee;
+    this.attendue = attendue;
+  }
+}
+
+/** §4 : cinquante items par lot réel, trente items d'entraînement communs. */
+const TAILLE_PAR_NATURE: Readonly<Record<Exclude<NatureLot, "reannotation">, number>> = {
+  reel: TAILLE_LOT_REEL,
+  entrainement: TAILLE_LOT_ENTRAINEMENT,
+};
+
+/**
+ * Taille réglementaire d'un lot composé depuis la réserve. Un lot de réannotation ne se compose
+ * pas depuis la réserve : il reprend les items d'un lot existant, donc sa taille.
+ */
+function tailleReglementaire(nature: NatureLot): number {
+  if (nature === "reannotation") {
+    throw new Error(
+      "Un lot de réannotation ne se compose pas depuis la réserve : il reprend les items d'un " +
+        "lot existant. Employer --reannote=<lot> --calibration=<date>.",
+    );
+  }
+  const taille = TAILLE_PAR_NATURE[nature] as number | undefined;
+  if (taille === undefined) throw new Error(`Nature de lot inconnue : ${JSON.stringify(nature)}`);
+  return taille;
+}
+
+/**
+ * Taille des lots d'une composition : celle de la nature. Une taille demandée n'est admise que
+ * si elle la répète ; toute autre valeur est refusée, jamais ajustée.
+ */
+export function tailleDeComposition(nature: NatureLot, demandee: number | null): number {
+  const attendue = tailleReglementaire(nature);
+  if (demandee !== null && demandee !== attendue) {
+    throw new TailleDeLotNonConforme(nature, demandee, attendue);
+  }
+  return attendue;
+}
+
+/**
+ * Taille qu'un lot existant devrait compter : celle de sa nature, ou, pour une réannotation,
+ * celle du premier maillon de sa chaîne, dont il reprend les items.
+ */
+export function tailleAttendue(lots: readonly Lot[], lot: Lot): number {
+  const tete = chaineAvant(lots, lot)[0] as Lot;
+  return tailleReglementaire(tete.nature);
+}
+
+export interface CompositionLots {
+  /** Lots pleins, tous exactement de la taille demandée. */
+  readonly lots: readonly (readonly ItemDuLot[])[];
+  /** Reste de la réserve : il n'est pas un lot, il attend la prochaine composition. */
+  readonly en_attente: readonly ItemDuLot[];
+}
+
+/**
+ * Découpe une réserve d'items en lots **pleins** de taille fixe. L'affectation aux lots est
+ * elle aussi tirée : composer les lots dans l'ordre du répertoire regrouperait les items d'un
+ * même candidat dans un même lot, ce qui rendrait la contrainte d'adjacence infaisable et,
+ * surtout, ferait porter le kappa d'un lot sur un seul candidat.
+ *
+ * Le reste de la réserve n'est jamais un lot : un kappa sur 17 items n'a pas la variance d'un
+ * kappa sur 50 (§4, §12). Il reste disponible et sera retiré au sort avec les items suivants.
  */
 export function composerLots(
   items: readonly ItemDuLot[],
   taille: number,
   graine_maitresse: string,
-): readonly (readonly ItemDuLot[])[] {
-  if (taille < 1) throw new Error(`Taille de lot invalide : ${taille}`);
+): CompositionLots {
+  if (!Number.isInteger(taille) || taille < 1) throw new Error(`Taille de lot invalide : ${taille}`);
   const rng = generateur(graineDepuisTexte(graine_maitresse, "composition"));
   const melanges = melanger([...items].sort(comparerParIdentifiant), rng);
 
+  const pleins = melanges.length - (melanges.length % taille);
   const lots: ItemDuLot[][] = [];
-  for (let debut = 0; debut < melanges.length; debut += taille) {
+  for (let debut = 0; debut < pleins; debut += taille) {
     lots.push(melanges.slice(debut, debut + taille));
   }
-  return lots;
+  return { lots, en_attente: melanges.slice(pleins) };
+}
+
+/**
+ * Identifiants des lots d'une nouvelle composition : ils reprennent après le plus grand numéro
+ * existant pour ce préfixe. Recomposer le reste de la réserve est le cas normal ; repartir à 001
+ * heurterait un manifeste existant, qui n'est jamais réécrit. Les réannotations (`lot-002-r1`)
+ * n'entrent pas dans le calcul : elles prolongent un numéro, elles n'en prennent pas un.
+ */
+export function numeroterLots(existants: readonly Lot[], prefixe: string, nombre: number): readonly string[] {
+  const depart = plusGrandNumero(existants, prefixe);
+  return Array.from({ length: nombre }, (_, index) => `${prefixe}-${String(depart + index + 1).padStart(3, "0")}`);
+}
+
+const NUMERO = /^\d+$/;
+
+function plusGrandNumero(existants: readonly Lot[], prefixe: string): number {
+  const tete = `${prefixe}-`;
+  let maximum = 0;
+  for (const lot of existants) {
+    if (!lot.lot_id.startsWith(tete)) continue;
+    const suffixe = lot.lot_id.slice(tete.length);
+    if (NUMERO.test(suffixe)) maximum = Math.max(maximum, Number(suffixe));
+  }
+  return maximum;
+}
+
+/** Ce que la commande annonce : les lots pleins, et le reste en clair. */
+export function annoncerComposition(composition: CompositionLots, taille: number): string {
+  const attente = composition.en_attente.length;
+  const reste =
+    attente === 0
+      ? "aucun item en attente"
+      : `${attente} items en attente d'un lot complet de ${taille}, disponibles pour une prochaine composition`;
+  if (composition.lots.length === 0) return `Aucun lot composé : ${reste}.`;
+  return `${composition.lots.length} lot(s) de ${taille}, ${reste}.`;
 }
 
 function comparerParIdentifiant(a: ItemDuLot, b: ItemDuLot): number {

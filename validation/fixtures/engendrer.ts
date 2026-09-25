@@ -476,7 +476,7 @@ function ecrireLots(plan: Plan): void {
     item_empreinte: item.empreinte,
     candidat_id: item.candidat_id,
   }));
-  const paquets = composerLots(references, 5, "graine-demonstration");
+  const paquets = composerLots(references, 5, "graine-demonstration").lots;
   const natures: readonly Lot["nature"][] = ["entrainement", "reel"];
 
   paquets.forEach((items, index) => {
