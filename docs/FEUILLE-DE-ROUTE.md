@@ -79,7 +79,7 @@ flowchart LR
   end
   subgraph jalon_J4["J4 · 22 nov. 2026"]
     lot_alignement_0_3["alignement-0-3<br/>Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)<br/>T2"]:::T2
-    lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois relances, réponses brutes immuables, archive Zenodo<br/>T0"]:::T0
+    lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo<br/>T0"]:::T0
     lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T0"]:::T0
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
@@ -121,7 +121,7 @@ flowchart LR
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
-| interrogation | Appels API, fenêtre 48 h, trois relances, réponses brutes immuables, archive Zenodo | J4 | T0 | bloqué par perimetre-prompts, questions-tirage-symetrie | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
+| interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T0 | bloqué par perimetre-prompts, questions-tirage-symetrie | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T0 | bloqué par perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse | sonnet | M | 2 | analyse |
