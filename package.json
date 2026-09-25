@@ -22,6 +22,8 @@
     "mesures": "node --experimental-strip-types outils/mesures.ts",
     "promote": "node --experimental-strip-types outils/promote.ts",
     "arbitrer": "node --experimental-strip-types outils/arbitrer.ts",
+    "contester": "node --experimental-strip-types outils/contester.ts",
+    "panel": "node --experimental-strip-types outils/panel.ts",
     "diagnostics": "node --experimental-strip-types outils/diagnostics.ts",
     "proprete": "node --experimental-strip-types outils/proprete.ts",
     "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts",

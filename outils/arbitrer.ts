@@ -36,6 +36,7 @@ import type { IssueArbitrage } from "../validation/domaine/promotion.ts";
 import { ARBITRES, ISSUES_ARBITRAGE, type Arbitre, type IssueDecisionArbitrage } from "../validation/domaine/types.ts";
 import { ulid } from "../validation/domaine/ulid.ts";
 import { ajouterDecisionArbitrage, cheminRegistreArbitrage, lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
+import { lireItemsData } from "../validation/io/data-items.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
@@ -50,6 +51,7 @@ interface Options {
   readonly decisions: string;
   readonly mesures: string;
   readonly arbitrage: string;
+  readonly data: string;
   readonly item: string;
 }
 
@@ -63,6 +65,7 @@ function lireOptions(table: Arguments): Options {
     decisions: texte(table, "decisions", resolve(racine, "validation/decisions")),
     mesures: texte(table, "mesures", resolve(racine, "validation/mesures")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
+    data: texte(table, "data", resolve(racine, "data/items")),
     item: texte(table, "item", ""),
   };
 }
@@ -70,6 +73,7 @@ function lireOptions(table: Arguments): Options {
 function verdictsCourants(options: Options, maintenant: string): readonly Verdict[] {
   return evaluerLots({
     staging: chargerStaging(options.staging),
+    data: lireItemsData(options.data),
     lots: lireLots(options.lots),
     repertoire_decisions: options.decisions,
     registre_mesures: lireRegistre(options.mesures),

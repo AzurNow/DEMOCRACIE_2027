@@ -11,6 +11,7 @@ import type { EtatAnnotateur } from "../validation/domaine/journal.ts";
 import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
 import type { Dossier, Issue } from "../validation/domaine/promotion.ts";
 import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
+import { statutContestationEffectif } from "../validation/io/items-effectifs.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { mesureDe, type Staging } from "../validation/io/staging.ts";
 
@@ -29,6 +30,8 @@ export interface Introuvable {
 
 export interface SourcesEvaluation {
   readonly staging: Staging;
+  /** Items publiés : leur statut de contestation est l'état effectif (`io/items-effectifs.ts`). */
+  readonly data: ReadonlyMap<string, Item>;
   readonly lots: readonly Lot[];
   readonly repertoire_decisions: string;
   readonly registre_mesures: RegistreCorrectionsMesure;
@@ -68,8 +71,10 @@ function evaluerLot(effectif: LotEffectif, sources: SourcesEvaluation): Evaluati
       introuvables.push({ lot_id: effectif.lot.lot_id, item_id: reference.item_id });
       continue;
     }
+    // Le contenu jugé est celui de `staging/` ; le statut de contestation est l'effectif : un item
+    // publié puis contesté est « en attente, contesté », jamais « à promouvoir ».
     const dossier: Dossier = {
-      item,
+      item: { ...item, statut_contestation: statutContestationEffectif(item, sources.data) },
       mesure: mesureDe(sources.staging, item),
       lot_id: effectif.lot.lot_id,
       lot_nature: effectif.lot.nature,

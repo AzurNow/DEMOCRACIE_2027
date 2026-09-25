@@ -21,6 +21,15 @@ export function analyserArguments(bruts: readonly string[]): Arguments {
   return table;
 }
 
+/**
+ * Toutes les valeurs d'une option répétable (`--cle=a --cle=b`), dans l'ordre. `analyserArguments`
+ * ne garde que la dernière : une option répétable se lit ici, sur les arguments bruts.
+ */
+export function multiples(bruts: readonly string[], cle: string): readonly string[] {
+  const prefixe = `--${cle}=`;
+  return bruts.filter((argument) => argument.startsWith(prefixe)).map((argument) => argument.slice(prefixe.length));
+}
+
 export function texte(table: Arguments, cle: string, defaut: string): string {
   const valeur = table.get(cle);
   return valeur === undefined ? defaut : valeur;

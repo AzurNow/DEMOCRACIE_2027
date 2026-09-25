@@ -287,6 +287,7 @@ function principal(): void {
   // --ecrire` y ajoutent les décisions.
   const { effectifs, verdicts, introuvables } = evaluerLots({
     staging: chargerStaging(options.staging),
+    data: lireItemsData(options.data),
     lots: lireLots(options.lots),
     repertoire_decisions: options.decisions,
     registre_mesures: lireRegistre(options.mesures),

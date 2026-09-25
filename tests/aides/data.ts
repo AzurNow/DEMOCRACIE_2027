@@ -41,6 +41,8 @@ export function contestationRecue(id = "01JBANCESSA1C0NTESTAT10N01") {
     date_reception: "2026-10-01T09:00:00+02:00",
     texte: "La source ne dit pas cela.",
     contestataire_type: "campagne",
+    // Protocole 0.10, §4 : le masquage des coordonnées d'une personne physique est publié.
+    caviardage: false,
   };
 }
 

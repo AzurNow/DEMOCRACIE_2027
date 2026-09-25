@@ -25,6 +25,7 @@ import * as questions from "../pipeline/questions/types.ts";
 import * as client from "../validation/client/types.ts";
 import * as domaine from "../validation/domaine/types.ts";
 import * as promotion from "../validation/domaine/promotion.ts";
+import * as contestation from "../validation/domaine/contestation-item.ts";
 
 const RACINE_SCHEMAS = join(import.meta.dirname, "..", "schema");
 
@@ -202,6 +203,9 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(DOMAINE, "ARBITRES"), valeurs: domaine.ARBITRES, fichier: ITEM, pointeur: "#/properties/arbitrage/properties/arbitre" },
   { liste: en("validation/domaine/promotion.ts", "MOTIFS_ARBITRAGE"), valeurs: promotion.MOTIFS_ARBITRAGE, fichier: "decision-arbitrage.schema.json", pointeur: "#/properties/motif" },
   { liste: en("validation/domaine/promotion.ts", "MOTIFS_ARBITRAGE"), valeurs: promotion.MOTIFS_ARBITRAGE, fichier: ITEM, pointeur: "#/properties/arbitrage/properties/motif" },
+  // Lot contestation-notification (protocole 0.10, §4 et annexe E) : contestation et panel.
+  { liste: en("validation/domaine/contestation-item.ts", "TYPES_CONTESTATAIRE"), valeurs: contestation.TYPES_CONTESTATAIRE, fichier: ITEM, pointeur: "#/properties/contestations/items/properties/contestataire_type" },
+  { liste: en("validation/domaine/contestation-item.ts", "DECISIONS_PANEL"), valeurs: contestation.DECISIONS_PANEL, fichier: ITEM, pointeur: "#/properties/contestations/items/properties/decision_panel/properties/decision" },
 
   // validation/client/types.ts
   { liste: en(CLIENT, "TYPES_ITEM"), valeurs: client.TYPES_ITEM, fichier: COMMUN, pointeur: "#/$defs/type_item" },

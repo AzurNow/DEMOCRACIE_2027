@@ -237,14 +237,23 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "date_reception", "texte", "contestataire_type"],
+        "required": ["id", "date_reception", "texte", "contestataire_type", "caviardage"],
         "properties": {
           "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
           "date_reception": {
             "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
             "description": "Horodatée à la seconde : c'est elle qui décide si la contestation est antérieure ou postérieure au gel d'un run, donc si l'item était contesté DANS le tirage (§5, §12) ou seulement après."
           },
-          "texte": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "texte": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "§4 (0.10) : publié tel quel, quelle que soit la décision, dans la limite de 1 000 caractères comptés en points de code Unicode après normalisation NFC. Un texte plus long n'est ni tronqué ni résumé : pnpm contester le refuse, et le contestataire est invité à en envoyer une version de 1 000 caractères au plus."
+          },
+          "caviardage": {
+            "type": "boolean",
+            "description": "§4 (0.10) : vrai si les coordonnées d'une personne physique ont été masquées dans le texte, avec une marque visible. Le masquage est fait par l'auteur dans le fichier du texte, jamais par le code, et il est publié par ce booléen."
+          },
           "contestataire_type": {
             "type": "string",
             "enum": ["campagne", "parti", "citoyen", "media", "autre"],

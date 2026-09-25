@@ -57,6 +57,7 @@ export function creerBac(): Bac {
     repertoire_lots: join(racine, "validation/lots"),
     repertoire_decisions: join(racine, "validation/decisions"),
     repertoire_brouillons: join(racine, "validation/brouillons"),
+    repertoire_data: join(racine, "data/items"),
     annotateur_id,
   });
 
