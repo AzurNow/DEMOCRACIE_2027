@@ -98,6 +98,11 @@ par son moteur HTML, sans erreur (garde ajoutée : `document.is_pdf`). Et `codec
 vaut `iso8859-1`, pas `latin-1` : la règle WHATWG « latin-1 se lit en windows-1252 » ne
 s'appliquait jamais, et l'apostrophe `’` devenait un caractère de contrôle.
 
+**Un test qui ne construit que le cas favorable passe par hasard.** Le test « rend la liste exacte
+des candidats pour une question d'attribution » n'utilisait que des items « pour » : il est resté vert
+alors que la liste attendue contenait aussi les candidats « contre » (conformité n° 2, 2026-09-24).
+Pour une règle qui filtre, construire au moins un cas que le filtre doit écarter.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -145,6 +150,21 @@ vrai saut de ligne (erreur de compilation). Le test restait juste mais illisible
 code, `String.fromCodePoint` en TypeScript, et un `grep` sur les octets après écriture.
 
 ## Méthode
+
+**Une dette marquée « réglée » se vérifie dans le code, pas dans le récit.** Le point de dette du
+2026-09-20 sur l'exactitude des comparateurs a été barré avec la mention « jamais implémentée » ; la
+fonction existait depuis deux jours et gardait les indéterminées au dénominateur. Seule la passe de
+conformité l'a vu. Avant de barrer un point, `grep` la fonction qu'il nomme et lire ce qu'elle fait.
+
+**Un sous-agent long écrit ses livrables au fil de l'eau.** Le 2026-09-24, la limite d'utilisation a
+coupé les trois sous-agents de la passe de conformité après une heure de lecture : aucun n'avait
+encore écrit une ligne de matrice. Ils ont pu reprendre avec leur contexte, mais le brief doit dire
+d'écrire dès qu'il y a assez de matière, pas à la toute fin.
+
+**Une passe de conformité trouve ce qu'aucune revue de code ne voit.** La revue du 2026-09-23 lisait
+la qualité ; la passe du 2026-09-24 lisait le code contre le protocole et a trouvé neuf écarts graves,
+dont une réponse attendue fausse et une graine publiée non rejouable, tous derrière des tests verts.
+Lancer `conformite-protocole` après tout lot qui touche une règle de mesure.
 
 **Suivre une règle jusqu'à tous ceux qui la lisent, pas seulement jusqu'au premier.** Le brief du
 lot alignement-0-3 demandait de réintégrer l'item arbitré « au tirage » : le sous-agent l'a fait dans
