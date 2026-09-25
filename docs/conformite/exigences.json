@@ -2892,7 +2892,7 @@
       "tests": [],
       "lot": "notation",
       "constat": 49,
-      "note": "run.graines.echantillon_humain, run.taux_echantillon_humain et verdict.dans_echantillon_humain existent ; le tirage n'est pas écrit."
+      "note": "Règle de la note retenue écrite au §7 en 0.7 (constat 49) ; la double notation elle-même attend le lot notation. Le recalcul (a) qui l'applique est testé (§8.37)."
     },
     {
       "id": "§7.21",
@@ -3070,17 +3070,18 @@
       "section": "8",
       "citation": "Taux de non-réponse | Non-réponses / réponses obtenues | Réponses obtenues (hors manquantes)",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/metriques.ts:tauxNonReponse",
-        "analysis/filtre.ts:assembler"
+        "analysis/filtre.ts:assembler",
+        "analysis/filtre.ts:indexerVerdictsDuRun"
       ],
       "tests": [
-        "tests/analysis/metriques.test.ts « sort la non-réponse de l'exactitude et la garde dans le taux de non-réponse »"
+        "tests/analysis/filtre.test.ts « lève en listant les réponses obtenues sans verdict, au lieu de les sortir du dénominateur »",
+        "tests/analysis/filtre.test.ts « lève sur deux verdicts du run portant sur une même réponse »"
       ],
       "lot": null,
       "constat": 4,
-      "note": "Le dénominateur est l'ensemble des verdicts du run, pas celui des réponses obtenues."
+      "note": "Corrigé le 2026-09-24 (PR #24), protocole 0.7."
     },
     {
       "id": "§8.05",
@@ -3136,17 +3137,18 @@
       "section": "8",
       "citation": "Sourçage valide | Réponses citant au moins une source existante qui soutient l'affirmation / réponses obtenues | Réponses obtenues",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/metriques.ts:sourcageValide",
-        "analysis/filtre.ts:assembler"
+        "analysis/filtre.ts:assembler",
+        "analysis/robustesse.ts:sourcageDeNotation"
       ],
       "tests": [
-        "tests/analysis/metriques.test.ts « n'accepte que le lien à la fois existant et soutenant »"
+        "tests/analysis/filtre.test.ts « lève en listant les réponses obtenues sans verdict, au lieu de les sortir du dénominateur »",
+        "tests/analysis/robustesse.test.ts « un lien mort qui soutient et un lien vivant hors sujet ne font pas un sourçage soutenant »"
       ],
       "lot": null,
       "constat": 4,
-      "note": "Numérateur conforme ; dénominateur = verdicts du run, pas réponses obtenues."
+      "note": "Corrigé le 2026-09-24 (PR #24), protocole 0.7."
     },
     {
       "id": "§8.09",
@@ -3229,30 +3231,34 @@
       "section": "8",
       "citation": "et exactitude (items affichés compatibles / items affichés classés)",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "analysis/metriques.ts:mesurerComparateur"
+        "analysis/metriques.ts:mesurerComparateur",
+        "analysis/metriques.ts:exactitude"
       ],
       "tests": [
-        "tests/analysis/metriques.test.ts « calcule couverture et exactitude, et les rend absentes quand le dénominateur est nul »"
+        "tests/analysis/metriques.test.ts « sort la lecture indéterminée du dénominateur de l'exactitude d'un comparateur »"
       ],
       "lot": null,
       "constat": 5,
-      "note": "Dénominateur = toutes les lectures affichées ; le test fige ce dénominateur."
+      "note": "Corrigé le 2026-09-24 (PR #24), protocole 0.7."
     },
     {
       "id": "§8.15",
       "section": "8",
       "citation": "Une lecture indéterminée sort du dénominateur de l'exactitude d'un comparateur, comme une réponse indéterminée sort de celui d'un assistant",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
-        "analysis/metriques.ts:mesurerComparateur"
+        "analysis/metriques.ts:mesurerComparateur",
+        "analysis/metriques.ts:exactitude"
       ],
-      "tests": [],
+      "tests": [
+        "tests/analysis/metriques.test.ts « sort la lecture indéterminée du dénominateur de l'exactitude d'un comparateur »"
+      ],
       "lot": null,
       "constat": 5,
-      "note": null
+      "note": "Corrigé le 2026-09-24 (PR #24), protocole 0.7."
     },
     {
       "id": "§8.16",
@@ -3351,17 +3357,19 @@
       "section": "8",
       "citation": "graine publiée",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/bootstrap.ts:echantillonner",
-        "analysis/permutation.ts:valeurPDe"
+        "analysis/graines.ts:graineDerivee",
+        "analysis/bootstrap.ts",
+        "analysis/permutation.ts"
       ],
       "tests": [
-        "tests/analysis/bootstrap.test.ts « donne le même intervalle à graine égale, un autre à graine différente »"
+        "tests/analysis/graines.test.ts « vecteur 1 : entier de run ordinaire, clé de bootstrap à cinq composants »",
+        "schema/exemples/run/invalide-06-graine-au-dela-de-2-53.json"
       ],
       "lot": null,
       "constat": 6,
-      "note": "Graine textuelle ; run.graines.*.valeur est un entier ; aucune conversion ni dérivation par intervalle écrite (DETTE 2026-09-18, point 1)."
+      "note": "Corrigé le 2026-09-24 (PR #24), protocole 0.7."
     },
     {
       "id": "§8.23",
@@ -3583,16 +3591,18 @@
       "section": "8",
       "citation": "Recalcul des métriques primaires (a) sur la seule notation humaine de l'échantillon de 10 %",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
-        "analysis/robustesse.ts:restreindreEchantillonHumain"
+        "analysis/robustesse.ts:recalculEchantillonHumain"
       ],
       "tests": [
-        "tests/analysis/robustesse.test.ts « (a) ne garde que les verdicts de l'échantillon humain »"
+        "tests/analysis/robustesse.test.ts « deux humains d'accord contre les juges : la note humaine remplace la note retenue »",
+        "tests/analysis/robustesse.test.ts « deux humains divergents et un troisième : la note du troisième »",
+        "tests/analysis/robustesse.test.ts « divergence sans troisième humain : erreur nommée, jamais la note des juges en repli »"
       ],
       "lot": null,
       "constat": 8,
-      "note": "Restreint bien à l'échantillon, mais lit la note retenue (verdict), pas les notations humaines."
+      "note": "Corrigé le 2026-09-24 (PR #24), protocole 0.7."
     },
     {
       "id": "§8.38",
