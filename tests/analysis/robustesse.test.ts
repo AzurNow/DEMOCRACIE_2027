@@ -26,7 +26,7 @@ import { notation, run, ulid, unite } from "./fabriques.ts";
 const OPTIONS = { reechantillonnages: 100, graine_du_run: 20261201, cle: ["test", "robustesse"] };
 
 function surItem(cle: string, partiel: Parameters<typeof unite>[0] = {}) {
-  return unite({ ...partiel, grappe_id: ulid(cle), item_principal_id: ulid(cle) });
+  return unite({ ...partiel, grappe_id: ulid(cle), item_principal_id: ulid(cle), item_ids: [ulid(cle)] });
 }
 
 /** Chaque réponse d'un bras reçoit son propre identifiant : deux bras sont deux outils. */

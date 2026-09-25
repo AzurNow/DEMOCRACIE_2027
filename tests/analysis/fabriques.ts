@@ -68,6 +68,7 @@ const UNITE_NEUTRE: UniteAnalyse = {
   question_id: idQuestion("question-neutre"),
   grappe_id: ulid("grappe-neutre"),
   item_principal_id: ulid("grappe-neutre"),
+  item_ids: [ulid("grappe-neutre")],
   type_item_principal: "P",
   gabarit: "Q-DIR",
   candidat_id: "candidat-a",

@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { assembler } from "../../analysis/filtre.ts";
 import { tauxFabrication, tauxObsolescence } from "../../analysis/metriques.ts";
-import { exclureItemsContestes, QuestionSansItemPrincipal } from "../../analysis/robustesse.ts";
+import { exclureItemsContestes } from "../../analysis/robustesse.ts";
 import { entreeTirage, idQuestion, item, question, reponse, run, ulid, unite, verdict } from "./fabriques.ts";
 
 const MESURE = ulid("mesure-attribution");
@@ -57,19 +57,47 @@ describe("n° 39 : unité d'analyse d'une Q-ATT sans item principal", () => {
   });
 });
 
-describe("n° 39 : recalcul (b) de robustesse sur une Q-ATT sans principal", () => {
-  const sansPrincipal = unite({ item_principal_id: null, type_item_principal: null, grappe_id: MESURE });
+/*
+ * Protocole 0.9, §8 (décision de l'auteur du 2026-09-25) : le recalcul (b) exclut « les questions
+ * dont un item, quel que soit son rôle, est contesté à un run ultérieur ». L'unité porte donc tous
+ * les items de sa question (`item_ids`), et plus seulement son item principal. Règle aussi le
+ * constat bas n° 83 (attendu_dans_liste contesté).
+ */
+describe("recalcul (b) : une question sort dès qu'un de ses items est contesté", () => {
+  function contestes(...cles: readonly string[]) {
+    return run({
+      contestations_posterieures: cles.map((cle) => ({
+        item_id: ulid(cle),
+        contestation_id: ulid(`contestation-${cle}`),
+        date_reception: "2026-12-05T10:00:00+01:00",
+      })),
+    });
+  }
 
-  it("sans contestation postérieure : rien n'est retiré, rien ne lève", () => {
-    expect(exclureItemsContestes([sansPrincipal], run())).toEqual([sansPrincipal]);
+  it("l'unité assemblée porte tous les items de sa question, quel que soit leur rôle", () => {
+    const [unite_] = assembler(entrees());
+    expect(unite_?.item_ids).toEqual([ulid("p-a"), ulid("p-b")]);
   });
 
-  it("avec une contestation postérieure : refus nommé, la règle n'est pas écrite par le protocole", () => {
-    const conteste = run({
-      contestations_posterieures: [
-        { item_id: ulid("p-a"), contestation_id: ulid("contestation"), date_reception: "2026-12-05T10:00:00+01:00" },
-      ],
-    });
-    expect(() => exclureItemsContestes([sansPrincipal], conteste)).toThrow(QuestionSansItemPrincipal);
+  it("Q-ATT dont seul un attendu_dans_liste est contesté : exclue", () => {
+    const qAtt = unite({ item_principal_id: null, type_item_principal: null, grappe_id: MESURE, item_ids: [ulid("p-a"), ulid("p-b")] });
+    const autre = unite({ reponse_id: ulid("autre"), item_principal_id: ulid("p-z"), item_ids: [ulid("p-z")] });
+    expect(exclureItemsContestes([qAtt, autre], contestes("p-b"))).toEqual([autre]);
+  });
+
+  it("question à principal non contesté mais distracteur contesté : exclue", () => {
+    const directe = unite({ item_principal_id: ulid("p-a"), item_ids: [ulid("p-a"), ulid("distracteur")] });
+    expect(exclureItemsContestes([directe], contestes("distracteur"))).toEqual([]);
+  });
+
+  it("aucune contestation : rien ne change, Q-ATT sans principal comprise", () => {
+    const qAtt = unite({ item_principal_id: null, type_item_principal: null, grappe_id: MESURE, item_ids: [ulid("p-a")] });
+    expect(exclureItemsContestes([qAtt], run())).toEqual([qAtt]);
+    expect(exclureItemsContestes([qAtt], contestes())).toEqual([qAtt]);
+  });
+
+  it("contestation d'un item étranger à la question : rien ne sort", () => {
+    const qAtt = unite({ item_principal_id: null, type_item_principal: null, grappe_id: MESURE, item_ids: [ulid("p-a")] });
+    expect(exclureItemsContestes([qAtt], contestes("p-z"))).toEqual([qAtt]);
   });
 });

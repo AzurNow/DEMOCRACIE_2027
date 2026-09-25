@@ -63,6 +63,12 @@ export interface UniteAnalyse {
   readonly grappe_id: Ulid;
   /** `null` : question d'attribution sur une mesure réelle, sans item principal (§5, 0.9). */
   readonly item_principal_id: Ulid | null;
+  /**
+   * Tous les items de la question, quel que soit leur rôle (principal, attendu_dans_liste,
+   * distracteur, contexte), dans l'ordre de la question. §8 (protocole 0.9) : le recalcul (b)
+   * exclut la question dès que l'un d'eux est contesté à un run ultérieur.
+   */
+  readonly item_ids: readonly Ulid[];
   readonly type_item_principal: TypeItem | null;
   readonly gabarit: Gabarit;
   readonly candidat_id: IdentifiantCourt | null;
@@ -250,6 +256,7 @@ function composer(
     question_id: question.id,
     grappe_id: question.grappe_id,
     item_principal_id: item === null ? null : item.id,
+    item_ids: question.items.map((entree) => entree.reference.item_id),
     type_item_principal: item === null ? null : item.type,
     gabarit: question.gabarit,
     candidat_id: question.candidat_id === undefined ? null : question.candidat_id,

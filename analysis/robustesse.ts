@@ -4,7 +4,8 @@
  * « Recalcul des métriques primaires (a) sur la seule notation humaine de l'échantillon de 10 %,
  * (b) en excluant les items contestés à un run ultérieur, (c) en excluant les formulations
  * orientées, (d) en excluant les réponses tronquées. Un résultat qui ne survit pas à ces quatre
- * recalculs est signalé comme fragile. »
+ * recalculs est signalé comme fragile. » Depuis la 0.9, (b) exclut « les questions dont un item,
+ * quel que soit son rôle, est contesté à un run ultérieur ».
  *
  * Les réponses tronquées entrent toujours dans le calcul principal (§8 : elles sont « notée[s]
  * sur ce qu'elle[s] contien[nent] et entre[nt] dans les métriques primaires ») ; leur exclusion
@@ -238,32 +239,17 @@ function memeSourcage(a: SourcageRetenu, b: SourcageRetenu): boolean {
 }
 
 /**
- * Une contestation postérieure existe et une unité porte sur une question d'attribution sans item
- * principal (§5, protocole 0.9). Le recalcul (b) exclut « les items contestés » ; le protocole ne
- * dit pas si une Q-ATT dont un seul des items `attendu_dans_liste` est contesté en sort. Refus
- * plutôt que règle inventée (question ouverte, rapport du 2026-09-25).
+ * §8(b) (protocole 0.9) : « en excluant les questions dont un item, quel que soit son rôle, est
+ * contesté à un run ultérieur ». Les contestations sont `run.contestations_posterieures[]`, reçues
+ * APRÈS le gel du run ; les items d'une question sont `UniteAnalyse.item_ids`, tous rôles compris :
+ * une Q-ATT sans principal sort dès qu'un de ses `attendu_dans_liste` est contesté, une question
+ * directe dès que son distracteur l'est.
  */
-export class QuestionSansItemPrincipal extends Error {
-  readonly reponse_id: Ulid;
-
-  constructor(reponse_id: Ulid, question_id: string) {
-    super(
-      `Recalcul (b) : la réponse ${reponse_id} porte sur la question ${question_id}, sans item principal ; ` +
-        `le protocole ne dit pas quand une question d'attribution sort du recalcul pour un item contesté.`,
-    );
-    this.name = "QuestionSansItemPrincipal";
-    this.reponse_id = reponse_id;
-  }
-}
-
-/** §8(b) : `run.contestations_posterieures[]`, contestations reçues APRÈS le gel du run. */
 export function exclureItemsContestes(unites: readonly UniteAnalyse[], run: Run): UniteAnalyse[] {
   const contestations = run.contestations_posterieures;
-  if (contestations === undefined || contestations.length === 0) return [...unites];
-  const sansPrincipal = unites.find((u) => u.item_principal_id === null);
-  if (sansPrincipal !== undefined) throw new QuestionSansItemPrincipal(sansPrincipal.reponse_id, sansPrincipal.question_id);
-  const contestes = new Set<Ulid | null>(contestations.map((c) => c.item_id));
-  return unites.filter((u) => !contestes.has(u.item_principal_id));
+  if (contestations === undefined) return [...unites];
+  const contestes = new Set<Ulid>(contestations.map((c) => c.item_id));
+  return unites.filter((u) => !u.item_ids.some((item_id) => contestes.has(item_id)));
 }
 
 /** §8(c) : les formulations orientées du §5. */
