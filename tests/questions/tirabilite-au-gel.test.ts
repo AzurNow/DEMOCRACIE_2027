@@ -147,6 +147,26 @@ describe("n° 36 : position « sans_objet » en vigueur au gel", () => {
   });
 });
 
+/*
+ * Décision de l'auteur du 2026-09-25 (lecture littérale de l'annexe B confirmée) : une Q-ATT dont
+ * aucun item n'est en vigueur au gel est tirée, et sa liste attendue est vide — personne ne porte
+ * la mesure au gel. Elle n'est pas exclue pour hors validité.
+ */
+describe("Q-ATT dont aucun item n'est en vigueur au gel", () => {
+  it("est tirée, avec une liste attendue vide, et n'est pas comptée parmi les exclusions", () => {
+    const attribution = questionDe(FIN_AU_GEL, "Q-ATT");
+    expect(attribution.candidat_id).toBeUndefined();
+    const resultat = tirerAvec(20261201);
+    const entree = resultat.tirage.entrees.find((candidate) => candidate.question_id === attribution.id);
+    expect(entree?.reponse_attendue).toEqual({
+      nature: "liste_candidats",
+      candidats_attendus: [],
+      resolution_temporelle: { date_gel: GEL, regle: "semi_ouvert" },
+    });
+    expect(resultat.tirage.exclusions.map((exclusion) => exclusion.question_id)).not.toContain(attribution.id);
+  });
+});
+
 describe("n° 36 : la graine ne décide plus du succès du tirage", () => {
   it("deux graines différentes sur le même jeu : les deux tirages réussissent", () => {
     expect(() => tirerAvec(20261201)).not.toThrow();
