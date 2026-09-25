@@ -27,3 +27,11 @@ modeles/
 .venv/
 __pycache__/
 .pytest_cache/
+
+# Textes canoniques et transcriptions intégrales des sources : hors Git par décision du 2026-09-25
+# (constat de conformité n° 31). Le §10 ne publie une copie intégrale que si sa licence le permet,
+# et d'un enregistrement T2 que la transcription de l'extrait. On publie l'empreinte, l'archive de
+# référence et la citation ; un tiers réextrait le texte de l'archive avec le code publié. Les
+# fiches .json de ces répertoires (traçabilité de la production, §9) restent versionnées.
+/staging/textes/*.txt
+/staging/transcriptions/*.vtt
