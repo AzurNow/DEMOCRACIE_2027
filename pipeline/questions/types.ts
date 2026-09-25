@@ -115,6 +115,7 @@ export interface QuestionEngendree {
   /** Absent pour Q-ATT : §5 interdit de nommer un candidat dans une question d'attribution. */
   readonly candidat_id?: string;
   readonly items: readonly ItemDeQuestion[];
+  /** L'item principal ; la mesure pour une question d'attribution (§5 et §8, protocole 0.9). */
   readonly grappe_id: string;
   readonly theme: Theme;
   readonly texte_neutre: string;
@@ -208,11 +209,57 @@ export interface GraineTirage {
   readonly version: string;
 }
 
+/**
+ * §5 (protocole 0.9) : pourquoi une question n'entre pas au tirage alors que ses items sont
+ * vérifiés. `hors_validite` : la fenêtre de validité d'un item ne contient pas l'instant du gel ;
+ * `reponse_attendue_indecidable` : la réponse attendue n'est pas définie au gel (« sans objet » sur
+ * un gabarit fermé, négatif ou orienté ; liste d'attribution non définie).
+ */
+export const MOTIFS_EXCLUSION = ["hors_validite", "reponse_attendue_indecidable"] as const;
+export type MotifExclusion = (typeof MOTIFS_EXCLUSION)[number];
+
+/** Une question écartée avant le tirage, « comptée à part dans le rapport du run » (§5). */
+export interface ExclusionTirage {
+  readonly question_id: string;
+  readonly candidat_id?: string;
+  readonly theme: Theme;
+  readonly gabarit: CodeGabarit;
+  readonly motif: MotifExclusion;
+  /** Le message de l'erreur de résolution, tel quel. */
+  readonly detail: string;
+}
+
+/**
+ * §5 (protocole 0.9) : par candidat, et pour les questions d'attribution sur l'ensemble des thèmes
+ * (`candidat_id` absent), le budget de reprise et son dépassement.
+ */
+export interface BilanReprise {
+  readonly candidat_id?: string;
+  /** Questions tirées dans le groupe, compensations comprises. */
+  readonly cible: number;
+  readonly budget_reprise: number;
+  readonly reprises: number;
+  /** Reprises au-delà du budget, venues compléter une strate sans question neuve. */
+  readonly depassement: number;
+}
+
+/** §5 (protocole 0.9) : une question tirée dans un autre thème pour combler une strate déficitaire. */
+export interface CompensationTirage {
+  readonly candidat_id: string;
+  readonly gabarit: CodeGabarit;
+  readonly theme_deficitaire: Theme;
+  readonly question_id: string;
+  readonly theme_origine: Theme;
+}
+
 export interface Tirage {
   readonly run_id: string;
   readonly date_gel: string;
   readonly graine_tirage: GraineTirage;
   readonly entrees: readonly EntreeTirage[];
+  readonly exclusions: readonly ExclusionTirage[];
+  readonly bilan_reprise: readonly BilanReprise[];
+  readonly compensations: readonly CompensationTirage[];
 }
 
 /* ----------------------------------------------------------------------- run */

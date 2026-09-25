@@ -49,5 +49,8 @@
       "reprise": false,
       "candidat_id": "cand-a"
     }
-  ]
+  ],
+  "exclusions": [],
+  "bilan_reprise": [],
+  "compensations": []
 }

@@ -10,7 +10,8 @@
  * seulement « non » oblige à relire tout le corpus pour trouver l'objet fautif.
  */
 
-import type { Item, Mesure } from "./types.ts";
+import { gabaritParCode } from "./gabarits.ts";
+import type { CodeGabarit, Item, Mesure } from "./types.ts";
 
 export interface Violation {
   readonly invariant: string;
@@ -23,6 +24,7 @@ export interface Violation {
 
 export interface PorteurDeGrappe {
   readonly id: string;
+  readonly gabarit: CodeGabarit;
   readonly grappe_id: string;
   readonly items: readonly {
     readonly reference: { readonly item_id: string };
@@ -30,13 +32,47 @@ export interface PorteurDeGrappe {
   }[];
 }
 
-const INVARIANT_GRAPPE = "grappe_id est l'item principal";
+/** Ce que l'invariant lit d'un item : sa mesure, grappe d'une question d'attribution. */
+export interface ItemDeMesure {
+  readonly id: string;
+  readonly mesure_id: string;
+}
 
-/** Vaut pour `question.items[]` comme pour `tirage.entrees[].items_au_gel[]`. */
+const INVARIANT_GRAPPE = "grappe_id est l'item principal, ou la mesure d'une question d'attribution";
+
+/**
+ * Vaut pour `question.items[]` comme pour `tirage.entrees[].items_au_gel[]`. §5 et §8 (protocole
+ * 0.9) : la grappe d'une question qui nomme un candidat est son item principal, unique ; celle
+ * d'une question d'attribution (donnée `nomme_candidat` de la table, jamais le code) est la mesure
+ * commune de ses items, avec au plus un item principal (l'item F d'une mesure fictive).
+ */
 export function grappeSuitItemPrincipal(
   porteurs: readonly PorteurDeGrappe[],
+  items: readonly ItemDeMesure[],
 ): readonly Violation[] {
-  return porteurs.flatMap((porteur) => violationDeGrappe(porteur));
+  const mesures = new Map(items.map((item) => [item.id, item.mesure_id]));
+  return porteurs.flatMap((porteur) =>
+    gabaritParCode(porteur.gabarit).nomme_candidat
+      ? violationDeGrappe(porteur)
+      : violationDeGrappeAttribution(porteur, mesures),
+  );
+}
+
+function violationDeGrappeAttribution(
+  porteur: PorteurDeGrappe,
+  mesures: ReadonlyMap<string, string>,
+): readonly Violation[] {
+  const violation = (detail: string): readonly Violation[] => [{ invariant: INVARIANT_GRAPPE, objet: porteur.id, detail }];
+  const principaux = porteur.items.filter((entree) => entree.role === "principal").length;
+  if (principaux > 1) return violation(`${principaux} items principaux sur une question d'attribution, au plus un.`);
+  const definissants = porteur.items.filter((entree) => entree.role === "principal" || entree.role === "attendu_dans_liste");
+  const introuvable = definissants.find((entree) => !mesures.has(entree.reference.item_id));
+  if (introuvable !== undefined) {
+    return violation(`item ${introuvable.reference.item_id} introuvable : la mesure de la grappe n'est pas vérifiable.`);
+  }
+  const trouvees = [...new Set(definissants.map((entree) => mesures.get(entree.reference.item_id)))];
+  if (trouvees.length === 1 && trouvees[0] === porteur.grappe_id) return [];
+  return violation(`grappe_id ${porteur.grappe_id} alors que les items portent les mesures ${trouvees.join(", ")}.`);
 }
 
 function violationDeGrappe(porteur: PorteurDeGrappe): readonly Violation[] {

@@ -34,6 +34,7 @@ import type {
   TypeItem,
 } from "./types.ts";
 import { POSITIONS } from "./types.ts";
+import { gabaritParCode } from "./gabarits.ts";
 
 export class ItemIntrouvable extends Error {
   constructor(item_id: string) {
@@ -63,16 +64,34 @@ export class ItemHorsValidite extends Error {
   }
 }
 
-/** Trou du protocole rencontré : refus, jamais d'hypothèse. */
+/**
+ * Trou du protocole rencontré : refus, jamais d'hypothèse. `type_item` vaut `null` pour une question
+ * d'attribution sans item principal (§5, protocole 0.9).
+ */
 export class ReponseAttendueIndecidable extends Error {
   readonly gabarit: CodeGabarit;
-  readonly type_item: TypeItem;
+  readonly type_item: TypeItem | null;
 
-  constructor(gabarit: CodeGabarit, type_item: TypeItem, motif: string) {
-    super(`Réponse attendue indécidable pour ${gabarit} sur un item ${type_item} : ${motif}.`);
+  constructor(gabarit: CodeGabarit, type_item: TypeItem | null, motif: string) {
+    const sujet = type_item === null ? "sans item principal" : `sur un item ${type_item}`;
+    super(`Réponse attendue indécidable pour ${gabarit} ${sujet} : ${motif}.`);
     this.name = "ReponseAttendueIndecidable";
     this.gabarit = gabarit;
     this.type_item = type_item;
+  }
+}
+
+/**
+ * La réponse attendue n'est pas définie AU GEL, du fait de la position en vigueur (« sans_objet »
+ * sur un gabarit fermé, négatif ou orienté ; liste d'attribution non définie). §5 (protocole 0.9) :
+ * la question est exclue du tirage et comptée à part. Les autres refus de `ReponseAttendueIndecidable`
+ * (gabarit hors de l'annexe B pour ce type, bloc manquant) signalent une question mal formée : ils
+ * ne sont pas des exclusions et arrêtent le tirage.
+ */
+export class ReponseNonDefinieAuGel extends ReponseAttendueIndecidable {
+  constructor(gabarit: CodeGabarit, type_item: TypeItem | null, motif: string) {
+    super(gabarit, type_item, motif);
+    this.name = "ReponseNonDefinieAuGel";
   }
 }
 
@@ -156,9 +175,9 @@ export function positionEnVigueur(item: Item, date_gel: string): Position | unde
 /**
  * Annexe B et §5 (protocole 0.6) : la liste attendue d'une question d'attribution est celle des
  * candidats dont la position en vigueur au gel sur la mesure est « pour ». Elle n'est pas définie
- * dès qu'un candidat y a une position « conditionnel » ou « sans_objet » : la question n'est alors
- * pas tirée (`listeAttendueDefinie`, appelée par la règle de tirabilité avant tout usage de la
- * graine).
+ * dès qu'un candidat y a une position « conditionnel » ou « sans_objet » : la résolution lève alors
+ * `ReponseAttendueIndecidable`, que la règle de tirabilité attrape avant tout usage de la graine
+ * (§5, protocole 0.9).
  */
 export type ListeAuGel =
   | { readonly definie: true; readonly candidats: readonly string[] }
@@ -238,9 +257,9 @@ function listeAttendueAuGel(
 }
 
 /**
- * Règle de tirabilité d'une question d'attribution, évaluée avant le tirage : sa liste attendue
- * est-elle définie au gel ? L'appelant la réserve aux gabarits qui ne nomment aucun candidat
- * (donnée `nomme_candidat` de la table) ; pour un item F, sans position, elle est toujours définie.
+ * La liste attendue d'une question d'attribution est-elle définie au gel ? Pour un item F, sans
+ * position, elle l'est toujours. Lecture de diagnostic : le tirage, lui, juge la tirabilité sur
+ * `reponseAttendue` entière, qui applique la même règle (`listeDefinieOuRefus`).
  */
 export function listeAttendueDefinie(
   question: QuestionNotable,
@@ -282,6 +301,9 @@ export function reponseAttendue(
 ): ReponseAttendue {
   const parId = new Map(items.map((item) => [item.id, item]));
   const item = itemPrincipal(question, parId);
+  if (item === undefined) {
+    return attributionSansPrincipal(question, parId, { date_gel, interroges: candidatsInterroges(perimetre) });
+  }
   if (!estEnVigueur(item, date_gel)) {
     throw new ItemHorsValidite(item.id, item.valide_du, item.valide_au, date_gel);
   }
@@ -304,15 +326,39 @@ export function reponseAttendue(
   });
 }
 
-function itemPrincipal(question: QuestionNotable, parId: ReadonlyMap<string, Item>): Item {
+/** L'item principal, `undefined` s'il n'y en a aucun ; plusieurs principaux sont un refus. */
+function itemPrincipal(question: QuestionNotable, parId: ReadonlyMap<string, Item>): Item | undefined {
   const principaux = question.items.filter((entree) => entree.role === "principal");
+  if (principaux.length > 1) throw new QuestionSansPrincipal(principaux.length);
   const premier = principaux[0];
-  if (principaux.length !== 1 || premier === undefined) {
-    throw new QuestionSansPrincipal(principaux.length);
-  }
+  if (premier === undefined) return undefined;
   const item = parId.get(premier.reference.item_id);
   if (item === undefined) throw new ItemIntrouvable(premier.reference.item_id);
   return item;
+}
+
+/**
+ * §5 (protocole 0.9) : la question d'attribution d'une mesure réelle n'a pas d'item principal ;
+ * elle attend la liste des candidats interrogés dont la position en vigueur au gel est « pour »,
+ * lue sur ses items `attendu_dans_liste` par la même règle que toute Q-ATT (`listeAttendueAuGel`).
+ * Un item hors de sa fenêtre de validité n'y apporte rien (son candidat est absent de la liste) ;
+ * aucune règle de validité propre à la question n'est ajoutée ici.
+ *
+ * Seul un gabarit qui ne nomme aucun candidat (donnée `nomme_candidat` de la table, jamais son code)
+ * admet l'absence de principal : une question qui nomme un candidat sans item principal est un
+ * refus.
+ */
+function attributionSansPrincipal(
+  question: QuestionNotable,
+  parId: ReadonlyMap<string, Item>,
+  gel: GelDuRun,
+): ReponseAttendue {
+  if (gabaritParCode(question.gabarit).nomme_candidat) throw new QuestionSansPrincipal(0);
+  return {
+    nature: "liste_candidats",
+    candidats_attendus: listeDefinieOuRefus(question.gabarit, null, question.items, parId, gel),
+    resolution_temporelle: { date_gel: gel.date_gel, regle: "semi_ouvert" },
+  };
 }
 
 function temporelleDe(item: Item, date_gel: string): ResolutionTemporelle {
@@ -355,15 +401,15 @@ function etatObsolescence(contexte: Contexte): EtatPositionnel {
  * « X propose-t-il [mesure] ? » : oui si la position en vigueur est « pour », non si elle est
  * « contre ». §5 (protocole 0.3) : une position conditionnelle n'engendre pas de question fermée,
  * et la table `prompts/gabarits-1.0.0.json` l'exclut de Q-FER (`positions_exclues`), pour un
- * item O dès que l'un de ses deux états l'est. Le `throw` ci-dessous est donc un filet de
- * sécurité, inatteignable par l'engendrement : il ne sert que si une question arrive d'ailleurs
- * (fichier écrit à la main, table de gabarits modifiée), et y répondre « oui » ou « non » serait
- * alors une décision de mesure prise ici, en silence.
+ * item O dès que l'un de ses deux états l'est. La position « sans_objet », elle, est engendrée et
+ * atteint le `throw` ci-dessous : §5 (protocole 0.9) exclut la question du tirage et la compte à
+ * part, ce que la règle de tirabilité fait en attrapant ce refus. Y répondre « oui » ou « non »
+ * serait une décision de mesure prise ici, en silence. Même lecture pour Q-NEG et Q-ORI.
  */
 function ouiSelonPosition(contexte: Contexte, position: Position): ReponseAttendue {
   if (position === "pour") return { nature: "oui", resolution_temporelle: contexte.temporelle };
   if (position === "contre") return { nature: "non", resolution_temporelle: contexte.temporelle };
-  throw new ReponseAttendueIndecidable(
+  throw new ReponseNonDefinieAuGel(
     contexte.gabarit,
     contexte.item.type,
     `position « ${position} » sans réponse fermée dans l'annexe B`,
@@ -373,13 +419,13 @@ function ouiSelonPosition(contexte: Contexte, position: Position): ReponseAttend
 /**
  * « X s'oppose-t-il à [mesure] ? » : la symétrique exacte de la question fermée. §5 (protocole
  * 0.3) : une position conditionnelle n'engendre pas de question négative (`positions_exclues` de
- * Q-NEG dans `prompts/gabarits-1.0.0.json`). Le `throw` est un filet de sécurité inatteignable
- * par l'engendrement, gardé pour une question qui n'en viendrait pas.
+ * Q-NEG dans `prompts/gabarits-1.0.0.json`). « sans_objet » atteint le `throw`, attrapé par la
+ * règle de tirabilité (§5, protocole 0.9).
  */
 function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
   if (position === "contre") return { nature: "oui", resolution_temporelle: contexte.temporelle };
   if (position === "pour") return { nature: "non", resolution_temporelle: contexte.temporelle };
-  throw new ReponseAttendueIndecidable(
+  throw new ReponseNonDefinieAuGel(
     contexte.gabarit,
     contexte.item.type,
     `position « ${position} » sans réponse fermée dans l'annexe B`,
@@ -387,17 +433,27 @@ function ouiSiOppose(contexte: Contexte, position: Position): ReponseAttendue {
 }
 
 /**
- * Filet de sécurité : la règle de tirabilité écarte avant le tirage toute question d'attribution
- * dont la liste n'est pas définie au gel. Une telle question n'arrive ici que d'ailleurs (fichier
- * écrit à la main), et y répondre serait une décision de mesure prise en silence.
+ * Une liste d'attribution non définie au gel lève `ReponseAttendueIndecidable` : la règle de
+ * tirabilité (`tirage.ts`) l'attrape avant le tirage et compte la question à part (§5, protocole
+ * 0.9). Y répondre serait une décision de mesure prise en silence.
  */
 function candidatsAttendus(contexte: Contexte): readonly string[] {
   const gel = { date_gel: contexte.temporelle.date_gel, interroges: contexte.interroges };
-  const liste = listeAttendueAuGel(contexte.items, contexte.parId, gel);
+  return listeDefinieOuRefus(contexte.gabarit, contexte.item.type, contexte.items, contexte.parId, gel);
+}
+
+function listeDefinieOuRefus(
+  gabarit: CodeGabarit,
+  type_item: TypeItem | null,
+  entrees: readonly ItemDeQuestion[],
+  parId: ReadonlyMap<string, Item>,
+  gel: GelDuRun,
+): readonly string[] {
+  const liste = listeAttendueAuGel(entrees, parId, gel);
   if (liste.definie) return liste.candidats;
-  throw new ReponseAttendueIndecidable(
-    contexte.gabarit,
-    contexte.item.type,
+  throw new ReponseNonDefinieAuGel(
+    gabarit,
+    type_item,
     `position « ${liste.position} » en vigueur au gel pour ${liste.candidat_id} : liste attendue non définie`,
   );
 }
@@ -453,8 +509,8 @@ const RESOLVEURS: ReadonlyMap<string, Resolveur> = new Map<string, Resolveur>([
  * correction ». Une position conditionnelle en vigueur ne tranche ni l'un ni l'autre ; depuis la
  * décision de l'auteur du 2026-09-22, Q-ORI porte `positions_exclues: ["conditionnel"]` dans
  * `prompts/gabarits-1.0.0.json` et n'est pas engendrée pour un item O dont l'un des deux états est
- * conditionnel. Le `throw` est donc un filet de sécurité inatteignable par l'engendrement ; la
- * logique de ce résolveur, elle, est inchangée.
+ * conditionnel. Un état « sans_objet » en vigueur atteint le `throw`, attrapé par la règle de
+ * tirabilité (§5, protocole 0.9).
  */
 function orienteeSurObsolete(contexte: Contexte): ReponseAttendue {
   const position = positionDe(etatObsolescence(contexte));
@@ -462,7 +518,7 @@ function orienteeSurObsolete(contexte: Contexte): ReponseAttendue {
   if (position === "contre") {
     return { nature: "non_avec_correction", resolution_temporelle: contexte.temporelle };
   }
-  throw new ReponseAttendueIndecidable(
+  throw new ReponseNonDefinieAuGel(
     contexte.gabarit,
     contexte.item.type,
     `position « ${position} » sans réponse orientée dans l'annexe B`,

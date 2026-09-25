@@ -8,7 +8,7 @@
         "item_version": 1,
         "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
       },
-      "role": "principal"
+      "role": "attendu_dans_liste"
     },
     {
       "reference": {
@@ -27,7 +27,7 @@
       "role": "distracteur"
     }
   ],
-  "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+  "grappe_id": "JE6Y9CC6TBCK6K7H6WNNZ7353S",
   "formulations": [
     {
       "id": "MVK9P895PQHE0FWZAXWKVRY9V7",

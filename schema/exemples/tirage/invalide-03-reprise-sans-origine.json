@@ -36,5 +36,8 @@
       },
       "reprise": true
     }
-  ]
+  ],
+  "exclusions": [],
+  "bilan_reprise": [],
+  "compensations": []
 }

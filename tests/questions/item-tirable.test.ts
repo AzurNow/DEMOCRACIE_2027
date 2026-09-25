@@ -57,7 +57,7 @@ function tiree(questionPosee: Question, items: readonly Item[]): boolean {
     mesures: [MESURE],
     run: RUN,
     graine: graine(),
-    parametres: { questions_par_strate: 10 },
+    parametres: { questions_par_strate: 10, questions_attribution_par_theme: 10 },
   });
   return resultat.tirage.entrees.some((e) => e.question_id === questionPosee.id);
 }

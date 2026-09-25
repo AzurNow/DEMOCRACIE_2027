@@ -12,7 +12,7 @@
       "question_id": "q_9eeeb68b8df88bee0fc88a5772576c59",
       "theme": "fiscalite_pouvoir_achat",
       "gabarit": "Q-ATT",
-      "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
+      "grappe_id": "JE6Y9CC6TBCK6K7H6WNNZ7353S",
       "items_au_gel": [
         {
           "reference": {
@@ -20,7 +20,7 @@
             "item_version": 1,
             "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
           },
-          "role": "principal",
+          "role": "attendu_dans_liste",
           "statut_validation_au_gel": "verifie",
           "statut_contestation_au_gel": "aucune"
         },
@@ -48,5 +48,23 @@
       },
       "reprise": false
     }
-  ]
+  ],
+  "exclusions": [
+    {
+      "question_id": "q_1c7e2f0a9b3d4e5f60718293a4b5c6d7",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-ATT",
+      "motif": "reponse_attendue_indecidable",
+      "detail": "Réponse attendue indécidable pour Q-ATT sans item principal : position « conditionnel » en vigueur au gel pour cand-b : liste attendue non définie."
+    }
+  ],
+  "bilan_reprise": [
+    {
+      "cible": 1,
+      "budget_reprise": 0,
+      "reprises": 0,
+      "depassement": 0
+    }
+  ],
+  "compensations": []
 }

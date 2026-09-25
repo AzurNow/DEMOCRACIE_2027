@@ -4,7 +4,8 @@
  *
  * Les sept cas limites du lot : reproductibilité, arrondi de la reprise aux deux bornes,
  * candidat nouveau, candidat sous le seuil, candidat non interrogé, item contesté après
- * engendrement, et strate vide signalée plutôt que comblée.
+ * engendrement, et strate vide signalée — puis compensée depuis le protocole 0.9 (§5, constat
+ * n° 38 ; cas détaillés dans `compensation.test.ts`).
  */
 
 import { describe, expect, it } from "vitest";
@@ -15,6 +16,7 @@ import {
   empreinteNeutre,
   PART_REPRISE,
   tirer,
+  tiragePrecedentDe,
   tiragePrecedentDepuis,
 } from "../../pipeline/questions/tirage.ts";
 import type { TiragePrecedent } from "../../pipeline/questions/tirage.ts";
@@ -34,14 +36,13 @@ function precedent(questions: readonly Question[], items: readonly Item[]): Tira
     JEU.mesures.filter((_, rang) => rang % MESURES_PAR_THEME < MESURES_PAR_THEME / 2).map((m) => m.id),
   );
   const parId = new Map(items.map((item) => [item.id, item]));
+  // La mesure se lit sur les items : `grappe_id` d'une Q-ATT est déjà la mesure (protocole 0.9).
   const reprises = questions.filter((question) => {
-    const principal = parId.get(question.grappe_id);
-    return principal !== undefined && anciennes.has(principal.mesure_id);
+    const premier = question.items[0];
+    const item = premier === undefined ? undefined : parId.get(premier.reference.item_id);
+    return item !== undefined && anciennes.has(item.mesure_id);
   });
-  return {
-    run_id: "44CX8VSV75Q6ZAHDEJ8VA81YQE",
-    empreintes_texte: new Map(reprises.map((question) => [question.id, empreinteNeutre(question)])),
-  };
+  return tiragePrecedentDe("44CX8VSV75Q6ZAHDEJ8VA81YQE", reprises);
 }
 
 function tirage(questions_par_strate: number, tirage_precedent?: TiragePrecedent) {
@@ -51,7 +52,7 @@ function tirage(questions_par_strate: number, tirage_precedent?: TiragePrecedent
     mesures: JEU.mesures,
     run: RUN,
     graine: graine(),
-    parametres: { questions_par_strate },
+    parametres: { questions_par_strate, questions_attribution_par_theme: questions_par_strate },
     ...(tirage_precedent === undefined ? {} : { tirage_precedent }),
   });
 }
@@ -82,7 +83,7 @@ describe("reproductibilité", () => {
           mesures: JEU.mesures,
           run: RUN,
           graine: graine(valeur),
-          parametres: { questions_par_strate: 1 },
+          parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
         }).tirage,
       );
     expect(avec(20270101)).not.toBe(avec(20261201));
@@ -108,7 +109,13 @@ describe("stratification", () => {
     expect(comptePour(resultat, "demo-alpha")).toBe(comptePour(resultat, "demo-beta"));
   });
 
-  it("signale une strate vide au lieu de la combler avec une autre strate", () => {
+  /*
+   * Modifié ouvertement pour le protocole 0.9 (§5, constat n° 38). Avant : « signale une strate
+   * vide au lieu de la combler », beta finissait à 3 questions contre 6. Désormais : « Une strate
+   * vide ou incomplète chez un candidat comparé […] est compensée par des questions du même gabarit
+   * sur d'autres thèmes de ce candidat, choisies par la graine. » La strate reste rapportée vide.
+   */
+  it("signale une strate vide, puis la compense par le même gabarit sur un autre thème", () => {
     const lacunaire = jeu({
       candidats: CANDIDATS,
       themes: THEMES_DE_TEST,
@@ -121,15 +128,23 @@ describe("stratification", () => {
       mesures: lacunaire.mesures,
       run: RUN,
       graine: graine(),
-      parametres: { questions_par_strate: 1 },
+      parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
     });
 
     const vides = resultat.rapport.strates_vides.filter(
       (strate) => strate.candidat_id === "demo-beta",
     );
     expect(vides.map((strate) => strate.theme)).toEqual(["retraites", "retraites", "retraites"]);
-    expect(comptePour(resultat, "demo-beta")).toBe(3);
+    expect(comptePour(resultat, "demo-beta")).toBe(6);
     expect(comptePour(resultat, "demo-alpha")).toBe(6);
+    expect(resultat.tirage.compensations).toHaveLength(3);
+    for (const compensation of resultat.tirage.compensations) {
+      expect(compensation).toMatchObject({
+        candidat_id: "demo-beta",
+        theme_deficitaire: "retraites",
+        theme_origine: "fiscalite_pouvoir_achat",
+      });
+    }
   });
 });
 
@@ -159,7 +174,7 @@ describe("reprise de 80 % des questions du run précédent", () => {
     for (const entree of reprises) {
       expect(entree.run_origine_id).toBe(attendu.run_id);
       expect(entree.empreinte_texte_precedente).toBe(
-        attendu.empreintes_texte.get(entree.question_id),
+        attendu.questions.get(entree.question_id)?.empreinte_neutre,
       );
     }
   });
@@ -186,16 +201,19 @@ describe("reprise de 80 % des questions du run précédent", () => {
       mesures: JEU.mesures,
       run: perimetre,
       graine: graine(),
-      parametres: { questions_par_strate: 1 },
+      parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
       tirage_precedent: precedent(JEU.questions, JEU.items),
     });
     expect(reprisesPour(resultat, "demo-beta")).toBe(0);
     expect(reprisesPour(resultat, "demo-alpha")).toBe(4);
-    expect(resultat.rapport.reprises_par_candidat).toContainEqual({
+    // Protocole 0.9 (§5, constat n° 35) : le bilan de reprise est publié dans le tirage, avec son
+    // dépassement ; il n'est plus un simple rapport en mémoire.
+    expect(resultat.tirage.bilan_reprise).toContainEqual({
       candidat_id: "demo-beta",
       cible: 6,
       budget_reprise: 0,
       reprises: 0,
+      depassement: 0,
     });
   });
 
@@ -204,9 +222,13 @@ describe("reprise de 80 % des questions du run précédent", () => {
    * par thème. » Un seul thème : la strate d'attribution et son groupe coïncident, et
    * l'arrondi par défaut se voit — cible 7, budget ⌊0,8 × 7⌋ = 5 reprises, pas 6 ni 7, alors que
    * 8 questions reprenables et 8 neuves sont disponibles.
+   *
+   * Modifié ouvertement pour le protocole 0.9 (§5, constat n° 39) : « Une mesure engendre une seule
+   * question d'attribution, quel que soit le nombre de candidats qui la portent. » Avant, 8 mesures
+   * portées par deux candidats donnaient 16 Q-ATT ; il en faut désormais 16 mesures.
    */
   it("applique le budget de reprise de 80 % aux questions d'attribution, par thème", () => {
-    const unTheme = jeu({ candidats: CANDIDATS, themes: ["fiscalite_pouvoir_achat"], mesures_par_theme: 8 });
+    const unTheme = jeu({ candidats: CANDIDATS, themes: ["fiscalite_pouvoir_achat"], mesures_par_theme: 16 });
     const attributions = unTheme.questions
       .filter((question) => question.gabarit === "Q-ATT")
       .sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -218,11 +240,8 @@ describe("reprise de 80 % des questions du run précédent", () => {
       mesures: unTheme.mesures,
       run: RUN,
       graine: graine(),
-      parametres: { questions_par_strate: 7 },
-      tirage_precedent: {
-        run_id: "44CX8VSV75Q6ZAHDEJ8VA81YQE",
-        empreintes_texte: new Map(anciennes.map((question) => [question.id, empreinteNeutre(question)])),
-      },
+      parametres: { questions_par_strate: 7, questions_attribution_par_theme: 7 },
+      tirage_precedent: tiragePrecedentDe("44CX8VSV75Q6ZAHDEJ8VA81YQE", anciennes),
     });
     const tirees = resultat.tirage.entrees.filter((entree) => entree.gabarit === "Q-ATT");
     expect(tirees).toHaveLength(7);
@@ -234,7 +253,11 @@ describe("reprise de 80 % des questions du run précédent", () => {
     const resultat = tirage(1);
     const reconstruit = tiragePrecedentDepuis(resultat.tirage, JEU.questions);
     expect(reconstruit.run_id).toBe(RUN.id);
-    expect(reconstruit.empreintes_texte.size).toBe(resultat.tirage.entrees.length);
+    expect(reconstruit.questions.size).toBe(resultat.tirage.entrees.length);
+    for (const entree of resultat.tirage.entrees) {
+      const question = JEU.questions.find((candidate) => candidate.id === entree.question_id) as Question;
+      expect(reconstruit.questions.get(entree.question_id)?.empreinte_neutre).toBe(empreinteNeutre(question));
+    }
   });
 });
 
@@ -253,7 +276,7 @@ describe("statut des candidats au gel", () => {
       mesures: JEU.mesures,
       run: perimetre,
       graine: graine(),
-      parametres: { questions_par_strate: 1 },
+      parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
     });
     expect(resultat.rapport.candidats_a_part).toEqual(["demo-beta"]);
     expect(comptePour(resultat, "demo-beta")).toBe(6);
@@ -273,7 +296,7 @@ describe("statut des candidats au gel", () => {
       mesures: JEU.mesures,
       run: perimetre,
       graine: graine(),
-      parametres: { questions_par_strate: 1 },
+      parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
     });
     expect(comptePour(resultat, "demo-beta")).toBe(0);
     expect(resultat.rapport.candidats_non_interroges).toEqual(["demo-beta"]);
@@ -292,7 +315,7 @@ describe("exclusion des items non tirables", () => {
       mesures: JEU.mesures,
       run: RUN,
       graine: graine(),
-      parametres: { questions_par_strate: MESURES_PAR_THEME },
+      parametres: { questions_par_strate: MESURES_PAR_THEME, questions_attribution_par_theme: MESURES_PAR_THEME },
       tirage_precedent: precedent(JEU.questions, JEU.items),
     });
     const grappes = resultat.tirage.entrees.map((entree) => entree.grappe_id);
@@ -315,7 +338,7 @@ describe("exclusion des items non tirables", () => {
       mesures: JEU.mesures,
       run: RUN,
       graine: graine(),
-      parametres: { questions_par_strate: MESURES_PAR_THEME },
+      parametres: { questions_par_strate: MESURES_PAR_THEME, questions_attribution_par_theme: MESURES_PAR_THEME },
     });
     expect(resultat.tirage.entrees.map((entree) => entree.grappe_id)).not.toContain(attente.id);
   });
@@ -344,7 +367,7 @@ function grappesTirees(items: readonly Item[]): readonly string[] {
     mesures: JEU.mesures,
     run: RUN,
     graine: graine(),
-    parametres: { questions_par_strate: MESURES_PAR_THEME },
+    parametres: { questions_par_strate: MESURES_PAR_THEME, questions_attribution_par_theme: MESURES_PAR_THEME },
   }).tirage.entrees.map((entree) => entree.grappe_id);
 }
 
@@ -450,7 +473,7 @@ function entreesTirees(items: readonly Item[]) {
     mesures: JEU.mesures,
     run: RUN,
     graine: graine(),
-    parametres: { questions_par_strate: MESURES_PAR_THEME },
+    parametres: { questions_par_strate: MESURES_PAR_THEME, questions_attribution_par_theme: MESURES_PAR_THEME },
   }).tirage.entrees;
 }
 
@@ -509,8 +532,11 @@ describe("contenu des entrées tirées", () => {
   it("porte le thème, la grappe, les statuts au gel et la réponse attendue", () => {
     const resultat = tirage(1);
     const parId = new Map(JEU.items.map((item) => [item.id, item]));
+    const mesures = new Set(JEU.mesures.map((referent) => referent.id));
     for (const entree of resultat.tirage.entrees) {
-      expect(parId.has(entree.grappe_id)).toBe(true);
+      // Protocole 0.9 (§5 et §8, constat n° 39) : la grappe est l'item, ou la mesure d'une Q-ATT.
+      if (entree.candidat_id === undefined) expect(mesures.has(entree.grappe_id)).toBe(true);
+      else expect(parId.has(entree.grappe_id)).toBe(true);
       expect(entree.reponse_attendue.resolution_temporelle.date_gel).toBe(GEL);
       for (const item of entree.items_au_gel) {
         expect(item.statut_validation_au_gel).toBe("verifie");
@@ -534,7 +560,7 @@ describe("contenu des entrées tirées", () => {
         mesures: JEU.mesures,
         run: RUN,
         graine: graine(),
-        parametres: { questions_par_strate: 1 },
+        parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
       }),
     ).toThrow(/introuvable/i);
   });
@@ -547,7 +573,7 @@ describe("contenu des entrées tirées", () => {
         mesures: [],
         run: RUN,
         graine: graine(),
-        parametres: { questions_par_strate: 1 },
+        parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
       }),
     ).toThrow(/mesure/i);
   });

@@ -17,6 +17,7 @@
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import type { IdentifiantCourt, Mode, Question } from "./types.ts";
+import { signatureQuestion } from "../pipeline/questions/signature.ts";
 
 export interface EtatRun {
   readonly unites: readonly UniteAnalyse[];
@@ -29,11 +30,6 @@ export interface TendanceOutilEtMode {
   readonly questions_communes: number;
   /** Dernier run moins premier run, sur les seules questions communes. */
   readonly difference: DifferenceTaux;
-}
-
-export function signatureQuestion(question: Question): string {
-  const empreintes = question.formulations.map((f) => f.empreinte_texte).sort();
-  return `${question.id}\0${empreintes.join("\0")}`;
 }
 
 export function questionsCommunes(

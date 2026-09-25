@@ -237,11 +237,32 @@ function memeSourcage(a: SourcageRetenu, b: SourcageRetenu): boolean {
   );
 }
 
+/**
+ * Une contestation postérieure existe et une unité porte sur une question d'attribution sans item
+ * principal (§5, protocole 0.9). Le recalcul (b) exclut « les items contestés » ; le protocole ne
+ * dit pas si une Q-ATT dont un seul des items `attendu_dans_liste` est contesté en sort. Refus
+ * plutôt que règle inventée (question ouverte, rapport du 2026-09-25).
+ */
+export class QuestionSansItemPrincipal extends Error {
+  readonly reponse_id: Ulid;
+
+  constructor(reponse_id: Ulid, question_id: string) {
+    super(
+      `Recalcul (b) : la réponse ${reponse_id} porte sur la question ${question_id}, sans item principal ; ` +
+        `le protocole ne dit pas quand une question d'attribution sort du recalcul pour un item contesté.`,
+    );
+    this.name = "QuestionSansItemPrincipal";
+    this.reponse_id = reponse_id;
+  }
+}
+
 /** §8(b) : `run.contestations_posterieures[]`, contestations reçues APRÈS le gel du run. */
 export function exclureItemsContestes(unites: readonly UniteAnalyse[], run: Run): UniteAnalyse[] {
   const contestations = run.contestations_posterieures;
-  if (contestations === undefined) return [...unites];
-  const contestes = new Set(contestations.map((c) => c.item_id));
+  if (contestations === undefined || contestations.length === 0) return [...unites];
+  const sansPrincipal = unites.find((u) => u.item_principal_id === null);
+  if (sansPrincipal !== undefined) throw new QuestionSansItemPrincipal(sansPrincipal.reponse_id, sansPrincipal.question_id);
+  const contestes = new Set<Ulid | null>(contestations.map((c) => c.item_id));
   return unites.filter((u) => !contestes.has(u.item_principal_id));
 }
 
