@@ -288,21 +288,6 @@
       }
     },
 
-    "notifications": {
-      "type": "array",
-      "description": "§4 : les campagnes sont notifiées à chaque création, modification ou contestation. Trace sans donnée personnelle : aucun destinataire nominatif dans le dépôt.",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["date", "evenement", "statut_envoi"],
-        "properties": {
-          "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
-          "evenement": { "type": "string", "enum": ["creation", "modification", "contestation"] },
-          "statut_envoi": { "type": "string", "enum": ["envoyee", "echec", "sans_destinataire_connu"] }
-        }
-      }
-    },
-
     "historique": {
       "type": "array",
       "minItems": 1,

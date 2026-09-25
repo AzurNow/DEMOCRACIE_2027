@@ -33,17 +33,20 @@ import {
 import type { Source } from "../validation/domaine/types.ts";
 import { ulid } from "../validation/domaine/ulid.ts";
 import { lireItem, reecrireItem } from "../validation/io/data-items.ts";
+import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
 interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
   readonly data: string;
+  readonly notifications: string;
 }
 
 function lireOptions(table: Arguments): Options {
   const racine = texte(table, "racine", resolve(import.meta.dirname, ".."));
-  return { ecrire: drapeau(table, "ecrire"), racine, data: texte(table, "data", resolve(racine, "data/items")) };
+  return { ecrire: drapeau(table, "ecrire"), racine, data: texte(table, "data", resolve(racine, "data/items")),
+    notifications: texte(table, "notifications", resolve(racine, "validation/notifications")) };
 }
 
 function typeContestataire(table: Arguments): TypeContestataire {
@@ -89,9 +92,11 @@ function principal(): void {
     return;
   }
   reecrireItem(options.data, lu, apres, { corrections: false });
+  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item.
+  ajouterDues(options.notifications, [notificationDue(apres, "contestation")]);
   process.stdout.write(
     `\nItem ${item_id} contesté : il sort du tirage du run suivant jusqu'à la décision du panel.\n\n` +
-      commandeGit([`data/items/${item_id}.json`], `data: contestation de l'item ${item_id}`, [`contestation ${contestation.id}`]),
+      commandeGit([`data/items/${item_id}.json`, "validation/notifications/dues.jsonl"], `data: contestation de l'item ${item_id}`, [`contestation ${contestation.id}`]),
   );
 }
 

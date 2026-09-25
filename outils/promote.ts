@@ -32,6 +32,7 @@ import type { Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
 import { ecrireFileArbitrage } from "../validation/io/file-arbitrage.ts";
+import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
@@ -49,6 +50,7 @@ interface Options {
   readonly mesures: string;
   readonly data: string;
   readonly arbitrage: string;
+  readonly notifications: string;
 }
 
 /** Un item à promouvoir que ses corrections ont rendu non conforme à `item.schema.json`. */
@@ -71,6 +73,7 @@ function lireOptions(): Options {
     mesures: texte(table, "mesures", resolve(racine, "validation/mesures")),
     data: texte(table, "data", resolve(racine, "data/items")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
+    notifications: texte(table, "notifications", resolve(racine, "validation/notifications")),
   };
 }
 
@@ -260,6 +263,8 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
     // Seule écriture vers `data/items/` : `creerItem` revalide contre le schéma, quel que soit le
     // chemin qui y mène, et refuse d'écraser un item déjà publié.
     creerItem(options.data, verdict.issue.item);
+    // §4 (0.10) : tout ce qui est publié est notifié, rejeté et non évaluable compris.
+    ajouterDues(options.notifications, [notificationDue(verdict.issue.item, "creation")]);
     promus.push(verdict.issue.item.id);
   }
 
@@ -275,7 +280,7 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
   process.stdout.write(
     `\n${promus.length} item(s) écrit(s) dans ${options.data}\n` +
       `${file.length} entrée(s) dans la file d'arbitrage.\n\n` +
-      commandeGit(["data/items", "validation/arbitrage"], `data: promotion de ${promus.length} item(s)`, promus),
+      commandeGit(["data/items", "validation/notifications/dues.jsonl"], `data: promotion de ${promus.length} item(s)`, promus),
   );
 }
 

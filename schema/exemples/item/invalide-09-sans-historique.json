@@ -83,12 +83,5 @@
       }
     }
   ],
-  "contestations": [],
-  "notifications": [
-    {
-      "date": "2026-09-20T10:06:00+02:00",
-      "evenement": "creation",
-      "statut_envoi": "envoyee"
-    }
-  ]
+  "contestations": []
 }

@@ -30,6 +30,7 @@ import {
 } from "../validation/domaine/contestation-item.ts";
 import type { Correction } from "../validation/domaine/types.ts";
 import { lireItem, reecrireItem } from "../validation/io/data-items.ts";
+import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
 import { lireTexteCanonique } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { accesTexteCorrections } from "../validation/serveur/emplacements.ts";
@@ -38,6 +39,7 @@ interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
   readonly data: string;
+  readonly notifications: string;
   readonly staging: string;
 }
 
@@ -47,6 +49,7 @@ function lireOptions(table: Arguments): Options {
     ecrire: drapeau(table, "ecrire"),
     racine,
     data: texte(table, "data", resolve(racine, "data/items")),
+    notifications: texte(table, "notifications", resolve(racine, "validation/notifications")),
     staging: texte(table, "staging", resolve(racine, "staging")),
   };
 }
@@ -103,9 +106,11 @@ function principal(): void {
     return;
   }
   reecrireItem(options.data, lu, item, autorisation);
+  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item.
+  ajouterDues(options.notifications, [notificationDue(item, "decision_panel")]);
   process.stdout.write(
     `\nDécision du panel enregistrée sur l'item ${item_id}.\n\n` +
-      commandeGit([`data/items/${item_id}.json`], `data: décision du panel sur l'item ${item_id}`, [
+      commandeGit([`data/items/${item_id}.json`, "validation/notifications/dues.jsonl"], `data: décision du panel sur l'item ${item_id}`, [
         `${decision.decision}, contestation ${decision.contestation_id}`,
       ]),
   );

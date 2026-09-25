@@ -1,0 +1,15 @@
+{
+  "envoi_id": "5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592",
+  "notification_ids": [
+    "01JBQ0N0T1F1CAT10N0000000A"
+  ],
+  "candidat_id": "cand-a",
+  "tentative": 1,
+  "date": "2026-09-21T08:00:00+02:00",
+  "etat": "envoyee",
+  "destinataire": "contact@campagne.invalid",
+  "preuve_sha256": null,
+  "message_id": "<5d41402abc4b2a76@banc-essai.invalid>",
+  "code_smtp": 250,
+  "erreur": null
+}
