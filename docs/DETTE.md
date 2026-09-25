@@ -13,6 +13,50 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-24 — Conformité, lot analyse : réponses obtenues, comparateurs, graines, recalcul (a) (`analysis/`, `schema/notation`, `schema/verdict`, `schema/run`, `docs/PROTOCOLE.md` 0.7)
+
+### 1. Le futur lot notation doit construire le verdict avec les fonctions de l'analyse — *haute*
+
+Le recalcul (a) dérive le sourçage d'une notation humaine par `robustesse.ts:sourcageDeNotation` (un
+même lien qui existe et soutient) et décide de l'accord des deux humains par l'identité complète de
+leurs notations. Le calcul principal, lui, lit `verdict.sourcage_retenu` et `categorie_retenue`,
+que le lot notation écrira.
+
+**Pourquoi ça casse.** Si le lot notation dérive le sourçage ou l'accord autrement (booléens pris
+sur deux liens différents, accord sur la seule catégorie), le calcul principal et le recalcul (a)
+ne mesurent plus la même chose : des résultats seront déclarés fragiles ou robustes à tort, sans
+qu'aucun test ne rougisse.
+
+**Ce qu'il faut faire.** Au lot notation : construire `sourcage_retenu` avec `sourcageDeNotation`
+et décider de l'appel au troisième humain avec la même définition de l'accord, exportée d'un seul
+endroit ; test d'accord entre verdict construit et recalcul (a) sur une même réponse.
+
+### 2. Changer la composition d'une clé déplace des bornes publiées — *moyenne*
+
+La graine de chaque intervalle dépend de sa clé (famille, outil, mode, métrique, strate ;
+`PaireCondition.cle` ; `outil_id` pour la tendance). Renommer une métrique ou réordonner les
+composants change la graine, donc les bornes.
+
+**Pourquoi ça casse.** Un run déjà publié, rejoué avec un code où une clé a changé, donne d'autres
+bornes. Visible au rejeu, mais un tiers conclura à une erreur.
+
+**Ce qu'il faut faire.** Au lot qui écrit `pnpm analyze` : publier la clé de chaque intervalle avec
+son résultat, et figer la liste des clés d'un run par un fichier doré.
+
+### 3. L'accord humain par identité complète multipliera les arbitrages — *basse*
+
+Deux humains d'accord sur la catégorie mais pas sur un drapeau ou un booléen de sourçage divergent,
+et le recalcul (a) exige alors un troisième humain (`DivergenceSansArbitrage` sinon).
+
+**Pourquoi ça casse.** Le volume d'arbitrages sur l'échantillon de 10 % sera plus élevé que ce que
+suggère le kappa sur la catégorie : si le lot hors-code ne prévoit pas ce temps d'annotation, le
+recalcul (a) ne se calcule pas au premier run.
+
+**Ce qu'il faut faire.** Estimer le taux de divergence complète sur le jeu d'or (J4) et dimensionner
+le temps d'annotation en conséquence.
+
+---
+
 ## 2026-09-24 — Conformité, lot tirage : attribution résolue au gel, noms des candidats (`pipeline/questions/`, `schema/run.schema.json`, `docs/PROTOCOLE.md` 0.6)
 
 ### 1. Un item P resté ouvert à côté de l'item O qui le remplace bloque tous les runs — *moyenne*
@@ -345,7 +389,7 @@ conteneur du lot hors-code.
 
 ## 2026-09-20 — Protocole 0.3 et squelette du périmètre (`docs/PROTOCOLE.md`, `schema/README.md`, `config/perimetre.yaml`, `package.json`)
 
-### ~~1. Le protocole 0.3 tranche des points que `analysis/` implémente encore autrement~~ — réglé le 2026-09-22 par le lot alignement-0-3 (l'exactitude des comparateurs, jamais implémentée, suivra la règle 0.3 dès son écriture)
+### ~~1. Le protocole 0.3 tranche des points que `analysis/` implémente encore autrement~~ — réglé le 2026-09-22 par le lot alignement-0-3, sauf l'exactitude des comparateurs, déclarée à tort « jamais implémentée » : elle existait et gardait les indéterminées au dénominateur (conformité n° 5), réglée le 2026-09-24 par la PR #24
 
 D6 est écrit dans le §8, pas dans le code. `analysis/conditions.ts` applique toujours Holm aux
 effets de condition, alors que le §8 le retire de cette famille. `analysis/robustesse.ts` compte
@@ -514,7 +558,7 @@ même fonction que `promote`, plutôt que de construire un `Dossier` à la main.
 
 ## 2026-09-18 — Trois lots en parallèle : outillage, analyse, questions (`outils/schemas/`, `eslint.config.js`, `analysis/`, `pipeline/questions/`)
 
-### 1. Les graines de l'analyse sont textuelles, celles du run sont des entiers — *haute*
+### ~~1. Les graines de l'analyse sont textuelles, celles du run sont des entiers~~ — réglé le 2026-09-24 par `analysis/graines.ts:graineDerivee` et la règle écrite au §8 (protocole 0.7, PR #24)
 
 `analysis/bootstrap.ts` et `analysis/permutation.ts` amorcent `validation/domaine/alea.ts` avec une
 graine **textuelle**, alors que `run.graines.bootstrap.valeur` et `run.graines.permutation.valeur`

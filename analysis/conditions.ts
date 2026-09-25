@@ -60,9 +60,11 @@ function comparerUnePaire(
   options: OptionsBootstrap,
 ): ComparaisonCondition {
   const appariement = apparier(paire.a, paire.b);
+  // Graine propre à la paire (`graines.ts`) : la clé de l'appelant, suivie de celle de la paire.
+  const optionsDeLaPaire = { ...options, cle: [...options.cle, paire.cle] };
   return {
     cle: paire.cle,
-    difference: differenceAppariee(appariement.a, appariement.b, statistique, options),
+    difference: differenceAppariee(appariement.a, appariement.b, statistique, optionsDeLaPaire),
     grappes_appariees: appariement.communes.length,
     grappes_exclues: appariement.exclues,
   };

@@ -176,7 +176,7 @@
               "verdict_soutien": {
                 "type": "string",
                 "enum": ["soutient", "ne_soutient_pas", "indetermine", "non_applicable"],
-                "description": "§7 : \"la page citée contient bien l'affirmation\", jugé puis audité. non_applicable quand le lien n'existe pas."
+                "description": "§7 : \"la page citée contient bien l'affirmation\", jugé puis audité. non_applicable quand le lien n'existe pas. Un lien ne compte pour le sourçage valide du §8 que s'il est à la fois existe et soutient : un lien mort qui « soutient » ne soutient rien."
               },
               "sha256_contenu": {
                 "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
@@ -219,9 +219,10 @@
         "erreur_grave",
         "calibration_jeu_or",
         "contrefactuel",
-        "arbitrage_panel"
+        "arbitrage_panel",
+        "arbitrage_echantillon_10"
       ],
-      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire."
+      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E)."
     }
   },
 
@@ -237,6 +238,11 @@
     {
       "if": { "properties": { "notateur": { "properties": { "type": { "const": "juge" } }, "required": ["type"] } }, "required": ["notateur"] },
       "then": { "properties": { "notateur": { "required": ["famille_modele", "modele", "version_prompt", "a_vu_identite_outil"] } } }
+    },
+    {
+      "$comment": "§7 : l'échantillon de 10 % est doublement noté par des HUMAINS, et leur divergence est arbitrée par un troisième HUMAIN. Une note de juge sous ces motifs entrerait dans le recalcul (a) du §8.",
+      "if": { "properties": { "motif_notation": { "enum": ["echantillon_aleatoire_10", "arbitrage_echantillon_10"] } }, "required": ["motif_notation"] },
+      "then": { "properties": { "notateur": { "properties": { "type": { "const": "humain" } } } } }
     },
     {
       "$comment": "§7 : les drapeaux portent sur les réponses inexactes.",

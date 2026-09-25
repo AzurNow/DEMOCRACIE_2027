@@ -109,6 +109,52 @@ export interface Verdict {
   readonly erreur_grave: boolean;
 }
 
+/** schema/notation.schema.json, `motif_notation`. */
+export const MOTIFS_NOTATION = [
+  "notation_juge",
+  "desaccord_juges",
+  "echantillon_aleatoire_10",
+  "erreur_grave",
+  "calibration_jeu_or",
+  "contrefactuel",
+  "arbitrage_panel",
+  "arbitrage_echantillon_10",
+] as const;
+export type MotifNotation = (typeof MOTIFS_NOTATION)[number];
+
+export const TYPES_NOTATEUR = ["juge", "humain"] as const;
+export type TypeNotateur = (typeof TYPES_NOTATEUR)[number];
+
+export const VERDICTS_EXISTENCE = ["existe", "mort", "inaccessible", "non_testable"] as const;
+export type VerdictExistence = (typeof VERDICTS_EXISTENCE)[number];
+
+export const VERDICTS_SOUTIEN = ["soutient", "ne_soutient_pas", "indetermine", "non_applicable"] as const;
+export type VerdictSoutien = (typeof VERDICTS_SOUTIEN)[number];
+
+export interface LienNote {
+  readonly verdict_existence: VerdictExistence;
+  readonly verdict_soutien: VerdictSoutien;
+}
+
+/**
+ * Une notation individuelle (schema/notation.schema.json) : ce que lit le recalcul de robustesse
+ * §8(a), qui ne doit jamais passer par la note retenue du verdict.
+ */
+export interface Notation {
+  readonly id: Ulid;
+  readonly run_id: Ulid;
+  readonly contexte: ContexteMesure;
+  readonly objet_note: ObjetNote;
+  readonly notateur: { readonly type: TypeNotateur; readonly id: IdentifiantCourt };
+  readonly categorie: CategorieRetenue;
+  readonly drapeaux: readonly Drapeau[];
+  /** §11 : présent uniquement avec le drapeau obsolescence. */
+  readonly obsolescence_fraiche?: boolean;
+  readonly sourcage: { readonly cite: boolean; readonly liens: readonly LienNote[] };
+  /** Obligatoire pour un juge (schéma) ; lu ici pour ne retenir que l'échantillon humain. */
+  readonly motif_notation?: MotifNotation;
+}
+
 export interface ProjectionNormalisee {
   readonly texte: string;
   readonly liens: readonly string[];

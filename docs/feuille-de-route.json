@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-09-24",
+  "date_maj": "2026-09-25",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -202,7 +202,7 @@
         "D4",
         "D5"
       ],
-      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur), 0.5 le 2026-09-24 (transcriptions T2 font foi telles que publiées), 0.6 le 2026-09-24 (attribution au gel, candidats interrogés, nom seul). Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
+      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur), 0.5 le 2026-09-24 (transcriptions T2 font foi telles que publiées), 0.6 le 2026-09-24 (attribution au gel, candidats interrogés, nom seul), 0.7 le 2026-09-24 (échantillon humain, graines de l'analyse). Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire."
     },
     {
       "id": "schemas",
@@ -407,7 +407,7 @@
       "decisions": [
         "D6"
       ],
-      "note": "Livré le 2026-09-18 : onze modules, 60 tests, aucun défaut silencieux. Pas de pnpm analyze tant que la disposition de runs/ n'est pas fixée (lot interrogation). Six précisions du §8 en attente (D6)."
+      "note": "Livré le 2026-09-18 : onze modules, 60 tests, aucun défaut silencieux. Pas de pnpm analyze tant que la disposition de runs/ n'est pas fixée (lot interrogation). Six précisions du §8 en attente (D6). Conformité n° 4, 5, 6, 8 (2026-09-24, protocole 0.7) : dénominateurs sur les réponses obtenues, exactitude des comparateurs sans lectures non classées, graineDerivee rejouable depuis run.graines, recalcul (a) sur les notations humaines."
     },
     {
       "id": "alignement-0-3",

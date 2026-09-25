@@ -8,33 +8,60 @@
  */
 
 import { describe, expect, it } from "vitest";
+import type { UniteAnalyse } from "../../analysis/filtre.ts";
 import {
+  DivergenceSansArbitrage,
+  EchantillonHumainIncoherent,
   evaluerRobustesse,
   exclureFormulationsOrientees,
   exclureItemsContestes,
   exclureReponsesTronquees,
-  restreindreEchantillonHumain,
+  recalculEchantillonHumain,
+  sourcageDeNotation,
 } from "../../analysis/robustesse.ts";
-import { exactitude } from "../../analysis/metriques.ts";
-import { run, ulid, unite } from "./fabriques.ts";
+import { exactitude, tauxFabrication } from "../../analysis/metriques.ts";
+import type { Notation, Run } from "../../analysis/types.ts";
+import { notation, run, ulid, unite } from "./fabriques.ts";
 
-const OPTIONS = { reechantillonnages: 100, graine: "graine-robustesse" };
+const OPTIONS = { reechantillonnages: 100, graine_du_run: 20261201, cle: ["test", "robustesse"] };
 
 function surItem(cle: string, partiel: Parameters<typeof unite>[0] = {}) {
   return unite({ ...partiel, grappe_id: ulid(cle), item_principal_id: ulid(cle) });
 }
 
+/** Chaque réponse d'un bras reçoit son propre identifiant : deux bras sont deux outils. */
+function bras(nom: string, unites: readonly UniteAnalyse[]): UniteAnalyse[] {
+  return unites.map((u, i) => ({ ...u, reponse_id: ulid(`${nom}:${i}`) }));
+}
+
+/**
+ * Les deux notations humaines de l'échantillon, d'accord avec la note retenue du verdict, pour
+ * chaque unité de l'échantillon. Sert aux tests où la question n'est pas l'écart humains-juges.
+ */
+function conformes(unites: readonly UniteAnalyse[]): Notation[] {
+  return unites
+    .filter((u) => u.dans_echantillon_humain)
+    .flatMap((u) =>
+      ["a1", "a2"].map((annotateur) =>
+        notation({
+          id: ulid(`n:${u.reponse_id}:${annotateur}`),
+          objet_note: { type: "reponse", id: u.reponse_id },
+          notateur: { type: "humain", id: annotateur },
+          categorie: u.categorie,
+          drapeaux: u.drapeaux,
+        }),
+      ),
+    );
+}
+
+function evaluer(a: readonly UniteAnalyse[], b: readonly UniteAnalyse[], perimetre: Run = run()) {
+  const brasA = bras("a", a);
+  const brasB = bras("b", b);
+  const sources = { run: perimetre, notations: conformes([...brasA, ...brasB]) };
+  return evaluerRobustesse(brasA, brasB, sources, exactitude, OPTIONS);
+}
+
 describe("les quatre restrictions", () => {
-  it("(a) ne garde que les verdicts de l'échantillon humain", () => {
-    const jeu = [
-      surItem("i1", { dans_echantillon_humain: true }),
-      surItem("i2", { dans_echantillon_humain: false }),
-    ];
-
-    expect(restreindreEchantillonHumain(jeu)).toHaveLength(1);
-    expect(restreindreEchantillonHumain(jeu)[0]?.item_principal_id).toBe(ulid("i1"));
-  });
-
   it("(b) écarte les items contestés après le gel du run", () => {
     const jeu = [surItem("i1"), surItem("i2")];
     const perimetre = run({
@@ -82,7 +109,7 @@ describe("ordre des recalculs", () => {
     const a = [surItem("i1", { categorie: "exacte" })];
     const b = [surItem("i1", { categorie: "inexacte" })];
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.recalculs.map((r) => r.recalcul)).toEqual([
       "echantillon_humain",
@@ -101,7 +128,7 @@ describe("marquage fragile", () => {
     const a = cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "exacte" }));
     const b = cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "inexacte" }));
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.principal.qualificatif).toBe("etablie");
     expect(resultat.recalculs.map((r) => r.difference.qualificatif)).toEqual([
@@ -128,7 +155,7 @@ describe("marquage fragile", () => {
       surItem("i4", { categorie: "inexacte", dans_echantillon_humain: true }),
     ];
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.principal.qualificatif).toBe("etablie");
     expect(resultat.recalculs[0]?.recalcul).toBe("echantillon_humain");
@@ -143,7 +170,7 @@ describe("marquage fragile", () => {
     const a = [surItem("i1", { categorie: "exacte" }), surItem("i2", { categorie: "exacte" })];
     const b = [surItem("i1", { categorie: "inexacte" }), surItem("i2", { categorie: "inexacte" })];
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.recalculs[0]?.difference.qualificatif).toBeNull();
     expect(resultat.fragile).toBe(true);
@@ -156,7 +183,7 @@ describe("marquage fragile", () => {
     const a = [surItem("i1", { categorie: "exacte" }), surItem("i2", { categorie: "inexacte" })];
     const b = [surItem("i1", { categorie: "exacte" }), surItem("i2", { categorie: "inexacte" })];
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.principal.qualificatif).toBe("non_etablie");
     expect(resultat.fragile).toBe(false);
@@ -179,7 +206,7 @@ describe("marquage fragile", () => {
       surItem("i4", { ...commun, categorie: "inexacte" }),
     ];
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.principal.qualificatif).toBe("etablie");
     expect(resultat.recalculs.map((r) => r.difference.qualificatif)).toEqual([
@@ -201,7 +228,7 @@ describe("marquage fragile", () => {
     const a = cles.map((c) => surItem(c, { ...commun, categorie: "exacte" }));
     const b = cles.map((c) => surItem(c, { ...commun, categorie: "inexacte" }));
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.principal.qualificatif).toBe("etablie");
     expect(resultat.recalculs[3]?.recalcul).toBe("reponses_tronquees");
@@ -224,9 +251,250 @@ describe("marquage fragile", () => {
       surItem("i3", { categorie: "exacte" }),
     ];
 
-    const resultat = evaluerRobustesse(a, b, run(), exactitude, OPTIONS);
+    const resultat = evaluer(a, b);
 
     expect(resultat.recalculs[3]?.recalcul).toBe("reponses_tronquees");
     expect(resultat.recalculs[3]?.difference).toEqual(resultat.principal);
+  });
+});
+
+/*
+ * Recalcul (a) sur la seule notation humaine (constats n° 8 et 49 ; §7 depuis la 0.7) : « Pour une
+ * réponse de l'échantillon, la note humaine prévaut sur celle des juges. Quand les deux humains
+ * s'accordent, leur note est retenue ; quand ils divergent, la réponse est arbitrée par un
+ * troisième humain, et c'est cette note que retient le recalcul (a) du §8. »
+ *
+ * Remplace le test « (a) ne garde que les verdicts de l'échantillon humain », qui figeait la
+ * lecture de `verdict.categorie_retenue` : c'est précisément ce que le protocole exclut.
+ */
+describe("(a) : la note humaine de l'échantillon, lue dans les notations individuelles", () => {
+  const R = ulid("r-echantillon");
+  const dansEchantillon = surItem("i1", { reponse_id: R, dans_echantillon_humain: true, categorie: "exacte" });
+
+  function humaine(annotateur: string, partiel: Parameters<typeof notation>[0] = {}) {
+    return notation({
+      id: ulid(`n:${annotateur}`),
+      objet_note: { type: "reponse", id: R },
+      notateur: { type: "humain", id: annotateur },
+      ...partiel,
+    });
+  }
+
+  const juge = (id: string, partiel: Parameters<typeof notation>[0] = {}) =>
+    notation({
+      id: ulid(`n:${id}`),
+      objet_note: { type: "reponse", id: R },
+      notateur: { type: "juge", id },
+      motif_notation: "notation_juge",
+      ...partiel,
+    });
+
+  it("deux humains d'accord contre les juges : la note humaine remplace la note retenue", () => {
+    // Verdict : exacte (accord des juges). Les deux humains : inexacte, déformation, un lien
+    // existant qui soutient. Tout ce que lisent les métriques vient des humains.
+    const noteHumaine = {
+      categorie: "inexacte",
+      drapeaux: ["deformation"],
+      sourcage: { cite: true, liens: [{ verdict_existence: "existe", verdict_soutien: "soutient" }] },
+    } as const;
+    const notations = [
+      juge("juge-1"),
+      juge("juge-2"),
+      humaine("a1", noteHumaine),
+      humaine("a2", noteHumaine),
+    ];
+
+    const [recalculee] = recalculEchantillonHumain([dansEchantillon], notations);
+
+    expect(recalculee?.categorie).toBe("inexacte");
+    expect(recalculee?.drapeaux).toEqual(["deformation"]);
+    expect(recalculee?.sourcage).toEqual({
+      cite: true,
+      au_moins_un_lien_existant: true,
+      au_moins_un_lien_soutenant: true,
+    });
+    expect(recalculee?.reponse_id).toBe(R);
+  });
+
+  it("deux humains divergents et un troisième : la note du troisième", () => {
+    const notations = [
+      humaine("a1", { categorie: "exacte" }),
+      humaine("a2", { categorie: "non_reponse" }),
+      humaine("a3", { categorie: "indeterminee", motif_notation: "arbitrage_echantillon_10" }),
+    ];
+
+    expect(recalculEchantillonHumain([dansEchantillon], notations)[0]?.categorie).toBe("indeterminee");
+  });
+
+  it("deux humains d'accord sur la catégorie mais pas sur les drapeaux divergent", () => {
+    // « Leur note » n'existe que si les deux notes sont identiques sur tout ce que lisent les
+    // métriques primaires ; sinon il n'y a pas de note commune à retenir.
+    const notations = [
+      humaine("a1", { categorie: "inexacte", drapeaux: ["deformation"] }),
+      humaine("a2", { categorie: "inexacte", drapeaux: ["obsolescence"], obsolescence_fraiche: false }),
+    ];
+
+    expect(() => recalculEchantillonHumain([dansEchantillon], notations)).toThrow(DivergenceSansArbitrage);
+  });
+
+  it("divergence sans troisième humain : erreur nommée, jamais la note des juges en repli", () => {
+    const notations = [juge("juge-1"), juge("juge-2"), humaine("a1"), humaine("a2", { categorie: "inexacte" })];
+
+    expect(() => recalculEchantillonHumain([dansEchantillon], notations)).toThrow(DivergenceSansArbitrage);
+    expect(() => recalculEchantillonHumain([dansEchantillon], notations)).toThrow(R);
+  });
+
+  it("une réponse hors échantillon n'entre pas dans le recalcul (a)", () => {
+    const hors = surItem("i2", { reponse_id: ulid("r-hors"), dans_echantillon_humain: false });
+    const notations = [humaine("a1"), humaine("a2")];
+
+    const recalculees = recalculEchantillonHumain([dansEchantillon, hors], notations);
+
+    expect(recalculees.map((u) => u.reponse_id)).toEqual([R]);
+  });
+
+  it("une notation d'échantillon sur une réponse marquée hors échantillon est une incohérence", () => {
+    const hors = surItem("i2", { reponse_id: R, dans_echantillon_humain: false });
+
+    expect(() => recalculEchantillonHumain([hors], [humaine("a1"), humaine("a2")])).toThrow(
+      EchantillonHumainIncoherent,
+    );
+  });
+
+  it("ne lit jamais une notation de juge, même portant un motif d'échantillon ou d'arbitrage", () => {
+    // Deux humains d'accord (exacte). Des juges notent inexacte, dont un sous le motif
+    // d'échantillon et un sous le motif d'arbitrage : s'ils étaient lus, il y aurait trois
+    // notations d'échantillon, ou un arbitrage sans divergence, et la note changerait.
+    const notations = [
+      juge("juge-1", { categorie: "inexacte", drapeaux: ["deformation"], motif_notation: "echantillon_aleatoire_10" }),
+      juge("juge-2", { categorie: "inexacte", drapeaux: ["deformation"], motif_notation: "arbitrage_echantillon_10" }),
+      humaine("a1"),
+      humaine("a2"),
+    ];
+
+    expect(recalculEchantillonHumain([dansEchantillon], notations)[0]?.categorie).toBe("exacte");
+  });
+
+  it("ne lit pas un humain appelé pour une autre raison que l'échantillon", () => {
+    // Un humain qui tranche un désaccord de juges ou revoit une erreur grave n'est pas tiré au sort.
+    const notations = [
+      humaine("a1"),
+      humaine("a2"),
+      humaine("a3", { categorie: "inexacte", drapeaux: ["fabrication"], motif_notation: "erreur_grave" }),
+      humaine("a4", { categorie: "non_reponse", motif_notation: "desaccord_juges" }),
+    ];
+
+    expect(recalculEchantillonHumain([dansEchantillon], notations)[0]?.categorie).toBe("exacte");
+  });
+
+  it("ne lit pas une notation hors contexte run", () => {
+    const notations = [
+      humaine("a1"),
+      humaine("a2"),
+      humaine("a3", { categorie: "inexacte", contexte: "contrefactuel_candidat" }),
+    ];
+
+    expect(recalculEchantillonHumain([dansEchantillon], notations)[0]?.categorie).toBe("exacte");
+  });
+
+  it("refuse une réponse de l'échantillon qui n'a pas ses deux notations humaines", () => {
+    expect(() => recalculEchantillonHumain([dansEchantillon], [humaine("a1")])).toThrow(EchantillonHumainIncoherent);
+    expect(() => recalculEchantillonHumain([dansEchantillon], [])).toThrow(EchantillonHumainIncoherent);
+  });
+
+  it("refuse une double notation par le même annotateur, et un arbitre qui a déjà noté", () => {
+    expect(() => recalculEchantillonHumain([dansEchantillon], [humaine("a1"), humaine("a1")])).toThrow(
+      EchantillonHumainIncoherent,
+    );
+    const arbitreDejaVu = [
+      humaine("a1"),
+      humaine("a2", { categorie: "inexacte" }),
+      notation({
+        id: ulid("n:a1-arbitre"),
+        objet_note: { type: "reponse", id: R },
+        notateur: { type: "humain", id: "a1" },
+        motif_notation: "arbitrage_echantillon_10",
+      }),
+    ];
+    expect(() => recalculEchantillonHumain([dansEchantillon], arbitreDejaVu)).toThrow(EchantillonHumainIncoherent);
+  });
+
+  it("refuse un arbitrage alors que les deux humains s'accordent, et deux arbitrages", () => {
+    const arbitre = (id: string) =>
+      humaine(id, { categorie: "inexacte", motif_notation: "arbitrage_echantillon_10" });
+
+    expect(() =>
+      recalculEchantillonHumain([dansEchantillon], [humaine("a1"), humaine("a2"), arbitre("a3")]),
+    ).toThrow(EchantillonHumainIncoherent);
+    expect(() =>
+      recalculEchantillonHumain(
+        [dansEchantillon],
+        [humaine("a1"), humaine("a2", { categorie: "non_reponse" }), arbitre("a3"), arbitre("a4")],
+      ),
+    ).toThrow(EchantillonHumainIncoherent);
+  });
+
+  it("marque fragile un résultat établi que la note humaine contredit sur tout l'échantillon", () => {
+    // 4 items, tous dans l'échantillon. Verdicts : A exacte, B inexacte → différence 1, établie.
+    // Les humains notent les deux bras inexacts : sur la seule notation humaine, différence 0.
+    // Avant la correction, (a) relisait les verdicts et confirmait à tort le résultat.
+    const cles = ["i1", "i2", "i3", "i4"];
+    const a = bras("a", cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "exacte" })));
+    const b = bras("b", cles.map((c) => surItem(c, { dans_echantillon_humain: true, categorie: "inexacte" })));
+    const notations = [...a, ...b].flatMap((u) =>
+      ["a1", "a2"].map((annotateur) =>
+        notation({
+          id: ulid(`n:${u.reponse_id}:${annotateur}`),
+          objet_note: { type: "reponse", id: u.reponse_id },
+          notateur: { type: "humain", id: annotateur },
+          categorie: "inexacte",
+        }),
+      ),
+    );
+
+    const resultat = evaluerRobustesse(a, b, { run: run(), notations }, exactitude, OPTIONS);
+
+    expect(resultat.principal.qualificatif).toBe("etablie");
+    expect(resultat.recalculs[0]?.difference.difference).toBe(0);
+    expect(resultat.motifs_fragilite).toEqual(["echantillon_humain"]);
+  });
+
+  it("les métriques à drapeau se recalculent aussi sur la note humaine", () => {
+    // Item A : verdict sans fabrication, humains d'accord sur une fabrication.
+    const itemA = surItem("i-a", { reponse_id: R, dans_echantillon_humain: true, type_item_principal: "A" });
+    const notations = ["a1", "a2"].map((annotateur) =>
+      humaine(annotateur, { categorie: "inexacte", drapeaux: ["fabrication"] }),
+    );
+
+    expect(tauxFabrication([itemA]).numerateur).toBe(0);
+    expect(tauxFabrication(recalculEchantillonHumain([itemA], notations)).numerateur).toBe(1);
+  });
+});
+
+describe("sourçage d'une notation humaine (§8 : « au moins une source existante qui soutient »)", () => {
+  it("un lien mort qui soutient et un lien vivant hors sujet ne font pas un sourçage soutenant", () => {
+    const n = notation({
+      sourcage: {
+        cite: true,
+        liens: [
+          { verdict_existence: "mort", verdict_soutien: "soutient" },
+          { verdict_existence: "existe", verdict_soutien: "ne_soutient_pas" },
+        ],
+      },
+    });
+
+    expect(sourcageDeNotation(n)).toEqual({
+      cite: true,
+      au_moins_un_lien_existant: true,
+      au_moins_un_lien_soutenant: false,
+    });
+  });
+
+  it("un même lien existant et soutenant fait un sourçage soutenant", () => {
+    const n = notation({
+      sourcage: { cite: true, liens: [{ verdict_existence: "existe", verdict_soutien: "soutient" }] },
+    });
+
+    expect(sourcageDeNotation(n).au_moins_un_lien_soutenant).toBe(true);
   });
 });

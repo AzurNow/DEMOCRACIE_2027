@@ -122,6 +122,7 @@ const CLIENT = "validation/client/types.ts";
 const COMMUN = "commun.schema.json";
 const REPONSE = "reponse.schema.json";
 const VERDICT = "verdict.schema.json";
+const NOTATION = "notation.schema.json";
 const RUN = "run.schema.json";
 const ITEM = "item.schema.json";
 const TIRAGE = "tirage.schema.json";
@@ -133,6 +134,7 @@ const STATUT_AU_GEL = "#/properties/perimetre/properties/candidats/items/propert
 const FAMILLE = "#/properties/perimetre/properties/outils/items/properties/famille";
 const ITEMS_AU_GEL = "#/$defs/entree_tirage/properties/items_au_gel/items/properties";
 const CONDITIONS = "#/properties/symetrie/properties/conditions/items/properties";
+const LIENS_NOTATION = "#/properties/sourcage/properties/liens/items/properties";
 
 function en(fichierTs: string, nom: string): string {
   return `${nom} (${fichierTs})`;
@@ -155,6 +157,13 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(ANALYSE, "ObjetNote.type"), valeurs: PONT_OBJET_NOTE, fichier: VERDICT, pointeur: "#/properties/objet_note/properties/type" },
   { liste: en(ANALYSE, "CandidatAuGel.statut_au_gel"), valeurs: PONT_STATUT_AU_GEL, fichier: RUN, pointeur: STATUT_AU_GEL },
   { liste: en(ANALYSE, "OutilAuGel.famille"), valeurs: PONT_FAMILLE_OUTIL, fichier: RUN, pointeur: FAMILLE },
+  { liste: en(ANALYSE, "CATEGORIES_RETENUES"), valeurs: analyse.CATEGORIES_RETENUES, fichier: NOTATION, pointeur: "#/properties/categorie" },
+  { liste: en(ANALYSE, "DRAPEAUX"), valeurs: analyse.DRAPEAUX, fichier: NOTATION, pointeur: "#/properties/drapeaux/items" },
+  { liste: en(ANALYSE, "MOTIFS_NOTATION"), valeurs: analyse.MOTIFS_NOTATION, fichier: NOTATION, pointeur: "#/properties/motif_notation" },
+  { liste: en(ANALYSE, "TYPES_NOTATEUR"), valeurs: analyse.TYPES_NOTATEUR, fichier: NOTATION, pointeur: "#/properties/notateur/properties/type" },
+  { liste: en(ANALYSE, "VERDICTS_EXISTENCE"), valeurs: analyse.VERDICTS_EXISTENCE, fichier: NOTATION, pointeur: `${LIENS_NOTATION}/verdict_existence` },
+  { liste: en(ANALYSE, "VERDICTS_SOUTIEN"), valeurs: analyse.VERDICTS_SOUTIEN, fichier: NOTATION, pointeur: `${LIENS_NOTATION}/verdict_soutien` },
+  { liste: en(ANALYSE, "Notation.objet_note.type"), valeurs: PONT_OBJET_NOTE, fichier: NOTATION, pointeur: "#/properties/objet_note/properties/type" },
 
   // pipeline/questions/types.ts
   { liste: en(QUESTIONS, "THEMES"), valeurs: questions.THEMES, fichier: COMMUN, pointeur: "#/$defs/theme" },
@@ -224,6 +233,10 @@ describe("constat 5 : les listes de pont sont exactement les unions en ligne", (
   it("vérifie à la compilation que les unions exportées sont dérivées de leur constante", () => {
     expectTypeOf<Element<typeof analyse.DRAPEAUX>>().toEqualTypeOf<analyse.Drapeau>();
     expectTypeOf<Element<typeof analyse.THEMES>>().toEqualTypeOf<analyse.Theme>();
+    expectTypeOf<Element<typeof analyse.MOTIFS_NOTATION>>().toEqualTypeOf<analyse.MotifNotation>();
+    expectTypeOf<Element<typeof analyse.TYPES_NOTATEUR>>().toEqualTypeOf<analyse.Notation["notateur"]["type"]>();
+    expectTypeOf<Element<typeof analyse.VERDICTS_EXISTENCE>>().toEqualTypeOf<analyse.LienNote["verdict_existence"]>();
+    expectTypeOf<Element<typeof analyse.VERDICTS_SOUTIEN>>().toEqualTypeOf<analyse.LienNote["verdict_soutien"]>();
     expectTypeOf<Element<typeof questions.ROLES_ITEM>>().toEqualTypeOf<questions.RoleItem>();
     expectTypeOf<Element<typeof domaine.TYPES_ITEM>>().toEqualTypeOf<questions.TypeItem>();
     expectTypeOf<Element<typeof client.DECISIONS>>().toEqualTypeOf<client.Decision>();

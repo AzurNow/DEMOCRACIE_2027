@@ -8,6 +8,13 @@
  * constructeur d'`UniteAnalyse` est `assembler`, qui applique le filtre. La barrière est donc
  * portée par le type, pas par la discipline de l'appelant.
  *
+ * Les unités partent des **réponses obtenues** du run, pas des verdicts : c'est le dénominateur
+ * « réponses obtenues » du §8. Chaque réponse obtenue doit porter exactement un verdict du run ;
+ * une réponse obtenue sans verdict lève `ReponsesNonNotees` (qui les liste toutes), deux verdicts
+ * sur un même objet lèvent `VerdictEnDouble`. Sans cela, une notation interrompue ou réécrite
+ * sortirait des réponses du dénominateur, ou les y compterait deux fois, sans que rien ne le dise.
+ * Une réponse manquante n'a pas de verdict et ne forme pas d'unité (§6).
+ *
  * Tout ce qui ne peut pas être résolu lève : réponse introuvable, question introuvable, verdict
  * du run portant sur une réponse hors run, note portée sur une réponse manquante. Une donnée
  * absente reste absente et visible — jamais un enregistrement ignoré en silence.
@@ -15,6 +22,7 @@
 
 import type {
   Canal,
+  ObjetNote,
   CategorieRetenue,
   ContexteMesure,
   Drapeau,
@@ -74,6 +82,48 @@ export interface EntreesAnalyse {
   readonly verdicts: readonly Verdict[];
 }
 
+/** Deux verdicts du run sur un même objet noté : lequel compte n'est pas à deviner. */
+export class VerdictEnDouble extends Error {
+  readonly objet: ObjetNote;
+  readonly verdicts: readonly Ulid[];
+
+  constructor(objet: ObjetNote, verdicts: readonly Ulid[]) {
+    super(`Objet noté ${objet.type} ${objet.id} portant ${verdicts.length} verdicts du run : ${verdicts.join(", ")}.`);
+    this.name = "VerdictEnDouble";
+    this.objet = objet;
+    this.verdicts = verdicts;
+  }
+}
+
+/** Réponses obtenues du run sans verdict : elles appartiennent au dénominateur, il manque leur note. */
+export class ReponsesNonNotees extends Error {
+  readonly reponses: readonly Ulid[];
+
+  constructor(reponses: readonly Ulid[]) {
+    super(`${reponses.length} réponse(s) obtenue(s) du run sans verdict : ${reponses.join(", ")}.`);
+    this.name = "ReponsesNonNotees";
+    this.reponses = reponses;
+  }
+}
+
+/**
+ * Les verdicts du run portant sur un objet du type donné, indexés par objet noté. Un doublon lève.
+ * Partagé par les réponses (`assembler`) et les lectures de comparateur (`metriques.ts`).
+ */
+export function indexerVerdictsDuRun(
+  verdicts: readonly Verdict[],
+  type: ObjetNote["type"],
+): ReadonlyMap<Ulid, Verdict> {
+  const index = new Map<Ulid, Verdict>();
+  for (const verdict of filtrerContexteRun(verdicts)) {
+    if (verdict.objet_note.type !== type) continue;
+    const deja = index.get(verdict.objet_note.id);
+    if (deja !== undefined) throw new VerdictEnDouble(verdict.objet_note, [deja.id, verdict.id]);
+    index.set(verdict.objet_note.id, verdict);
+  }
+  return index;
+}
+
 export function estDuRun(objet: { readonly contexte: ContexteMesure }): boolean {
   return objet.contexte === "run";
 }
@@ -93,12 +143,12 @@ interface IndexEntrees {
 
 export function assembler(entrees: EntreesAnalyse): UniteAnalyse[] {
   const index = indexer(entrees);
-  const unites: UniteAnalyse[] = [];
-  for (const verdict of filtrerContexteRun(entrees.verdicts)) {
-    if (verdict.objet_note.type !== "reponse") continue;
-    unites.push(uniteDepuis(verdict, index));
-  }
-  return unites;
+  const verdicts = indexerVerdictsDuRun(entrees.verdicts, "reponse");
+  for (const verdict of verdicts.values()) reponseNotee(verdict, index);
+  const obtenues = filtrerContexteRun(entrees.reponses).filter((r) => r.statut_reponse === "obtenue");
+  const nonNotees = obtenues.filter((r) => !verdicts.has(r.id)).map((r) => r.id);
+  if (nonNotees.length > 0) throw new ReponsesNonNotees(nonNotees);
+  return obtenues.map((reponse) => uniteDepuis(exiger(verdicts, reponse.id, "verdict"), reponse, index));
 }
 
 function indexer(entrees: EntreesAnalyse): IndexEntrees {
@@ -115,8 +165,7 @@ function indexer(entrees: EntreesAnalyse): IndexEntrees {
  * métriques primaires ». Elle est donc toujours assemblée ; `tronquee` reste porté par l'unité,
  * parce que le recalcul de robustesse (d) l'exclut (`robustesse.ts`).
  */
-function uniteDepuis(verdict: Verdict, index: IndexEntrees): UniteAnalyse {
-  const reponse = reponseNotee(verdict, index);
+function uniteDepuis(verdict: Verdict, reponse: Reponse, index: IndexEntrees): UniteAnalyse {
   const tronquee = projection(reponse).troncature;
   return composer(verdict, reponse, contexteQuestion(reponse, index), tronquee);
 }

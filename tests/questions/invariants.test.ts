@@ -285,8 +285,8 @@ describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5,
 /* ------------------------------------------------- exemples réels du dépôt */
 
 describe("exemples de schema/exemples/", () => {
-  it("charge les 85 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(85);
+  it("charge les 92 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(92);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -316,7 +316,7 @@ describe("exemples de schema/exemples/", () => {
       contexte: contenu["contexte"] as string,
       objet_note: contenu["objet_note"] as { type: string; id: string },
     }));
-    expect(notants).toHaveLength(10);
+    expect(notants).toHaveLength(15);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

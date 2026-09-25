@@ -6,7 +6,13 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { assembler, estDuRun, filtrerContexteRun } from "../../analysis/filtre.ts";
+import {
+  assembler,
+  estDuRun,
+  filtrerContexteRun,
+  ReponsesNonNotees,
+  VerdictEnDouble,
+} from "../../analysis/filtre.ts";
 import { exactitude, tauxNonReponse } from "../../analysis/metriques.ts";
 import { partReponsesManquantes } from "../../analysis/seuils.ts";
 import { entreeTirage, idQuestion, item, question, reponse, run, ulid, verdict } from "./fabriques.ts";
@@ -165,5 +171,80 @@ describe("filtre de contexte", () => {
 
     expect(unite?.theme).toBeNull();
     expect(unite?.candidat_id).toBeNull();
+  });
+});
+
+describe("une unité par réponse obtenue, un verdict par réponse (constat n° 4)", () => {
+  it("lève en listant les réponses obtenues sans verdict, au lieu de les sortir du dénominateur", () => {
+    // Deux réponses obtenues, un seul verdict. Avant la correction : taux de non-réponse 1/1
+    // au lieu d'une erreur, la réponse non notée ayant disparu du dénominateur « réponses obtenues ».
+    const reponses = [reponse({ id: ulid("r-notee") }), reponse({ id: ulid("r-non-notee") })];
+    const verdicts = [
+      verdict({ id: ulid("v-notee"), objet_note: { type: "reponse", id: ulid("r-notee") }, categorie_retenue: "non_reponse" }),
+    ];
+
+    const appel = () => assembler(entrees(reponses, verdicts));
+
+    expect(appel).toThrow(ReponsesNonNotees);
+    expect(appel).toThrow(ulid("r-non-notee"));
+    try {
+      appel();
+    } catch (erreur) {
+      expect((erreur as ReponsesNonNotees).reponses).toEqual([ulid("r-non-notee")]);
+    }
+  });
+
+  it("lève sur deux verdicts du run portant sur une même réponse", () => {
+    // Avant la correction : deux unités pour une réponse, taux de non-réponse 2/3 au lieu de 1/2.
+    const reponses = [reponse({ id: ulid("r1") }), reponse({ id: ulid("r2") })];
+    const verdicts = [
+      verdict({ id: ulid("v1"), objet_note: { type: "reponse", id: ulid("r1") } }),
+      verdict({ id: ulid("v1-bis"), objet_note: { type: "reponse", id: ulid("r1") }, categorie_retenue: "non_reponse" }),
+      verdict({ id: ulid("v2"), objet_note: { type: "reponse", id: ulid("r2") }, categorie_retenue: "non_reponse" }),
+    ];
+
+    expect(() => assembler(entrees(reponses, verdicts))).toThrow(VerdictEnDouble);
+    expect(() => assembler(entrees(reponses, verdicts))).toThrow(ulid("r1"));
+  });
+
+  it("un verdict hors run sur une réponse du run ne compte pas comme doublon", () => {
+    // Le verdict contrefactuel ne passe pas le filtre : il n'est ni un doublon ni une note.
+    const reponses = [reponse({ id: ulid("r1") })];
+    const verdicts = [
+      verdict({ id: ulid("v1"), objet_note: { type: "reponse", id: ulid("r1") } }),
+      verdict({ id: ulid("v1-cf"), contexte: "contrefactuel_candidat", objet_note: { type: "reponse", id: ulid("r1") } }),
+    ];
+
+    expect(assembler(entrees(reponses, verdicts))).toHaveLength(1);
+  });
+
+  it("une réponse manquante sans verdict reste hors dénominateur, sans erreur", () => {
+    const reponses = [
+      reponse({ id: ulid("r-ok") }),
+      reponse({ id: ulid("r-manq"), statut_reponse: "manquante", normalise: undefined }),
+    ];
+    const verdicts = [verdict({ id: ulid("v-ok"), objet_note: { type: "reponse", id: ulid("r-ok") } })];
+
+    const unites = assembler(entrees(reponses, verdicts));
+
+    expect(unites.map((u) => u.reponse_id)).toEqual([ulid("r-ok")]);
+    expect(tauxNonReponse(unites)).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+  });
+
+  it("cas nominal : une unité par réponse obtenue, dans l'ordre des réponses", () => {
+    const reponses = [reponse({ id: ulid("r-a") }), reponse({ id: ulid("r-b") })];
+    // Verdicts dans l'ordre inverse : l'ordre des unités suit les réponses, pas les verdicts.
+    const verdicts = [
+      verdict({ id: ulid("v-b"), objet_note: { type: "reponse", id: ulid("r-b") }, categorie_retenue: "non_reponse" }),
+      verdict({ id: ulid("v-a"), objet_note: { type: "reponse", id: ulid("r-a") } }),
+    ];
+
+    const unites = assembler(entrees(reponses, verdicts));
+
+    expect(unites.map((u) => [u.reponse_id, u.verdict_id])).toEqual([
+      [ulid("r-a"), ulid("v-a")],
+      [ulid("r-b"), ulid("v-b")],
+    ]);
+    expect(tauxNonReponse(unites)).toEqual({ numerateur: 1, denominateur: 2, valeur: 0.5 });
   });
 });
