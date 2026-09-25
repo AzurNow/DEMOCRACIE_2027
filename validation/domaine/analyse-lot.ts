@@ -29,6 +29,15 @@ export interface DiagnosticLot {
    */
   readonly taux_double_correction_divergente: number | null;
   readonly alerte_reannotation: boolean;
+  /** Nombre d'items du manifeste, contestations comprises : distinct de `kappa.n`. */
+  readonly taille_lot: number;
+  /** Taille fixée par le §4 pour ce lot : 50 (réel), 30 (entraînement), celle de l'origine. */
+  readonly taille_attendue: number;
+  /**
+   * Faux pour un lot écrit avant que `pnpm lots` ne compose que des lots pleins. Son kappa est
+   * calculé, mais il n'a pas la variance d'un kappa sur 50 : il ne se lit pas comme tel (§12).
+   */
+  readonly taille_conforme: boolean;
 }
 
 export interface EntreeDiagnostic {
@@ -36,6 +45,8 @@ export interface EntreeDiagnostic {
   readonly items: ReadonlyMap<string, Item>;
   /** État rejoué du journal, par annotateur. Exactement deux entrées. */
   readonly etats: ReadonlyMap<string, EtatAnnotateur>;
+  /** Taille que le lot devrait compter, voir `lot.ts:tailleAttendue`. */
+  readonly taille_attendue: number;
 }
 
 interface PaireDecisions {
@@ -62,6 +73,9 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
     kappa_par_question: kappaParQuestion(paires),
     taux_double_correction_divergente: tauxDivergence(paires),
     alerte_reannotation: alerteReannotation(kappa),
+    taille_lot: entree.lot.items.length,
+    taille_attendue: entree.taille_attendue,
+    taille_conforme: entree.lot.items.length === entree.taille_attendue,
   };
 }
 

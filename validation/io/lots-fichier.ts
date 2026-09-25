@@ -88,8 +88,33 @@ export class LotDejaExistant extends Error {
 }
 
 export function ecrireLot(repertoire: string, lot: Lot): void {
+  ecrireLots(repertoire, [lot]);
+}
+
+/**
+ * Écrit une composition **tout ou rien** : chaque identifiant et chaque chemin sont vérifiés
+ * avant la première écriture. Une collision découverte au troisième lot laisserait sinon deux
+ * manifestes orphelins, dont les items ne seraient plus disponibles pour la composition suivante.
+ */
+export function ecrireLots(repertoire: string, lots: readonly Lot[]): void {
+  const chemins = verifierAvantEcriture(repertoire, lots);
   mkdirSync(repertoire, { recursive: true });
-  const chemin = join(repertoire, `${lot.lot_id}.json`);
-  if (existsSync(chemin)) throw new LotDejaExistant(lot.lot_id);
-  writeFileSync(chemin, `${JSON.stringify(lot, null, 2)}\n`, "utf8");
+  lots.forEach((lot, index) => {
+    writeFileSync(chemins[index] as string, `${JSON.stringify(lot, null, 2)}\n`, "utf8");
+  });
+}
+
+function verifierAvantEcriture(repertoire: string, lots: readonly Lot[]): readonly string[] {
+  const vus = new Set<string>();
+  return lots.map((lot) => {
+    if (vus.has(lot.lot_id)) {
+      throw new Error(
+        `Composition refusée : l'identifiant ${lot.lot_id} y figure deux fois. Aucun manifeste écrit.`,
+      );
+    }
+    vus.add(lot.lot_id);
+    const chemin = join(repertoire, `${lot.lot_id}.json`);
+    if (existsSync(chemin)) throw new LotDejaExistant(lot.lot_id);
+    return chemin;
+  });
 }

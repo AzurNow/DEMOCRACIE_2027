@@ -9,8 +9,15 @@
  * de la même graine. La commande le vérifie tout de même à la composition, pour qu'un lot
  * impossible à ordonner soit connu maintenant et non au milieu d'une séance d'annotation.
  *
- *   pnpm lots --nature=entrainement --taille=30 --annotateurs=a1,a2 --graine=lot-ent-2026-11
- *   pnpm lots --nature=reel --taille=50 --annotateurs=a1,a2 --graine=lots-2026-11
+ * Seuls des lots **pleins** sont composés : 50 items pour un lot réel, 30 pour un lot
+ * d'entraînement (§4). La taille découle de la nature ; `--taille` n'est admis que s'il la
+ * répète, toute autre valeur est refusée. Le reste de la réserve n'est jamais un lot : il reste
+ * disponible pour une prochaine composition, et la commande annonce combien d'items attendent.
+ * Une réserve plus petite qu'un lot ne produit aucun lot et sort avec le code 0 : attendre des
+ * items n'est pas une erreur.
+ *
+ *   pnpm lots --nature=entrainement --annotateurs=a1,a2 --graine=lot-ent-2026-11
+ *   pnpm lots --nature=reel --annotateurs=a1,a2 --graine=lots-2026-11
  *
  * Réannotation (§4) : un lot dont le kappa tombe strictement sous 0,80 est rejugé après une
  * séance de calibration, dont la date est exigée — sans elle, le kappa du nouveau lot n'est pas
@@ -20,22 +27,26 @@
  */
 
 import { resolve } from "node:path";
-import { analyserArguments, drapeau, entier, obligatoire, texte, type Arguments } from "./arguments.ts";
+import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "./arguments.ts";
 import {
   adjacenceRespectee,
+  annoncerComposition,
   composerLots,
   ordreAffichage,
   OrdreImpossible,
+  numeroterLots,
   preparerReannotation,
+  tailleDeComposition,
 } from "../validation/domaine/lot.ts";
 import type { ItemDuLot, Lot, NatureLot } from "../validation/domaine/types.ts";
-import { lireLots, ecrireLot } from "../validation/io/lots-fichier.ts";
+import { lireLots, ecrireLot, ecrireLots } from "../validation/io/lots-fichier.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
 interface Options {
   readonly nature: NatureLot;
-  readonly taille: number;
+  /** Valeur de `--taille`, `null` si l'option est absente. Jamais une taille par défaut. */
+  readonly taille_demandee: number | null;
   readonly annotateurs: readonly string[];
   readonly graine: string;
   readonly prefixe: string;
@@ -60,8 +71,7 @@ function lireOptions(bruts: readonly string[]): Options {
 
   return {
     nature,
-    // §4 : trente items d'entraînement, cinquante par lot réel.
-    taille: entier(table, "taille", entrainement ? 30 : 50),
+    taille_demandee: tailleDemandee(table),
     annotateurs: texte(table, "annotateurs", "").split(",").filter((nom) => nom.length > 0),
     graine: obligatoire(table, "graine", "c'est elle qui rend la composition reproductible."),
     prefixe: texte(table, "prefixe", entrainement ? "ent" : "lot"),
@@ -72,6 +82,12 @@ function lireOptions(bruts: readonly string[]): Options {
     reannote,
     calibration: reannote.length === 0 ? null : dateDeCalibration(table),
   };
+}
+
+/** `--taille` absent reste absent : la taille se déduira de la nature, pas d'un défaut ici. */
+function tailleDemandee(table: Arguments): number | null {
+  const valeur = table.get("taille");
+  return valeur === undefined ? null : Number(valeur);
 }
 
 /** Sans date de séance, le kappa d'un lot de réannotation n'est pas interprétable (§4). */
@@ -110,11 +126,16 @@ function itemsDisponibles(options: Options): readonly ItemDuLot[] {
   return disponibles;
 }
 
-function construireLots(options: Options, disponibles: readonly ItemDuLot[]): readonly Lot[] {
-  const paquets = composerLots(disponibles, options.taille, options.graine);
+function construireLots(
+  options: Options,
+  paquets: readonly (readonly ItemDuLot[])[],
+): readonly Lot[] {
   const date = instantLocal(new Date());
+  // La numérotation reprend après le plus grand numéro existant : recomposer le reste de la
+  // réserve est le cas normal, et un manifeste existant n'est jamais réécrit.
+  const identifiants = numeroterLots(lireLots(options.lots), options.prefixe, paquets.length);
   return paquets.map((items, index) => ({
-    lot_id: `${options.prefixe}-${String(index + 1).padStart(3, "0")}`,
+    lot_id: identifiants[index] as string,
     nature: options.nature,
     graine_maitresse: options.graine,
     algorithme_ordre: "ordre-annotateur-v1",
@@ -140,6 +161,12 @@ function verifierOrdres(lot: Lot): void {
  * annotateurs sont ceux du lot d'origine, sans quoi son kappa ne remplacerait pas le leur.
  */
 function principalReannotation(options: Options): void {
+  if (options.taille_demandee !== null) {
+    throw new Error(
+      "--taille ne s'emploie pas avec --reannote : un lot de réannotation reprend les items du " +
+        "lot d'origine, donc sa taille.",
+    );
+  }
   if (options.annotateurs.length > 0) {
     throw new Error(
       "--annotateurs ne s'emploie pas avec --reannote : un lot de réannotation reprend les " +
@@ -169,23 +196,8 @@ function principalReannotation(options: Options): void {
   process.stdout.write(`\nManifeste écrit dans ${options.lots}\n`);
 }
 
-function principal(): void {
-  const options = lireOptions(process.argv.slice(2));
-  if (options.reannote.length > 0) {
-    principalReannotation(options);
-    return;
-  }
-  if (options.annotateurs.length !== 2) {
-    throw new Error("--annotateurs attend exactement deux identifiants, séparés par une virgule.");
-  }
-
-  const disponibles = itemsDisponibles(options);
-  const lots = construireLots(options, disponibles);
-
-  process.stdout.write(
-    `${disponibles.length} item(s) disponible(s) → ${lots.length} lot(s) de ${options.taille}\n`,
-  );
-
+/** Vrai si chaque lot peut s'ordonner ; sinon, le premier échec est annoncé et la commande échoue. */
+function lotsOrdonnables(lots: readonly Lot[]): boolean {
   for (const lot of lots) {
     try {
       verifierOrdres(lot);
@@ -193,19 +205,44 @@ function principal(): void {
       if (erreur instanceof OrdreImpossible) {
         process.stdout.write(`  ${lot.lot_id} : ${erreur.message}\n`);
         process.exitCode = 1;
-        return;
+        return false;
       }
       throw erreur;
     }
     process.stdout.write(`  ${lot.lot_id} : ${lot.items.length} items, ordre vérifié\n`);
   }
+  return true;
+}
+
+function principalComposition(options: Options): void {
+  if (options.annotateurs.length !== 2) {
+    throw new Error("--annotateurs attend exactement deux identifiants, séparés par une virgule.");
+  }
+  const taille = tailleDeComposition(options.nature, options.taille_demandee);
+
+  const disponibles = itemsDisponibles(options);
+  const composition = composerLots(disponibles, taille, options.graine);
+  const lots = construireLots(options, composition.lots);
+
+  process.stdout.write(
+    `${disponibles.length} item(s) disponible(s). ${annoncerComposition(composition, taille)}\n`,
+  );
+  // Aucun lot plein : rien à écrire, et ce n'est pas une erreur (code de sortie 0).
+  if (lots.length === 0) return;
+  if (!lotsOrdonnables(lots)) return;
 
   if (!options.ecrire) {
     process.stdout.write("\nSimulation. Ajouter --ecrire pour écrire les manifestes.\n");
     return;
   }
-  for (const lot of lots) ecrireLot(options.lots, lot);
+  ecrireLots(options.lots, lots);
   process.stdout.write(`\n${lots.length} manifeste(s) écrit(s) dans ${options.lots}\n`);
+}
+
+function principal(): void {
+  const options = lireOptions(process.argv.slice(2));
+  if (options.reannote.length > 0) principalReannotation(options);
+  else principalComposition(options);
 }
 
 principal();

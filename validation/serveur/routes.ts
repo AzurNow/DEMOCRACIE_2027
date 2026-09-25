@@ -22,7 +22,7 @@ import {
 import { validerCorrections } from "../domaine/corrections.ts";
 import { RACCOURCIS, TOUCHES_DECISION, TOUCHE_CONFIRMATION, TOUCHES_REPONSE } from "../domaine/interaction.ts";
 import { itemCourant, prochaineVisite, progression, rejouer } from "../domaine/journal.ts";
-import { ordreAffichage } from "../domaine/lot.ts";
+import { ordreAffichage, tailleAttendue } from "../domaine/lot.ts";
 import { ulid } from "../domaine/ulid.ts";
 import type { Item, ItemDuLot, Lot } from "../domaine/types.ts";
 import { servirArchive } from "../io/archives.ts";
@@ -126,6 +126,7 @@ function diagnostic(contexte: Contexte, params: readonly string[]): Reponse {
     lot,
     items: staging.items,
     etats: contexte.etatsDuLot(lot),
+    taille_attendue: tailleAttendue(contexte.lots(), lot),
   });
 
   if (!resultat.les_deux_ont_fini) {
