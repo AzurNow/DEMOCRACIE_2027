@@ -139,9 +139,10 @@ function plusRecent(candidat: DiagnosticPublie, retenu: DiagnosticPublie): boole
 }
 
 /**
- * Kappas qui comptent pour le §12 : le dernier calcul de chaque lot, s'il n'est supersédé par
- * aucun lot de réannotation. Un lot sous l'effectif attendu reste dans la liste, avec
- * `taille_conforme: false` : l'écarter ou non est une règle du §12, pas de cette fonction.
+ * Kappas qui comptent pour le §12 : le dernier calcul de chaque lot (§4, 0.10 : « le calcul le
+ * plus récent fait foi »), s'il n'est supersédé par aucun lot de réannotation, et seulement pour
+ * les « lots réels ou de réannotation de taille conforme » (§12, 0.10). Un lot d'entraînement
+ * ou sous l'effectif attendu reste publié, mais ne compte pas.
  */
 export function kappasRetenusSection12(
   diagnostics: readonly DiagnosticPublie[],
@@ -155,5 +156,9 @@ export function kappasRetenusSection12(
       throw new DiagnosticPerime(diagnostic.lot_id, diagnostic.supersede_par, attendu);
     }
   }
-  return derniers.filter((diagnostic) => diagnostic.supersede_par === null);
+  return derniers.filter(compteSection12);
+}
+
+function compteSection12(diagnostic: DiagnosticPublie): boolean {
+  return diagnostic.supersede_par === null && diagnostic.taille_conforme && diagnostic.nature !== "entrainement";
 }

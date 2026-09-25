@@ -185,6 +185,11 @@ describe("sélection du kappa du §12", () => {
     const plusRecent = { ...base, date_calcul: T2, kappa: 0.85, n: 49, exclus_contestation: 1 };
     expect(kappasRetenusSection12([plusRecent, base], lots)).toEqual([plusRecent]);
 
+    // §12 (0.10) : un lot d'entraînement est publié mais ne compte pas.
+    const entrainement = { ...base, lot_id: "lot-010", nature: "entrainement" as const };
+    const lotsAvecEntrainement = [...lots, lotDe("lot-010", items("10", 1), "entrainement")];
+    expect(kappasRetenusSection12([base, entrainement], lotsAvecEntrainement)).toEqual([base]);
+
     // Même instant écrit avec un autre décalage : lequel compte n'est pas décidable.
     const simultane = { ...base, date_calcul: "2026-10-12T16:00:00Z", kappa: 0.5 };
     expect(() => kappasRetenusSection12([base, simultane], lots)).toThrow(CalculsSimultanes);
@@ -208,7 +213,7 @@ describe("contenu publié", () => {
     expect(publie["n"]).toBe(50);
   });
 
-  it("un lot sous l'effectif attendu est publié avec taille_conforme à faux, et reste visible à la sélection", () => {
+  it("un lot sous l'effectif attendu est publié avec taille_conforme à faux, et ne compte pas pour le §12 (0.10)", () => {
     const liste = items("2", 4);
     ecrireItems(liste);
     const lot = lotDe("lot-005", liste, "reel");
@@ -222,7 +227,8 @@ describe("contenu publié", () => {
     expect(publie?.taille_attendue).toBe(50);
     expect(publie?.taille_conforme).toBe(false);
     const retenus = kappasRetenusSection12(lireDiagnostics(chemins.diagnostics), lireLots(chemins.lots));
-    expect(retenus.map((d) => [d.lot_id, d.taille_conforme])).toEqual([["lot-005", false]]);
+    // §12 (0.10) : seuls les lots réels ou de réannotation de taille conforme comptent.
+    expect(retenus).toEqual([]);
   });
 
   it("aucun fichier tant qu'un des deux annotateurs n'a pas fini : le kappa n'existe pas encore", () => {
