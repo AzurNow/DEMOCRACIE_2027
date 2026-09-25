@@ -120,12 +120,13 @@ cites}` enregistrent en plus de quoi reconstruire la nuance en analyse explorato
 avec mauvais chiffre, ajout fabriqué non contraire, liste d'attribution juste à 4 candidats sur 5.
 
 **Plusieurs items pour une même question.** `question.items[]` porte un `role` par entrée, avec
-exactement un `principal`, et `grappe_id` **stocke** la grappe du bootstrap (§8 : « la grappe étant
-l'item ») au lieu de laisser l'analyse la recalculer.
+exactement un `principal` — au plus un pour une question d'attribution, aucun sur une mesure réelle
+(protocole 0.9) — et `grappe_id` **stocke** la grappe du bootstrap (§8 : « la grappe étant l'item
+[…], et la mesure pour une question d'attribution ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 103 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 104 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -133,7 +134,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | --- | --- |
 | item | source T3 déclarée vérifiée · item vérifié avec une seule validation · item d'absence portant une citation de position |
 | mesure | mesure fictive sans vérification contre les corpus T1 · thème hors des dix · identifiant lisible au lieu d'opaque |
-| question | deux items principaux · Q-ATT nommant un candidat · deux formulations au lieu de trois |
+| question | deux items principaux · Q-ATT nommant un candidat · deux formulations au lieu de trois · question directe sans item principal |
 | reponse | réponse manquante portant un contenu · réponse d'API sans mode · artefact contrefactuel sans traçabilité |
 | notation | juge attribuant « indéterminée » · drapeau sur une réponse exacte · note non exacte sans extrait justificatif · arbitrage de l'échantillon humain confié à un juge · échantillon humain noté par un juge |
 | verdict | fabrication retenue sans revue humaine · verdict sans notation source · désaccord avec une seule source · réponse de l'échantillon humain retenue sur l'accord des juges |
@@ -150,7 +151,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | transcription | température de décodage non nulle · révision des poids qui n'est pas un hash de commit |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 18 schémas au registre, 103/103 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 18 schémas au registre, 104/104 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

@@ -20,7 +20,7 @@
  *    (`bootstrap.ts`, `permutation.ts`), jamais par l'appelant. Suivent, dans cet ordre, les
  *    composants fournis par l'appelant dans `options.cle`, puis ceux qu'ajoute le module qui
  *    démultiplie une comparaison : la clé de la paire (`conditions.ts`, `PaireCondition.cle`),
- *    l'identifiant de l'outil (`tendance.ts`).
+ *    l'identifiant de l'outil puis le mode (`tendance.ts`).
  * 3. Le texte haché est l'entier écrit en (1), suivi de chaque composant, tous joints par le
  *    caractère nul U+0000, encodés en UTF-8. Les huit premiers octets de son sha256, lus en
  *    gros-boutiste, sont la graine de SplitMix64.

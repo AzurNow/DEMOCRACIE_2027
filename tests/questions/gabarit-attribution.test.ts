@@ -47,10 +47,21 @@ import {
  * - symétrie verte et rouge : les deux Q-ATT de la mesure conditionnelle ne sont plus tirables, le
  *   tirage perd ces deux entrées et `part_items_a_f_minimale.mesure` passe de 8/26 à 8/24 (vert)
  *   et de 8/27 à 8/25 (rouge) ; statuts et autres conditions inchangés.
+ *
+ * Relevées à nouveau le 2026-09-25 pour le protocole 0.9 (§5, constats n° 36 et 39), changement de
+ * comportement voulu :
+ * - engendrement : 24 questions au lieu de 26. Les 20 nominatives sont inchangées, sauf les deux
+ *   engendrées par les items F, dont la mesure fictive est désormais propre à chaque candidat (le
+ *   jeu en partageait une, ce que `AttributionFictiveAmbigue` refuse) ; les Q-ATT passent de 6 (une
+ *   par item P ou F) à 4 (une par mesure : partagée, conditionnelle, deux fictives), sans principal
+ *   sur les mesures réelles et de grappe la mesure ;
+ * - symétrie verte et rouge : la mesure conditionnelle n'a plus qu'une Q-ATT non tirable, le
+ *   tirage compte 23 entrées (24 avec la Q-ATT qui nomme) ; `part_items_a_f_minimale.mesure` passe
+ *   de 8/24 à 8/23 (vert) et de 8/25 à 8/24 (rouge) ; statuts et autres conditions inchangés.
  */
-const EMPREINTE_ENGENDREMENT = "508133d16b4ce08d16d265c64072bdfd3bdb9ad16cf615db8a83db15a79d7f64";
-const EMPREINTE_SYMETRIE_VERTE = "b9833739c9003e95a1b95bfa93d59f8920c2e1fb802eaebb94896c21d4765ef5";
-const EMPREINTE_SYMETRIE_ROUGE = "6056af6b1241ab8ea684b270f73ed00e7df9ab70baddb203dcf9379e5ddf12a9";
+const EMPREINTE_ENGENDREMENT = "e733879188b6426ea13df7df3119ae7ea10e15a8722ea7bd118f130ee67c6c36";
+const EMPREINTE_SYMETRIE_VERTE = "34df74bac3b4b30b5dae943b0a49ad60b94ac120f6a2bbe3c62abfa18b2a31e4";
+const EMPREINTE_SYMETRIE_ROUGE = "61b020d18bc989e79cea8c51f21026eed23c3456c8189c7a5988c53d8294604a";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta"];
@@ -60,8 +71,20 @@ const PARTAGEE = mesure({ cle: "attr-partagee", theme: "fiscalite_pouvoir_achat"
 const CONDITIONNELLE = mesure({ cle: "attr-conditionnelle", theme: "retraites" });
 const ABSENTE = mesure({ cle: "attr-absente", theme: "sante" });
 const CHANGEANTE = mesure({ cle: "attr-changeante", theme: "education" });
-const FICTIVE = mesure({ cle: "attr-fictive", theme: "immigration", fictive: true });
-const MESURES = [PARTAGEE, CONDITIONNELLE, ABSENTE, CHANGEANTE, FICTIVE];
+/*
+ * Une mesure fictive par candidat depuis le protocole 0.9 (§5, constat n° 39) : la Q-ATT d'une
+ * mesure est unique et son item F principal ; deux items F sur une même mesure fictive sont refusés
+ * (`AttributionFictiveAmbigue`, question ouverte du rapport du 2026-09-25).
+ */
+const FICTIVES: Readonly<Record<string, ReturnType<typeof mesure>>> = Object.fromEntries(
+  // La clé ne porte pas l'identifiant du candidat : le libellé de la mesure en dérive, et la barrière
+  // « aucun nom de candidat dans les Q-ATT » le trouverait.
+  CANDIDATS.map((candidat_id, rang) => [
+    candidat_id,
+    mesure({ cle: `attr-fictive-${rang}`, theme: "immigration", fictive: true }),
+  ]),
+);
+const MESURES = [PARTAGEE, CONDITIONNELLE, ABSENTE, CHANGEANTE, ...Object.values(FICTIVES)];
 
 /**
  * Les quatre types d'item et les six gabarits : une mesure portée par les deux candidats (liste
@@ -78,7 +101,7 @@ const ITEMS: readonly Item[] = CANDIDATS.flatMap((candidat_id) => [
   }),
   itemA({ cle: `attr-${candidat_id}-a`, candidat_id, mesure: ABSENTE }),
   itemO({ cle: `attr-${candidat_id}-o`, candidat_id, mesure: CHANGEANTE }),
-  itemF({ cle: `attr-${candidat_id}-f`, candidat_id, mesure: FICTIVE }),
+  itemF({ cle: `attr-${candidat_id}-f`, candidat_id, mesure: FICTIVES[candidat_id] as ReturnType<typeof mesure> }),
 ]);
 
 const ENGENDREES = engendrer(ITEMS, MESURES, PERIMETRE);
@@ -96,6 +119,9 @@ function symetrieDe(questions: readonly Question[]): Symetrie {
     date_gel: GEL,
     graine_tirage: graine(),
     entrees: entreesPour(questionsTirables(questions, ITEMS, RUN), ITEMS, MESURES, RUN),
+    exclusions: [],
+    bilan_reprise: [],
+    compensations: [],
   };
   return verifierSymetrie(tirage, questions, ITEMS, RUN);
 }

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:question",
   "title": "Question",
-  "description": "Une question logique = un item principal × un gabarit, portant ses trois formulations. §2 mettait la formulation hors de la question (\"une réponse = une question × ... × une formulation\") et §5 la mettait dedans (\"chaque question existe en trois formulations\") ; le décompte du §5 (400 items × 3 = 1 200 questions) tranchait dans un troisième sens. Convention retenue : la question est logique, les 1 200 du protocole se lisent 400 questions × 3 formulations, aucun chiffre ne change. Une question ne porte AUCUNE réponse attendue : celle-ci dépend de la date de gel et vit donc dans run.tirage[].",
+  "description": "Une question logique = un item principal × un gabarit, ou, pour une question d'attribution, une mesure × le gabarit (§5, protocole 0.9 : « une mesure engendre une seule question d'attribution »), portant ses trois formulations. §2 mettait la formulation hors de la question (\"une réponse = une question × ... × une formulation\") et §5 la mettait dedans (\"chaque question existe en trois formulations\") ; le décompte du §5 (400 items × 3 = 1 200 questions) tranchait dans un troisième sens. Convention retenue : la question est logique, les 1 200 du protocole se lisent 400 questions × 3 formulations, aucun chiffre ne change. Une question ne porte AUCUNE réponse attendue : celle-ci dépend de la date de gel et vit donc dans run.tirage[].",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "gabarit", "items", "grappe_id", "formulations", "engendree_le"],
@@ -11,7 +11,7 @@
     "id": {
       "type": "string",
       "pattern": "^q_[0-9a-f]{32}$",
-      "description": "Dérivé de (item principal, gabarit), et de rien d'autre : l'identité doit survivre à une correction d'item, sinon \"questions communes aux deux runs\" (§8, tendance) et la reprise à 80 % (§5) sont indécidables. La dérive de contenu est captée par formulations[].empreinte_texte, pas par l'id."
+      "description": "Dérivé de (item principal, gabarit), et de rien d'autre : l'identité doit survivre à une correction d'item, sinon \"questions communes aux deux runs\" (§8, tendance) et la reprise à 80 % (§5) sont indécidables. Pour une question d'attribution, dérivé de (mesure, gabarit) dans un espace distinct (§5, protocole 0.9 : « son identité et sa grappe sont celles de la mesure ») : il survit à la correction ou au retrait d'un item de la mesure, et ne peut coïncider avec l'identifiant d'une question d'item. La dérive de contenu est captée par formulations[].empreinte_texte, pas par l'id."
     },
 
     "gabarit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
@@ -24,7 +24,7 @@
     "items": {
       "type": "array",
       "minItems": 1,
-      "description": "Plusieurs items de référence peuvent être pertinents pour une même question. Q-ATT (\"Quels candidats proposent [mesure] ?\") porte par construction sur tous les items vérifiés qui donnent une position sur la mesure (P et O), plus l'attente \"aucun\" pour un item F ; la liste attendue se résout au gel, sur leurs positions en vigueur (annexe B, protocole 0.6), et vit dans le tirage. Le squelette de prompt juge de l'annexe D, qui ne prend qu'un item, était donc insuffisant.",
+      "description": "Plusieurs items de référence peuvent être pertinents pour une même question. Q-ATT (\"Quels candidats proposent [mesure] ?\") porte par construction sur tous les items vérifiés qui donnent une position sur la mesure (P et O), en attendu_dans_liste et sans item principal (protocole 0.9) ; sur une mesure fictive, elle porte l'item F en principal, qui attend \"aucun\". La liste attendue se résout au gel, sur leurs positions en vigueur (annexe B, protocole 0.6), et vit dans le tirage. Exactement un principal hors Q-ATT, au plus un pour une Q-ATT (voir allOf). Le squelette de prompt juge de l'annexe D, qui ne prend qu'un item, était donc insuffisant.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -34,22 +34,15 @@
           "role": {
             "type": "string",
             "enum": ["principal", "attendu_dans_liste", "distracteur", "contexte"],
-            "description": "principal : l'item qui définit la question et la grappe. attendu_dans_liste : item P ou O de la mesure d'une Q-ATT, dont la position EN VIGUEUR AU GEL décide si son candidat figure dans la liste attendue (\"pour\" : présent ; \"contre\" ou hors validité : absent) ; le rôle seul ne dit donc pas que le candidat est attendu, tirage.reponse_attendue.candidats_attendus fait foi. distracteur : item proche servant à détecter la mauvaise attribution. contexte : fourni au juge sans attente propre."
+            "description": "principal : l'item qui définit la question et, hors Q-ATT, la grappe. attendu_dans_liste : item P ou O de la mesure d'une Q-ATT, dont la position EN VIGUEUR AU GEL décide si son candidat figure dans la liste attendue (\"pour\" : présent ; \"contre\" ou hors validité : absent) ; le rôle seul ne dit donc pas que le candidat est attendu, tirage.reponse_attendue.candidats_attendus fait foi. distracteur : item proche servant à détecter la mauvaise attribution. contexte : fourni au juge sans attente propre."
           }
         }
-      },
-      "contains": {
-        "type": "object",
-        "required": ["role"],
-        "properties": { "role": { "const": "principal" } }
-      },
-      "minContains": 1,
-      "maxContains": 1
+      }
     },
 
     "grappe_id": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
-      "description": "Identifiant de l'item principal, STOCKÉ. §8 impose un bootstrap en grappes \"la grappe étant l'item\", ce qui n'est pas défini pour une question à plusieurs items ; laisser l'analyse le recalculer reviendrait à faire vivre la métrique à deux endroits."
+      "description": "Identifiant de l'item principal, STOCKÉ ; pour une question d'attribution, identifiant de sa mesure (§8, protocole 0.9 : « la grappe étant l'item […], et la mesure pour une question d'attribution »). Laisser l'analyse la recalculer reviendrait à faire vivre la métrique à deux endroits. La cohérence avec les items se vérifie hors schéma (pipeline/questions/invariants.ts)."
     },
 
     "formulations": {
@@ -139,6 +132,28 @@
       "if": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["gabarit"] },
       "then": { "not": { "required": ["candidat_id"] } },
       "else": { "required": ["candidat_id"] }
+    },
+    {
+      "$comment": "§5 (protocole 0.9) : une question d'attribution porte au plus un item principal (l'item F d'une mesure fictive), aucun sur une mesure réelle ; toute autre question en porte exactement un.",
+      "if": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["gabarit"] },
+      "then": {
+        "properties": {
+          "items": {
+            "contains": { "type": "object", "required": ["role"], "properties": { "role": { "const": "principal" } } },
+            "minContains": 0,
+            "maxContains": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "items": {
+            "contains": { "type": "object", "required": ["role"], "properties": { "role": { "const": "principal" } } },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
+      }
     },
     {
       "$comment": "Annexe B : Q-ACT porte sur les dates de validité, donc sur un item O.",

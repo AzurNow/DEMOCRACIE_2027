@@ -62,8 +62,9 @@ function porte(drapeau: Drapeau): Predicat {
   return (u) => u.drapeaux.includes(drapeau);
 }
 
+/** Une Q-ATT sans item principal (`null`, §5 protocole 0.9) n'est d'aucun type. */
 function estDeType(...types: readonly TypeItem[]): Predicat {
-  return (u) => types.includes(u.type_item_principal);
+  return (u) => u.type_item_principal !== null && types.includes(u.type_item_principal);
 }
 
 /**
@@ -95,9 +96,10 @@ export function tauxFabrication(unites: readonly UniteAnalyse[]): Taux {
 function verifierFabrications(unites: readonly UniteAnalyse[]): void {
   for (const unite of unites) {
     if (!unite.drapeaux.includes("fabrication")) continue;
-    if (unite.type_item_principal === "A" || unite.type_item_principal === "F") continue;
+    if (estDeType("A", "F")(unite)) continue;
+    const porteur = unite.type_item_principal === null ? "une question sans item principal" : `un item de type ${unite.type_item_principal}`;
     throw new Error(
-      `Drapeau fabrication sur un item de type ${unite.type_item_principal} (réponse ${unite.reponse_id}) : §7 le réserve aux items A et F.`,
+      `Drapeau fabrication sur ${porteur} (réponse ${unite.reponse_id}) : §7 le réserve aux items A et F.`,
     );
   }
 }

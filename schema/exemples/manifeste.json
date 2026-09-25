@@ -133,7 +133,7 @@
       "objet": "question",
       "fichier": "question/valide-02-q-att-plusieurs-items.json",
       "attendu": "valide",
-      "motif": "Plusieurs items de référence pour une seule question, avec des rôles distincts, et AUCUN candidat nommé : §5 impose que les questions d'attribution ne nomment que la mesure."
+      "motif": "Plusieurs items de référence pour une seule question, avec des rôles distincts, et AUCUN candidat nommé : §5 impose que les questions d'attribution ne nomment que la mesure. Protocole 0.9 : la question d'attribution d'une mesure réelle n'a pas d'item principal, sa grappe est la mesure."
     },
     {
       "objet": "question",
@@ -155,6 +155,13 @@
       "attendu": "invalide",
       "motif": "Deux formulations au lieu de trois. §5 : chaque question existe en neutre, familière et orientée ; la formulation orientée porte à elle seule la mesure de complaisance (H3).",
       "regle_protocole": "§5, formulations"
+    },
+    {
+      "objet": "question",
+      "fichier": "question/invalide-04-q-dir-sans-principal.json",
+      "attendu": "invalide",
+      "motif": "Question directe sans item principal. Seule une question d'attribution peut n'en porter aucun (§5, protocole 0.9) ; une question qui nomme un candidat porte exactement un item principal, sa grappe.",
+      "regle_protocole": "§5 et §8, protocole 0.9"
     },
     {
       "objet": "reponse",

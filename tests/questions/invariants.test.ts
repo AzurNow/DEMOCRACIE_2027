@@ -20,7 +20,7 @@ import {
   validationsConcordantesMemeVersion,
 } from "../../pipeline/questions/invariants.ts";
 import type { PorteurDePremisse } from "../../pipeline/questions/invariants.ts";
-import type { Item, Mesure } from "../../pipeline/questions/types.ts";
+import type { CodeGabarit, Item, Mesure } from "../../pipeline/questions/types.ts";
 import { itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
 const RACINE_EXEMPLES = resolve(import.meta.dirname, "../../schema/exemples");
@@ -59,6 +59,7 @@ function contenus(objet: string, prefixe = ""): readonly Record<string, unknown>
 
 interface PorteurDeGrappe {
   readonly id: string;
+  readonly gabarit: CodeGabarit;
   readonly grappe_id: string;
   readonly items: readonly { readonly reference: { readonly item_id: string }; readonly role: string }[];
 }
@@ -71,14 +72,27 @@ function porteursDeTirage(contenu: Record<string, unknown>): readonly PorteurDeG
   const entrees = contenu["entrees"] as readonly Record<string, unknown>[];
   return entrees.map((entree) => ({
     id: entree["question_id"] as string,
+    gabarit: entree["gabarit"] as CodeGabarit,
     grappe_id: entree["grappe_id"] as string,
     items: entree["items_au_gel"] as PorteurDeGrappe["items"],
   }));
 }
 
+/*
+ * Protocole 0.9 (§5 et §8, constat n° 39) : la grappe d'une Q-ATT est sa mesure, que l'invariant lit
+ * sur les items. Les exemples de Q-ATT portent les items YARY… (celui de `item/valide-01`) et R6Y2…,
+ * tous deux sur la mesure de `mesure/valide-01`.
+ */
+const MESURE_EXEMPLE = "JE6Y9CC6TBCK6K7H6WNNZ7353S";
+const ITEMS_EXEMPLES = [
+  { id: "YARYX9NM753C0AF6CDVVE6SVGM", mesure_id: MESURE_EXEMPLE },
+  { id: "R6Y2NGVGPBZ3SCVGAFH669X8VD", mesure_id: MESURE_EXEMPLE },
+];
+
 describe("invariant : grappe_id est l'item principal", () => {
   const conforme: PorteurDeGrappe = {
     id: "q_" + "a".repeat(32),
+    gabarit: "Q-DIR",
     grappe_id: "YARYX9NM753C0AF6CDVVE6SVGM",
     items: [
       { reference: { item_id: "YARYX9NM753C0AF6CDVVE6SVGM" }, role: "principal" },
@@ -87,12 +101,12 @@ describe("invariant : grappe_id est l'item principal", () => {
   };
 
   it("ne rend aucune violation sur un cas conforme", () => {
-    expect(grappeSuitItemPrincipal([conforme])).toEqual([]);
+    expect(grappeSuitItemPrincipal([conforme], ITEMS_EXEMPLES)).toEqual([]);
   });
 
   it("nomme la question dont la grappe désigne un autre item", () => {
     const violee = { ...conforme, grappe_id: "R6Y2NGVGPBZ3SCVGAFH669X8VD" };
-    const violations = grappeSuitItemPrincipal([violee]);
+    const violations = grappeSuitItemPrincipal([violee], ITEMS_EXEMPLES);
     expect(violations).toHaveLength(1);
     expect(violations[0]?.objet).toBe(violee.id);
     expect(violations[0]?.detail).toContain("R6Y2NGVGPBZ3SCVGAFH669X8VD");
@@ -106,7 +120,7 @@ describe("invariant : grappe_id est l'item principal", () => {
         { reference: { item_id: "R6Y2NGVGPBZ3SCVGAFH669X8VD" }, role: "principal" },
       ],
     };
-    expect(grappeSuitItemPrincipal([violee])).toHaveLength(1);
+    expect(grappeSuitItemPrincipal([violee], ITEMS_EXEMPLES)).toHaveLength(1);
   });
 
   it("nomme la question qui ne porte aucun item principal", () => {
@@ -114,7 +128,7 @@ describe("invariant : grappe_id est l'item principal", () => {
       ...conforme,
       items: [{ reference: { item_id: "R6Y2NGVGPBZ3SCVGAFH669X8VD" }, role: "attendu_dans_liste" }],
     };
-    expect(grappeSuitItemPrincipal([violee])).toHaveLength(1);
+    expect(grappeSuitItemPrincipal([violee], ITEMS_EXEMPLES)).toHaveLength(1);
   });
 });
 
@@ -285,8 +299,8 @@ describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5,
 /* ------------------------------------------------- exemples réels du dépôt */
 
 describe("exemples de schema/exemples/", () => {
-  it("charge les 103 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(103);
+  it("charge les 104 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(104);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -295,7 +309,7 @@ describe("exemples de schema/exemples/", () => {
       ...contenus("tirage", "valide-").flatMap(porteursDeTirage),
     ];
     expect(porteurs.length).toBeGreaterThan(0);
-    expect(grappeSuitItemPrincipal(porteurs)).toEqual([]);
+    expect(grappeSuitItemPrincipal(porteurs, ITEMS_EXEMPLES)).toEqual([]);
   });
 
   it("repère les deux exemples invalides qui portent deux items principaux", () => {
@@ -303,7 +317,7 @@ describe("exemples de schema/exemples/", () => {
       ...contenus("question", "invalide-01").map(porteurDeQuestion),
       ...contenus("tirage", "invalide-02").flatMap(porteursDeTirage),
     ];
-    expect(grappeSuitItemPrincipal(porteurs)).toHaveLength(2);
+    expect(grappeSuitItemPrincipal(porteurs, ITEMS_EXEMPLES)).toHaveLength(2);
   });
 
   it("ne trouve aucune divergence de contexte entre notations, verdicts et objets notés", () => {

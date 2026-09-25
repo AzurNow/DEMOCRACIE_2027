@@ -31,6 +31,7 @@ import {
   grappeSuitItemPrincipal,
   itemsFictifsPointentMesureFictive,
   premisseFausseSurItemFOuO,
+  unSeulItemFictifParMesure,
 } from "../pipeline/questions/invariants.ts";
 import type { PorteurDeGrappe, Violation } from "../pipeline/questions/invariants.ts";
 import { verifierSymetrie } from "../pipeline/questions/symetrie.ts";
@@ -108,6 +109,7 @@ function porteursDeGrappe(entrees: Entrees): readonly PorteurDeGrappe[] {
   const questions: readonly PorteurDeGrappe[] = entrees.questions;
   const tirage: readonly PorteurDeGrappe[] = entrees.tirage.entrees.map((entree) => ({
     id: entree.question_id,
+    gabarit: entree.gabarit,
     grappe_id: entree.grappe_id,
     items: entree.items_au_gel,
   }));
@@ -115,7 +117,7 @@ function porteursDeGrappe(entrees: Entrees): readonly PorteurDeGrappe[] {
 }
 
 function violations(entrees: Entrees): readonly Violation[] {
-  const grappes = grappeSuitItemPrincipal(porteursDeGrappe(entrees));
+  const grappes = grappeSuitItemPrincipal(porteursDeGrappe(entrees), entrees.items);
   // §5 (protocole 0.3) : une prémisse fausse hors d'un item F ou O fausserait le dénominateur de
   // la confirmation de prémisse (§8). Les questions et les items suffisent à le vérifier.
   const premisses = premisseFausseSurItemFOuO(entrees.questions, entrees.items);
@@ -123,6 +125,7 @@ function violations(entrees: Entrees): readonly Violation[] {
     ...grappes,
     ...premisses,
     ...itemsFictifsPointentMesureFictive(entrees.items, entrees.mesures),
+    ...unSeulItemFictifParMesure(entrees.items),
   ];
 }
 

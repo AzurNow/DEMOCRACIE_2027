@@ -644,7 +644,7 @@
     },
     "contestations_posterieures": {
       "type": "array",
-      "description": "Contestations reçues APRÈS date_gel. Le run se poursuit et est publié intact (§4 : l'exclusion vaut pour le run suivant) ; cette liste est l'entrée exacte de l'analyse de robustesse §8(b), \"en excluant les items contestés à un run ultérieur\".",
+      "description": "Contestations reçues APRÈS date_gel. Le run se poursuit et est publié intact (§4 : l'exclusion vaut pour le run suivant) ; cette liste est l'entrée exacte de l'analyse de robustesse §8(b), \"en excluant les questions dont un item, quel que soit son rôle, est contesté à un run ultérieur\" (protocole 0.9).",
       "items": {
         "type": "object",
         "additionalProperties": false,

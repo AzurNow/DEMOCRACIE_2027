@@ -206,10 +206,13 @@ describe("item sorti de l'arbitrage du panel", () => {
     const autre = arbitre(itemP({ cle: "p-arbitre-b", candidat_id: "demo-beta", mesure: MESURE }), [
       contestation("eh", "maintien", DATE),
     ]);
+    // Protocole 0.9 (§5, constat n° 39) : la Q-ATT est celle de la mesure (grappe = mesure), et ses
+    // deux items y sont en attente de liste, sans principal.
     const attribution = engendrer([base, autre], [MESURE], PERIMETRE).find(
-      (question) => question.gabarit === "Q-ATT" && question.grappe_id === base.id,
+      (question) => question.gabarit === "Q-ATT" && question.grappe_id === MESURE.id,
     );
     expect(attribution?.items.map((entree) => entree.reference.item_id)).toEqual([base.id, autre.id]);
+    expect(attribution?.items.every((entree) => entree.role === "attendu_dans_liste")).toBe(true);
   });
 });
 
@@ -218,16 +221,21 @@ describe("question d'attribution", () => {
   const beta = itemP({ cle: "att-b", candidat_id: "demo-beta", mesure: MESURE });
   const gamma = itemP({ cle: "att-c", candidat_id: "demo-gamma", mesure: MESURE });
 
-  it("porte les items P vérifiés des autres candidats de la mesure et aucun candidat_id", () => {
+  /*
+   * Modifié ouvertement pour le protocole 0.9 (§5, constat n° 39) : « Une mesure engendre une seule
+   * question d'attribution, quel que soit le nombre de candidats qui la portent. » Avant : trois
+   * Q-ATT, chacune avec un principal et deux attendus.
+   */
+  it("porte les items P vérifiés de tous les candidats de la mesure, sans principal ni candidat_id", () => {
     const questions = engendrer([alpha, beta, gamma], [MESURE], PERIMETRE);
     const attribution = questions.filter((question) => question.gabarit === "Q-ATT");
-    expect(attribution).toHaveLength(3);
+    expect(attribution).toHaveLength(1);
 
-    const premiere = attribution[0] as QuestionEngendree;
-    expect(premiere.candidat_id).toBeUndefined();
-    expect(premiere.items).toHaveLength(3);
-    expect(premiere.items.filter((entree) => entree.role === "principal")).toHaveLength(1);
-    expect(premiere.items.filter((entree) => entree.role === "attendu_dans_liste")).toHaveLength(2);
+    const seule = attribution[0] as QuestionEngendree;
+    expect(seule.candidat_id).toBeUndefined();
+    expect(seule.items).toHaveLength(3);
+    expect(seule.items.filter((entree) => entree.role === "principal")).toHaveLength(0);
+    expect(seule.items.filter((entree) => entree.role === "attendu_dans_liste")).toHaveLength(3);
   });
 
   it("n'inclut pas dans la liste attendue l'item contesté d'un autre candidat", () => {
@@ -263,12 +271,21 @@ describe("question d'attribution", () => {
 });
 
 describe("grappe et intégrité des entrées", () => {
-  it("fixe grappe_id sur l'identifiant de l'item principal", () => {
+  /*
+   * Modifié ouvertement pour le protocole 0.9 (§5 et §8, constat n° 39) : la grappe d'une question
+   * d'attribution est sa mesure ; celle des cinq autres gabarits reste l'item principal.
+   */
+  it("fixe grappe_id sur l'item principal, ou sur la mesure pour la Q-ATT", () => {
     const item = itemP({ cle: "p-grappe", candidat_id: "demo-alpha", mesure: MESURE });
     for (const question of engendrer([item], [MESURE], PERIMETRE)) {
       const principal = question.items.find((entree) => entree.role === "principal");
-      expect(question.grappe_id).toBe(principal?.reference.item_id);
-      expect(question.grappe_id).toBe(item.id);
+      if (question.candidat_id === undefined) {
+        expect(principal).toBeUndefined();
+        expect(question.grappe_id).toBe(MESURE.id);
+      } else {
+        expect(question.grappe_id).toBe(principal?.reference.item_id);
+        expect(question.grappe_id).toBe(item.id);
+      }
     }
   });
 

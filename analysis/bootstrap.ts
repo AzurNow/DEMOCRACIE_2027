@@ -61,6 +61,7 @@ export interface DifferenceTaux {
   /** `null` quand l'un des deux taux n'existe pas : une différence sans terme n'existe pas. */
   readonly difference: number | null;
   readonly intervalle: Intervalle95 | null;
+  /** `null` sans intervalle, et aussi sur un intervalle d'une seule grappe (§8, 0.9 : `qualifier`). */
   readonly qualificatif: Qualificatif | null;
 }
 
@@ -166,9 +167,17 @@ export function differenceAppariee(
   return { taux_a, taux_b, difference, intervalle, qualificatif: qualifier(intervalle) };
 }
 
-/** §8 : « établie » seulement si l'intervalle exclut zéro. Aucun autre mot n'est publiable. */
+/**
+ * §8 : « établie » seulement si l'intervalle exclut zéro. Aucun autre mot n'est publiable.
+ *
+ * §8 (0.9) : « Un intervalle calculé sur une seule grappe est dégénéré : la différence
+ * correspondante n'est qualifiée ni d'« établie » ni de « non établie », elle est publiée avec la
+ * mention « une seule grappe ». » Le qualificatif est alors `null`, mais l'intervalle, lui, est
+ * rendu tel quel : c'est son `degenere: "grappe_unique"` qui porte la mention, et qui distingue ce
+ * cas d'une différence sans intervalle du tout (`intervalle: null`).
+ */
 export function qualifier(intervalle: Intervalle95 | null): Qualificatif | null {
-  if (intervalle === null) return null;
+  if (intervalle === null || intervalle.degenere === "grappe_unique") return null;
   return intervalle.bas > 0 || intervalle.haut < 0 ? "etablie" : "non_etablie";
 }
 

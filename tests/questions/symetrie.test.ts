@@ -41,27 +41,38 @@ const PERIMETRE = perimetre(CANDIDATS);
 const MESURE_P1 = mesure({ cle: "p1", theme: "fiscalite_pouvoir_achat", libelle: "tarif de base" });
 const MESURE_P2 = mesure({ cle: "p2", theme: "retraites", libelle: "durée de cotisation" });
 const MESURE_A = mesure({ cle: "abs", theme: "fiscalite_pouvoir_achat", libelle: "taxe sur les fibres" });
-const MESURE_F = mesure({
-  cle: "fic",
-  theme: "fiscalite_pouvoir_achat",
-  libelle: "prime aux marcheurs",
-  fictive: true,
-});
-const MESURES = [MESURE_P1, MESURE_P2, MESURE_A, MESURE_F];
+/*
+ * Une mesure fictive par candidat : depuis le protocole 0.9 (§5, constat n° 39), la Q-ATT d'une
+ * mesure est unique et son item F principal ; deux items F sur une même mesure fictive sont refusés
+ * (`AttributionFictiveAmbigue`, question ouverte du rapport du 2026-09-25).
+ */
+const MESURES_F: Readonly<Record<string, ReturnType<typeof mesure>>> = Object.fromEntries(
+  CANDIDATS.map((candidat_id) => [
+    candidat_id,
+    mesure({ cle: `fic-${candidat_id}`, theme: "fiscalite_pouvoir_achat", libelle: "prime aux marcheurs", fictive: true }),
+  ]),
+);
+const MESURES = [MESURE_P1, MESURE_P2, MESURE_A, ...Object.values(MESURES_F)];
 
 const ITEMS: readonly Item[] = CANDIDATS.flatMap((candidat_id) => [
   itemP({ cle: `${candidat_id}-p1`, candidat_id, mesure: MESURE_P1 }),
   itemP({ cle: `${candidat_id}-p2`, candidat_id, mesure: MESURE_P2 }),
   itemA({ cle: `${candidat_id}-a`, candidat_id, mesure: MESURE_A }),
-  itemF({ cle: `${candidat_id}-f`, candidat_id, mesure: MESURE_F }),
+  itemF({ cle: `${candidat_id}-f`, candidat_id, mesure: MESURES_F[candidat_id] as ReturnType<typeof mesure> }),
 ]);
 
 const QUESTIONS: readonly Question[] = engendrer(ITEMS, MESURES, PERIMETRE).map(completer);
 const RUN = run(CANDIDATS.map((candidat_id) => candidat({ candidat_id })), GEL);
 
+/**
+ * La question du gabarit sur l'item. Depuis le protocole 0.9 (§5, constat n° 39), la Q-ATT est
+ * celle de la mesure de l'item (grappe = mesure), partagée par tous les items de la mesure.
+ */
 function choisir(item: Item, gabarit: CodeGabarit): Question {
   const trouvee = QUESTIONS.find(
-    (candidate) => candidate.grappe_id === item.id && candidate.gabarit === gabarit,
+    (candidate) =>
+      candidate.gabarit === gabarit &&
+      (candidate.grappe_id === item.id || (candidate.candidat_id === undefined && candidate.grappe_id === item.mesure_id)),
   );
   if (trouvee === undefined) throw new Error(`Question ${gabarit} absente pour l'item ${item.id}.`);
   return trouvee;
@@ -102,6 +113,9 @@ function tirageDe(questions: readonly Question[], items: readonly Item[] = ITEMS
     date_gel: GEL,
     graine_tirage: graine(),
     entrees: entreesPour(questions, items, MESURES, RUN),
+    exclusions: [],
+    bilan_reprise: [],
+    compensations: [],
   };
 }
 
@@ -433,7 +447,7 @@ describe("noms de candidats dans les questions d'attribution", () => {
       id: "q_" + "f".repeat(32),
       gabarit: "Q-ATT",
       items: choisir(itemsDe("demo-alpha").p1, "Q-ATT").items,
-      grappe_id: itemsDe("demo-alpha").p1.id,
+      grappe_id: MESURE_P1.id,
       texte_neutre: "Quels candidats, dont Candidat demo-alpha, proposent le tarif de base ?",
     });
     const tirage = tirageDe([...SYMETRIQUES, fuite]);
@@ -470,13 +484,16 @@ describe("noms de candidats dans les questions d'attribution", () => {
     );
     const engendrees = engendrer(items, [...MESURES, mesureAmbigue], nommes.perimetre.candidats).map(completer);
     const attribution = engendrees.find(
-      (candidate) => candidate.grappe_id === item.id && candidate.gabarit === "Q-ATT",
+      (candidate) => candidate.grappe_id === mesureAmbigue.id && candidate.gabarit === "Q-ATT",
     ) as Question;
     const tirage: Tirage = {
       run_id: RUN.id,
       date_gel: GEL,
       graine_tirage: graine(),
       entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], nommes),
+      exclusions: [],
+      bilan_reprise: [],
+      compensations: [],
     };
     const symetrie = verifierSymetrie(tirage, [...QUESTIONS, ...engendrees], items, nommes);
     expect(conditionDe(symetrie, "aucun_nom_candidat_dans_q_att").statut).toBe("vert");
@@ -548,6 +565,9 @@ describe("entrées du tirage sans question correspondante", () => {
       date_gel: GEL,
       graine_tirage: graine(),
       entrees: [orpheline],
+      exclusions: [],
+      bilan_reprise: [],
+      compensations: [],
     };
     expect(() => verifierSymetrie(tirage, QUESTIONS, ITEMS, RUN)).toThrow(/introuvable/i);
   });

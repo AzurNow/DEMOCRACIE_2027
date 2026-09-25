@@ -83,9 +83,45 @@ export function identifiantQuestion(item_id: string, gabarit: string): string {
 }
 
 /**
+ * §5 (protocole 0.9) : l'identité d'une question d'attribution est celle de sa mesure. Dérivé de
+ * (mesure, gabarit) et de rien d'autre : l'identifiant survit à la correction ou au retrait d'un
+ * item de la mesure. La chaîne hachée porte le préfixe `mesure|`, qu'aucune chaîne de
+ * `identifiantQuestion` ne peut porter (un ULID est en majuscules de Crockford, sans `|`) : les
+ * deux espaces d'identifiants sont disjoints, même si un item et une mesure partageaient un ULID.
+ */
+export function identifiantAttribution(mesure_id: string, gabarit: string): string {
+  return `q_${sha256(`mesure|${mesure_id}|${gabarit}`).slice(0, 32)}`;
+}
+
+/**
+ * Deux items F sur la même mesure fictive : la Q-ATT de la mesure aurait deux candidats au rôle
+ * principal. Aucun n'est choisi (décision de l'auteur du 2026-09-25 : pas de principal désigné
+ * arbitrairement) ; le cas est refusé et remonte à l'auteur.
+ */
+export class AttributionFictiveAmbigue extends Error {
+  readonly mesure_id: string;
+  readonly item_ids: readonly string[];
+
+  constructor(mesure_id: string, item_ids: readonly string[]) {
+    super(
+      `Mesure fictive ${mesure_id} portée par ${item_ids.length} items sans position (${item_ids.join(", ")}) : ` +
+        `sa question d'attribution n'a pas d'item principal désignable sans choix arbitraire.`,
+    );
+    this.name = "AttributionFictiveAmbigue";
+    this.mesure_id = mesure_id;
+    this.item_ids = item_ids;
+  }
+}
+
+/**
  * `candidats` : le périmètre du run (`run.perimetre.candidats`), seul domicile du nom d'un
  * candidat. Son `libelle` remplit `[candidat]` ; `item.libelle_lisible`, étiquette de l'item, n'y
  * sert plus.
+ *
+ * Un gabarit qui nomme un candidat engendre une question par item. Un gabarit qui n'en nomme aucun
+ * (donnée `nomme_candidat` de la table, jamais le code) engendre une question par mesure (§5,
+ * protocole 0.9), quel que soit le nombre d'items de la mesure qui l'admettent : les items sont
+ * d'abord regroupés, la question construite ensuite.
  */
 export function engendrer(
   items: readonly Item[],
@@ -98,11 +134,16 @@ export function engendrer(
   const positionsParMesure = grouperPositionsParMesure(eligibles);
 
   const questions: QuestionEngendree[] = [];
+  const attributions = new Map<string, Attribution>();
   for (const item of eligibles) {
-    const contexte = { mesure: mesureDe(referentiel, item), libelles, positionsParMesure };
+    const contexte = { mesure: mesureDe(referentiel, item), libelles };
     for (const gabarit of gabaritsPourItem(item)) {
-      questions.push(construire(item, gabarit, contexte));
+      if (gabarit.nomme_candidat) questions.push(construire(item, gabarit, contexte));
+      else noterAttribution(attributions, contexte.mesure, gabarit, item);
     }
+  }
+  for (const attribution of attributions.values()) {
+    questions.push(construireAttribution(attribution, positionsParMesure));
   }
   return questions;
 }
@@ -110,7 +151,25 @@ export function engendrer(
 interface ContexteItem {
   readonly mesure: Mesure;
   readonly libelles: ReadonlyMap<string, string>;
-  readonly positionsParMesure: ReadonlyMap<string, readonly Item[]>;
+}
+
+/** Une mesure, un gabarit qui ne nomme personne, et les items éligibles qui l'admettent. */
+interface Attribution {
+  readonly mesure: Mesure;
+  readonly gabarit: Gabarit;
+  readonly porteurs: Item[];
+}
+
+function noterAttribution(
+  attributions: Map<string, Attribution>,
+  mesure: Mesure,
+  gabarit: Gabarit,
+  item: Item,
+): void {
+  const cle = `${mesure.id}|${gabarit.code}`;
+  const existante = attributions.get(cle);
+  if (existante === undefined) attributions.set(cle, { mesure, gabarit, porteurs: [item] });
+  else existante.porteurs.push(item);
 }
 
 /**
@@ -168,24 +227,24 @@ function grouperPositionsParMesure(items: readonly Item[]): ReadonlyMap<string, 
   return parMesure;
 }
 
+/** Une question qui nomme le candidat de l'item : un seul item, principal, qui est aussi la grappe. */
 function construire(item: Item, gabarit: Gabarit, contexte: ContexteItem): QuestionEngendree {
-  const socle = {
+  return {
     id: identifiantQuestion(item.id, gabarit.code),
     gabarit: gabarit.code,
-    items: entreesDItems(item, gabarit, contexte.positionsParMesure),
+    candidat_id: item.candidat_id,
+    items: [{ reference: referenceDe(item), role: "principal" }],
     grappe_id: item.id,
     theme: themeDe(contexte.mesure),
     texte_neutre: texteDe(item, gabarit, contexte),
     version_gabarits: VERSION_GABARITS,
   };
-  if (!gabarit.nomme_candidat) return socle;
-  return { ...socle, candidat_id: item.candidat_id };
 }
 
 /**
  * `[candidat]` reçoit le `libelle` du candidat dans le périmètre du run. Un candidat absent du
- * périmètre fait échouer le remplissage des cinq gabarits qui le nomment (`LibelleCandidatAbsent`),
- * et réussir celui de Q-ATT, qui ne le nomme pas. Aucun libellé de repli n'est fabriqué.
+ * périmètre fait échouer le remplissage des cinq gabarits qui le nomment (`LibelleCandidatAbsent`).
+ * Aucun libellé de repli n'est fabriqué.
  */
 function texteDe(item: Item, gabarit: Gabarit, contexte: ContexteItem): string {
   const substitutions = { formulation_mesure: contexte.mesure.formulation_canonique };
@@ -195,32 +254,44 @@ function texteDe(item: Item, gabarit: Gabarit, contexte: ContexteItem): string {
 }
 
 /**
- * Q-ATT attend « la liste exacte des candidats du périmètre dont la position en vigueur à la date
- * du run est « pour » » (annexe B, protocole 0.6). L'engendrement ne connaît pas cette date : il
- * inscrit en `attendu_dans_liste` TOUS les autres items vérifiés qui portent une position sur la
- * mesure (P et O, de tout candidat, y compris celui de l'item principal), et la liste se résout au
- * gel sur leurs positions en vigueur (`reponse-attendue.ts:listeAttendueAuGel`). Qu'un item y
- * figure ne dit donc pas que son candidat est attendu. Pour un item fictif, la liste est vide, ce
- * qui est exactement l'attente « aucun » de l'annexe B.
+ * La question d'attribution d'une mesure (§5, protocole 0.9) : son identité et sa grappe sont
+ * celles de la mesure, son thème celui de la mesure, et elle ne nomme personne.
  *
- * Le gabarit d'attribution se reconnaît à sa donnée `nomme_candidat`, jamais à son code : dans
- * la table, seul le gabarit qui ne nomme aucun candidat attend une liste de candidats, et le
- * chargeur de `gabarits.ts` lie `nomme_candidat` à la présence de `[candidat]` dans le texte.
+ * Elle attend « la liste exacte des candidats du périmètre interrogés au run dont la position en
+ * vigueur à la date du run est « pour » » (annexe B). L'engendrement ne connaît pas cette date : il
+ * inscrit en `attendu_dans_liste` TOUS les items vérifiés qui portent une position sur la mesure
+ * (P et O, de tout candidat), et la liste se résout au gel sur leurs positions en vigueur
+ * (`reponse-attendue.ts:listeAttendueAuGel`). Qu'un item y figure ne dit donc pas que son candidat
+ * est attendu. Aucun de ces items n'est principal : la question ne porte sur aucun d'eux en
+ * particulier (décision de l'auteur du 2026-09-25).
+ *
+ * Un item qui admet le gabarit sans porter de position — l'item F d'une mesure fictive, lu aux blocs
+ * présents et jamais au type — reste principal : c'est lui que la question met à l'épreuve, et la
+ * liste vide qu'il attend est l'attente « aucun » de l'annexe B. Deux tels items sur une mesure
+ * lèvent `AttributionFictiveAmbigue`.
  */
-function entreesDItems(
-  item: Item,
-  gabarit: Gabarit,
+function construireAttribution(
+  attribution: Attribution,
   positionsParMesure: ReadonlyMap<string, readonly Item[]>,
-): readonly ItemDeQuestion[] {
-  const principal: ItemDeQuestion = { reference: referenceDe(item), role: "principal" };
-  if (gabarit.nomme_candidat) return [principal];
-
-  // Une mesure sans aucun item P du périmètre — le cas d'une mesure fictive — n'a pas de groupe.
-  const groupe = positionsParMesure.get(item.mesure_id);
-  if (groupe === undefined) return [principal];
-
-  const autres = groupe
-    .filter((autre) => autre.id !== item.id)
-    .map((autre): ItemDeQuestion => ({ reference: referenceDe(autre), role: "attendu_dans_liste" }));
-  return [principal, ...autres];
+): QuestionEngendree {
+  const { mesure, gabarit } = attribution;
+  const sansPosition = attribution.porteurs.filter((item) => positionsPortees(item).length === 0);
+  if (sansPosition.length > 1) {
+    throw new AttributionFictiveAmbigue(mesure.id, sansPosition.map((item) => item.id));
+  }
+  // Une mesure sans aucun item positionnel — le cas d'une mesure fictive — n'a pas de groupe.
+  const groupe = positionsParMesure.get(mesure.id);
+  const positionnels = groupe === undefined ? [] : groupe;
+  return {
+    id: identifiantAttribution(mesure.id, gabarit.code),
+    gabarit: gabarit.code,
+    items: [
+      ...sansPosition.map((item): ItemDeQuestion => ({ reference: referenceDe(item), role: "principal" })),
+      ...positionnels.map((item): ItemDeQuestion => ({ reference: referenceDe(item), role: "attendu_dans_liste" })),
+    ],
+    grappe_id: mesure.id,
+    theme: themeDe(mesure),
+    texte_neutre: remplirTexteNeutre(gabarit, { formulation_mesure: mesure.formulation_canonique }),
+    version_gabarits: VERSION_GABARITS,
+  };
 }

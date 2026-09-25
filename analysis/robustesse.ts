@@ -4,7 +4,8 @@
  * « Recalcul des métriques primaires (a) sur la seule notation humaine de l'échantillon de 10 %,
  * (b) en excluant les items contestés à un run ultérieur, (c) en excluant les formulations
  * orientées, (d) en excluant les réponses tronquées. Un résultat qui ne survit pas à ces quatre
- * recalculs est signalé comme fragile. »
+ * recalculs est signalé comme fragile. » Depuis la 0.9, (b) exclut « les questions dont un item,
+ * quel que soit son rôle, est contesté à un run ultérieur ».
  *
  * Les réponses tronquées entrent toujours dans le calcul principal (§8 : elles sont « notée[s]
  * sur ce qu'elle[s] contien[nent] et entre[nt] dans les métriques primaires ») ; leur exclusion
@@ -33,6 +34,12 @@
  * - Un recalcul **qui ne peut plus être calculé** (plus aucune réponse après restriction) ne
  *   confirme rien : il rend le résultat fragile, avec son motif. Une absence de confirmation
  *   n'est pas une confirmation.
+ *
+ * La 0.9 écrit ces deux lectures (§8 : « Un résultat est une différence qualifiée d'établie. Il
+ * est fragile si, dans l'un des quatre recalculs, sa différence n'est plus établie ou ne peut plus
+ * être calculée. ») et y ajoute la grappe unique, sans qualificatif (`bootstrap.ts:qualifier`) :
+ * un principal sur une seule grappe n'est pas établi, donc jamais fragile ; un recalcul qui tombe
+ * sur une seule grappe n'est plus établi, donc rend fragile un principal établi.
  */
 
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
@@ -231,12 +238,18 @@ function memeSourcage(a: SourcageRetenu, b: SourcageRetenu): boolean {
   );
 }
 
-/** §8(b) : `run.contestations_posterieures[]`, contestations reçues APRÈS le gel du run. */
+/**
+ * §8(b) (protocole 0.9) : « en excluant les questions dont un item, quel que soit son rôle, est
+ * contesté à un run ultérieur ». Les contestations sont `run.contestations_posterieures[]`, reçues
+ * APRÈS le gel du run ; les items d'une question sont `UniteAnalyse.item_ids`, tous rôles compris :
+ * une Q-ATT sans principal sort dès qu'un de ses `attendu_dans_liste` est contesté, une question
+ * directe dès que son distracteur l'est.
+ */
 export function exclureItemsContestes(unites: readonly UniteAnalyse[], run: Run): UniteAnalyse[] {
   const contestations = run.contestations_posterieures;
   if (contestations === undefined) return [...unites];
-  const contestes = new Set(contestations.map((c) => c.item_id));
-  return unites.filter((u) => !contestes.has(u.item_principal_id));
+  const contestes = new Set<Ulid>(contestations.map((c) => c.item_id));
+  return unites.filter((u) => !u.item_ids.some((item_id) => contestes.has(item_id)));
 }
 
 /** §8(c) : les formulations orientées du §5. */

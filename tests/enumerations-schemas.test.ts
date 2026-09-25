@@ -177,6 +177,7 @@ const CONFRONTATIONS: readonly Confrontation[] = [
   { liste: en(QUESTIONS, "ROLES_ITEM"), valeurs: questions.ROLES_ITEM, fichier: QUESTION, pointeur: "#/properties/items/items/properties/role" },
   { liste: en(QUESTIONS, "ROLES_ITEM"), valeurs: questions.ROLES_ITEM, fichier: TIRAGE, pointeur: `${ITEMS_AU_GEL}/role` },
   { liste: en(QUESTIONS, "NATURES_REPONSE"), valeurs: questions.NATURES_REPONSE, fichier: TIRAGE, pointeur: "#/$defs/reponse_attendue/properties/nature" },
+  { liste: en(QUESTIONS, "MOTIFS_EXCLUSION"), valeurs: questions.MOTIFS_EXCLUSION, fichier: TIRAGE, pointeur: "#/properties/exclusions/items/properties/motif" },
   { liste: en(QUESTIONS, "CODES_CONDITION"), valeurs: questions.CODES_CONDITION, fichier: RUN, pointeur: `${CONDITIONS}/code` },
   { liste: en(QUESTIONS, "STATUTS_SYMETRIE"), valeurs: questions.STATUTS_SYMETRIE, fichier: RUN, pointeur: "#/properties/symetrie/properties/statut_global" },
   { liste: en(QUESTIONS, "STATUTS_SYMETRIE"), valeurs: questions.STATUTS_SYMETRIE, fichier: RUN, pointeur: `${CONDITIONS}/statut` },

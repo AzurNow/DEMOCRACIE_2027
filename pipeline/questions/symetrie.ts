@@ -50,6 +50,8 @@ interface Contexte {
   /** Candidats comparés : interrogés et au-dessus du seuil de couverture (§4). */
   readonly compares: readonly string[];
   readonly libelles: readonly string[];
+  /** Nombre de compensations inscrites dans le tirage (§5, protocole 0.9). */
+  readonly compensations: number;
 }
 
 export function verifierSymetrie(
@@ -92,11 +94,15 @@ function construireContexte(
       .filter((candidat) => estCompare(candidat))
       .map((candidat) => candidat.candidat_id),
     libelles: libellesDuPerimetre(perimetre),
+    compensations: tirage.compensations.length,
   };
 }
 
-/** §4 : « les candidats sous le seuil de couverture sont traités à part ». */
-function estCompare(candidat: CandidatAuGel): boolean {
+/**
+ * §4 : « les candidats sous le seuil de couverture sont traités à part ». Seule définition du
+ * candidat comparé : le tirage la lit pour la compensation des strates (§5, protocole 0.9).
+ */
+export function estCompare(candidat: Pick<CandidatAuGel, "interroge" | "sous_seuil">): boolean {
   return candidat.interroge && !candidat.sous_seuil;
 }
 
@@ -247,7 +253,8 @@ function repartitionThemes(contexte: Contexte): ConditionSymetrie {
     detail_par_candidat: detailParTheme(table, contexte.compares),
     commentaire:
       "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une " +
-      "répartition identique (§5).",
+      `répartition identique (§5). ${contexte.compensations} compensation(s) inscrite(s) dans ` +
+      "le tirage (même gabarit, autre thème, §5, protocole 0.9).",
   };
 }
 
@@ -336,9 +343,10 @@ function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {
 
 function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   const total = contexte.entrees.length;
-  const absencesEtFictifs = contexte.entrees.filter((entree) =>
-    ["A", "F"].includes(typePrincipal(contexte, entree)),
-  ).length;
+  const absencesEtFictifs = contexte.entrees.filter((entree) => {
+    const type = typePrincipal(contexte, entree);
+    return type !== null && ["A", "F"].includes(type);
+  }).length;
   // Comparaison en entiers : 0,2 n'est pas représentable exactement en binaire, et la frontière
   // du §5 est justement ce qui est testé.
   const atteint = absencesEtFictifs * 5 >= total;
@@ -350,10 +358,18 @@ function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   };
 }
 
-function typePrincipal(contexte: Contexte, entree: EntreeTirage): string {
-  const item = contexte.items.get(entree.grappe_id);
+/**
+ * Le type de l'item principal, lu dans `items_au_gel` et non dans `grappe_id`, qui désigne la
+ * mesure pour une question d'attribution (§5, protocole 0.9). Une Q-ATT sans principal (mesure
+ * réelle) porte des items P et O : elle n'est ni une question d'absence ni une question de
+ * fabrication, et vaut `null` ici, comme valait « P » son item principal avant la 0.9.
+ */
+function typePrincipal(contexte: Contexte, entree: EntreeTirage): string | null {
+  const principal = entree.items_au_gel.find((item) => item.role === "principal");
+  if (principal === undefined) return null;
+  const item = contexte.items.get(principal.reference.item_id);
   if (item === undefined) {
-    throw new Error(`Item ${entree.grappe_id} de la question ${entree.question_id} introuvable.`);
+    throw new Error(`Item ${principal.reference.item_id} de la question ${entree.question_id} introuvable.`);
   }
   return item.type;
 }

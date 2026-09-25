@@ -56,10 +56,20 @@ export interface UniteAnalyse {
   readonly mode: Mode | null;
   readonly canal: Canal;
   readonly question_id: string;
-  /** §8 : la grappe du bootstrap, « la grappe étant l'item ». Lue, jamais recalculée. */
+  /**
+   * §8 : la grappe du bootstrap, « la grappe étant l'item […], et la mesure pour une question
+   * d'attribution » (protocole 0.9). Lue, jamais recalculée.
+   */
   readonly grappe_id: Ulid;
-  readonly item_principal_id: Ulid;
-  readonly type_item_principal: TypeItem;
+  /** `null` : question d'attribution sur une mesure réelle, sans item principal (§5, 0.9). */
+  readonly item_principal_id: Ulid | null;
+  /**
+   * Tous les items de la question, quel que soit leur rôle (principal, attendu_dans_liste,
+   * distracteur, contexte), dans l'ordre de la question. §8 (protocole 0.9) : le recalcul (b)
+   * exclut la question dès que l'un d'eux est contesté à un run ultérieur.
+   */
+  readonly item_ids: readonly Ulid[];
+  readonly type_item_principal: TypeItem | null;
   readonly gabarit: Gabarit;
   readonly candidat_id: IdentifiantCourt | null;
   readonly theme: Theme | null;
@@ -195,7 +205,7 @@ interface ContexteQuestion {
   readonly question: Question;
   readonly entree: EntreeTirage;
   readonly formulation: Formulation;
-  readonly item: Item;
+  readonly item: Item | null;
 }
 
 function contexteQuestion(reponse: Reponse, index: IndexEntrees): ContexteQuestion {
@@ -209,12 +219,16 @@ function contexteQuestion(reponse: Reponse, index: IndexEntrees): ContexteQuesti
   return { question, entree, formulation, item: itemPrincipal(question, index) };
 }
 
-function itemPrincipal(question: Question, index: IndexEntrees): Item {
+/**
+ * §5 (protocole 0.9) : seule une question d'attribution — celle qui ne porte aucun candidat — peut
+ * n'avoir aucun item principal. L'absence est rendue telle quelle (`null`), jamais comblée par un
+ * autre item de la question.
+ */
+function itemPrincipal(question: Question, index: IndexEntrees): Item | null {
   const principal = question.items.find((i: ItemDeQuestion) => i.role === "principal");
-  if (principal === undefined) {
-    throw new Error(`Question ${question.id} sans item principal.`);
-  }
-  return exiger(index.items, principal.reference.item_id, "item principal");
+  if (principal !== undefined) return exiger(index.items, principal.reference.item_id, "item principal");
+  if (question.candidat_id === undefined) return null;
+  throw new Error(`Question ${question.id} sans item principal alors qu'elle nomme un candidat.`);
 }
 
 function verifierCoherenceTirage(question: Question, entree: EntreeTirage): void {
@@ -241,8 +255,9 @@ function composer(
     canal: reponse.canal,
     question_id: question.id,
     grappe_id: question.grappe_id,
-    item_principal_id: item.id,
-    type_item_principal: item.type,
+    item_principal_id: item === null ? null : item.id,
+    item_ids: question.items.map((entree) => entree.reference.item_id),
+    type_item_principal: item === null ? null : item.type,
     gabarit: question.gabarit,
     candidat_id: question.candidat_id === undefined ? null : question.candidat_id,
     theme: entree.theme === undefined ? null : entree.theme,

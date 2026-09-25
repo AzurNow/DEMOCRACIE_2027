@@ -31,10 +31,14 @@ const INTERROGES = CANDIDATS.map((candidat_id) => candidat({ candidat_id }));
 const MESURE = mesure({ cle: "att-gel", libelle: "tarif social de l'eau" });
 const MESURE_FICTIVE = mesure({ cle: "att-gel-fictive", libelle: "prime aux marcheurs", fictive: true });
 
-/** La Q-ATT dont l'item principal est `principal`, engendrée avec tous les items du jeu. */
+/**
+ * La Q-ATT de la mesure de `principal`, engendrée avec tous les items du jeu. Protocole 0.9 (§5,
+ * constat n° 39) : une seule Q-ATT par mesure, dont la grappe est la mesure ; avant, une Q-ATT par
+ * item P, de grappe l'item.
+ */
 function attributionSur(principal: Item, items: readonly Item[]): QuestionEngendree {
   const trouvee = engendrer(items, [MESURE, MESURE_FICTIVE], PERIMETRE).find(
-    (question) => question.gabarit === "Q-ATT" && question.grappe_id === principal.id,
+    (question) => question.gabarit === "Q-ATT" && question.grappe_id === principal.mesure_id,
   );
   if (trouvee === undefined) throw new Error(`Aucune Q-ATT engendrée sur l'item ${principal.id}.`);
   return trouvee;
@@ -234,8 +238,8 @@ describe("cas 4 : Q-ATT non tirable quand un candidat est « conditionnel » ou 
     const questions = engendrer(items, [MESURE, autreMesure], PERIMETRE)
       .map(completer)
       .filter((question) => question.gabarit === "Q-ATT");
-    const bloquees = questions.filter((question) => question.grappe_id !== libre.id);
-    const admise = questions.find((question) => question.grappe_id === libre.id);
+    const bloquees = questions.filter((question) => question.grappe_id !== autreMesure.id);
+    const admise = questions.find((question) => question.grappe_id === autreMesure.id);
     const RUN = run(
       CANDIDATS.slice(0, 2).map((candidat_id) => candidat({ candidat_id })),
       GEL,
@@ -248,11 +252,13 @@ describe("cas 4 : Q-ATT non tirable quand un candidat est « conditionnel » ou 
         mesures: [MESURE, autreMesure],
         run: RUN,
         graine: graine(valeur),
-        parametres: { questions_par_strate: 10 },
+        parametres: { questions_par_strate: 10, questions_attribution_par_theme: 10 },
       });
 
-    it("la règle de tirabilité écarte les Q-ATT de la mesure, et elles seules", () => {
-      expect(bloquees).toHaveLength(2);
+    it("la règle de tirabilité écarte la Q-ATT de la mesure, et elle seule", () => {
+      // Protocole 0.9 (§5, constat n° 39) : une seule Q-ATT par mesure ; il y en avait deux, une
+      // par item P de la mesure.
+      expect(bloquees).toHaveLength(1);
       const tirables = questionsTirables(questions, items, RUN).map((question) => question.id);
       expect(tirables).toEqual([admise?.id]);
     });
@@ -344,7 +350,7 @@ describe("périmètre du run : seuls les candidats interrogés comptent", () => 
       mesures: [MESURE],
       run: run(RETIRE, GEL),
       graine: graine(),
-      parametres: { questions_par_strate: 10 },
+      parametres: { questions_par_strate: 10, questions_attribution_par_theme: 10 },
     });
     const listes = resultat.tirage.entrees.map((entree) => entree.reponse_attendue.candidats_attendus);
     expect(listes.length).toBeGreaterThan(0);
