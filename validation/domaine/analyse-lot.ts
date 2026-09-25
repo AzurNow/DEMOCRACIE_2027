@@ -29,6 +29,12 @@ export interface DiagnosticLot {
    */
   readonly taux_double_correction_divergente: number | null;
   readonly alerte_reannotation: boolean;
+  /**
+   * Items du lot qu'une contestation vise au moment du calcul, sortis du dénominateur (§4). Un
+   * décompte, pas une liste : le diagnostic ne nomme aucun item (voir l'en-tête du module).
+   * `kappa.n` est l'effectif publié avec le kappa, contestations déduites.
+   */
+  readonly exclus_contestation: number;
   /** Nombre d'items du manifeste, contestations comprises : distinct de `kappa.n`. */
   readonly taille_lot: number;
   /** Taille fixée par le §4 pour ce lot : 50 (réel), 30 (entraînement), celle de l'origine. */
@@ -55,6 +61,38 @@ interface PaireDecisions {
   readonly b: EntreeDecision;
 }
 
+/**
+ * Un item du lot dont le statut de contestation n'est pas dans la table fermée ci-dessous : le
+ * kappa n'est pas calculé plutôt que calculé sur une règle inventée.
+ */
+export class StatutContestationNonTranche extends Error {
+  readonly item_id: string;
+  readonly statut: string;
+
+  constructor(item_id: string, statut: string) {
+    super(
+      `Item ${item_id} au statut de contestation inconnu « ${statut} » : ` +
+        `sa sortie du dénominateur du kappa n'est pas définie. Kappa non calculé.`,
+    );
+    this.name = "StatutContestationNonTranche";
+    this.item_id = item_id;
+    this.statut = statut;
+  }
+}
+
+/**
+ * §4 (0.8) : « Un item sort du dénominateur si une contestation le vise à la date où le kappa du
+ * lot est calculé ». Table fermée sur `item.schema.json:statut_contestation`. Décision de l'auteur
+ * du 2026-09-25 : une contestation close (`arbitree`, quelle que soit la décision du panel) vise
+ * encore l'item. Un item arbitré ne s'affiche plus à l'annotation (`retirerSiConteste`) : le
+ * garder ferait de nouveau dépendre le dénominateur de l'ordre de navigation.
+ */
+const VISE_PAR_UNE_CONTESTATION: ReadonlyMap<string, boolean> = new Map([
+  ["aucune", false],
+  ["contestee", true],
+  ["arbitree", true],
+]);
+
 export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
   const [premier, second] = [...entree.etats.keys()].sort();
   if (premier === undefined || second === undefined) {
@@ -63,16 +101,18 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
 
   const etatA = entree.etats.get(premier) as EtatAnnotateur;
   const etatB = entree.etats.get(second) as EtatAnnotateur;
-  const paires = apparier(entree, etatA, etatB);
+  const exclus = exclusPourContestation(entree);
+  const paires = apparier(entree, etatA, etatB, exclus);
   const kappa = kappaPublie(paires.map((paire) => ({ a: paire.a.decision, b: paire.b.decision })));
 
   return {
     lot_id: entree.lot.lot_id,
-    les_deux_ont_fini: aFini(entree, etatA) && aFini(entree, etatB),
+    les_deux_ont_fini: aFini(entree, etatA, exclus) && aFini(entree, etatB, exclus),
     kappa,
     kappa_par_question: kappaParQuestion(paires),
     taux_double_correction_divergente: tauxDivergence(paires),
     alerte_reannotation: alerteReannotation(kappa),
+    exclus_contestation: exclus.size,
     taille_lot: entree.lot.items.length,
     taille_attendue: entree.taille_attendue,
     taille_conforme: entree.lot.items.length === entree.taille_attendue,
@@ -80,17 +120,41 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
 }
 
 /**
- * Un item retiré du lot pour contestation sort du dénominateur. Le §4 parle de lots de 50 ;
+ * Les items du lot qu'une contestation vise **au calcul**, lus sur l'item tel qu'il est chargé
+ * maintenant, jamais sur le journal : l'entrée `retrait_item` dit quand un annotateur a rencontré
+ * l'item contesté, ce qui dépend de sa navigation (constat 9 du 2026-09-24). Les décisions déjà
+ * portées sur un item exclu restent au journal ; elles ne sont simplement pas appariées.
+ */
+function exclusPourContestation(entree: EntreeDiagnostic): ReadonlySet<string> {
+  const exclus = new Set<string>();
+  for (const reference of entree.lot.items) {
+    const item = entree.items.get(reference.item_id);
+    if (item !== undefined && viseParUneContestation(item)) exclus.add(item.id);
+  }
+  return exclus;
+}
+
+function viseParUneContestation(item: Item): boolean {
+  const vise = VISE_PAR_UNE_CONTESTATION.get(item.statut_contestation);
+  if (vise === undefined) {
+    throw new StatutContestationNonTranche(item.id, item.statut_contestation);
+  }
+  return vise;
+}
+
+/**
+ * Un item qu'une contestation vise au calcul sort du dénominateur. Le §4 parle de lots de 50 ;
  * quand une contestation en retire un, le kappa porte sur ce qui reste, et `n` le dit.
  */
 function apparier(
   entree: EntreeDiagnostic,
   etatA: EtatAnnotateur,
   etatB: EtatAnnotateur,
+  exclus: ReadonlySet<string>,
 ): readonly PaireDecisions[] {
   const paires: PaireDecisions[] = [];
   for (const reference of entree.lot.items) {
-    if (etatA.retires.has(reference.item_id) || etatB.retires.has(reference.item_id)) continue;
+    if (exclus.has(reference.item_id)) continue;
     const a = etatA.decisions.get(reference.item_id);
     const b = etatB.decisions.get(reference.item_id);
     const item = entree.items.get(reference.item_id);
@@ -100,9 +164,10 @@ function apparier(
   return paires;
 }
 
-function aFini(entree: EntreeDiagnostic, etat: EtatAnnotateur): boolean {
+/** Fini : chaque item que la contestation n'exclut pas au calcul porte une décision. */
+function aFini(entree: EntreeDiagnostic, etat: EtatAnnotateur, exclus: ReadonlySet<string>): boolean {
   for (const reference of entree.lot.items) {
-    if (etat.retires.has(reference.item_id)) continue;
+    if (exclus.has(reference.item_id)) continue;
     if (!etat.decisions.has(reference.item_id)) return false;
   }
   return true;
