@@ -18,23 +18,25 @@
  *   pnpm promote --ecrire
  */
 
-import { execFileSync } from "node:child_process";
 import { analyserArguments, drapeau, texte } from "./arguments.ts";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { commandeGit, commitCourant, ecriturePermise } from "./garde-fous-git.ts";
 import { ItemFictifEnDouble, verifierFictifUnique } from "../validation/domaine/fictif-unique.ts";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
 import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
 import type { EtatAnnotateur } from "../validation/domaine/journal.ts";
 import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
 import { evaluerPromotion, type Issue } from "../validation/domaine/promotion.ts";
 import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
+import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
+import { ecrireFileArbitrage } from "../validation/io/file-arbitrage.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
 import { chargerStaging, mesureDe, type Staging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
-import { erreurDeSchema, valider } from "./schemas/valider.ts";
+import { erreurDeSchema } from "./schemas/valider.ts";
 
 interface Options {
   readonly ecrire: boolean;
@@ -72,8 +74,9 @@ interface EvaluationLot {
 }
 
 function lireOptions(): Options {
-  const racine = resolve(import.meta.dirname, "..");
   const table = analyserArguments(process.argv.slice(2));
+  // `--racine` : le dépôt dont l'arbre doit être propre et dont HEAD est inscrit (bac d'essai des tests).
+  const racine = texte(table, "racine", resolve(import.meta.dirname, ".."));
   return {
     ecrire: drapeau(table, "ecrire"),
     racine,
@@ -84,15 +87,6 @@ function lireOptions(): Options {
     data: texte(table, "data", resolve(racine, "data/items")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
   };
-}
-
-function arbrePropre(racine: string): boolean {
-  const sortie = execFileSync("git", ["status", "--porcelain"], { cwd: racine, encoding: "utf8" });
-  return sortie.trim().length === 0;
-}
-
-function commitCourant(racine: string): string {
-  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: racine, encoding: "utf8" }).trim();
 }
 
 function decisionsActives(etats: ReadonlyMap<string, EtatAnnotateur>, item_id: string): EntreeDecision[] {
@@ -153,7 +147,7 @@ function evaluerLot(
  * la promotion est donc sans effet sur lui.
  */
 function dejaDansData(verdict: Verdict, options: Options): boolean {
-  return existsSync(join(options.data, `${verdict.item.id}.json`));
+  return existsSync(cheminItem(options.data, verdict.item.id));
 }
 
 function imprimerEcriturePrevue(promus: readonly Verdict[], options: Options): void {
@@ -172,7 +166,7 @@ function imprimerIntrouvables(introuvables: readonly Introuvable[]): void {
 }
 
 function cheminDansData(item: Item, options: Options): string {
-  return join(options.data, `${item.id}.json`);
+  return cheminItem(options.data, item.id);
 }
 
 /** Les items que `--ecrire` écrirait, confrontés au schéma dans l'état exact où ils le seraient. */
@@ -192,14 +186,7 @@ function nonConformes(verdicts: readonly Verdict[], options: Options): readonly 
  * répertoire absent est un `data/` vide ; un fichier non conforme arrête la commande.
  */
 function itemsDeData(options: Options): readonly Item[] {
-  if (!existsSync(options.data)) return [];
-  return readdirSync(options.data)
-    .filter((nom) => nom.endsWith(".json"))
-    .sort()
-    .map((nom) => {
-      const chemin = join(options.data, nom);
-      return valider<Item>("item", JSON.parse(readFileSync(chemin, "utf8")) as unknown, chemin);
-    });
+  return [...lireItemsData(options.data).values()];
 }
 
 /**
@@ -326,18 +313,13 @@ function imprimerNonEvaluables(lots: readonly Lot[], options: Options): void {
 }
 
 function ecrire(verdicts: readonly Verdict[], options: Options): void {
-  mkdirSync(options.data, { recursive: true });
-  mkdirSync(options.arbitrage, { recursive: true });
-
   const promus: string[] = [];
   for (const verdict of verdicts) {
     if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
-    const item = verdict.issue.item;
-    const chemin = cheminDansData(item, options);
-    // Dernière frontière avant `data/` : déjà contrôlé par `nonConformes`, revalidé ici pour
-    // qu'aucune écriture n'échappe au schéma, quel que soit le chemin qui y mène.
-    writeFileSync(chemin, `${JSON.stringify(valider<Item>("item", item, chemin), null, 2)}\n`, "utf8");
-    promus.push(item.id);
+    // Seule écriture vers `data/items/` : `creerItem` revalide contre le schéma, quel que soit le
+    // chemin qui y mène, et refuse d'écraser un item déjà publié.
+    creerItem(options.data, verdict.issue.item);
+    promus.push(verdict.issue.item.id);
   }
 
   const file = verdicts
@@ -347,34 +329,18 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
       lot_id: verdict.lot_id,
       motif: (verdict.issue as Extract<Issue, { sort: "arbitrage" }>).motif,
     }));
-  writeFileSync(
-    join(options.arbitrage, "file.json"),
-    `${JSON.stringify({ date: instantLocal(new Date()), entrees: file }, null, 2)}\n`,
-    "utf8",
-  );
+  ecrireFileArbitrage(options.arbitrage, instantLocal(new Date()), file);
 
   process.stdout.write(
     `\n${promus.length} item(s) écrit(s) dans ${options.data}\n` +
       `${file.length} entrée(s) dans la file d'arbitrage.\n\n` +
-      `Rien n'est commité : c'est vous qui signez.\n\n` +
-      `  git add data/items validation/arbitrage\n` +
-      `  git commit -m "data: promotion de ${promus.length} item(s)\n\n` +
-      promus.map((identifiant) => `  ${identifiant}`).join("\n") +
-      `\n"\n`,
+      commandeGit(["data/items", "validation/arbitrage"], `data: promotion de ${promus.length} item(s)`, promus),
   );
 }
 
 function principal(): void {
   const options = lireOptions();
-  if (options.ecrire && !arbrePropre(options.racine)) {
-    process.stderr.write(
-      "Arbre Git non propre. --ecrire inscrit le commit courant dans l'historique de chaque item\n" +
-        "promu ; avec des modifications non commitées à côté, ce commit ne décrirait pas l'état\n" +
-        "du dépôt. Commitez ou remisez, puis relancez.\n",
-    );
-    process.exitCode = 1;
-    return;
-  }
+  if (options.ecrire && !ecriturePermise(options.racine)) return;
 
   const staging = chargerStaging(options.staging);
   // Le registre est **lu**, jamais écrit ici : seul `pnpm mesures --ecrire` y ajoute une décision.
