@@ -142,17 +142,21 @@ describe("marquage fragile", () => {
   });
 
   it("marque fragile un résultat établi qui devient non établi sur la seule notation humaine", () => {
-    // 4 items. Sur l'ensemble : A exactes, B inexactes → différence 1, établie.
-    // Dans l'échantillon humain (le seul item i4) : les deux bras sont inexacts → différence 0,
-    // intervalle contenant 0 → non établie. Le résultat ne survit pas au recalcul (a).
-    const communs = ["i1", "i2", "i3"];
+    // 7 items. Sur l'ensemble : i1 à i5, A exactes, B inexactes ; i6 et i7, inexactes des deux
+    // côtés → 5/7 contre 0/7, établie (un rééchantillon ne tombe à 0 que s'il ne tire que i6 et
+    // i7 : (2/7)⁷ ≈ 0,015 %, loin des 2,5 %).
+    // Dans l'échantillon humain (i6 et i7, deux grappes) : les deux bras sont inexacts →
+    // différence 0, intervalle contenant 0 → non établie. Le résultat ne survit pas au recalcul
+    // (a). Deux grappes et non une : depuis la 0.9, une seule grappe ne se qualifie plus (§8).
+    const communs = ["i1", "i2", "i3", "i4", "i5"];
+    const echantillon = ["i6", "i7"];
     const a = [
       ...communs.map((c) => surItem(c, { categorie: "exacte" })),
-      surItem("i4", { categorie: "inexacte", dans_echantillon_humain: true }),
+      ...echantillon.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: true })),
     ];
     const b = [
       ...communs.map((c) => surItem(c, { categorie: "inexacte" })),
-      surItem("i4", { categorie: "inexacte", dans_echantillon_humain: true }),
+      ...echantillon.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: true })),
     ];
 
     const resultat = evaluer(a, b);
@@ -189,21 +193,59 @@ describe("marquage fragile", () => {
     expect(resultat.fragile).toBe(false);
   });
 
+  it("marque fragile un résultat établi dont un recalcul tombe sur une seule grappe", () => {
+    // §8 (0.9) : un résultat « est fragile si, dans l'un des quatre recalculs, sa différence n'est
+    // plus établie » ; sur une seule grappe, elle n'est qualifiée ni d'établie ni de non établie.
+    // 5 items, A exactes, B inexactes : établie. Seul i1 est dans l'échantillon humain : le
+    // recalcul (a) garde la différence 1, mais sur une grappe, donc sans qualificatif.
+    const cles = ["i1", "i2", "i3", "i4", "i5"];
+    const a = cles.map((c) => surItem(c, { categorie: "exacte", dans_echantillon_humain: c === "i1" }));
+    const b = cles.map((c) => surItem(c, { categorie: "inexacte", dans_echantillon_humain: c === "i1" }));
+
+    const resultat = evaluer(a, b);
+
+    expect(resultat.principal.qualificatif).toBe("etablie");
+    expect(resultat.recalculs[0]?.difference.difference).toBe(1);
+    expect(resultat.recalculs[0]?.difference.intervalle?.degenere).toBe("grappe_unique");
+    expect(resultat.recalculs[0]?.difference.qualificatif).toBeNull();
+    expect(resultat.fragile).toBe(true);
+    expect(resultat.motifs_fragilite).toEqual(["echantillon_humain"]);
+  });
+
+  it("ne marque jamais fragile un résultat principal calculé sur une seule grappe", () => {
+    // Un seul item, A exacte, B inexacte, hors échantillon humain : la différence principale vaut
+    // 1 mais n'est pas qualifiée (§8, 0.9, « une seule grappe »). Pas établie, donc pas un
+    // résultat : rien à faire survivre, même si le recalcul (a) ne peut plus être calculé.
+    const a = [surItem("i1", { categorie: "exacte" })];
+    const b = [surItem("i1", { categorie: "inexacte" })];
+
+    const resultat = evaluer(a, b);
+
+    expect(resultat.principal.difference).toBe(1);
+    expect(resultat.principal.intervalle?.degenere).toBe("grappe_unique");
+    expect(resultat.principal.qualificatif).toBeNull();
+    expect(resultat.recalculs[0]?.difference.qualificatif).toBeNull();
+    expect(resultat.fragile).toBe(false);
+    expect(resultat.motifs_fragilite).toEqual([]);
+  });
+
   it("marque fragile un résultat établi qui cesse de l'être seulement quand on retire les tronquées", () => {
-    // 4 items, tous dans l'échantillon humain, aucun contesté, aucune formulation orientée : (a),
+    // 7 items, tous dans l'échantillon humain, aucun contesté, aucune formulation orientée : (a),
     // (b) et (c) recalculent sur le jeu entier et confirment le calcul principal.
-    // i1 à i3, tronquées : A exacte, B inexacte. i4, entière : A et B inexactes.
-    // Principal : 3/4 contre 0/4, établie. Sans les tronquées (le seul i4) : 0/1 contre 0/1,
-    // différence 0, non établie. Le résultat tient aux seules réponses tronquées.
-    const tronquees = ["i1", "i2", "i3"];
+    // i1 à i5, tronquées : A exacte, B inexacte. i6 et i7, entières : A et B inexactes.
+    // Principal : 5/7 contre 0/7, établie. Sans les tronquées (i6 et i7, deux grappes) : 0/2
+    // contre 0/2, différence 0, non établie. Le résultat tient aux seules réponses tronquées.
+    // Deux grappes entières et non une : depuis la 0.9, une seule grappe ne se qualifie plus (§8).
+    const tronquees = ["i1", "i2", "i3", "i4", "i5"];
+    const entieres = ["i6", "i7"];
     const commun = { dans_echantillon_humain: true } as const;
     const a = [
       ...tronquees.map((c) => surItem(c, { ...commun, categorie: "exacte", tronquee: true })),
-      surItem("i4", { ...commun, categorie: "inexacte" }),
+      ...entieres.map((c) => surItem(c, { ...commun, categorie: "inexacte" })),
     ];
     const b = [
       ...tronquees.map((c) => surItem(c, { ...commun, categorie: "inexacte", tronquee: true })),
-      surItem("i4", { ...commun, categorie: "inexacte" }),
+      ...entieres.map((c) => surItem(c, { ...commun, categorie: "inexacte" })),
     ];
 
     const resultat = evaluer(a, b);

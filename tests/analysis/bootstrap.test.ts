@@ -162,4 +162,37 @@ describe("différence appariée par grappe", () => {
     expect(resultat.qualificatif).toBeNull();
     expect(resultat.intervalle).toBeNull();
   });
+
+  it("ne qualifie ni établie ni non établie une différence non nulle sur une seule grappe (§8, 0.9)", () => {
+    // §8 (0.9) : « Un intervalle calculé sur une seule grappe est dégénéré : la différence
+    // correspondante n'est qualifiée ni d'« établie » ni de « non établie », elle est publiée
+    // avec la mention « une seule grappe ». » Exactitude 1 contre 0 sur une grappe : l'intervalle
+    // se réduit au point [1 ; 1], qui exclut zéro sans rien mesurer.
+    const exacte = grappe("g-unique", 3, { categorie: "exacte" });
+    const inexacte = grappe("g-unique", 3, { categorie: "inexacte" });
+
+    const resultat = differenceAppariee(exacte, inexacte, exactitude, OPTIONS);
+
+    expect(resultat.difference).toBe(1);
+    expect(resultat.qualificatif).toBeNull();
+    // La mention « une seule grappe » reste lisible : l'intervalle existe, il n'est pas absent.
+    expect(resultat.intervalle).not.toBeNull();
+    expect(resultat.intervalle?.degenere).toBe("grappe_unique");
+    expect(resultat.intervalle?.nombre_grappes).toBe(1);
+    expect(resultat.intervalle?.bas).toBe(1);
+    expect(resultat.intervalle?.haut).toBe(1);
+  });
+
+  it("qualifie toujours une différence non nulle dès deux grappes", () => {
+    // Même écart qu'au test précédent, sur deux grappes : l'intervalle n'est plus dégénéré et le
+    // §8 s'applique sans changement.
+    const exacte = ["g1", "g2"].flatMap((g) => grappe(g, 3, { categorie: "exacte" }));
+    const inexacte = ["g1", "g2"].flatMap((g) => grappe(g, 3, { categorie: "inexacte" }));
+
+    const resultat = differenceAppariee(exacte, inexacte, exactitude, OPTIONS);
+
+    expect(resultat.intervalle?.degenere).toBeNull();
+    expect(resultat.intervalle?.nombre_grappes).toBe(2);
+    expect(resultat.qualificatif).toBe("etablie");
+  });
 });

@@ -38,7 +38,11 @@ describe("appariement par item", () => {
     expect(comparaison?.grappes_exclues).toEqual([item2]);
     expect(comparaison?.difference.taux_a).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(comparaison?.difference.difference).toBe(1);
-    expect(comparaison?.difference.qualificatif).toBe("etablie");
+    // Une seule grappe appariée : §8 (0.9), « un intervalle calculé sur une seule grappe est
+    // dégénéré : la différence correspondante n'est qualifiée ni d'« établie » ni de « non
+    // établie », elle est publiée avec la mention « une seule grappe ». »
+    expect(comparaison?.difference.intervalle?.degenere).toBe("grappe_unique");
+    expect(comparaison?.difference.qualificatif).toBeNull();
   });
 
   it("ne rend aucune comparaison quand aucun item n'est commun aux deux bras", () => {

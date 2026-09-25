@@ -33,6 +33,12 @@
  * - Un recalcul **qui ne peut plus être calculé** (plus aucune réponse après restriction) ne
  *   confirme rien : il rend le résultat fragile, avec son motif. Une absence de confirmation
  *   n'est pas une confirmation.
+ *
+ * La 0.9 écrit ces deux lectures (§8 : « Un résultat est une différence qualifiée d'établie. Il
+ * est fragile si, dans l'un des quatre recalculs, sa différence n'est plus établie ou ne peut plus
+ * être calculée. ») et y ajoute la grappe unique, sans qualificatif (`bootstrap.ts:qualifier`) :
+ * un principal sur une seule grappe n'est pas établi, donc jamais fragile ; un recalcul qui tombe
+ * sur une seule grappe n'est plus établi, donc rend fragile un principal établi.
  */
 
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
