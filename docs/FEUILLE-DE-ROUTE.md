@@ -73,6 +73,7 @@ flowchart LR
     lot_validation_interface["validation-interface<br/>Interface de validation humaine, pnpm lots, pnpm promote<br/>T3"]:::T3
   end
   subgraph jalon_J3["J3 · 15 nov. 2026"]
+    lot_contestation_notification["contestation-notification<br/>Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18)<br/>T0"]:::T0
     lot_dette_validation["dette-validation<br/>Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/<br/>T2"]:::T2
     lot_hors_code["hors-code<br/>Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9<br/>T0"]:::T0
   end
@@ -85,6 +86,7 @@ flowchart LR
     lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
+  lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
   lot_protocole --> lot_hors_code
@@ -115,6 +117,7 @@ flowchart LR
 | questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T2 | débloqué | opus | L | 2 | — |
 | schemas | Schémas JSON et 45 exemples | J2 | T2 | débloqué | fait | S | 0 | — |
 | validation-interface | Interface de validation humaine, pnpm lots, pnpm promote | J2 | T3 | atteint | fait | L | 0 | — |
+| contestation-notification | Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18) | J3 | T0 | débloqué | opus | L | 2 | validation-interface |
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
@@ -151,6 +154,7 @@ flowchart LR
 
 ### J3
 
+- contestation-notification (T0)
 - dette-validation (T2)
 - hors-code (T0)
 

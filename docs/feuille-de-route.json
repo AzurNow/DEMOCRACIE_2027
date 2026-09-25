@@ -332,7 +332,7 @@
       "decisions": [
         "D3"
       ],
-      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1)."
+      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification."
     },
     {
       "id": "questions-tirage-symetrie",
@@ -423,6 +423,23 @@
         "D7"
       ],
       "note": "Livré le 2026-09-22 : effets de condition sans valeur p, recalcul (d) hors tronquées, tronquées toujours incluses ; gabarits dans prompts/gabarits-1.0.0.json avec schéma ; conditionnel exclu par la table (Q-FER, Q-NEG, Q-ORI, les deux états d'un item O) ; item arbitré maintenu ou corrigé réintégré à l'engendrement, au tirage et à la symétrie ; invariant de prémisse fausse. Protocole 0.4 pour les deux précisions. Dernière décision du panel figée dans items_au_gel le même jour : la symétrie d'un tirage publié se revérifie sur le tirage seul."
+    },
+    {
+      "id": "contestation-notification",
+      "titre": "Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18)",
+      "jalon": "J3",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 2,
+      "depend_de": [
+        {
+          "lot": "validation-interface",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [],
+      "note": "Plan du 2026-09-25, décisions de l'auteur écrites en 0.10. Cinq sous-lots : V1 seul module d'écriture dans data/items, en ajout seul, test structurel de la règle 3 ; V2 pnpm arbitrer (registre en ajout seul, schéma d'item : bloc arbitrage, vérifié par arbitrage) ; V3 lecture de l'état effectif (data/ sinon staging/), pnpm contester et pnpm panel ; V4 file des notifications dues et journal des envois publiés, item.notifications[] retiré ; V5 pnpm notifier en Python stdlib (smtplib), simulation par défaut, identifiants en variables d'environnement, jamais lancé par un agent. L'auteur déclare contact_notification dans config/perimetre.yaml et nomme le fournisseur SMTP au §10."
     },
     {
       "id": "site",
