@@ -30,12 +30,14 @@
     "collecte": "uv run python -m pipeline.collecte",
     "textes": "uv run python -m pipeline.collecte.textes",
     "transcriptions": "uv run python -m pipeline.collecte.transcription",
+    "notifier": "node --experimental-strip-types outils/contacts.ts | uv run python -m pipeline.notification",
     "check:py": "uv run ruff check pipeline tests",
     "test:py": "uv run pytest"
   },
   "dependencies": {
     "ajv": "8.20.0",
-    "ajv-formats": "3.0.1"
+    "ajv-formats": "3.0.1",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -43,7 +45,6 @@
     "eslint-plugin-sonarjs": "4.2.1",
     "typescript": "^5.7.2",
     "typescript-eslint": "8.70.0",
-    "vitest": "^2.1.8",
-    "yaml": "2.9.1"
+    "vitest": "^2.1.8"
   }
 }
