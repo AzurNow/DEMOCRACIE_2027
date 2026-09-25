@@ -14,10 +14,12 @@ import {
   reechantillonner,
   REECHANTILLONNAGES_PRODUCTION,
 } from "../../analysis/bootstrap.ts";
+import { graineDerivee } from "../../analysis/graines.ts";
 import { exactitude } from "../../analysis/metriques.ts";
+import { generateur } from "../../validation/domaine/alea.ts";
 import { grappe } from "./fabriques.ts";
 
-const OPTIONS = { reechantillonnages: 200, graine: "graine-de-test" };
+const OPTIONS = { reechantillonnages: 200, graine_du_run: 20261201, cle: ["test", "bootstrap"] };
 
 /** 10 grappes d'une réponse : 7 exactes, 3 inexactes. Exactitude observée 0,7. */
 function dixGrappes() {
@@ -48,17 +50,45 @@ describe("percentiles empiriques", () => {
 });
 
 describe("reproductibilité", () => {
-  it("donne le même intervalle à graine égale, un autre à graine différente", () => {
+  it("donne le même intervalle à graine égale, un autre à graine de run différente", () => {
     const jeu = dixGrappes();
 
     const a = intervalleBootstrap(jeu, exactitude, OPTIONS);
     const b = intervalleBootstrap(jeu, exactitude, OPTIONS);
-    const c = intervalleBootstrap(jeu, exactitude, { ...OPTIONS, graine: "une-autre-graine" });
+    const autreRun = { ...OPTIONS, graine_du_run: 20261202 };
 
     expect(a).toEqual(b);
-    expect([c?.bas, c?.haut]).not.toEqual([a?.bas, a?.haut]);
+    // Sur dix grappes, les bornes avancent par pas de 0,1 : deux flux distincts peuvent tomber sur
+    // les mêmes bornes. C'est le flux des rééchantillons qui doit changer avec la graine.
+    expect(reechantillonner(jeu, exactitude, autreRun).valeurs).not.toEqual(
+      reechantillonner(jeu, exactitude, OPTIONS).valeurs,
+    );
     expect(a?.reechantillonnages).toBe(200);
     expect(REECHANTILLONNAGES_PRODUCTION).toBe(2000);
+  });
+});
+
+describe("contrat de rejeu depuis run.graines.bootstrap (constat n° 6)", () => {
+  it("amorce le générateur par graineDerivee(graine_du_run, [\"bootstrap\", ...cle]), rien d'autre", () => {
+    // Deux grappes homogènes, dans l'ordre de première apparition : g-exacte (indice 0, taux 1),
+    // g-inexacte (indice 1, taux 0). Chaque rééchantillon tire deux indices avec remise ; sa
+    // valeur est la moyenne des deux taux. Un tiers qui rejoue le générateur avec la graine
+    // dérivée doit retrouver exactement la même liste de valeurs.
+    const jeu = [
+      ...grappe("g-exacte", 1, { categorie: "exacte" }),
+      ...grappe("g-inexacte", 1, { categorie: "inexacte" }),
+    ];
+    const options = { reechantillonnages: 50, graine_du_run: 20261201, cle: ["outil-alpha", "exactitude"] };
+
+    const rng = generateur(graineDerivee(20261201, ["bootstrap", "outil-alpha", "exactitude"]));
+    const attendues: number[] = [];
+    for (let i = 0; i < 50; i += 1) {
+      const tirees = [rng.entier(2), rng.entier(2)];
+      attendues.push(tirees.filter((indice) => indice === 0).length / 2);
+    }
+    attendues.sort((x, y) => x - y);
+
+    expect(reechantillonner(jeu, exactitude, options).valeurs).toEqual(attendues);
   });
 });
 

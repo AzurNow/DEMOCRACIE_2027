@@ -13,6 +13,7 @@ import type {
   EntreeTirage,
   Item,
   LectureComparateur,
+  Notation,
   OutilAuGel,
   Question,
   Reponse,
@@ -200,5 +201,20 @@ export function lectureComparateur(partiel: Partiel<LectureComparateur> = {}): L
     outil_id: "comparateur-un",
     reference_item: { item_id: ulid("item"), item_version: 1, item_empreinte: empreinte("item") },
     affiche: true,
+  }, partiel);
+}
+
+/** Notation humaine de l'échantillon de 10 %, exacte, sans lien : chaque test pose ce qui compte. */
+export function notation(partiel: Partiel<Notation> = {}): Notation {
+  return fusionner<Notation>({
+    id: ulid("notation"),
+    run_id: ulid("run"),
+    contexte: "run",
+    objet_note: { type: "reponse", id: ulid("reponse") },
+    notateur: { type: "humain", id: "a1" },
+    categorie: "exacte",
+    drapeaux: [],
+    sourcage: { cite: false, liens: [] },
+    motif_notation: "echantillon_aleatoire_10",
   }, partiel);
 }

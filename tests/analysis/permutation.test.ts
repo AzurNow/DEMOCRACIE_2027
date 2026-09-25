@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { generateur, graineDepuisTexte } from "../../validation/domaine/alea.ts";
+import { graineDerivee } from "../../analysis/graines.ts";
 import {
   ecartMaximal,
   grappesEtiquetees,
@@ -17,7 +18,7 @@ import {
 } from "../../analysis/permutation.ts";
 import { grappe, ulid, unite } from "./fabriques.ts";
 
-const OPTIONS = { permutations: 200, graine: "graine-de-permutation" };
+const OPTIONS = { permutations: 200, graine_du_run: 20261201, cle: ["test", "permutation"] };
 
 /** `n` items d'un candidat, une réponse chacun, toutes de la même catégorie. */
 function items(candidat_id: string, n: number, exacte: boolean, prefixe = candidat_id) {
@@ -82,6 +83,30 @@ describe("statistique et valeur p", () => {
   it("ne teste rien quand il n'y a pas deux candidats à comparer", () => {
     expect(testHomogeneiteCandidats([], OPTIONS)).toBeNull();
     expect(testHomogeneiteCandidats(items("candidat-a", 3, true), OPTIONS)).toBeNull();
+  });
+});
+
+describe("contrat de rejeu depuis run.graines.permutation (constat n° 6)", () => {
+  it("amorce le générateur par graineDerivee(graine_du_run, [\"permutation\", ...cle]), rien d'autre", () => {
+    // Deux candidats, trois items chacun, profils mêlés : la valeur p dépend du flux aléatoire.
+    // Un tiers qui rejoue les permutations avec la graine dérivée doit retrouver la même valeur p.
+    const jeu = [
+      ...items("candidat-a", 2, true, "a-exactes"),
+      ...items("candidat-a", 1, false, "a-inexactes"),
+      ...items("candidat-b", 1, true, "b-exactes"),
+      ...items("candidat-b", 2, false, "b-inexactes"),
+    ];
+    const options = { permutations: 40, graine_du_run: 5, cle: ["outil-alpha", "web_activee"] };
+
+    const grappes = grappesEtiquetees(jeu);
+    const observee = ecartMaximal(grappes);
+    const rng = generateur(graineDerivee(5, ["permutation", "outil-alpha", "web_activee"]));
+    let extremes = 0;
+    for (let i = 0; i < 40; i += 1) {
+      if (ecartMaximal(permuterEtiquettes(grappes, rng)) >= observee - 1e-12) extremes += 1;
+    }
+
+    expect(testHomogeneiteCandidats(jeu, options)?.valeur_p).toBe((1 + extremes) / 41);
   });
 });
 

@@ -24,7 +24,8 @@ import {
   tauxObsolescence,
   tauxObsolescenceFraiche,
 } from "../../analysis/metriques.ts";
-import type { Taux } from "../../analysis/types.ts";
+import { VerdictEnDouble } from "../../analysis/filtre.ts";
+import type { CategorieRetenue, Taux } from "../../analysis/types.ts";
 import { lectureComparateur, ulid, unite, unites, verdict } from "./fabriques.ts";
 
 /** Un taux absent n'a pas de champ `valeur` : ni null, ni 0, ni NaN. */
@@ -267,5 +268,58 @@ describe("comparateurs (QR9)", () => {
     const lectures = [lectureComparateur({ id: ulid("l1"), affiche: true })];
 
     expect(() => metriquesComparateur(lectures, [])).toThrow(/verdict/);
+  });
+});
+
+describe("exactitude des comparateurs : même règle que les assistants (constat n° 5)", () => {
+  /** Un comparateur, une lecture affichée par catégorie donnée, plus `masquees` lectures non affichées. */
+  function mesurer(categories: readonly CategorieRetenue[], masquees = 0) {
+    const lectures = [
+      ...categories.map((_, i) => lectureComparateur({ id: ulid(`la-${i}`), affiche: true })),
+      ...Array.from({ length: masquees }, (_, i) => lectureComparateur({ id: ulid(`lm-${i}`), affiche: false })),
+    ];
+    const verdicts = categories.map((categorie_retenue, i) =>
+      verdict({ id: ulid(`vla-${i}`), objet_note: { type: "lecture_comparateur", id: ulid(`la-${i}`) }, categorie_retenue }),
+    );
+    const [mesure] = metriquesComparateur(lectures, verdicts);
+    if (mesure === undefined) throw new Error("aucune mesure rendue");
+    return mesure;
+  }
+
+  it("sort la lecture indéterminée du dénominateur de l'exactitude d'un comparateur", () => {
+    // Exacte + indéterminée : 1/1, et non 1/2 comme avant la correction.
+    expect(mesurer(["exacte", "indeterminee"]).exactitude).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+  });
+
+  it("sort la lecture notée non-réponse du dénominateur", () => {
+    expect(mesurer(["exacte", "non_reponse"]).exactitude).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+  });
+
+  it("rend l'exactitude absente, pas nulle, quand aucune lecture affichée n'est classée", () => {
+    const mesure = mesurer(["indeterminee", "non_reponse"]);
+    attendreAbsent(mesure.exactitude, 0);
+  });
+
+  it("garde la couverture inchangée : les lectures non classées restent des items affichés", () => {
+    // 3 affichées (exacte, indéterminée, non-réponse) sur 4 lectures : couverture 3/4.
+    expect(mesurer(["exacte", "indeterminee", "non_reponse"], 1).couverture).toEqual({
+      numerateur: 3,
+      denominateur: 4,
+      valeur: 0.75,
+    });
+  });
+
+  it("lève sur deux verdicts du run portant sur une même lecture, au lieu de garder le dernier", () => {
+    const lectures = [lectureComparateur({ id: ulid("l1"), affiche: true })];
+    const verdicts = [
+      verdict({ id: ulid("vl1"), objet_note: { type: "lecture_comparateur", id: ulid("l1") } }),
+      verdict({
+        id: ulid("vl1-bis"),
+        objet_note: { type: "lecture_comparateur", id: ulid("l1") },
+        categorie_retenue: "inexacte",
+      }),
+    ];
+
+    expect(() => metriquesComparateur(lectures, verdicts)).toThrow(VerdictEnDouble);
   });
 });

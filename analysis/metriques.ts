@@ -34,12 +34,12 @@ import {
   type TypeItem,
   type Verdict,
 } from "./types.ts";
-import { filtrerContexteRun } from "./filtre.ts";
+import { filtrerContexteRun, indexerVerdictsDuRun } from "./filtre.ts";
 
-type Predicat = (unite: UniteAnalyse) => boolean;
+type Predicat<T = UniteAnalyse> = (objet: T) => boolean;
 
 /** Compte un numérateur et un dénominateur en un passage. Seul chemin vers un `Taux` de métrique. */
-function tauxSur(unites: readonly UniteAnalyse[], denominateur: Predicat, numerateur: Predicat): Taux {
+function tauxSur<T>(unites: readonly T[], denominateur: Predicat<T>, numerateur: Predicat<T>): Taux {
   let bas = 0;
   let haut = 0;
   for (const unite of unites) {
@@ -50,7 +50,12 @@ function tauxSur(unites: readonly UniteAnalyse[], denominateur: Predicat, numera
   return taux(haut, bas);
 }
 
-const CLASSEE: Predicat = (u) => u.categorie === "exacte" || u.categorie === "inexacte";
+/** Ce qui porte une catégorie primaire du §7 : une unité d'analyse, ou une lecture de comparateur notée. */
+export interface Classable {
+  readonly categorie: CategorieRetenue;
+}
+
+const CLASSEE: Predicat<Classable> = (u) => u.categorie === "exacte" || u.categorie === "inexacte";
 const TOUTE: Predicat = () => true;
 
 function porte(drapeau: Drapeau): Predicat {
@@ -61,8 +66,12 @@ function estDeType(...types: readonly TypeItem[]): Predicat {
   return (u) => types.includes(u.type_item_principal);
 }
 
-/** Exactitude : exactes / (exactes + inexactes). Non-réponses, indéterminées et manquantes hors dénominateur. */
-export function exactitude(unites: readonly UniteAnalyse[]): Taux {
+/**
+ * Exactitude : exactes / (exactes + inexactes). Non-réponses, indéterminées et manquantes hors
+ * dénominateur. Seule définition du dépôt, pour les assistants comme pour les comparateurs (§8 0.3 :
+ * « la même règle des deux côtés »).
+ */
+export function exactitude(unites: readonly Classable[]): Taux {
   return tauxSur(unites, CLASSEE, (u) => u.categorie === "exacte");
 }
 
@@ -246,13 +255,17 @@ export interface MetriquesComparateur {
   readonly outil_id: IdentifiantCourt;
   /** §8 : items P affichés / items P de référence. */
   readonly couverture: Taux;
-  /** §8 : items affichés compatibles / items affichés — dénominateur littéral du protocole. */
+  /**
+   * §8 (0.3) : items affichés compatibles / items affichés classés. Une lecture indéterminée ou
+   * notée non-réponse sort du dénominateur, comme pour un assistant : même fonction `exactitude`.
+   */
   readonly exactitude: Taux;
 }
 
 /**
  * QR9 : les comparateurs sont lus, pas interrogés (§6). Une lecture affichée sans verdict n'est
- * pas une lecture incompatible : c'est une notation absente, et elle lève.
+ * pas une lecture incompatible : c'est une notation absente, et elle lève. Deux verdicts du run
+ * sur une même lecture lèvent aussi (`VerdictEnDouble`) : garder le dernier serait arbitraire.
  */
 export function metriquesComparateur(
   lectures: readonly LectureComparateur[],
@@ -269,12 +282,8 @@ export function metriquesComparateur(
 }
 
 function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<string, CategorieRetenue> {
-  const notes = new Map<string, CategorieRetenue>();
-  for (const verdict of filtrerContexteRun(verdicts)) {
-    if (verdict.objet_note.type !== "lecture_comparateur") continue;
-    notes.set(verdict.objet_note.id, verdict.categorie_retenue);
-  }
-  return notes;
+  const index = indexerVerdictsDuRun(verdicts, "lecture_comparateur");
+  return new Map([...index].map(([id, verdict]) => [id, verdict.categorie_retenue]));
 }
 
 function mesurerComparateur(
@@ -283,17 +292,16 @@ function mesurerComparateur(
   notes: ReadonlyMap<string, CategorieRetenue>,
 ): MetriquesComparateur {
   const affichees = lectures.filter((l) => l.affiche);
-  let compatibles = 0;
-  for (const lecture of affichees) {
+  const notees = affichees.map((lecture): Classable => {
     const categorie = notes.get(lecture.id);
     if (categorie === undefined) {
       throw new Error(`Lecture affichée ${lecture.id} sans verdict : la compatibilité n'a pas été notée.`);
     }
-    if (categorie === "exacte") compatibles += 1;
-  }
+    return { categorie };
+  });
   return {
     outil_id,
     couverture: taux(affichees.length, lectures.length),
-    exactitude: taux(compatibles, affichees.length),
+    exactitude: exactitude(notees),
   };
 }

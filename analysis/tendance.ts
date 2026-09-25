@@ -62,7 +62,8 @@ export function tendanceParOutil(
     return {
       outil_id,
       questions_communes: questionsDesDeux(avant, apres),
-      difference: differenceAppariee(apres, avant, statistique, options),
+      // Graine propre à l'outil (`graines.ts`) : la clé de l'appelant, suivie de l'outil.
+      difference: differenceAppariee(apres, avant, statistique, { ...options, cle: [...options.cle, outil_id] }),
     };
   });
 }

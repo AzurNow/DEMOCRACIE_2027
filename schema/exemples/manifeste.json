@@ -167,6 +167,26 @@
       "regle_protocole": "annexe C, grille de notation"
     },
     {
+      "objet": "notation",
+      "fichier": "notation/valide-03-humain-arbitrage-echantillon.json",
+      "attendu": "valide",
+      "motif": "Troisième humain arbitrant une réponse de l'échantillon de 10 % dont les deux notations divergent (§7) : motif arbitrage_echantillon_10, distinct de l'arbitrage du panel des contestations. C'est cette note que retient le recalcul (a) du §8."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-04-arbitrage-echantillon-par-un-juge.json",
+      "attendu": "invalide",
+      "motif": "Arbitrage de l'échantillon humain confié à un juge automatique. §7 : la divergence des deux humains est arbitrée par un troisième HUMAIN ; une note de juge entrerait sinon dans le recalcul (a), qui doit rester sur la seule notation humaine.",
+      "regle_protocole": "§7, règle de décision ; §8, robustesse (a)"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-05-echantillon-note-par-un-juge.json",
+      "attendu": "invalide",
+      "motif": "Notation de l'échantillon aléatoire de 10 % portée par un juge automatique. §7 : double notation HUMAINE à l'aveugle ; une note de juge sous ce motif entrerait dans le recalcul (a) du §8, qui doit rester sur la seule notation humaine.",
+      "regle_protocole": "§7, règle de décision ; §8, robustesse (a)"
+    },
+    {
       "objet": "verdict",
       "fichier": "verdict/valide-01-accord-des-deux-juges.json",
       "attendu": "valide",
@@ -198,6 +218,19 @@
       "attendu": "invalide",
       "motif": "Désaccord déclaré avec une seule notation source. Un désaccord suppose au moins deux notations ; sans cela, le kappa juges-humains publié à chaque run repose sur du vide.",
       "regle_protocole": "§7, calibration et fiabilité publiée"
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/valide-03-echantillon-note-humaine.json",
+      "attendu": "valide",
+      "motif": "Réponse de l'échantillon de 10 % : la note retenue vient des humains (echantillon_humain_10), les notations des deux juges et des deux humains restent référencées pour l'accord juges-humains publié à chaque run."
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-04-echantillon-retenu-sur-accord-des-juges.json",
+      "attendu": "invalide",
+      "motif": "Réponse de l'échantillon de 10 % dont la note retenue vient de l'accord des juges. §7 (0.7) : pour une réponse de l'échantillon, la note humaine prévaut sur celle des juges.",
+      "regle_protocole": "§7, règle de décision"
     },
     {
       "objet": "run",
@@ -253,6 +286,13 @@
       "regle_protocole": "§5, tirage ; annexe E, point 6"
     },
     {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-06-graine-au-dela-de-2-53.json",
+      "attendu": "invalide",
+      "motif": "Graine du tirage supérieure à 2^53 − 1, borne de run.graines.tirage dont elle est la copie : le tirage ne serait plus rejouable exactement depuis la valeur publiée.",
+      "regle_protocole": "§5, tirage avec graine publiée ; §9, reproductibilité"
+    },
+    {
       "objet": "run",
       "fichier": "run/valide-02-provisoire-juge-retire.json",
       "attendu": "valide",
@@ -292,6 +332,13 @@
       "attendu": "invalide",
       "motif": "Candidat du périmètre sans nom de famille seul. §5 (protocole 0.6) : la barrière vise « prénom et nom, ou nom seul » ; sans le nom saisi, une Q-ATT qui ne cite que le nom de famille passerait la barrière, et le dériver du libellé serait une hypothèse (particules, noms composés).",
       "regle_protocole": "§5, garanties de symétrie"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-06-graine-au-dela-de-2-53.json",
+      "attendu": "invalide",
+      "motif": "Graine de bootstrap supérieure à 2^53 − 1. Sa valeur n'a plus d'écriture décimale exacte depuis un nombre JavaScript : deux graines publiées différentes pourraient amorcer le même tirage, et l'intervalle ne serait plus rejouable depuis la valeur publiée.",
+      "regle_protocole": "§8, graine publiée ; §9, reproductibilité"
     },
     {
       "objet": "lecture-comparateur",

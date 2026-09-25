@@ -8,11 +8,12 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { differenceAppariee, reechantillonnerDifference } from "../../analysis/bootstrap.ts";
 import { questionsCommunes, tendanceParOutil } from "../../analysis/tendance.ts";
 import { exactitude } from "../../analysis/metriques.ts";
 import { empreinte, idQuestion, question, ulid, unite } from "./fabriques.ts";
 
-const OPTIONS = { reechantillonnages: 100, graine: "graine-tendance" };
+const OPTIONS = { reechantillonnages: 100, graine_du_run: 20261201, cle: ["test", "tendance"] };
 
 function questionAvecTexte(cle: string, texte: string) {
   return question({
@@ -94,5 +95,23 @@ describe("tendance par outil", () => {
       expect(tendance.difference.difference).toBeNull();
       expect(tendance.difference.qualificatif).toBeNull();
     }
+  });
+});
+
+describe("graine de chaque tendance (constat n° 6)", () => {
+  it("dérive la graine d'un outil de la clé de l'appelant suivie de l'identifiant de l'outil", () => {
+    const cles = ["q1", "q2", "q3", "q4", "q5", "q6"];
+    const questions = cles.map((c) => questionAvecTexte(c, "v1"));
+    const avant = cles.map((c, i) => reponseA(c, i % 2 === 0));
+    const apres = cles.map((c, i) => reponseA(c, i % 3 === 0));
+
+    const [tendance] = tendanceParOutil({ questions, unites: avant }, { questions, unites: apres }, exactitude, OPTIONS);
+    const attendue = differenceAppariee(apres, avant, exactitude, { ...OPTIONS, cle: [...OPTIONS.cle, "outil-alpha"] });
+
+    expect(tendance?.difference).toEqual(attendue);
+    // L'outil fait partie de la clé : le flux diffère de celui de la seule clé de l'appelant.
+    expect(
+      reechantillonnerDifference(apres, avant, exactitude, { ...OPTIONS, cle: [...OPTIONS.cle, "outil-alpha"] }).valeurs,
+    ).not.toEqual(reechantillonnerDifference(apres, avant, exactitude, OPTIONS).valeurs);
   });
 });

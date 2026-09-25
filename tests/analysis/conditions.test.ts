@@ -6,11 +6,12 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { differenceAppariee, reechantillonnerDifference } from "../../analysis/bootstrap.ts";
 import { comparerConditions, pairesParFormulation, pairesParMode } from "../../analysis/conditions.ts";
 import { exactitude } from "../../analysis/metriques.ts";
 import { grappe, ulid, unite } from "./fabriques.ts";
 
-const OPTIONS = { reechantillonnages: 100, graine: "graine-conditions" };
+const OPTIONS = { reechantillonnages: 100, graine_du_run: 20261201, cle: ["test", "conditions"] };
 
 /** Les seules clés qu'une comparaison de condition publie : aucune ne porte une valeur p. */
 const CLES_COMPARAISON = ["cle", "difference", "grappes_appariees", "grappes_exclues"];
@@ -101,6 +102,30 @@ describe("aucune valeur p dans les effets de condition (§8 0.3)", () => {
     const uneAUne = paires.flatMap((paire) => comparerConditions([paire], exactitude, OPTIONS));
 
     expect(enFamille).toEqual(uneAUne);
+  });
+});
+
+describe("graine de chaque comparaison (constat n° 6)", () => {
+  it("dérive la graine d'une paire de la clé de l'appelant suivie de la clé de la paire", () => {
+    // Six items aux différences mêlées : l'intervalle dépend du flux aléatoire, donc de la clé.
+    const profils: readonly (readonly [boolean, boolean])[] = [
+      [true, false], [true, true], [false, false], [true, false], [false, true], [true, false],
+    ];
+    const a = profils.flatMap(([exacte], i) => grappe(`i${i}`, 1, { categorie: exacte ? "exacte" : "inexacte" }));
+    const b = profils.flatMap(([, exacte], i) => grappe(`i${i}`, 1, { categorie: exacte ? "exacte" : "inexacte" }));
+
+    const [comparaison] = comparerConditions([{ cle: "outil-alpha:web_activee-web_desactivee", a, b }], exactitude, OPTIONS);
+    const attendue = differenceAppariee(a, b, exactitude, {
+      ...OPTIONS,
+      cle: [...OPTIONS.cle, "outil-alpha:web_activee-web_desactivee"],
+    });
+
+    expect(comparaison?.difference).toEqual(attendue);
+    // La clé de la paire fait partie de la clé : le flux diffère de celui de la seule clé de l'appelant.
+    expect(
+      reechantillonnerDifference(a, b, exactitude, { ...OPTIONS, cle: [...OPTIONS.cle, "outil-alpha:web_activee-web_desactivee"] })
+        .valeurs,
+    ).not.toEqual(reechantillonnerDifference(a, b, exactitude, OPTIONS).valeurs);
   });
 });
 

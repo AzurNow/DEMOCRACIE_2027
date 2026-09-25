@@ -17,12 +17,16 @@
  * 3. **Un rééchantillon dont la statistique est indéfinie** (dénominateur nul) est compté à part,
  *    jamais remplacé par 0 : `reechantillonnages_indefinis` dit combien l'intervalle ignore.
  *
- * Le générateur est celui du dépôt (`validation/domaine/alea.ts`, SplitMix64 amorcé par le
- * sha256 d'une graine textuelle) : la reproductibilité du §9 ne dépend d'aucune version de Node.
+ * Le générateur est celui du dépôt (`validation/domaine/alea.ts`, SplitMix64 amorcé par sha256) :
+ * la reproductibilité du §9 ne dépend d'aucune version de Node. Il est amorcé par
+ * `graineDerivee(options.graine_du_run, ["bootstrap", ...options.cle])` (`graines.ts`, qui écrit la
+ * règle complète) : un tiers qui part de `run.graines.bootstrap.valeur` et de la clé publiée avec
+ * l'intervalle retrouve les mêmes bornes.
  */
 
-import { generateur, graineDepuisTexte, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
+import { generateur, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
 import type { UniteAnalyse } from "./filtre.ts";
+import { graineDerivee } from "./graines.ts";
 import type { Intervalle95, Taux, Ulid } from "./types.ts";
 
 /** §8. Les tests en utilisent beaucoup moins, à graine fixe. */
@@ -30,9 +34,14 @@ export const REECHANTILLONNAGES_PRODUCTION = 2000;
 
 export interface OptionsBootstrap {
   readonly reechantillonnages: number;
-  /** Graine textuelle, passée telle quelle à l'algorithme `splitmix64-sha256-v1`. */
-  readonly graine: string;
+  /** `run.graines.bootstrap.valeur`, l'entier publié du run. */
+  readonly graine_du_run: number;
+  /** Clé lisible de la comparaison, sans la famille `bootstrap` que ce module ajoute en tête. */
+  readonly cle: readonly string[];
 }
+
+/** Famille ajoutée en tête de toute clé de bootstrap (`graines.ts`). */
+export const FAMILLE_BOOTSTRAP = "bootstrap";
 
 export type Statistique = (unites: readonly UniteAnalyse[]) => Taux;
 
@@ -169,7 +178,7 @@ function echantillonner(
   options: OptionsBootstrap,
 ): EchantillonBootstrap {
   verifierOptions(options);
-  const rng = generateur(graineDepuisTexte(options.graine));
+  const rng = generateur(graineDerivee(options.graine_du_run, [FAMILLE_BOOTSTRAP, ...options.cle]));
   const valeurs: number[] = [];
   let indefinis = 0;
   for (let b = 0; b < options.reechantillonnages; b += 1) {
@@ -185,7 +194,6 @@ function verifierOptions(options: OptionsBootstrap): void {
   if (!Number.isInteger(options.reechantillonnages) || options.reechantillonnages < 1) {
     throw new Error(`Nombre de rééchantillonnages invalide : ${options.reechantillonnages}`);
   }
-  if (options.graine.length === 0) throw new Error("Graine de bootstrap vide : rien ne serait rejouable.");
 }
 
 function tirerAvecRemise(nombreGrappes: number, rng: GenerateurAleatoire): number[] {

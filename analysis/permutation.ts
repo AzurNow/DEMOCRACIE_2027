@@ -18,13 +18,17 @@
  *    est produit par `exactitude()`, et la statistique ne fait qu'en sommer numérateurs et
  *    dénominateurs. La métrique ne vit pas ici une deuxième fois.
  *
+ * Le générateur est amorcé par `graineDerivee(options.graine_du_run, ["permutation",
+ * ...options.cle])` (`graines.ts`) : la valeur p se rejoue depuis `run.graines.permutation.valeur`.
+ *
  * Valeur p de Monte-Carlo : (1 + nombre de permutations au moins aussi extrêmes) / (1 + B). Le
  * « 1 + » compte l'échantillon observé lui-même ; sans lui, une valeur p nulle serait publiable,
  * ce qu'aucun nombre fini de permutations ne justifie.
  */
 
-import { generateur, graineDepuisTexte, melanger, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
+import { generateur, melanger, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
 import type { UniteAnalyse } from "./filtre.ts";
+import { graineDerivee } from "./graines.ts";
 import { exactitude, exactitudeParCandidat } from "./metriques.ts";
 import { taux, type IdentifiantCourt, type Taux, type Ulid } from "./types.ts";
 
@@ -40,8 +44,14 @@ const TOLERANCE = 1e-12;
 
 export interface OptionsPermutation {
   readonly permutations: number;
-  readonly graine: string;
+  /** `run.graines.permutation.valeur`, l'entier publié du run. */
+  readonly graine_du_run: number;
+  /** Clé lisible du test (outil, mode), sans la famille `permutation` que ce module ajoute en tête. */
+  readonly cle: readonly string[];
 }
+
+/** Famille ajoutée en tête de toute clé de permutation (`graines.ts`). */
+export const FAMILLE_PERMUTATION = "permutation";
 
 /** Un item, son étiquette de candidat, et ses comptages d'exactitude. */
 export interface GrappeEtiquetee {
@@ -166,7 +176,7 @@ function valeurPDe(
   observee: number,
   options: OptionsPermutation,
 ): number {
-  const rng = generateur(graineDepuisTexte(options.graine));
+  const rng = generateur(graineDerivee(options.graine_du_run, [FAMILLE_PERMUTATION, ...options.cle]));
   let extremes = 0;
   for (let i = 0; i < options.permutations; i += 1) {
     if (ecartMaximal(permuterEtiquettes(grappes, rng)) >= observee - TOLERANCE) extremes += 1;
@@ -188,5 +198,6 @@ function verifierOptions(options: OptionsPermutation): void {
   if (!Number.isInteger(options.permutations) || options.permutations < 1) {
     throw new Error(`Nombre de permutations invalide : ${options.permutations}`);
   }
-  if (options.graine.length === 0) throw new Error("Graine de permutation vide : rien ne serait rejouable.");
+  // Une graine invalide refuse avant tout calcul, pas seulement quand un tirage a lieu.
+  graineDerivee(options.graine_du_run, [FAMILLE_PERMUTATION, ...options.cle]);
 }

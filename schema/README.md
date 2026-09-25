@@ -125,7 +125,7 @@ l'item ») au lieu de laisser l'analyse la recalculer.
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 85 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 92 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -135,10 +135,10 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | mesure | mesure fictive sans vérification contre les corpus T1 · thème hors des dix · identifiant lisible au lieu d'opaque |
 | question | deux items principaux · Q-ATT nommant un candidat · deux formulations au lieu de trois |
 | reponse | réponse manquante portant un contenu · réponse d'API sans mode · artefact contrefactuel sans traçabilité |
-| notation | juge attribuant « indéterminée » · drapeau sur une réponse exacte · note non exacte sans extrait justificatif |
-| verdict | fabrication retenue sans revue humaine · verdict sans notation source · désaccord avec une seule source |
-| run | graine sans algorithme nommé · symétrie rouge publiée sans mention provisoire · candidat à 8 items P déclaré au-dessus du seuil · candidat sans libellé · candidat sans nom seul |
-| tirage | entrée d'attribution nommant un candidat · deux items principaux dans une entrée · question reprise sans run d'origine · item arbitré sans décision du panel figée · décision figée sur un item non arbitré |
+| notation | juge attribuant « indéterminée » · drapeau sur une réponse exacte · note non exacte sans extrait justificatif · arbitrage de l'échantillon humain confié à un juge · échantillon humain noté par un juge |
+| verdict | fabrication retenue sans revue humaine · verdict sans notation source · désaccord avec une seule source · réponse de l'échantillon humain retenue sur l'accord des juges |
+| run | graine sans algorithme nommé · symétrie rouge publiée sans mention provisoire · candidat à 8 items P déclaré au-dessus du seuil · candidat sans libellé · candidat sans nom seul · graine au-delà de 2^53 − 1 |
+| tirage | entrée d'attribution nommant un candidat · deux items principaux dans une entrée · question reprise sans run d'origine · item arbitré sans décision du panel figée · décision figée sur un item non arbitré · graine au-delà de 2^53 − 1 |
 | lecture-comparateur | absence d'affichage portant un extrait · affichage sans extrait · cadence supérieure à une page par seconde |
 | decision | annulation portant une décision · decision=corriger avec corrections vide · item O portant reponses_grille au lieu de reponses_par_etat |
 | decision-mesure | refus sans motif · theme_demande hors des dix thèmes fixes du §3 |
@@ -150,7 +150,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | transcription | température de décodage non nulle · révision des poids qui n'est pas un hash de commit |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 18 schémas au registre, 85/85 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 18 schémas au registre, 92/92 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 
