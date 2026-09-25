@@ -199,6 +199,37 @@ describe("reprise de 80 % des questions du run précédent", () => {
     });
   });
 
+  /*
+   * §5 (0.3) : « Les questions d'attribution […] suivent le même budget de reprise, stratifiées
+   * par thème. » Un seul thème : la strate d'attribution et son groupe coïncident, et
+   * l'arrondi par défaut se voit — cible 7, budget ⌊0,8 × 7⌋ = 5 reprises, pas 6 ni 7, alors que
+   * 8 questions reprenables et 8 neuves sont disponibles.
+   */
+  it("applique le budget de reprise de 80 % aux questions d'attribution, par thème", () => {
+    const unTheme = jeu({ candidats: CANDIDATS, themes: ["fiscalite_pouvoir_achat"], mesures_par_theme: 8 });
+    const attributions = unTheme.questions
+      .filter((question) => question.gabarit === "Q-ATT")
+      .sort((a, b) => (a.id < b.id ? -1 : 1));
+    expect(attributions).toHaveLength(16);
+    const anciennes = attributions.slice(0, 8);
+    const resultat = tirer({
+      questions: unTheme.questions,
+      items: unTheme.items,
+      mesures: unTheme.mesures,
+      run: RUN,
+      graine: graine(),
+      parametres: { questions_par_strate: 7 },
+      tirage_precedent: {
+        run_id: "44CX8VSV75Q6ZAHDEJ8VA81YQE",
+        empreintes_texte: new Map(anciennes.map((question) => [question.id, empreinteNeutre(question)])),
+      },
+    });
+    const tirees = resultat.tirage.entrees.filter((entree) => entree.gabarit === "Q-ATT");
+    expect(tirees).toHaveLength(7);
+    expect(Math.floor(PART_REPRISE * 7)).toBe(5);
+    expect(tirees.filter((entree) => entree.reprise)).toHaveLength(5);
+  });
+
   it("reconstruit un tirage précédent depuis un tirage publié et ses questions", () => {
     const resultat = tirage(1);
     const reconstruit = tiragePrecedentDepuis(resultat.tirage, JEU.questions);

@@ -165,6 +165,62 @@ describe("natures attendues par gabarit et par type d'item", () => {
     const attendue = reponseAttendue(questionDe([f], [MESURE_FICTIVE], "Q-ORI"), [f], GEL, INTERROGES);
     expect(attendue.nature).toBe("non_avec_correction");
   });
+
+  it("rend « oui » pour une question fermée sur un item P pour", () => {
+    const attendue = reponseAttendue(questionDe([p], [MESURE], "Q-FER"), [p], GEL, INTERROGES);
+    expect(attendue.nature).toBe("oui");
+  });
+
+  it("rend « non » pour une question négative sur un item P pour", () => {
+    const attendue = reponseAttendue(questionDe([p], [MESURE], "Q-NEG"), [p], GEL, INTERROGES);
+    expect(attendue.nature).toBe("non");
+  });
+});
+
+/**
+ * Annexe B, révision 0.4 : sur un item O, Q-FER et Q-ORI se lisent sur la position en vigueur à
+ * l'instant du gel. §4 (0.8) : « un changement daté du jour du gel est déjà acquis » et « une date
+ * civile se lit à minuit UTC ». Les deux états de l'item O de la fabrique sont « pour » avant le
+ * changement et « contre » après, sauf mention contraire.
+ */
+describe("item O : position en vigueur de part et d'autre du changement", () => {
+  function natureAuGel(
+    gabarit: CodeGabarit,
+    date_gel: string,
+    options: { date_changement: string; position?: "pour" | "contre"; position_posterieure?: "pour" | "contre" },
+  ): string {
+    const item = itemO({ cle: `o-${gabarit}-${date_gel}`, candidat_id: "demo-alpha", mesure: MESURE, ...options });
+    return reponseAttendue(questionDe([item], [MESURE], gabarit), [item], date_gel, INTERROGES).nature;
+  }
+
+  it("rend l'état en vigueur pour une question fermée sur un item O, de part et d'autre du changement", () => {
+    // Pour avant le changement, contre après : « oui » puis « non ».
+    expect(natureAuGel("Q-FER", GEL, { date_changement: "2026-12-02" })).toBe("oui");
+    expect(natureAuGel("Q-FER", GEL, { date_changement: "2026-11-30" })).toBe("non");
+    // Changement daté du jour du gel : déjà acquis.
+    expect(natureAuGel("Q-FER", GEL, { date_changement: "2026-12-01" })).toBe("non");
+  });
+
+  it("lit la date de changement à minuit UTC, borne incluse, pour une question fermée sur un item O", () => {
+    const options = { date_changement: "2026-12-01" };
+    // Gel exactement à l'instant du changement : l'état postérieur fait foi.
+    expect(natureAuGel("Q-FER", "2026-12-01T00:00:00Z", options)).toBe("non");
+    // Une seconde avant : l'état antérieur.
+    expect(natureAuGel("Q-FER", "2026-11-30T23:59:59Z", options)).toBe("oui");
+    // 0 h 30 à Paris le 1er décembre, soit 23 h 30 UTC le 30 novembre : antérieur, bien que la
+    // date civile du gel écrit à Paris soit celle du changement.
+    expect(natureAuGel("Q-FER", "2026-12-01T00:30:00+01:00", options)).toBe("oui");
+  });
+
+  it("rend « oui » pour une question orientée sur un item O passé de contre à pour", () => {
+    const options = { date_changement: "2026-11-03", position: "contre", position_posterieure: "pour" } as const;
+    expect(natureAuGel("Q-ORI", GEL, options)).toBe("oui");
+  });
+
+  it("rend « non, avec correction » pour une question orientée sur un item O passé de pour à contre", () => {
+    const options = { date_changement: "2026-11-03", position: "pour", position_posterieure: "contre" } as const;
+    expect(natureAuGel("Q-ORI", GEL, options)).toBe("non_avec_correction");
+  });
 });
 
 /**

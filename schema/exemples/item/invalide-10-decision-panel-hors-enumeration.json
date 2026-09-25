@@ -1,0 +1,141 @@
+{
+  "id": "2MKBWSFAX0BQD36HSYE7WVJZS6",
+  "version": 3,
+  "empreinte": "4467e3ae7290d1b583e60a8cce0b128213242f7124ebe5f10755eca49822460f",
+  "type": "O",
+  "candidat_id": "cand-b",
+  "mesure_id": "RVFDD78MRJE8V6EPKA0T2CN37D",
+  "mesure_version": 2,
+  "statut_validation": "verifie",
+  "statut_contestation": "arbitree",
+  "valide_du": "2026-06-15",
+  "valide_au": null,
+  "obsolescence": {
+    "date_changement": "2026-11-03",
+    "etat_anterieur": {
+      "position": "pour",
+      "paraphrase": "Abaisser l'âge légal de départ à 60 ans.",
+      "citation_verbatim": "Nous rétablirons la retraite à 60 ans.",
+      "quantification": {
+        "dimensions": [
+          {
+            "type": "age",
+            "valeur": 60,
+            "unite": "ans",
+            "operateur": "exact"
+          }
+        ]
+      },
+      "source": {
+        "tier": "T1",
+        "url": "https://exemple-candidat.fr/programme-2027.pdf",
+        "type_document": "programme_pdf",
+        "page": 14,
+        "sha256": "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
+        "archive_url": "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/programme-2027.pdf",
+        "date_source": "2026-09-01",
+        "date_collecte": "2026-09-03T09:12:00+02:00",
+        "publication": "publique"
+      }
+    },
+    "etat_posterieur": {
+      "position": "conditionnel",
+      "paraphrase": "Abaisser l'âge légal à 62 ans pour les carrières longues uniquement.",
+      "citation_verbatim": "Ce sera 62 ans, et 60 ans pour les carrières longues.",
+      "quantification": {
+        "dimensions": [
+          {
+            "type": "age",
+            "valeur": 62,
+            "unite": "ans",
+            "operateur": "exact"
+          }
+        ]
+      },
+      "source": {
+        "tier": "T2",
+        "url": "https://exemple-media.fr/emission-du-12-octobre",
+        "type_document": "enregistrement_video",
+        "extrait": {
+          "debut": "00:42:10",
+          "fin": "00:43:05"
+        },
+        "transcription_verifiee_par": "a1",
+        "transcription_verifiee_le": "2026-10-14",
+        "sha256": "0cab1c9617404faf2b24e221e189ca5945813e14d3f766345b09ca13bbe28ffc",
+        "archive_url": "https://web.archive.org/web/20261014100000/https://exemple-media.fr/emission-du-12-octobre",
+        "date_source": "2026-10-12",
+        "date_collecte": "2026-10-13T08:00:00+02:00",
+        "chemin_local": "collecte/2026-10-12/emission.mp4",
+        "publication": "interne"
+      }
+    },
+    "remplace_item_id": "CK0RMX7KFHM4QH7J9GB5FFV3Z8"
+  },
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a3",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [
+    {
+      "id": "T2X08DX4NC7PKKHCN3PD1NECAF",
+      "date_reception": "2026-11-10T14:02:00+01:00",
+      "texte": "La position n'a pas changé : le candidat a toujours défendu une exception pour les carrières longues.",
+      "contestataire_type": "campagne",
+      "decision_panel": {
+        "date": "2026-11-20T17:00:00+01:00",
+        "decision": "maintien_partiel",
+        "motivation": "Les deux états sont sourcés en T1 et T2 ; la citation du 3 novembre modifie explicitement l'âge légal.",
+        "opinions_dissidentes": [
+          "Un membre estime la formulation initiale déjà conditionnelle."
+        ],
+        "arbitre_seul": false
+      }
+    }
+  ],
+  "historique": [
+    {
+      "date": "2026-09-20T10:05:00+02:00",
+      "changement": "création",
+      "commit": "2f22765d04931a078909145ca628d2264c852d7d",
+      "version_resultante": 1
+    },
+    {
+      "date": "2026-11-05T09:00:00+01:00",
+      "changement": "passage en type O, ajout de l'état postérieur",
+      "motif": "Déclaration T2 du 3 novembre 2026",
+      "commit": "6b1f53303a732ccc8c6aae6640399827c15250e3",
+      "version_resultante": 2
+    },
+    {
+      "date": "2026-11-20T17:30:00+01:00",
+      "changement": "arbitrage du panel : maintien",
+      "commit": "a625406f6977d45c1391b078f4d3656e0b75bfcb",
+      "version_resultante": 3
+    }
+  ]
+}
