@@ -13,6 +13,35 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-25 — Protocole 0.8 et conformité n° 9 : le kappa lit la contestation au calcul (`validation/domaine/analyse-lot.ts`, `docs/PROTOCOLE.md` 0.8)
+
+### 1. Un item du lot absent du staging sort du kappa sans signal — *moyenne*
+
+`analyse-lot.ts:apparier` écarte sans bruit un item du lot qu'il ne trouve plus dans `staging/`
+(promu puis retiré, renommé). Son statut de contestation n'est alors pas lisible, et il sort du
+dénominateur sans être compté parmi les exclus.
+
+**Pourquoi ça casse.** L'effectif `n` publié avec le kappa baisse sans explication, et un lot dont
+plusieurs items ont quitté le staging peut voir son kappa calculé sur un effectif trop faible pour
+décider du §12, sans que rien ne le dise.
+
+**Ce qu'il faut faire.** Compter ces items à part dans le diagnostic (`absents_du_staging`), ou lire
+leur statut dans `data/` quand ils y ont été promus. Décision d'implémentation, pas de protocole.
+
+### 2. Un item arbitré reste hors du kappa de son lot pour toujours — *basse*
+
+Décision du 2026-09-25 : une contestation close sort aussi l'item du dénominateur. Un item maintenu
+ou corrigé par le panel n'y revient jamais, même s'il est ensuite tiré.
+
+**Pourquoi ça casse.** Si les contestations se concentrent sur des items difficiles, le kappa publié
+porte sur les items les plus consensuels et surestime l'accord. C'est un choix assumé, mais il faudra
+le lire ainsi au §12.
+
+**Ce qu'il faut faire.** Publier avec le kappa le nombre d'items exclus pour contestation (déjà dans
+le diagnostic, `exclus_contestation`) dans le fichier publié du constat 16.
+
+---
+
 ## 2026-09-25 — Conformité, lot validation : lots pleins seulement, numérotation continue (`validation/domaine/lot.ts`, `validation/io/lots-fichier.ts`, `outils/lots.ts`, `validation/domaine/analyse-lot.ts`)
 
 ### 1. Un lot de taille non conforme n'est signalé que dans la réponse de la route — *moyenne*

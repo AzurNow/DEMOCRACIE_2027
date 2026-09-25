@@ -1157,19 +1157,20 @@
     {
       "id": "§4.44",
       "section": "4",
-      "citation": "Un item retiré du lot pour contestation sort du dénominateur, et l'effectif est publié avec le kappa.",
+      "citation": "Un item sort du dénominateur si une contestation, ouverte ou close, le vise à la date où le kappa du lot est calculé, qu'il ait été décidé ou non par les annotateurs ; ses décisions éventuelles restent au journal.",
       "nature": "code",
       "statut": "testee",
       "code": [
-        "validation/domaine/analyse-lot.ts:apparier",
-        "validation/serveur/routes.ts:retirerSiConteste"
+        "validation/domaine/analyse-lot.ts:exclusPourContestation",
+        "validation/domaine/analyse-lot.ts:diagnostiquerLot"
       ],
       "tests": [
-        "tests/interface.test.ts « l'item retiré sort du dénominateur du kappa, et n'est pas compté comme un désaccord »"
+        "tests/diagnostic-contestation.test.ts",
+        "tests/interface.test.ts (item contesté après les deux décisions, exclu sans que personne l'affiche)"
       ],
       "lot": null,
       "constat": 9,
-      "note": "Le retrait n'est écrit qu'à l'affichage de l'item : sa prise en compte dépend de l'ordre de navigation."
+      "note": "Protocole révisé en 0.8 le 2026-09-25 (PR #26). Code corrigé."
     },
     {
       "id": "§4.45",
@@ -1526,7 +1527,7 @@
       ],
       "lot": null,
       "constat": 34,
-      "note": null
+      "note": "Protocole révisé en 0.8 le 2026-09-25 (PR #26). Les trois règles de date sont écrites au §4."
     },
     {
       "id": "§4.66",
@@ -3433,9 +3434,9 @@
     {
       "id": "§8.27",
       "section": "8",
-      "citation": "la statistique est l'écart maximal absolu entre l'exactitude d'un candidat et l'exactitude globale de l'outil — calculée sur l'ensemble de ses réponses classées",
+      "citation": "calculée sur l'ensemble de ses réponses classées aux questions qui nomment un candidat — les questions d'attribution, qui n'en nomment aucun, sortent du test comme de l'exactitude par candidat",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
         "analysis/permutation.ts:grappesEtiquetees",
         "analysis/permutation.ts:ecartMaximal"
@@ -3445,7 +3446,7 @@
       ],
       "lot": null,
       "constat": 7,
-      "note": "L'exactitude globale exclut les réponses aux Q-ATT, qui sont des réponses classées de l'outil."
+      "note": "Protocole révisé en 0.8 le 2026-09-25 (PR #26). Le texte suit désormais le code."
     },
     {
       "id": "§8.28",
@@ -4377,7 +4378,7 @@
     {
       "id": "§12.14",
       "section": "12",
-      "citation": "moins de 20 % de réponses manquantes par outil",
+      "citation": "au plus 20 % de réponses manquantes par outil",
       "nature": "code",
       "statut": "partielle",
       "code": [
@@ -4388,7 +4389,7 @@
       ],
       "lot": null,
       "constat": 40,
-      "note": "Le code applique « plus de 20 % » du §8 ; à 20 % exactement, §12 exige la mention provisoire."
+      "note": "Protocole révisé en 0.8 le 2026-09-25 (PR #26). Aligné sur le §8 ; le critère go/no-go reste à calculer (lot sans propriétaire, voir constat 11 de la passe)."
     },
     {
       "id": "§12.15",
@@ -4821,7 +4822,7 @@
       ],
       "lot": null,
       "constat": 34,
-      "note": "L'égalité date_changement = date_gel et la lecture à minuit UTC sont des conventions de schema/README.md (Temps)."
+      "note": "Protocole révisé en 0.8 le 2026-09-25 (PR #26). Règles de date écrites au §4."
     },
     {
       "id": "C.01",
@@ -5176,9 +5177,9 @@
     {
       "id": "F.08",
       "section": "F",
-      "citation": "réponses manquantes < 20 % par outil",
+      "citation": "réponses manquantes ≤ 20 % par outil",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
         "analysis/seuils.ts:runIncomplet",
         "analysis/seuils.ts:outilsComparables"
@@ -5188,7 +5189,7 @@
       ],
       "lot": null,
       "constat": 40,
-      "note": "Le code suit le §8 (« plus de 20 % ») : un outil à exactement 20 % passe, ce que l'annexe F et le §12 (« moins de 20 % ») refusent."
+      "note": "Protocole révisé en 0.8 le 2026-09-25 (PR #26). Aligné sur le §8 et sur analysis/seuils.ts:runIncomplet."
     },
     {
       "id": "F.09",
