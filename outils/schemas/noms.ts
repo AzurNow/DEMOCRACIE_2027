@@ -1,5 +1,5 @@
 /**
- * Les dix-huit schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
+ * Les dix-neuf schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
  * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
  * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`, dix-huit avec
  * `transcription`).
@@ -27,6 +27,10 @@
  *
  * `transcription` décrit la fiche de transcription écrite par `pipeline/collecte/transcription`
  * (sous-lot C3, `docs/CONTRATS.md` §2.2), vérifiée de la même façon.
+ *
+ * `diagnostic-lot` décrit un calcul du kappa d'un lot, écrit en ajout seul par `pnpm diagnostics`
+ * dans `validation/diagnostics/` et publié au titre du §9 (conformité 2026-09-24, n° 16) : le
+ * dix-neuvième schéma.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -47,6 +51,7 @@ export const NOMS_SCHEMAS = [
   "reprise-archivage",
   "extraction-texte",
   "transcription",
+  "diagnostic-lot",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

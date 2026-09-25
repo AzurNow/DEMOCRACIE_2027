@@ -299,8 +299,8 @@ describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5,
 /* ------------------------------------------------- exemples réels du dépôt */
 
 describe("exemples de schema/exemples/", () => {
-  it("charge les 104 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(104);
+  it("charge les 110 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(110);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

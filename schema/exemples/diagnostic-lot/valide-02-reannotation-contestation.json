@@ -1,0 +1,15 @@
+{
+  "lot_id": "lot-003-r1",
+  "nature": "reannotation",
+  "date_calcul": "2026-10-20T11:30:00+02:00",
+  "kappa": 0.84,
+  "accord_observe": 0.918,
+  "n": 49,
+  "exclus_contestation": 1,
+  "taille_lot": 50,
+  "taille_attendue": 50,
+  "taille_conforme": true,
+  "reannote": "lot-003",
+  "date_calibration": "2026-10-15",
+  "supersede_par": null
+}
