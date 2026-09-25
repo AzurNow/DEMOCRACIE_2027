@@ -1,5 +1,5 @@
 /**
- * Les cinq invariants inter-fichiers que JSON Schema ne peut pas exprimer.
+ * Les six invariants inter-fichiers que JSON Schema ne peut pas exprimer.
  *
  * `docs/DETTE.md`, entrée « JSON Schema », point 1 : JSON Schema valide un fichier à la fois.
  * Une divergence sur `grappe_id` fausse les grappes du bootstrap du §8, donc tous les
@@ -10,6 +10,7 @@
  * seulement « non » oblige à relire tout le corpus pour trouver l'objet fautif.
  */
 
+import { fictifsEnDouble, type ItemFictifCandidat } from "../../validation/domaine/fictif-unique.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import type { CodeGabarit, Item, Mesure } from "./types.ts";
 
@@ -181,6 +182,23 @@ function violationDeFictivite(
       detail: `mesure ${mesure.id} déclarée fictive=false alors que l'item est de type F.`,
     },
   ];
+}
+
+/* ------------------------------------ 3 bis. un seul item F par mesure fictive */
+
+const INVARIANT_FICTIF_UNIQUE = "une mesure fictive porte un seul item fictif";
+
+/**
+ * §5 (protocole 0.9) : « Une mesure fictive porte un seul item fictif. » La règle est celle de la
+ * promotion (`validation/domaine/fictif-unique.ts`), lue ici sur le corpus entier, comme contrôle
+ * a posteriori. Une violation par mesure fautive, qui nomme ses items.
+ */
+export function unSeulItemFictifParMesure(items: readonly ItemFictifCandidat[]): readonly Violation[] {
+  return [...fictifsEnDouble(items)].map(([mesure_id, item_ids]) => ({
+    invariant: INVARIANT_FICTIF_UNIQUE,
+    objet: mesure_id,
+    detail: `${item_ids.length} items fictifs vérifiés : ${item_ids.join(", ")}.`,
+  }));
 }
 
 /* ------------------------------------ 4. versions des deux validations */

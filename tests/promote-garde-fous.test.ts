@@ -11,9 +11,10 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { evaluerPromotion } from "../validation/domaine/promotion.ts";
 import type { Item } from "../validation/domaine/types.ts";
 import { creerBac, lotDe, type Bac } from "./aides/bac.ts";
-import { decision, itemP, mesure } from "./aides/fabriques.ts";
+import { decision, itemF, itemP, mesure } from "./aides/fabriques.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
 
@@ -80,7 +81,9 @@ describe("item déjà présent dans data/", () => {
   accepterParLesDeux(bac, nouveau, "lot-008");
   accepterParLesDeux(bac, dejaPromu, "lot-008");
   mkdirSync(join(bac.racine, "data/items"), { recursive: true });
-  writeFileSync(join(bac.racine, "data/items", `${dejaPromu.id}.json`), "{}\n", "utf8");
+  // Un vrai item : depuis le protocole 0.9, `data/` est relu (et validé) pour la règle « une mesure
+  // fictive porte un seul item F ».
+  writeFileSync(join(bac.racine, "data/items", `${dejaPromu.id}.json`), `${JSON.stringify(dejaPromu)}\n`, "utf8");
   const resultat = simuler(bac);
   afterAll(() => bac.detruire());
 
@@ -89,5 +92,67 @@ describe("item déjà présent dans data/", () => {
     expect(resultat.sortie).toMatch(/Déjà dans data\/, non réécrits : 1/);
     expect(resultat.sortie).toMatch(new RegExp(`${dejaPromu.id}\\s+\\[lot-008\\]`));
     expect(resultat.sortie).toMatch(/À écrire par --ecrire : 1/);
+  });
+});
+
+/*
+ * Protocole 0.9 (§5) : « Une mesure fictive porte un seul item fictif. » Un item F vérifié déjà
+ * dans `data/` sur une mesure fictive, et un second item F de la même mesure promu : la commande
+ * refuse, nomme l'erreur et n'écrit rien.
+ */
+describe("second item F vérifié sur une mesure fictive déjà portée", () => {
+  const bac = creerBac();
+  const mesureFictive = {
+    ...mesure({ id: "01JBANCESSA90000000MESVRF9", version: 1, fictive: true }),
+    origine_fictive: "Mesure fictive de test, sans rapport avec aucun candidat.",
+    verification_fictivite: {
+      date: "2026-09-10T11:00:00+02:00",
+      corpus_verifies: ["demo-91", "demo-92"],
+      operateur: "a2",
+      resultat: "aucune_occurrence",
+    },
+  };
+  const acceptations = (item: Item, lot_id: string) =>
+    ["a1", "a2"].map((annotateur_id) =>
+      decision({
+        annotateur_id,
+        item,
+        decision: "accepter",
+        lot_id,
+        questions_specifiques: { fictivite_verifiee: true, plausibilite: true },
+      }),
+    );
+  // L'item déjà promu l'a été par la vraie règle de promotion : `data/` est relu et validé.
+  const premier = itemF({ id: "01JBANCESSA1000000000TEM91", candidat_id: "demo-91", mesure_id: mesureFictive.id });
+  const issue = evaluerPromotion(
+    {
+      item: premier,
+      mesure: mesureFictive,
+      lot_id: "lot-000",
+      lot_nature: "reel",
+      decisions: acceptations(premier, "lot-000"),
+      registre_corrections_mesure: [],
+    },
+    { commit: "0".repeat(40), horodatage: "2026-09-20T10:00:00+02:00" },
+  );
+  if (issue.sort !== "promouvoir") throw new Error("L'item F de départ aurait dû être promu.");
+  const existant = issue.item;
+  const second = itemF({ id: "01JBANCESSA1000000000TEM92", candidat_id: "demo-92", mesure_id: mesureFictive.id });
+  bac.ecrireItem(second);
+  bac.ecrireMesure(mesureFictive);
+  bac.ecrireLot(lotDe("lot-009", [second]));
+  for (const entree of acceptations(second, "lot-009")) bac.journal(entree.annotateur_id).ajouter("lot-009", entree);
+  mkdirSync(join(bac.racine, "data/items"), { recursive: true });
+  writeFileSync(join(bac.racine, "data/items", `${existant.id}.json`), `${JSON.stringify(existant)}\n`, "utf8");
+  const resultat = simuler(bac);
+  afterAll(() => bac.detruire());
+
+  it("sort en erreur avec ItemFictifEnDouble, qui nomme la mesure et les deux items", () => {
+    expect(resultat.sortie, resultat.erreur).toMatch(new RegExp(`${second.id}\\s+verifie`));
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain("ItemFictifEnDouble");
+    expect(resultat.erreur).toContain(mesureFictive.id);
+    expect(resultat.erreur).toContain(existant.id);
+    expect(resultat.erreur).toContain(second.id);
   });
 });

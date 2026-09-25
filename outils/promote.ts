@@ -20,7 +20,8 @@
 
 import { execFileSync } from "node:child_process";
 import { analyserArguments, drapeau, texte } from "./arguments.ts";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { ItemFictifEnDouble, verifierFictifUnique } from "../validation/domaine/fictif-unique.ts";
 import { join, resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
 import { CorrectionMesureIncoherente, type RegistreCorrectionsMesure } from "../validation/domaine/corrections-mesure.ts";
@@ -184,6 +185,33 @@ function nonConformes(verdicts: readonly Verdict[], options: Options): readonly 
     if (erreur !== null) trouves.push({ lot_id: verdict.lot_id, item_id: item.id, erreur: erreur.message });
   }
   return trouves;
+}
+
+/**
+ * Frontière d'entrée : les items déjà dans `data/`, chacun confronté à `item.schema.json`. Un
+ * répertoire absent est un `data/` vide ; un fichier non conforme arrête la commande.
+ */
+function itemsDeData(options: Options): readonly Item[] {
+  if (!existsSync(options.data)) return [];
+  return readdirSync(options.data)
+    .filter((nom) => nom.endsWith(".json"))
+    .sort()
+    .map((nom) => {
+      const chemin = join(options.data, nom);
+      return valider<Item>("item", JSON.parse(readFileSync(chemin, "utf8")) as unknown, chemin);
+    });
+}
+
+/**
+ * §5 (protocole 0.9) : « Une mesure fictive porte un seul item fictif. » Les items que `--ecrire`
+ * écrirait, ajoutés à ceux de `data/`, ne donnent à aucune mesure fictive un second item F vérifié ;
+ * sinon `ItemFictifEnDouble` arrête la commande, en simulation comme à l'écriture.
+ */
+function controlerFictifUnique(verdicts: readonly Verdict[], options: Options): void {
+  const aEcrire = verdicts
+    .filter((verdict) => verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options))
+    .map((verdict) => (verdict.issue as Extract<Issue, { sort: "promouvoir" }>).item);
+  verifierFictifUnique(aEcrire, itemsDeData(options));
 }
 
 function imprimerNonConformes(liste: readonly NonConforme[]): void {
@@ -365,6 +393,7 @@ function principal(): void {
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
   imprimerNonConformes(fautifs);
+  controlerFictifUnique(verdicts, options);
 
   if (introuvables.length > 0) {
     process.stderr.write(
@@ -394,7 +423,8 @@ try {
 } catch (erreur) {
   // §4 : « une acceptation enregistrée sans mesure modifiée est une erreur bloquante ». Elle
   // arrête la commande plutôt que de promouvoir un item validé contre un thème inexistant.
-  if (!(erreur instanceof CorrectionMesureIncoherente)) throw erreur;
+  // §5 (protocole 0.9) : un second item F vérifié sur une mesure fictive déjà portée, de même.
+  if (!(erreur instanceof CorrectionMesureIncoherente) && !(erreur instanceof ItemFictifEnDouble)) throw erreur;
   process.stderr.write(`\n${erreur.message}\n`);
   process.exitCode = 1;
 }

@@ -206,6 +206,16 @@ describe("7. pnpm symmetry", () => {
     expect(resultat.erreur).toContain("fictive=false");
   });
 
+  it("§5 (0.9) : un second item F vérifié sur la mesure fictive : code 1, mesure et items nommés", () => {
+    const jeu = jeuNominal();
+    const second = conforme(itemF({ cle: "cli-f2", candidat_id: CANDIDAT, mesure: MESURE_F }));
+    const resultat = symmetry(poser({ ...jeu, items: [...jeu.items, second] }));
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain("une mesure fictive porte un seul item fictif");
+    expect(resultat.erreur).toContain(MESURE_F.id);
+    expect(resultat.erreur).toContain(second.id);
+  });
+
   it("un fichier d'item non conforme à son schéma : code 1, fichier nommé", () => {
     const options = poser(jeuNominal());
     const fichier = join(options.items, `${ITEM_P.id}.json`);

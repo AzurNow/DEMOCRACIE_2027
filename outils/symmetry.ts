@@ -31,6 +31,7 @@ import {
   grappeSuitItemPrincipal,
   itemsFictifsPointentMesureFictive,
   premisseFausseSurItemFOuO,
+  unSeulItemFictifParMesure,
 } from "../pipeline/questions/invariants.ts";
 import type { PorteurDeGrappe, Violation } from "../pipeline/questions/invariants.ts";
 import { verifierSymetrie } from "../pipeline/questions/symetrie.ts";
@@ -124,6 +125,7 @@ function violations(entrees: Entrees): readonly Violation[] {
     ...grappes,
     ...premisses,
     ...itemsFictifsPointentMesureFictive(entrees.items, entrees.mesures),
+    ...unSeulItemFictifParMesure(entrees.items),
   ];
 }
 
