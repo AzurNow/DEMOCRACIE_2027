@@ -13,6 +13,35 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-25 — Conformité, lot validation : lots pleins seulement, numérotation continue (`validation/domaine/lot.ts`, `validation/io/lots-fichier.ts`, `outils/lots.ts`, `validation/domaine/analyse-lot.ts`)
+
+### 1. Un lot de taille non conforme n'est signalé que dans la réponse de la route — *moyenne*
+
+`diagnostiquerLot` porte désormais `taille_lot`, `taille_attendue` et `taille_conforme`, mais le
+client (`validation/client/app.ts:bilanKappa`) ne les lit pas, et aucun fichier publié ne porte le
+kappa d'un lot (conformité n° 16).
+
+**Pourquoi ça casse.** Un lot écrit avant cette correction, ou composé à la main, voit son kappa
+affiché et, demain, publié comme celui d'un lot de 50. S'il fait partie des « deux derniers lots »
+du §12, il décide du jalon J3 sans que personne n'ait vu la mention.
+
+**Ce qu'il faut faire.** Au lot des constats client : afficher la mention de taille. Au lot du
+constat 16 : reprendre les trois champs dans le fichier publié et exclure un lot non conforme des
+« deux derniers lots ».
+
+### 2. La numérotation lit `lot_id`, pas le nom du fichier — *basse*
+
+`numeroterLots` reprend après le plus grand `lot_id` du préfixe. Un manifeste renommé à la main,
+dont le nom de fichier ne correspond plus à son `lot_id`, fausse le calcul ; la vérification des
+chemins de `ecrireLots` bloque tout écrasement, mais l'échec surprend.
+
+**Pourquoi ça casse.** `pnpm lots --ecrire` refuse d'écrire sans que la cause saute aux yeux.
+
+**Ce qu'il faut faire.** Rien tant que les manifestes ne sont écrits que par `pnpm lots`. Un test
+d'accord nom de fichier ↔ `lot_id` dans `lireLots` le jour où un autre outil en écrit.
+
+---
+
 ## 2026-09-24 — Conformité, lot analyse : réponses obtenues, comparateurs, graines, recalcul (a) (`analysis/`, `schema/notation`, `schema/verdict`, `schema/run`, `docs/PROTOCOLE.md` 0.7)
 
 ### 1. Le futur lot notation doit construire le verdict avec les fonctions de l'analyse — *haute*

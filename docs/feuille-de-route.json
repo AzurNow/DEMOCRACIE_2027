@@ -226,7 +226,7 @@
       "temps_auteur_h": 0,
       "depend_de": [],
       "decisions": [],
-      "note": "Fusionnée dans main par la PR #1. Le client n'a toujours aucun test de comportement, par décision : la logique pure en est sortie et docs/CONTROLE-MANUEL.md couvre le reste, à dérouler avant la campagne. Jamais exercée sur un vrai staging."
+      "note": "Fusionnée dans main par la PR #1. Le client n'a toujours aucun test de comportement, par décision : la logique pure en est sortie et docs/CONTROLE-MANUEL.md couvre le reste, à dérouler avant la campagne. Jamais exercée sur un vrai staging. Conformité n° 1 (2026-09-25) : lots pleins seulement (50 réel, 30 entraînement), reste annoncé, numérotation continue et écriture tout ou rien, taille signalée au diagnostic."
     },
     {
       "id": "feuille-de-route",

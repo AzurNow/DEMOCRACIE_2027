@@ -1091,18 +1091,19 @@
       "section": "4",
       "citation": "Le kappa de Cohen est calculé par lot de 50 items",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "validation/domaine/lot.ts:composerLots",
-        "validation/domaine/lot.ts:TAILLE_LOT_REEL",
-        "outils/lots.ts:lireOptions"
+        "validation/domaine/lot.ts:tailleDeComposition",
+        "validation/domaine/analyse-lot.ts:diagnostiquerLot"
       ],
       "tests": [
-        "tests/lot.test.ts « partitionne la réserve : chaque item une fois et une seule »"
+        "tests/lot.test.ts (composition : 117 items → deux lots de 50, 17 en attente)",
+        "tests/diagnostic-taille.test.ts"
       ],
       "lot": null,
       "constat": 1,
-      "note": "50 est un défaut : --taille le remplace, et le dernier lot garde le reste de la réserve."
+      "note": "Corrigé le 2026-09-24 (PR #25) : lots pleins seulement, taille signalée au diagnostic."
     },
     {
       "id": "§4.41",
