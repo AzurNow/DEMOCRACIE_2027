@@ -1,12 +1,15 @@
 {
-  "id": "G0YTMV5YPHSTN7S8RYF1F7AB4W",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
     "fin": "2026-12-03T06:00:00+01:00"
   },
   "type_run": "mensuel",
-  "statut": "publie",
+  "statut": "invalide",
+  "invalidation": {
+    "motif": "Tests de symétrie rouges constatés après le lancement : répartition des gabarits et des formulations hors tolérance (écart de 2 pour un seuil de 1). Run publié tel quel et réexécuté (§12)."
+  },
   "versions": {
     "protocole": "1.0",
     "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
@@ -104,7 +107,7 @@
           "par": "parti"
         },
         "items_p_verifies": 8,
-        "sous_seuil": false,
+        "sous_seuil": true,
         "interroge": true
       },
       {
@@ -172,7 +175,7 @@
   "taux_echantillon_humain": 0.1,
   "kappa_paire_juges": 0.81,
   "symetrie": {
-    "statut_global": "vert",
+    "statut_global": "rouge",
     "conditions": [
       {
         "code": "nombre_questions_par_candidat",
@@ -182,8 +185,8 @@
       },
       {
         "code": "repartition_gabarits_formulations",
-        "statut": "vert",
-        "mesure": 1,
+        "statut": "rouge",
+        "mesure": 2,
         "seuil": 1
       },
       {

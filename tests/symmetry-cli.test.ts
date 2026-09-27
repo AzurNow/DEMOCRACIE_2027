@@ -94,7 +94,7 @@ function jeuNominal(): Jeu {
   };
   // Le libellé qui remplit [candidat] est celui du périmètre du run écrit sur disque.
   const engendrees = engendrer(items, mesures, [candidatDuRun as unknown as CandidatNomme]).map(completer);
-  const questions = [choisir(engendrees, ITEM_P, "Q-DIR"), choisir(engendrees, ITEM_F, "Q-ORI")];
+  const tirees = [choisir(engendrees, ITEM_P, "Q-DIR"), choisir(engendrees, ITEM_F, "Q-ORI")];
   return {
     tirage: {
       run_id: identifiant("run:cli"),
@@ -102,12 +102,14 @@ function jeuNominal(): Jeu {
       graine_tirage: graine(),
       // Conformité n° 59 : un tirage porte ses quotas.
       parametres: quotas(),
-      entrees: entreesPour(questions, items, mesures, run as unknown as RunAuGel),
+      entrees: entreesPour(tirees, items, mesures, run as unknown as RunAuGel),
       exclusions: [],
       bilan_reprise: [],
       compensations: [],
     },
-    questions,
+    // Modifié ouvertement (protocole 0.13, §5) : `--questions` reçoit le jeu complet des questions
+    // engendrées au gel, et non plus les seules questions tirées, que la barrière refuse désormais.
+    questions: engendrees,
     items,
     mesures,
     run,
@@ -180,6 +182,22 @@ describe("7. pnpm symmetry", () => {
     expect(resultat.sortie).toContain("statut global : vert");
     expect(resultat.sortie).toContain("aucune violation");
     expect(resultat.sortie).not.toContain("non contrôlé");
+  });
+
+  it("protocole 0.13, §5 : --questions réduit aux questions tirées : code 1, refus nommé", () => {
+    const jeu = jeuNominal();
+    const tirees = jeu.questions.filter((question) =>
+      jeu.tirage.entrees.some((entree) => entree.question_id === question.id),
+    );
+    expect(tirees.length).toBeLessThan(jeu.questions.length);
+    const resultat = symmetry(poser({ ...jeu, questions: tirees }));
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain("JeuDeQuestionsIncomplet");
+    for (const question of jeu.questions.filter((candidate) => !tirees.includes(candidate))) {
+      expect(resultat.erreur).toContain(question.id);
+    }
+    expect(resultat.sortie).not.toContain("Contrôles verts");
+    expect(resultat.sortie).not.toContain("statut global");
   });
 
   it("sans --mesures : code 1, et le message nomme l'invariant qui ne serait pas contrôlé", () => {

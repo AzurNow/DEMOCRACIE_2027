@@ -148,6 +148,36 @@ export function engendrer(
   return questions;
 }
 
+/** Une question engendrée réduite à son identité : ce que la complétude du jeu lit (§5, protocole 0.13). */
+export interface IdentiteEngendree {
+  readonly id: string;
+  /** Absent pour une question d'attribution, comme dans `QuestionEngendree`. */
+  readonly candidat_id?: string;
+}
+
+/**
+ * §5 (protocole 0.13) : les identités des questions que `engendrer` produirait sur ces items, sans
+ * leurs textes. La règle est la même — items admis (`itemEngendreDesQuestions`), gabarits de la table
+ * (`gabaritsPourItem`), une question par item si le gabarit nomme le candidat, une par mesure sinon —
+ * et ne demande ni le libellé des candidats ni le référentiel des mesures : un contrôle de complétude
+ * ne dépend d'aucun texte. `tests/questions/jeu-complet.test.ts` vérifie l'égalité avec `engendrer`.
+ */
+export function identitesEngendrees(items: readonly Item[]): readonly IdentiteEngendree[] {
+  const parId = new Map<string, IdentiteEngendree>();
+  for (const item of items.filter(itemEngendreDesQuestions)) {
+    for (const gabarit of gabaritsPourItem(item)) {
+      const identite = identiteDe(item, gabarit);
+      parId.set(identite.id, identite);
+    }
+  }
+  return [...parId.values()];
+}
+
+function identiteDe(item: Item, gabarit: Gabarit): IdentiteEngendree {
+  if (!gabarit.nomme_candidat) return { id: identifiantAttribution(item.mesure_id, gabarit.code) };
+  return { id: identifiantQuestion(item.id, gabarit.code), candidat_id: item.candidat_id };
+}
+
 interface ContexteItem {
   readonly mesure: Mesure;
   readonly libelles: ReadonlyMap<string, string>;

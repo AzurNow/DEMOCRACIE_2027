@@ -1,12 +1,15 @@
 {
-  "id": "G0YTMV5YPHSTN7S8RYF1F7AB4W",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
     "fin": "2026-12-03T06:00:00+01:00"
   },
   "type_run": "mensuel",
-  "statut": "publie",
+  "statut": "invalide",
+  "invalidation": {
+    "motif": "Tests de symétrie rouges constatés après le lancement : répartition des gabarits et des formulations hors tolérance (écart de 2 pour un seuil de 1). Run publié tel quel et réexécuté (§12)."
+  },
   "versions": {
     "protocole": "1.0",
     "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
@@ -104,7 +107,7 @@
           "par": "parti"
         },
         "items_p_verifies": 8,
-        "sous_seuil": false,
+        "sous_seuil": true,
         "interroge": true
       },
       {
@@ -172,7 +175,7 @@
   "taux_echantillon_humain": 0.1,
   "kappa_paire_juges": 0.81,
   "symetrie": {
-    "statut_global": "vert",
+    "statut_global": "rouge",
     "conditions": [
       {
         "code": "nombre_questions_par_candidat",
@@ -182,8 +185,8 @@
       },
       {
         "code": "repartition_gabarits_formulations",
-        "statut": "vert",
-        "mesure": 1,
+        "statut": "rouge",
+        "mesure": 2,
         "seuil": 1
       },
       {
@@ -254,57 +257,5 @@
       "contestation_id": "PFHW0PWQ9VE2N6738D4VKSE3TM",
       "date_reception": "2026-12-02T15:20:00+01:00"
     }
-  ],
-  "go_no_go": {
-    "criteres": [
-      {
-        "code": "kappa_juges_humains",
-        "statut": "vert",
-        "valeur": 0.81,
-        "seuil": 0.75
-      },
-      {
-        "code": "test_contrefactuel",
-        "statut": "vert",
-        "valeur": 0.012,
-        "seuil": 0.03
-      },
-      {
-        "code": "aucun_item_conteste_dans_le_tirage",
-        "statut": "vert",
-        "valeur": 0,
-        "seuil": 0
-      },
-      {
-        "code": "tests_symetrie",
-        "statut": "vert",
-        "valeur": "vert",
-        "seuil": "vert"
-      },
-      {
-        "code": "reponses_manquantes",
-        "statut": "vert",
-        "valeur": 0.03,
-        "seuil": 0.2
-      },
-      {
-        "code": "erreurs_graves_revues",
-        "statut": "vert",
-        "valeur": 1,
-        "seuil": 1
-      },
-      {
-        "code": "analyses_preenregistrees_executees",
-        "statut": "vert",
-        "valeur": "oui",
-        "seuil": "oui"
-      }
-    ],
-    "decision": "publie"
-  },
-  "publication": {
-    "date": "2026-12-06T09:00:00+01:00",
-    "doi": "10.5281/zenodo.0000000",
-    "suspension_veille_electorale": false
-  }
+  ]
 }

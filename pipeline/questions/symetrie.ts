@@ -16,6 +16,7 @@
  * d'attribuer une question d'attribution à un candidat (`schema/README.md`, point ouvert 2).
  */
 
+import { exigerJeuComplet } from "./completude.ts";
 import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import { libelleSansMot, trouverLibelle } from "./libelles.ts";
@@ -65,9 +66,10 @@ interface Contexte {
 }
 
 /**
- * `questions` : toutes les questions candidates au tirage, pas seulement les tirées — la
- * répartition par thème juge le tirage contre ce que les items permettaient (constat n° 23).
- * `mesures` : le référentiel, qui porte le thème d'une question non tirée.
+ * `questions` : le jeu complet des questions engendrées au gel, pas seulement les tirées — la
+ * répartition par thème juge le tirage contre ce que les items permettaient (constat n° 23). Un jeu
+ * incomplet lève `JeuDeQuestionsIncomplet` avant tout verdict (§5, protocole 0.13 ; `completude.ts`).
+ * `items` : les items au gel. `mesures` : le référentiel, qui porte le thème d'une question non tirée.
  */
 export function verifierSymetrie(
   tirage: Tirage,
@@ -77,6 +79,7 @@ export function verifierSymetrie(
   run: RunAuGel,
 ): Symetrie {
   const contexte = construireContexte(tirage, { questions, items, mesures }, run);
+  exigerJeuComplet(tirage, questions, items, run);
   const conditions: readonly ConditionSymetrie[] = [
     nombreQuestionsParCandidat(contexte),
     repartitionGabaritsFormulations(contexte),

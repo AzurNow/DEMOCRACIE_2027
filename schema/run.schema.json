@@ -137,7 +137,7 @@
           "$ref": "#/$defs/graine"
         },
         "echantillon_humain": {
-          "$ref": "#/$defs/graine"
+          "$ref": "#/$defs/graine_generateur_du_tirage"
         },
         "bootstrap": {
           "$ref": "#/$defs/graine"
@@ -146,7 +146,7 @@
           "$ref": "#/$defs/graine"
         },
         "contrefactuel": {
-          "$ref": "#/$defs/graine"
+          "$ref": "#/$defs/graine_generateur_du_tirage"
         }
       }
     },
@@ -1050,7 +1050,7 @@
       }
     },
     {
-      "$comment": "§5 et §12 (protocole 0.11, conformité n° 21) : une symétrie rouge bloque le lancement ; un run dont la symétrie est rouge est planifié (il ne part pas) ou marqué invalide avec la raison, publié tel quel et réexécuté. Jamais en cours, jamais publié, même provisoire.",
+      "$comment": "§5 et §12 (protocole 0.11, conformité n° 21) : une symétrie rouge bloque le lancement ; un run dont la symétrie est rouge est planifié (il ne part pas) ou marqué invalide avec la raison, publié tel quel et réexécuté. Jamais en cours, jamais publié, même provisoire. Protocole 0.13 : la contrainte go_no_go.decision = publie_provisoire est retirée ; un run invalide ne porte plus de go/no-go (règle suivante).",
       "if": {
         "properties": {
           "symetrie": {
@@ -1075,14 +1075,29 @@
               "planifie",
               "invalide"
             ]
-          },
-          "go_no_go": {
-            "properties": {
-              "decision": {
-                "const": "publie_provisoire"
-              }
-            }
           }
+        }
+      }
+    },
+    {
+      "$comment": "§12 (protocole 0.13) : « un run invalide ne porte aucune décision de publication, mais déclare sa publication et son dépôt comme tout run publié ». Pas de go_no_go ; publication et depot obligatoires.",
+      "if": {
+        "properties": {
+          "statut": {
+            "const": "invalide"
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "required": [
+          "publication",
+          "depot"
+        ],
+        "properties": {
+          "go_no_go": false
         }
       }
     },
@@ -1329,6 +1344,22 @@
         "version": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "graine_generateur_du_tirage": {
+      "$comment": "§7 (protocole 0.13) : « L'échantillon humain et ce sous-ensemble sont tirés avec le générateur du tirage (SplitMix64, splitmix64-sha256-v1), chacun avec sa graine dérivée de la graine publiée et d'une clé lisible, comme en section 8. » Les trois champs désignent le générateur que pipeline/questions/tirage.ts déclare (GENERATEUR_DU_TIRAGE) ; tests/run-schema-0-13.test.ts vérifie qu'ils ne divergent pas.",
+      "type": "object",
+      "$ref": "#/$defs/graine",
+      "properties": {
+        "algorithme": {
+          "const": "splitmix64-sha256-v1"
+        },
+        "bibliotheque": {
+          "const": "banc-essai-2027/validation/domaine/alea.ts"
+        },
+        "version": {
+          "const": "1"
         }
       }
     }

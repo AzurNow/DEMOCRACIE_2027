@@ -18,6 +18,13 @@
  * « un item F pointe une mesure fictive » ne serait pas contrôlé, et la règle 4 de CLAUDE.md
  * interdit qu'un contrôle de la barrière se saute.
  *
+ * `--questions` est le jeu complet des questions engendrées au gel, publié avec le run, et non les
+ * seules questions tirées ; `--items`, les items au gel (`versions.donnees_commit` du run). §5
+ * (protocole 0.13) : « un jeu incomplet est refusé ». S'il manque au jeu une question citée par le
+ * tirage (entrées ou exclusions) ou engendrée sur ces items pour une mesure ou un candidat interrogé,
+ * la symétrie n'est pas évaluée : `JeuDeQuestionsIncomplet` est imprimé avec les questions manquantes
+ * et la commande sort avec le code 1 (`pipeline/questions/completude.ts`).
+ *
  * Chaque objet lu — tirage, questions, items, mesures, run — est confronté à son JSON Schema
  * avant tout contrôle : une entrée non conforme arrête la commande avec le code 1.
  */
@@ -34,6 +41,7 @@ import {
   unSeulItemFictifParMesure,
 } from "../pipeline/questions/invariants.ts";
 import type { PorteurDeGrappe, Violation } from "../pipeline/questions/invariants.ts";
+import { JeuDeQuestionsIncomplet } from "../pipeline/questions/completude.ts";
 import { verifierSymetrie } from "../pipeline/questions/symetrie.ts";
 import type {
   ConditionSymetrie,
@@ -87,7 +95,7 @@ function lireEntrees(): Entrees {
   const table = analyserArguments(process.argv.slice(2));
   const chemins = {
     tirage: obligatoire(table, "tirage", "le tirage gelé du run"),
-    questions: obligatoire(table, "questions", "les questions publiées du run"),
+    questions: obligatoire(table, "questions", "le jeu complet des questions engendrées au gel, publié avec le run"),
     items: obligatoire(table, "items", "le répertoire des items de référence, un fichier par item"),
     mesures: obligatoire(
       table,
@@ -156,15 +164,33 @@ function imprimerInvariants(liste: readonly Violation[]): void {
   process.stderr.write("\n");
 }
 
+/**
+ * La symétrie, ou le refus nommé d'un jeu incomplet (§5, protocole 0.13). Seul ce refus-là est
+ * rattrapé, pour que les invariants inter-fichiers soient encore imprimés ; toute autre erreur remonte.
+ */
+function evaluerSymetrie(entrees: Entrees): Symetrie | JeuDeQuestionsIncomplet {
+  try {
+    return verifierSymetrie(entrees.tirage, entrees.questions, entrees.items, entrees.mesures, entrees.run);
+  } catch (erreur) {
+    if (erreur instanceof JeuDeQuestionsIncomplet) return erreur;
+    throw erreur;
+  }
+}
+
+function imprimerRefus(refus: JeuDeQuestionsIncomplet): void {
+  process.stderr.write(`Symétrie (§5) non évaluée — ${refus.name} :\n  ${refus.message}\n\n`);
+}
+
 function principal(): void {
   const entrees = lireEntrees();
-  const symetrie = verifierSymetrie(entrees.tirage, entrees.questions, entrees.items, entrees.mesures, entrees.run);
+  const symetrie = evaluerSymetrie(entrees);
   const liste = violations(entrees);
 
-  imprimerSymetrie(symetrie);
+  if (symetrie instanceof JeuDeQuestionsIncomplet) imprimerRefus(symetrie);
+  else imprimerSymetrie(symetrie);
   imprimerInvariants(liste);
 
-  if (symetrie.statut_global === "rouge" || liste.length > 0) {
+  if (symetrie instanceof JeuDeQuestionsIncomplet || symetrie.statut_global === "rouge" || liste.length > 0) {
     process.stderr.write("Le run ne peut pas être lancé : voir ci-dessus (§5).\n");
     process.exitCode = 1;
     return;
