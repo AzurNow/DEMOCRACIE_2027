@@ -28,7 +28,8 @@ réel, écrire qu'il n'y en a pas et passer à autre chose.
 6. **Mettre la feuille de route à jour.** Dans `docs/feuille-de-route.json` : le `niveau` des lots
    que la session a fait avancer, `date_maj`, et le `statut` des décisions que l'auteur a tranchées.
    Puis `pnpm feuille-de-route`, et vérifier que `pnpm feuille-de-route --verifier` sort à 0. Le
-   Markdown est généré, jamais édité.
+   Markdown est généré, jamais édité. Tenir aussi `docs/TACHES-AUTEUR.md` : ajouter ce que la
+   session laisse à l'auteur, retirer ce qu'il a fait.
 7. **Le dire en deux lignes** dans la réponse finale, sans recopier les fichiers.
 
 ## Ce qui va dans `docs/DETTE.md`, ce qui n'y va pas
