@@ -156,6 +156,14 @@ code, `String.fromCodePoint` en TypeScript, et un `grep` sur les octets après �
 fonction existait depuis deux jours et gardait les indéterminées au dénominateur. Seule la passe de
 conformité l'a vu. Avant de barrer un point, `grep` la fonction qu'il nomme et lire ce qu'elle fait.
 
+**Une PR qui traite un constat change son état dans le rapport, dans le même diff.** Le 2026-09-25,
+la PR #29 a traité six constats de conformité. Le rapport les marquait encore « ouvert », et la
+matrice n'avait pas bougé depuis la 0.8 à travers sept PR. À la reprise du 2026-09-27, le décompte
+des constats ouverts était faux dans les deux sens : six étaient comptés ouverts alors qu'ils étaient
+traités, et trois « code à aligner » (n° 80, 82, 84) passaient pour traités. Le premier lot proposé
+aurait refait du travail fait et oublié un écart haut. Une session menée sur l'autre machine se
+clôture aussi là-bas : cinq points de dette réglés attendaient d'être barrés.
+
 **Un sous-agent long écrit ses livrables au fil de l'eau.** Le 2026-09-24, la limite d'utilisation a
 coupé les trois sous-agents de la passe de conformité après une heure de lecture : aucun n'avait
 encore écrit une ligne de matrice. Ils ont pu reprendre avec leur contexte, mais le brief doit dire

@@ -13,6 +13,66 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-25 (clôturée le 2026-09-27) — Protocole 0.9 à 0.11, alignement 0.9, textes hors Git, kappa publié, contestation et notification (PR #28 à #35 : `docs/PROTOCOLE.md`, `pipeline/questions/`, `analysis/`, `validation/`, `outils/`, `pipeline/notification/`, `.gitignore`)
+
+### 1. Le seuil de 20 % se calcule encore par outil, alors que la 0.11 le calcule par outil et par mode — *haute*
+
+`analysis/seuils.ts:partReponsesManquantes` filtre les réponses du run sur `outil_id` seul. Depuis
+la 0.11 (n° 84), le §8 et le §12 appliquent le seuil par outil et par mode, sur le canal API. Deux
+autres règles de la même révision attendent aussi le code : `kappa_juge_humain` pouvant valoir
+`null` dans `run.schema.json` (n° 80), et la famille de Holm sur les couples outil × mode (n° 82).
+
+**Pourquoi ça casse.** Un outil avec 30 % de réponses manquantes dans un mode et 5 % dans l'autre
+passe à 17,5 % et entre dans les comparaisons, alors que le protocole exclut son premier mode.
+Aucun test n'échoue : les tests actuels encodent la règle d'avant la 0.11.
+
+**Ce qu'il faut faire.** Aligner `analysis/seuils.ts` et `run.schema.json` avant le premier run,
+avec un test à deux modes déséquilibrés. Le rapport de conformité les marque « code à aligner » et
+non « ouvert » : les relire en même temps que les constats ouverts.
+
+### 2. Les textes canoniques et les transcriptions n'existent plus que sur la machine qui les a produits — *moyenne*
+
+Depuis #31, `staging/textes/*.txt` et `staging/transcriptions/*.vtt` sont hors Git, comme
+`archives/`. Les fiches `.json` et les empreintes restent versionnées. Le travail se fait sur deux
+machines.
+
+**Pourquoi ça casse.** Un item extrait sur une machine ne peut pas être validé sur l'autre :
+`lireTexteCanonique` ne trouve pas le texte ou refuse son empreinte (409). C'est visible, mais un
+texte perdu ne se régénère pas toujours. Un PDF se réextrait depuis son archive, mais une
+transcription T2 ne se reproduit pas à l'octet près (§9), et les citations qui s'y appuient perdent
+alors la base de leur test verbatim.
+
+**Ce qu'il faut faire.** À décider par l'auteur avant la première collecte réelle : où vit la copie
+de référence des textes et des transcriptions (Zenodo en accès restreint, sauvegarde chiffrée), et
+comment on synchronise les deux machines.
+
+### 3. Le journal des envois n'empêche un double courriel que sur la machine qui l'a écrit — *basse*
+
+`pnpm notifier` tient son idempotence de `validation/notifications/envois.jsonl`, un fichier
+versionné et lu localement.
+
+**Pourquoi ça casse.** Si un envoi réel part d'une machine et que le journal n'est pas poussé avant
+une exécution sur l'autre, la même campagne reçoit deux fois le même courriel. Aucune mesure n'est
+faussée, mais c'est gênant vis-à-vis d'un interlocuteur que le §4 veut traiter avec rigueur.
+
+**Ce qu'il faut faire.** N'envoyer que depuis une seule machine, ou faire refuser `--envoyer`
+tant que la branche est en retard sur `origin`. Choix de l'auteur.
+
+### 4. Les clés de quota de `config/perimetre.yaml` n'ont aucun lecteur, et deux noms circulent — *basse*
+
+Le tirage lit `ParametresTirage.questions_par_strate` et `questions_attribution_par_theme`
+(`pipeline/questions/tirage.ts`). Le fichier de périmètre porte `tirage.quota_par_strate`, et les
+PR #28 et #30 demandent à l'auteur d'ajouter `quota_attribution_par_theme`. Aucun code ne charge
+encore ces paramètres depuis le YAML.
+
+**Pourquoi ça casse.** Le premier chargeur écrit trouvera des noms qui ne correspondent pas. C'est
+bruyant si la clé est obligatoire, mais une valeur saisie sous un nom que personne ne lit se perd.
+
+**Ce qu'il faut faire.** Au lot interrogation : choisir un nom par paramètre, écrire le chargeur, et
+ajouter un test d'accord entre `config/perimetre.yaml` et `ParametresTirage`.
+
+---
+
 ## 2026-09-25 — Protocole 0.8 et conformité n° 9 : le kappa lit la contestation au calcul (`validation/domaine/analyse-lot.ts`, `docs/PROTOCOLE.md` 0.8)
 
 ### 1. Un item du lot absent du staging sort du kappa sans signal — *moyenne*
@@ -28,7 +88,7 @@ décider du §12, sans que rien ne le dise.
 **Ce qu'il faut faire.** Compter ces items à part dans le diagnostic (`absents_du_staging`), ou lire
 leur statut dans `data/` quand ils y ont été promus. Décision d'implémentation, pas de protocole.
 
-### 2. Un item arbitré reste hors du kappa de son lot pour toujours — *basse*
+### ~~2. Un item arbitré reste hors du kappa de son lot pour toujours~~ — réglé le 2026-09-25 par `exclus_contestation` publié dans `validation/diagnostics/` (`pnpm diagnostics`, #33)
 
 Décision du 2026-09-25 : une contestation close sort aussi l'item du dénominateur. Un item maintenu
 ou corrigé par le panel n'y revient jamais, même s'il est ensuite tiré.
@@ -141,7 +201,7 @@ attendues : un outil qui le cite à juste titre est noté en fabrication ou en m
 **Ce qu'il faut faire.** Au lot qui écrira le run à partir de `config/perimetre.yaml` : dériver
 `interroge` de `statut_au_gel`, jamais saisi deux fois, avec un test d'accord.
 
-### 3. Une Q-ATT non tirable disparaît du rapport de tirage sans être comptée — *basse*
+### ~~3. Une Q-ATT non tirable disparaît du rapport de tirage sans être comptée~~ — réglé le 2026-09-25 par `tirage.exclusions` et le motif `reponse_attendue_indecidable` (conformité n° 36, #30)
 
 Comme les items contestés, les Q-ATT écartées parce qu'un candidat est « conditionnel » ou
 « sans_objet » au gel ne sont comptées nulle part dans `RapportTirage`.
@@ -191,7 +251,7 @@ retenu, donc les octets et l'empreinte d'un média recollecté.
 **Ce qu'il faut faire.** Monter yt-dlp par un commit dédié quand une collecte échoue, jamais en
 passant. Les médias déjà archivés ne sont pas recollectés (non-réécriture de C1).
 
-### 4. Les transcriptions des sources `interne` partent dans Git — *moyenne*
+### ~~4. Les transcriptions des sources `interne` partent dans Git~~ — réglé le 2026-09-25 : plus aucune transcription intégrale n'est versionnée (conformité n° 31, #31)
 
 Même cause que le point 2 de C2 (textes) : `staging/transcriptions/` est versionné et ne lit pas
 `publication`. Le §10 publie « la transcription de l'extrait », pas la transcription intégrale.
@@ -312,7 +372,7 @@ les doublons d'item et les déduplications ratées se voient seulement à la val
 service (version épinglée dans `uv.lock`, `REGLE` courante) », avec un test à deux fiches. À
 l'auteur : dire si une réextraction invalide les items déjà validés sur l'ancien texte.
 
-### 2. Les textes des sources `publication = "interne"` partent dans Git — *moyenne*
+### ~~2. Les textes des sources `publication = "interne"` partent dans Git~~ — réglé le 2026-09-25 : plus aucun texte canonique n'est versionné (conformité n° 31, #31)
 
 `staging/textes/` est versionné, comme `staging/sources/`. Le texte canonique d'une source que la
 liste marque `interne` (§10, droit d'auteur) y est écrit intégralement, sans distinction : C2 ne lit
@@ -541,7 +601,7 @@ un renommage de fixtures isolé ne se relit pas et ne prouve rien.
 
 ## 2026-09-19 — Lot dette-validation : réannotation, registre des mesures, logique pure du client (`validation/domaine/`, `outils/`, `validation/client/`)
 
-### 1. Deux kappas coexistent pour un même lot, et rien ne choisit encore lequel compte — *haute*
+### ~~1. Deux kappas coexistent pour un même lot, et rien ne choisit encore lequel compte~~ — réglé le 2026-09-25 : la sélection du §12 ne garde que les lots non supersédés et lève `DiagnosticPerime` (conformité n° 16, #33)
 
 Le §4 dit : « le kappa retenu pour les critères de la section 12 est celui du lot de réannotation ».
 Depuis cette session, un lot peut être supersédé, donc deux kappas existent pour les mêmes items.
