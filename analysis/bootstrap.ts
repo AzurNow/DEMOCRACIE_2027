@@ -17,6 +17,14 @@
  * 3. **Un rééchantillon dont la statistique est indéfinie** (dénominateur nul) est compté à part,
  *    jamais remplacé par 0 : `reechantillonnages_indefinis` dit combien l'intervalle ignore.
  *
+ * **Statistique numérique (conformité n° 29).** Le cœur rééchantillonne une `StatistiqueNumerique`,
+ * `(unites) => number | null` : `null` est la statistique indéfinie du point 3. Un taux y entre par
+ * `valeurDuTaux` (valeur absente ⇒ `null`), ce qui ne change ni les grappes, ni le flux aléatoire,
+ * ni les quantiles : ses bornes sont exactement celles d'avant. La voie numérique sert l'écart
+ * maximal du test d'asymétrie (`permutation.ts`), qui n'est pas un rapport d'effectifs. Le §8 ne
+ * dit pas en toutes lettres que son intervalle vient du même bootstrap en grappes ; c'est la lecture
+ * du paragraphe « Incertitude », retenue ici et à écrire en révision 0.12.
+ *
  * Le générateur est celui du dépôt (`validation/domaine/alea.ts`, SplitMix64 amorcé par sha256) :
  * la reproductibilité du §9 ne dépend d'aucune version de Node. Il est amorcé par
  * `graineDerivee(options.graine_du_run, ["bootstrap", ...options.cle])` (`graines.ts`, qui écrit la
@@ -44,6 +52,24 @@ export interface OptionsBootstrap {
 export const FAMILLE_BOOTSTRAP = "bootstrap";
 
 export type Statistique = (unites: readonly UniteAnalyse[]) => Taux;
+
+/** `null` : statistique indéfinie sur ces unités (§8, écartée des bornes et comptée). */
+export type StatistiqueNumerique = (unites: readonly UniteAnalyse[]) => number | null;
+
+/** Pourquoi un intervalle nommé est absent. Jamais un intervalle inventé à la place. */
+export type RaisonSansIntervalle = "aucune_grappe" | "aucun_reechantillon_defini";
+
+/**
+ * Un intervalle publié avec ce qui le rejoue (§8, « Graines de l'analyse ») : la clé complète,
+ * famille en tête, et l'amorce de SplitMix64 en hexadécimal sur seize chiffres (le §8 l'écrit
+ * `0xd8bcfbd164a58f33`). `intervalle` est `null` seulement avec sa raison.
+ */
+export interface IntervalleNomme {
+  readonly cle: readonly string[];
+  readonly graine: string;
+  readonly intervalle: Intervalle95 | null;
+  readonly raison_sans_intervalle: RaisonSansIntervalle | null;
+}
 
 /** §8 : une différence est « établie » ou « non établie ». Le rapport n'a pas d'autre mot. */
 export type Qualificatif = "etablie" | "non_etablie";
@@ -87,17 +113,26 @@ export function percentile(valeursTriees: readonly number[], p: number): number 
   return valeurBasse + (h - bas) * (valeurHaute - valeurBasse);
 }
 
+/** Un taux vu comme statistique numérique : sa valeur, ou `null` quand son dénominateur est nul. */
+export function valeurDuTaux(statistique: Statistique): StatistiqueNumerique {
+  return (unites) => valeurDe(statistique(unites));
+}
+
 export function reechantillonner(
   unites: readonly UniteAnalyse[],
   statistique: Statistique,
   options: OptionsBootstrap,
 ): EchantillonBootstrap {
+  return reechantillonnerStatistique(unites, valeurDuTaux(statistique), options);
+}
+
+export function reechantillonnerStatistique(
+  unites: readonly UniteAnalyse[],
+  statistique: StatistiqueNumerique,
+  options: OptionsBootstrap,
+): EchantillonBootstrap {
   const grappes = [...grapper(unites).values()];
-  return echantillonner(
-    grappes.length,
-    (indices) => valeurDe(statistique(rassembler(grappes, indices))),
-    options,
-  );
+  return echantillonner(grappes.length, (indices) => statistique(rassembler(grappes, indices)), options);
 }
 
 /**
@@ -132,7 +167,36 @@ export function intervalleBootstrap(
   statistique: Statistique,
   options: OptionsBootstrap,
 ): Intervalle95 | null {
-  return intervalleDepuis(reechantillonner(unites, statistique, options), options.reechantillonnages);
+  return intervalleStatistique(unites, valeurDuTaux(statistique), options);
+}
+
+export function intervalleStatistique(
+  unites: readonly UniteAnalyse[],
+  statistique: StatistiqueNumerique,
+  options: OptionsBootstrap,
+): Intervalle95 | null {
+  return intervalleDepuis(reechantillonnerStatistique(unites, statistique, options), options.reechantillonnages);
+}
+
+/** L'intervalle, sa clé complète et sa graine ; absent seulement avec sa raison. */
+export function intervalleNomme(
+  unites: readonly UniteAnalyse[],
+  statistique: StatistiqueNumerique,
+  options: OptionsBootstrap,
+): IntervalleNomme {
+  const cle = [FAMILLE_BOOTSTRAP, ...options.cle];
+  const graine = graineDerivee(options.graine_du_run, cle).toString(16).padStart(16, "0");
+  const echantillon = reechantillonnerStatistique(unites, statistique, options);
+  const intervalle = intervalleDepuis(echantillon, options.reechantillonnages);
+  return { cle, graine, intervalle, raison_sans_intervalle: raisonSansIntervalle(echantillon, intervalle) };
+}
+
+function raisonSansIntervalle(
+  echantillon: EchantillonBootstrap,
+  intervalle: Intervalle95 | null,
+): RaisonSansIntervalle | null {
+  if (intervalle !== null) return null;
+  return echantillon.nombre_grappes === 0 ? "aucune_grappe" : "aucun_reechantillon_defini";
 }
 
 export function intervalleDepuis(
