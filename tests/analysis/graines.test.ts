@@ -122,6 +122,8 @@ describe("les intervalles et les tests se rejouent depuis la graine du run", () 
     expect(() =>
       testHomogeneiteCandidats(
         [...grappe("a", 1, { candidat_id: "candidat-a" }), ...grappe("b", 1, { candidat_id: "candidat-b" })],
+        // Conformité n° 30 : le test prend le partage du seuil de couverture ; les deux sont comparés.
+        { compares: ["candidat-a", "candidat-b"], rapportes_a_part: [] },
         { permutations: 10, graine_du_run: 0.5, cle: ["x"] },
       ),
     ).toThrow(/entier/);

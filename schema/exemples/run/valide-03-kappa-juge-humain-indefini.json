@@ -1,5 +1,5 @@
 {
-  "id": "45BA12PKAC7CZTYF0FKW29YE3D",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -159,14 +159,14 @@
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
       "taux_changement_contrefactuel": 0.021,
-      "kappa_juge_humain": 0.78,
-      "retire": false
+      "retire": false,
+      "motif_indefini_kappa_juge_humain": "accord_attendu_maximal"
     }
   ],
   "taux_echantillon_humain": 0.1,
   "kappa_paire_juges": 0.81,
   "symetrie": {
-    "statut_global": "rouge",
+    "statut_global": "vert",
     "conditions": [
       {
         "code": "nombre_questions_par_candidat",

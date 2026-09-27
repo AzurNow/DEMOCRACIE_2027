@@ -5,13 +5,22 @@
  *
  * - le seuil de couverture par candidat est **lu** dans `run.perimetre.candidats[].sous_seuil`,
  *   compté au gel et stocké (§4). Le recalculer ici ferait vivre le seuil à deux endroits ;
- * - la part de réponses manquantes par outil est **calculée** ici, à partir des réponses du run,
- *   parce que c'est la mesure elle-même. `run.perimetre.outils[].run_incomplet` est alors le
- *   report de ce calcul, jamais un second calcul.
+ * - la part de réponses manquantes par couple outil × mode est **calculée** ici, à partir des
+ *   réponses du canal API du run (§8, protocole 0.11), parce que c'est la mesure elle-même.
+ *   `run.perimetre.outils[].par_mode.<mode>.run_incomplet` est alors le report de ce calcul, jamais
+ *   un second calcul.
  */
 
-import { filtrerContexteRun } from "./filtre.ts";
-import { taux, type IdentifiantCourt, type Reponse, type Run, type Taux } from "./types.ts";
+import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
+import {
+  taux,
+  type CoupleOutilMode,
+  type IdentifiantCourt,
+  type Mode,
+  type Reponse,
+  type Run,
+  type Taux,
+} from "./types.ts";
 
 export interface PartageCandidats {
   /** Candidats entrant dans les comparaisons inter-candidats. */
@@ -30,12 +39,50 @@ export function candidatsComparables(run: Run): PartageCandidats {
   return { compares, rapportes_a_part };
 }
 
-/** Part des réponses manquantes d'un outil, sur les seules réponses du run (§6, §8). */
-export function partReponsesManquantes(
-  reponses: readonly Reponse[],
-  outil_id: IdentifiantCourt,
-): Taux {
-  const siennes = filtrerContexteRun(reponses).filter((r) => r.outil_id === outil_id);
+export interface RepartitionCandidats {
+  /** Unités des seuls candidats comparés, dans l'ordre d'entrée. */
+  readonly comparees: readonly UniteAnalyse[];
+  /** Candidats sous le seuil présents dans les unités, dans l'ordre de première apparition. */
+  readonly candidats_a_part: readonly IdentifiantCourt[];
+}
+
+/**
+ * Seule porte des statistiques par candidat vers le seuil de couverture (conformité n° 30). Une
+ * question d'attribution (`candidat_id` nul, §5) n'est d'aucun candidat : elle ne sort ni d'un
+ * côté ni de l'autre. Un candidat inconnu du partage lève — le ranger d'un côté serait décider
+ * de son seuil ici.
+ */
+export function repartirParCandidat(
+  unites: readonly UniteAnalyse[],
+  partage: PartageCandidats,
+): RepartitionCandidats {
+  const comparees: UniteAnalyse[] = [];
+  const candidats_a_part: IdentifiantCourt[] = [];
+  for (const unite of unites) {
+    if (unite.candidat_id === null) continue;
+    if (partage.compares.includes(unite.candidat_id)) comparees.push(unite);
+    else if (partage.rapportes_a_part.includes(unite.candidat_id)) ajouterUnique(candidats_a_part, unite.candidat_id);
+    else throw new Error(`Candidat ${unite.candidat_id} absent du partage du seuil de couverture (§4) : non classable.`);
+  }
+  return { comparees, candidats_a_part };
+}
+
+/**
+ * Clé publiée d'un couple. « / » n'appartient pas à l'alphabet d'un identifiant court
+ * (`commun.schema.json`), ni à celui d'un mode : deux couples distincts ne partagent pas une clé.
+ */
+export function cleCouple(couple: CoupleOutilMode): string {
+  return `${couple.outil_id}/${couple.mode}`;
+}
+
+/**
+ * Part des réponses manquantes d'un couple outil × mode, sur les seules réponses du canal API du
+ * run (§6, §8, protocole 0.11). Le canal application n'a pas de mode et n'entre jamais ici.
+ */
+export function partReponsesManquantes(reponses: readonly Reponse[], couple: CoupleOutilMode): Taux {
+  const siennes = reponsesApiDuRun(reponses).filter(
+    (r) => r.outil_id === couple.outil_id && r.mode === couple.mode,
+  );
   const manquantes = siennes.filter((r) => r.statut_reponse === "manquante");
   return taux(manquantes.length, siennes.length);
 }
@@ -43,36 +90,56 @@ export function partReponsesManquantes(
 /**
  * §8 : « plus de 20 % ». Le test est entier — `5 × manquantes > total` — pour que l'égalité à un
  * cinquième soit décidée par l'arithmétique et non par la représentation flottante de 0,2.
- * Un outil sans aucune réponse n'est pas « complet » : il n'est pas qualifiable, donc il lève.
+ * Un couple sans aucune réponse API n'est pas « complet » : il n'est pas qualifiable, donc il lève.
  */
 export function runIncomplet(part: Taux): boolean {
   if (part.denominateur === 0) {
-    throw new Error("Outil sans aucune réponse dans le run : le seuil de 20 % n'est pas décidable.");
+    throw new Error("Couple outil × mode sans aucune réponse API dans le run : le seuil de 20 % n'est pas décidable.");
   }
   return 5 * part.numerateur > part.denominateur;
 }
 
-export interface PartageOutils {
-  readonly compares: readonly IdentifiantCourt[];
-  /** §8 : « marqué run incomplet et exclu des comparaisons de ce run ». */
-  readonly incomplets: readonly IdentifiantCourt[];
+export interface PartageCouples {
+  readonly compares: readonly CoupleOutilMode[];
+  /**
+   * §8 : « marqué run incomplet et exclu des comparaisons de ce run, l'autre mode de l'outil
+   * restant publié s'il passe le seuil ».
+   */
+  readonly incomplets: readonly CoupleOutilMode[];
 }
 
-export function outilsComparables(reponses: readonly Reponse[]): PartageOutils {
-  const compares: IdentifiantCourt[] = [];
-  const incomplets: IdentifiantCourt[] = [];
-  for (const outil_id of outilsPresents(reponses)) {
-    const part = partReponsesManquantes(reponses, outil_id);
-    if (runIncomplet(part)) incomplets.push(outil_id);
-    else compares.push(outil_id);
+/** Couples présents parmi les réponses API du run, dans l'ordre de première apparition. */
+export function couplesComparables(reponses: readonly Reponse[]): PartageCouples {
+  const compares: CoupleOutilMode[] = [];
+  const incomplets: CoupleOutilMode[] = [];
+  for (const couple of couplesPresents(reponses)) {
+    if (runIncomplet(partReponsesManquantes(reponses, couple))) incomplets.push(couple);
+    else compares.push(couple);
   }
   return { compares, incomplets };
 }
 
-function outilsPresents(reponses: readonly Reponse[]): IdentifiantCourt[] {
-  const vus: IdentifiantCourt[] = [];
-  for (const reponse of filtrerContexteRun(reponses)) {
-    if (!vus.includes(reponse.outil_id)) vus.push(reponse.outil_id);
+function reponsesApiDuRun(reponses: readonly Reponse[]): Reponse[] {
+  return filtrerContexteRun(reponses).filter((r) => r.canal === "api");
+}
+
+function couplesPresents(reponses: readonly Reponse[]): CoupleOutilMode[] {
+  const vus = new Map<string, CoupleOutilMode>();
+  for (const reponse of reponsesApiDuRun(reponses)) {
+    const couple = { outil_id: reponse.outil_id, mode: modeExige(reponse) };
+    if (!vus.has(cleCouple(couple))) vus.set(cleCouple(couple), couple);
   }
-  return vus;
+  return [...vus.values()];
+}
+
+/** §6 : le mode est obligatoire sur le canal API. Absent, le couple n'est pas décidable. */
+function modeExige(reponse: Reponse): Mode {
+  if (reponse.mode === undefined) {
+    throw new Error(`Réponse API ${reponse.id} sans mode (§6) : son couple outil × mode n'est pas décidable.`);
+  }
+  return reponse.mode;
+}
+
+function ajouterUnique(liste: IdentifiantCourt[], valeur: IdentifiantCourt): void {
+  if (!liste.includes(valeur)) liste.push(valeur);
 }

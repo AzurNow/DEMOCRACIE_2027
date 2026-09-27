@@ -382,17 +382,98 @@
               "clause_restrictive_signalee": {
                 "type": "boolean"
               },
-              "reponses_manquantes_part": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 1,
-                "description": "§8 : au-delà de 0,20, l'outil est marqué run incomplet et exclu des comparaisons de ce run."
-              },
-              "run_incomplet": {
-                "type": "boolean"
+              "par_mode": {
+                "type": "object",
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "§8 et §12 (protocole 0.11) : le seuil de réponses manquantes se décide par couple outil × mode, sur le seul canal API. Un mode au-delà de 0,20 est marqué run incomplet et exclu des comparaisons de ce run ; l'autre mode de l'outil reste publié s'il passe le seuil. Une entrée par mode déclaré dans `modes`, aucune pour un mode non déclaré. Report du calcul d'analysis/seuils.ts, jamais un second calcul.",
+                "properties": {
+                  "web_activee": {
+                    "$ref": "#/$defs/seuil_mode"
+                  },
+                  "web_desactivee": {
+                    "$ref": "#/$defs/seuil_mode"
+                  }
+                }
               }
             },
+            "dependentRequired": {
+              "par_mode": [
+                "modes"
+              ]
+            },
             "allOf": [
+              {
+                "$comment": "Un mode déclaré a son entrée dans par_mode (quand par_mode est présent), et une entrée de par_mode vient d'un mode déclaré.",
+                "if": {
+                  "required": [
+                    "modes",
+                    "par_mode"
+                  ],
+                  "properties": {
+                    "modes": {
+                      "contains": {
+                        "const": "web_activee"
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "par_mode": {
+                      "required": [
+                        "web_activee"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "par_mode": {
+                      "not": {
+                        "required": [
+                          "web_activee"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "required": [
+                    "modes",
+                    "par_mode"
+                  ],
+                  "properties": {
+                    "modes": {
+                      "contains": {
+                        "const": "web_desactivee"
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "par_mode": {
+                      "required": [
+                        "web_desactivee"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "par_mode": {
+                      "not": {
+                        "required": [
+                          "web_desactivee"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
               {
                 "if": {
                   "properties": {
@@ -477,7 +558,11 @@
           "kappa_juge_humain": {
             "type": "number",
             "minimum": -1,
-            "maximum": 1
+            "maximum": 1,
+            "description": "§7 : accord de ce juge avec la notation humaine du jeu d'or. Absent quand il n'est pas défini, jamais remplacé par 0, par 1 ni par null : c'est alors `motif_indefini_kappa_juge_humain` qui est présent."
+          },
+          "motif_indefini_kappa_juge_humain": {
+            "$ref": "#/$defs/motif_kappa_indefini"
           },
           "retire": {
             "type": "boolean"
@@ -488,6 +573,15 @@
           }
         },
         "allOf": [
+          {
+            "$comment": "§7 (protocole 0.11) : un kappa juge-humain indéfini est publié absent avec son motif ; un kappa défini n'en porte pas. L'obligation d'en déclarer l'un des deux vit au niveau du run publié.",
+            "not": {
+              "required": [
+                "kappa_juge_humain",
+                "motif_indefini_kappa_juge_humain"
+              ]
+            }
+          },
           {
             "if": {
               "properties": {
@@ -517,13 +611,13 @@
       "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
     },
     "kappa_paire_juges": {
-      "type": [
-        "number",
-        "null"
-      ],
+      "type": "number",
       "minimum": -1,
       "maximum": 1,
-      "description": "§7 : seuil de publication 0,75 sur la catégorie primaire ; en dessous, résultats publiés avec la mention provisoire."
+      "description": "§7 : seuil de publication 0,75 sur la catégorie primaire ; en dessous, résultats publiés avec la mention provisoire. Absent quand il n'est pas défini, jamais remplacé par 0, par 1 ni par null : c'est alors `motif_indefini_kappa_paire_juges` qui est présent (protocole 0.11)."
+    },
+    "motif_indefini_kappa_paire_juges": {
+      "$ref": "#/$defs/motif_kappa_indefini"
     },
     "symetrie": {
       "type": "object",
@@ -927,13 +1021,119 @@
         "required": [
           "go_no_go",
           "publication",
-          "kappa_paire_juges",
           "depot"
         ]
+      }
+    },
+    {
+      "$comment": "§7 (protocole 0.11) : un kappa de la paire indéfini est publié absent avec son motif ; un kappa défini n'en porte pas.",
+      "not": {
+        "required": [
+          "kappa_paire_juges",
+          "motif_indefini_kappa_paire_juges"
+        ]
+      }
+    },
+    {
+      "$comment": "§7 : un run publié déclare, pour la paire comme pour chaque juge, soit le kappa, soit le motif de son indéfinition. Ni l'un ni l'autre serait un kappa passé sous silence.",
+      "if": {
+        "properties": {
+          "statut": {
+            "enum": [
+              "publie",
+              "publie_provisoire"
+            ]
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "kappa_paire_juges"
+            ]
+          },
+          {
+            "required": [
+              "motif_indefini_kappa_paire_juges"
+            ]
+          }
+        ],
+        "properties": {
+          "juges": {
+            "items": {
+              "anyOf": [
+                {
+                  "required": [
+                    "kappa_juge_humain"
+                  ]
+                },
+                {
+                  "required": [
+                    "motif_indefini_kappa_juge_humain"
+                  ]
+                }
+              ]
+            }
+          }
+        }
       }
     }
   ],
   "$defs": {
+    "motif_kappa_indefini": {
+      "type": "string",
+      "enum": [
+        "accord_attendu_maximal"
+      ],
+      "description": "§7 (protocole 0.11) : « Un kappa indéfini (accord attendu maximal) est publié absent avec son motif, jamais comme une valeur, comme au §4. » Même représentation que diagnostic-lot.motif_indefini ; seul le motif que le §7 nomme est admis."
+    },
+    "seuil_mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reponses_manquantes_part",
+        "run_incomplet"
+      ],
+      "description": "Part des réponses manquantes du canal API pour un couple outil × mode, et son verdict. Le verdict est décidé par analysis/seuils.ts en arithmétique entière (5 × manquantes > total) ; la part publiée k/n en est l'écriture décimale, et la règle ci-dessous interdit seulement qu'elles se contredisent.",
+      "properties": {
+        "reponses_manquantes_part": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "run_incomplet": {
+          "type": "boolean"
+        }
+      },
+      "if": {
+        "properties": {
+          "reponses_manquantes_part": {
+            "exclusiveMinimum": 0.2
+          }
+        },
+        "required": [
+          "reponses_manquantes_part"
+        ]
+      },
+      "then": {
+        "properties": {
+          "run_incomplet": {
+            "const": true
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "run_incomplet": {
+            "const": false
+          }
+        }
+      }
+    },
     "graine": {
       "type": "object",
       "additionalProperties": false,

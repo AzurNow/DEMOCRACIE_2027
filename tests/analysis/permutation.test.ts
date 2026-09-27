@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { generateur, graineDepuisTexte } from "../../validation/domaine/alea.ts";
 import { graineDerivee } from "../../analysis/graines.ts";
 import {
+  corrigerFamilleAsymetrie,
   ecartMaximal,
   grappesEtiquetees,
   permuterEtiquettes,
@@ -19,6 +20,16 @@ import {
 import { grappe, ulid, unite } from "./fabriques.ts";
 
 const OPTIONS = { permutations: 200, graine_du_run: 20261201, cle: ["test", "permutation"] };
+
+/**
+ * Conformité n° 30 : le test prend le partage du seuil de couverture (§4, §8). Les tests écrits
+ * avant ce constat posent des candidats tous au-dessus du seuil ; ils reçoivent ce partage, et
+ * leurs assertions ne changent pas.
+ */
+const TOUS_COMPARES = {
+  compares: ["candidat-a", "candidat-b", "candidat-c", "candidat-d"],
+  rapportes_a_part: [],
+};
 
 /** `n` items d'un candidat, une réponse chacun, toutes de la même catégorie. */
 function items(candidat_id: string, n: number, exacte: boolean, prefixe = candidat_id) {
@@ -47,7 +58,7 @@ describe("statistique et valeur p", () => {
       ...items("candidat-b", 2, false, "b-inexactes"),
     ];
 
-    const resultat = testHomogeneiteCandidats(jeu, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS);
 
     expect(resultat?.statistique_observee).toBe(0);
     expect(resultat?.valeur_p).toBe(1);
@@ -68,7 +79,7 @@ describe("statistique et valeur p", () => {
       ...items("candidat-d", 5, false),
     ];
 
-    const resultat = testHomogeneiteCandidats(jeu, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS);
 
     expect(resultat?.statistique_observee).toBeCloseTo(0.75, 12);
     expect(resultat?.valeur_p).toBeCloseTo(1 / 201, 12);
@@ -92,7 +103,7 @@ describe("statistique et valeur p", () => {
     const globale = 11 / 40;
     const moyenneDesCandidats = (1 + 1 / 30) / 2;
 
-    const resultat = testHomogeneiteCandidats(jeu, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS);
 
     expect(resultat?.exactitude_outil).toEqual({ numerateur: 11, denominateur: 40, valeur: globale });
     expect(resultat?.statistique_observee).toBeCloseTo(1 - globale, 12);
@@ -100,8 +111,152 @@ describe("statistique et valeur p", () => {
   });
 
   it("ne teste rien quand il n'y a pas deux candidats à comparer", () => {
-    expect(testHomogeneiteCandidats([], OPTIONS)).toBeNull();
-    expect(testHomogeneiteCandidats(items("candidat-a", 3, true), OPTIONS)).toBeNull();
+    expect(testHomogeneiteCandidats([], TOUS_COMPARES, OPTIONS)).toBeNull();
+    expect(testHomogeneiteCandidats(items("candidat-a", 3, true), TOUS_COMPARES, OPTIONS)).toBeNull();
+  });
+});
+
+describe("candidats sous le seuil de couverture (conformité n° 30, §4 et §8)", () => {
+  it("n'entre pas un candidat sous le seuil dans le test d'asymétrie, et le rapporte à part", () => {
+    // A : 5 exactes. B : 5 exactes. C (sous le seuil) : 5 inexactes.
+    // Avec C, la globale vaudrait 10/15 et l'écart de C |0 − 2/3| : une asymétrie fabriquée par un
+    // candidat trop peu couvert pour être mesuré. Sans C : globale 10/10, écart 0, p = 201/201 = 1.
+    const jeu = [...items("candidat-a", 5, true), ...items("candidat-b", 5, true), ...items("candidat-c", 5, false)];
+    const partage = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: ["candidat-c"] };
+
+    const resultat = testHomogeneiteCandidats(jeu, partage, OPTIONS);
+
+    expect(resultat?.statistique_observee).toBe(0);
+    expect(resultat?.valeur_p).toBe(1);
+    expect(resultat?.exactitude_outil).toEqual({ numerateur: 10, denominateur: 10, valeur: 1 });
+    expect(resultat?.candidats.map((c) => c.candidat_id)).toEqual(["candidat-a", "candidat-b"]);
+    expect(resultat?.candidats_rapportes_a_part).toEqual(["candidat-c"]);
+  });
+
+  it("ne teste rien quand un seul candidat reste au-dessus du seuil", () => {
+    const jeu = [...items("candidat-a", 3, true), ...items("candidat-c", 3, false)];
+    const partage = { compares: ["candidat-a"], rapportes_a_part: ["candidat-c"] };
+
+    expect(testHomogeneiteCandidats(jeu, partage, OPTIONS)).toBeNull();
+  });
+
+  it("refuse un candidat des unités absent du partage", () => {
+    const jeu = [...items("candidat-a", 2, true), ...items("candidat-x", 2, false)];
+
+    expect(() => testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS)).toThrow(/candidat-x/);
+  });
+});
+
+describe("famille de Holm du test d'asymétrie (conformité n° 82, protocole 0.11)", () => {
+  /** Un résultat de test dont seule la valeur p compte ici. */
+  function resultat(valeur_p: number) {
+    return {
+      statistique_observee: 0.1,
+      valeur_p,
+      permutations: 200,
+      exactitude_outil: { numerateur: 1, denominateur: 2, valeur: 0.5 },
+      candidats: [],
+      candidats_rapportes_a_part: [],
+    };
+  }
+  const ALPHA_ACT = { outil_id: "outil-alpha", mode: "web_activee" } as const;
+  const ALPHA_DES = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
+  const BETA_ACT = { outil_id: "outil-beta", mode: "web_activee" } as const;
+  const BETA_DES = { outil_id: "outil-beta", mode: "web_desactivee" } as const;
+
+  it("forme une famille d'une valeur p par couple outil × mode : deux outils × deux modes = quatre", () => {
+    // m = 4. Triées : 0,01 · 0,03 · 0,04 · 0,20.
+    // 0,01 × 4 = 0,04 ; 0,03 × 3 = 0,09 ; 0,04 × 2 = 0,08 → 0,09 ; 0,20 × 1 = 0,20.
+    // Une famille par outil (m = 2) donnerait 0,02 pour alpha/web_activee : la famille compte.
+    const famille = corrigerFamilleAsymetrie(
+      [
+        { couple: ALPHA_ACT, resultat: resultat(0.01) },
+        { couple: ALPHA_DES, resultat: resultat(0.04) },
+        { couple: BETA_ACT, resultat: resultat(0.03) },
+        { couple: BETA_DES, resultat: resultat(0.2) },
+      ],
+      { compares: [ALPHA_ACT, ALPHA_DES, BETA_ACT, BETA_DES], incomplets: [] },
+    );
+
+    expect(famille.corrigees.map((c) => c.cle)).toEqual([
+      "outil-alpha/web_activee",
+      "outil-alpha/web_desactivee",
+      "outil-beta/web_activee",
+      "outil-beta/web_desactivee",
+    ]);
+    expect(famille.corrigees.map((c) => c.corrigee)).toEqual(
+      [0.04, 0.09, 0.09, 0.2].map((v) => expect.closeTo(v, 12)),
+    );
+    expect(famille.couples_incomplets).toEqual([]);
+    expect(famille.couples_sans_test).toEqual([]);
+  });
+
+  it("sort de la famille un couple marqué run incomplet, et le rapporte à part", () => {
+    // beta/web_activee incomplet : m = 3. Triées : 0,01 · 0,04 · 0,20.
+    // 0,01 × 3 = 0,03 ; 0,04 × 2 = 0,08 ; 0,20 × 1 = 0,20.
+    const famille = corrigerFamilleAsymetrie(
+      [
+        { couple: ALPHA_ACT, resultat: resultat(0.01) },
+        { couple: ALPHA_DES, resultat: resultat(0.04) },
+        { couple: BETA_ACT, resultat: resultat(0.03) },
+        { couple: BETA_DES, resultat: resultat(0.2) },
+      ],
+      { compares: [ALPHA_ACT, ALPHA_DES, BETA_DES], incomplets: [BETA_ACT] },
+    );
+
+    expect(famille.corrigees.map((c) => c.cle)).toEqual([
+      "outil-alpha/web_activee",
+      "outil-alpha/web_desactivee",
+      "outil-beta/web_desactivee",
+    ]);
+    expect(famille.corrigees.map((c) => c.corrigee)).toEqual([0.03, 0.08, 0.2].map((v) => expect.closeTo(v, 12)));
+    expect(famille.couples_incomplets).toEqual(["outil-beta/web_activee"]);
+  });
+
+  it("sort de la famille un couple sans test (moins de deux candidats), et le rapporte à part", () => {
+    // alpha/web_desactivee sans test : m = 2. 0,01 × 2 = 0,02 ; 0,03 × 1 = 0,03.
+    const famille = corrigerFamilleAsymetrie(
+      [
+        { couple: ALPHA_ACT, resultat: resultat(0.01) },
+        { couple: ALPHA_DES, resultat: null },
+        { couple: BETA_ACT, resultat: resultat(0.03) },
+      ],
+      { compares: [ALPHA_ACT, ALPHA_DES, BETA_ACT], incomplets: [] },
+    );
+
+    expect(famille.corrigees.map((c) => [c.cle, c.corrigee])).toEqual([
+      ["outil-alpha/web_activee", expect.closeTo(0.02, 12)],
+      ["outil-beta/web_activee", expect.closeTo(0.03, 12)],
+    ]);
+    expect(famille.couples_sans_test).toEqual(["outil-alpha/web_desactivee"]);
+  });
+
+  it("refuse une famille incomplète, un couple inconnu ou un couple en double", () => {
+    const partage = { compares: [ALPHA_ACT, ALPHA_DES], incomplets: [] };
+    // Un couple comparable sans résultat rétrécirait la famille, donc les valeurs corrigées.
+    expect(() => corrigerFamilleAsymetrie([{ couple: ALPHA_ACT, resultat: resultat(0.01) }], partage)).toThrow(
+      /outil-alpha\/web_desactivee/,
+    );
+    expect(() =>
+      corrigerFamilleAsymetrie(
+        [
+          { couple: ALPHA_ACT, resultat: resultat(0.01) },
+          { couple: ALPHA_DES, resultat: resultat(0.02) },
+          { couple: BETA_ACT, resultat: resultat(0.03) },
+        ],
+        partage,
+      ),
+    ).toThrow(/outil-beta\/web_activee/);
+    expect(() =>
+      corrigerFamilleAsymetrie(
+        [
+          { couple: ALPHA_ACT, resultat: resultat(0.01) },
+          { couple: ALPHA_ACT, resultat: resultat(0.02) },
+          { couple: ALPHA_DES, resultat: resultat(0.03) },
+        ],
+        partage,
+      ),
+    ).toThrow(/double/);
   });
 });
 
@@ -125,7 +280,7 @@ describe("contrat de rejeu depuis run.graines.permutation (constat n° 6)", () =
       if (ecartMaximal(permuterEtiquettes(grappes, rng)) >= observee - 1e-12) extremes += 1;
     }
 
-    expect(testHomogeneiteCandidats(jeu, options)?.valeur_p).toBe((1 + extremes) / 41);
+    expect(testHomogeneiteCandidats(jeu, TOUS_COMPARES, options)?.valeur_p).toBe((1 + extremes) / 41);
   });
 });
 

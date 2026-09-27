@@ -12,8 +12,9 @@
  *    l'item entier — ses trois formulations et ses deux échantillons. Permuter par réponse
  *    fabriquerait de l'indépendance qui n'existe pas et rendrait la valeur p trop petite.
  * 2. **« L'exactitude moyenne de l'outil » est son exactitude globale** (exactes / classées sur
- *    toutes ses réponses), invariante par permutation. La moyenne non pondérée des exactitudes
- *    par candidat, elle, bougerait d'une permutation à l'autre.
+ *    ses réponses aux questions qui nomment un candidat comparé — conformité n° 30), invariante
+ *    par permutation. La moyenne non pondérée des exactitudes par candidat, elle, bougerait d'une
+ *    permutation à l'autre.
  * 3. **L'exactitude d'un candidat garde la définition de `metriques.ts`** : l'agrégat par grappe
  *    est produit par `exactitude()`, et la statistique ne fait qu'en sommer numérateurs et
  *    dénominateurs. La métrique ne vit pas ici une deuxième fois.
@@ -29,8 +30,10 @@
 import { generateur, melanger, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { graineDerivee } from "./graines.ts";
+import { corrigerHolm, type ValeurP, type ValeurPCorrigee } from "./holm.ts";
 import { exactitude, exactitudeParCandidat } from "./metriques.ts";
-import { taux, type IdentifiantCourt, type Taux, type Ulid } from "./types.ts";
+import { cleCouple, repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
+import { taux, type CoupleOutilMode, type IdentifiantCourt, type Taux, type Ulid } from "./types.ts";
 
 /** §8. Les tests en utilisent beaucoup moins, à graine fixe. */
 export const PERMUTATIONS_PRODUCTION = 10000;
@@ -72,6 +75,12 @@ export interface ResultatPermutation {
   readonly permutations: number;
   readonly exactitude_outil: Taux;
   readonly candidats: readonly ExactitudeCandidat[];
+  /**
+   * §4 : candidats sous le seuil de couverture présents dans les unités, rapportés à part avec la
+   * mention « couverture insuffisante », sans taux (§8). Leurs items n'entrent ni dans la
+   * statistique, ni dans l'exactitude globale de référence, ni dans les permutations.
+   */
+  readonly candidats_rapportes_a_part: readonly IdentifiantCourt[];
 }
 
 /**
@@ -147,28 +156,95 @@ export function ecartMaximal(grappes: readonly GrappeEtiquetee[]): number {
 }
 
 /**
- * `null` quand le test n'a pas d'objet : aucun item exploitable, ou un seul candidat — il n'y a
- * alors rien à permuter, et publier une valeur p de 1 laisserait croire qu'un test a eu lieu.
+ * `null` quand le test n'a pas d'objet : aucun item exploitable, ou moins de deux candidats
+ * comparés — il n'y a alors rien à permuter, et publier une valeur p de 1 laisserait croire
+ * qu'un test a eu lieu.
+ *
+ * Le partage vient de `candidatsComparables(run)` (conformité n° 30) : un candidat sous le seuil
+ * de couverture « n'entre pas dans les comparaisons inter-candidats » (§4). Ses items sont retirés
+ * avant la formation des grappes ; il est rendu à part dans le résultat, jamais effacé.
  */
 export function testHomogeneiteCandidats(
   unites: readonly UniteAnalyse[],
+  partage: PartageCandidats,
   options: OptionsPermutation,
 ): ResultatPermutation | null {
   verifierOptions(options);
-  const grappes = grappesEtiquetees(unites);
+  const { comparees } = repartirParCandidat(unites, partage);
+  const grappes = grappesEtiquetees(comparees);
   const candidats = new Set(grappes.map((g) => g.candidat_id));
   if (candidats.size < 2) return null;
   const observee = ecartMaximal(grappes);
+  const parCandidat = exactitudeParCandidat(unites, partage);
   return {
     statistique_observee: observee,
     valeur_p: valeurPDe(grappes, observee, options),
     permutations: options.permutations,
     exactitude_outil: exactitudeDesGrappes(grappes),
-    candidats: [...exactitudeParCandidat(unites)].map(([candidat_id, t]) => ({
-      candidat_id,
-      exactitude: t,
-    })),
+    candidats: [...parCandidat.compares].map(([candidat_id, t]) => ({ candidat_id, exactitude: t })),
+    candidats_rapportes_a_part: parCandidat.rapportes_a_part,
   };
+}
+
+/** Le test d'un couple outil × mode ; `null` quand il n'a pas eu d'objet. */
+export interface ResultatCouple {
+  readonly couple: CoupleOutilMode;
+  readonly resultat: ResultatPermutation | null;
+}
+
+export interface FamilleAsymetrie {
+  /** Une entrée par couple testé, clé `cleCouple`, dans l'ordre d'entrée. */
+  readonly corrigees: readonly ValeurPCorrigee[];
+  /** §8 : couples marqués « run incomplet », exclus des comparaisons, donc de la famille. */
+  readonly couples_incomplets: readonly string[];
+  /** Couples comparables dont le test n'a pas eu d'objet : aucune valeur p, rien à corriger. */
+  readonly couples_sans_test: readonly string[];
+}
+
+/**
+ * §8 (protocole 0.11) : « Correction de Holm sur la famille de toutes les valeurs p du run, une
+ * par couple outil × mode. » La famille est formée ici, une seule fois : les couples incomplets
+ * (conformité n° 84) et les tests sans objet n'y entrent pas, et sont rendus à part.
+ *
+ * Une famille qui perdrait un couple comparable aurait des valeurs corrigées plus petites qu'elle
+ * ne doit : un couple comparable sans résultat lève, comme un couple inconnu ou en double.
+ */
+export function corrigerFamilleAsymetrie(
+  resultats: readonly ResultatCouple[],
+  couples: PartageCouples,
+): FamilleAsymetrie {
+  const comparables = new Set(couples.compares.map(cleCouple));
+  const incomplets = new Set(couples.incomplets.map(cleCouple));
+  verifierCouplesDeLaFamille(resultats, comparables, incomplets);
+  const famille: ValeurP[] = [];
+  const sans_test: string[] = [];
+  for (const { couple, resultat } of resultats) {
+    const cle = cleCouple(couple);
+    if (incomplets.has(cle)) continue;
+    if (resultat === null) sans_test.push(cle);
+    else famille.push({ cle, valeur: resultat.valeur_p });
+  }
+  return { corrigees: corrigerHolm(famille), couples_incomplets: [...incomplets], couples_sans_test: sans_test };
+}
+
+function verifierCouplesDeLaFamille(
+  resultats: readonly ResultatCouple[],
+  comparables: ReadonlySet<string>,
+  incomplets: ReadonlySet<string>,
+): void {
+  const vus = new Set<string>();
+  for (const { couple } of resultats) {
+    const cle = cleCouple(couple);
+    if (vus.has(cle)) throw new Error(`Couple ${cle} en double dans la famille de Holm.`);
+    if (!comparables.has(cle) && !incomplets.has(cle)) {
+      throw new Error(`Couple ${cle} absent du partage des couples du run : famille de Holm indécidable.`);
+    }
+    vus.add(cle);
+  }
+  const manquants = [...comparables].filter((cle) => !vus.has(cle));
+  if (manquants.length > 0) {
+    throw new Error(`Couples comparables sans résultat de test : ${manquants.join(", ")}. Famille de Holm incomplète.`);
+  }
 }
 
 function valeurPDe(

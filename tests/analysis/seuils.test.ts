@@ -1,27 +1,57 @@
 /**
  * Seuils de non-publication du §8 — les deux règles qui retirent un chiffre du rapport.
  *
- * « Aucune statistique par candidat sous 10 items P vérifiés. Aucune statistique par outil si
- * plus de 20 % des réponses d'un run sont manquantes pour cet outil. »
+ * Protocole 0.11 : « Aucune statistique par candidat sous 10 items P vérifiés (section 4). Aucune
+ * statistique pour un outil dans un mode si plus de 20 % des réponses du canal API de ce run sont
+ * manquantes pour ce couple : il est alors marqué « run incomplet » et exclu des comparaisons de ce
+ * run, l'autre mode de l'outil restant publié s'il passe le seuil. »
+ *
+ * Conformité n° 84, protocole 0.11 : les tests de la règle d'avant (seuil par outil, tous modes et
+ * tous canaux confondus) sont réécrits ici par couple outil × mode ; aucune assertion n'est
+ * affaiblie, les effectifs et les frontières (2/10, 3/10, 1/5) sont conservés.
  */
 
 import { describe, expect, it } from "vitest";
 import {
   candidatsComparables,
-  outilsComparables,
+  cleCouple,
+  couplesComparables,
   partReponsesManquantes,
+  repartirParCandidat,
   runIncomplet,
 } from "../../analysis/seuils.ts";
-import { candidat, reponse, run, ulid } from "./fabriques.ts";
+import type { Canal, Mode } from "../../analysis/types.ts";
+import { candidat, reponse, run, ulid, unite } from "./fabriques.ts";
 
-function reponses(obtenues: number, manquantes: number, outil_id = "outil-alpha") {
+const ALPHA_DESACTIVEE = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
+
+/**
+ * `obtenues` réponses obtenues et `manquantes` réponses manquantes d'un couple. Le canal
+ * application n'a pas de mode (§6) : le champ est alors retiré, comme le schéma l'exige.
+ */
+function reponses(
+  obtenues: number,
+  manquantes: number,
+  outil_id = "outil-alpha",
+  mode: Mode = "web_desactivee",
+  canal: Canal = "api",
+) {
+  const modeEcrit = canal === "api" ? mode : undefined;
+  const prefixe = `${outil_id}-${mode}-${canal}`;
   const liste = [];
   for (let i = 0; i < obtenues; i += 1) {
-    liste.push(reponse({ id: ulid(`${outil_id}-ok-${i}`), outil_id }));
+    liste.push(reponse({ id: ulid(`${prefixe}-ok-${i}`), outil_id, mode: modeEcrit, canal }));
   }
   for (let i = 0; i < manquantes; i += 1) {
     liste.push(
-      reponse({ id: ulid(`${outil_id}-manq-${i}`), outil_id, statut_reponse: "manquante", normalise: undefined }),
+      reponse({
+        id: ulid(`${prefixe}-manq-${i}`),
+        outil_id,
+        mode: modeEcrit,
+        canal,
+        statut_reponse: "manquante",
+        normalise: undefined,
+      }),
     );
   }
   return liste;
@@ -48,36 +78,95 @@ describe("seuil de couverture par candidat", () => {
   });
 });
 
-describe("seuil de réponses manquantes par outil", () => {
-  it("laisse un outil à 20 % exactement dans les comparaisons, et exclut celui qui dépasse", () => {
+describe("seuil de réponses manquantes par couple outil × mode (conformité n° 84, protocole 0.11)", () => {
+  it("laisse un couple à 20 % exactement dans les comparaisons, et exclut celui qui dépasse", () => {
     // §8 dit « plus de 20 % ». Comparaison entière (5·manquantes > total) : 2/10 ne déclenche
     // pas, 3/10 déclenche. Le flottant 0,2 ne décide rien.
-    const pile = partReponsesManquantes(reponses(8, 2), "outil-alpha");
+    const pile = partReponsesManquantes(reponses(8, 2), ALPHA_DESACTIVEE);
     expect(pile).toEqual({ numerateur: 2, denominateur: 10, valeur: 0.2 });
     expect(runIncomplet(pile)).toBe(false);
 
-    const dessus = partReponsesManquantes(reponses(7, 3), "outil-alpha");
+    const dessus = partReponsesManquantes(reponses(7, 3), ALPHA_DESACTIVEE);
     expect(dessus).toEqual({ numerateur: 3, denominateur: 10, valeur: 0.3 });
     expect(runIncomplet(dessus)).toBe(true);
-
-    // Un cinquième exact, sur un effectif où le flottant tombe juste.
-    expect(runIncomplet(partReponsesManquantes(reponses(4, 1), "outil-alpha"))).toBe(false);
   });
 
-  it("ne qualifie pas un outil sans aucune réponse plutôt que de le déclarer complet", () => {
-    const aucune = partReponsesManquantes([], "outil-absent");
+  it("laisse comparable un couple à un cinquième exact, sur 1/5 comme sur 2/10", () => {
+    const unSurCinq = partReponsesManquantes(reponses(4, 1), ALPHA_DESACTIVEE);
+    expect(unSurCinq).toEqual({ numerateur: 1, denominateur: 5, valeur: 0.2 });
+    expect(runIncomplet(unSurCinq)).toBe(false);
 
+    expect(runIncomplet(partReponsesManquantes(reponses(8, 2), ALPHA_DESACTIVEE))).toBe(false);
+    expect(couplesComparables(reponses(4, 1))).toEqual({ compares: [ALPHA_DESACTIVEE], incomplets: [] });
+    expect(couplesComparables(reponses(8, 2))).toEqual({ compares: [ALPHA_DESACTIVEE], incomplets: [] });
+  });
+
+  it("décide chaque mode d'un outil à part : 30 % en web activée l'exclut, 5 % en web désactivée reste comparable", () => {
+    // Agrégés, les deux modes donneraient (6 + 1) / 40 = 17,5 %, sous le seuil : l'ancienne règle
+    // aurait laissé passer le mode web activée. La moyenne agrégée ne décide plus rien.
+    const jeu = [
+      ...reponses(14, 6, "outil-alpha", "web_activee"),
+      ...reponses(19, 1, "outil-alpha", "web_desactivee"),
+    ];
+
+    expect(partReponsesManquantes(jeu, { outil_id: "outil-alpha", mode: "web_activee" })).toEqual({
+      numerateur: 6,
+      denominateur: 20,
+      valeur: 0.3,
+    });
+    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({
+      numerateur: 1,
+      denominateur: 20,
+      valeur: 0.05,
+    });
+
+    const partage = couplesComparables(jeu);
+
+    expect(partage.incomplets).toEqual([{ outil_id: "outil-alpha", mode: "web_activee" }]);
+    expect(partage.compares).toEqual([ALPHA_DESACTIVEE]);
+  });
+
+  it("ignore les réponses manquantes du canal application, qui n'entrent jamais dans le seuil", () => {
+    // Couple API à 1/5 (comparable). Dix réponses manquantes du canal application sur le même
+    // outil : les compter ferait passer la part à 11/15, bien au-delà du seuil.
+    const jeu = [...reponses(4, 1), ...reponses(0, 10, "outil-alpha", "web_desactivee", "application")];
+
+    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({
+      numerateur: 1,
+      denominateur: 5,
+      valeur: 0.2,
+    });
+    expect(couplesComparables(jeu)).toEqual({ compares: [ALPHA_DESACTIVEE], incomplets: [] });
+  });
+
+  it("ne qualifie pas un couple sans aucune réponse API plutôt que de le déclarer complet", () => {
+    const aucune = partReponsesManquantes([], { outil_id: "outil-absent", mode: "web_activee" });
     expect(aucune.denominateur).toBe(0);
     expect(() => runIncomplet(aucune)).toThrow(/aucune réponse/);
+
+    // Des réponses du seul canal application ne rendent pas le couple API décidable.
+    const applicationSeule = partReponsesManquantes(
+      reponses(3, 0, "outil-alpha", "web_desactivee", "application"),
+      ALPHA_DESACTIVEE,
+    );
+    expect(applicationSeule.denominateur).toBe(0);
+    expect(() => runIncomplet(applicationSeule)).toThrow(/aucune réponse/);
   });
 
-  it("sépare les outils comparables des outils marqués run incomplet", () => {
+  it("sépare les couples comparables des couples marqués run incomplet, outil par outil", () => {
     const jeu = [...reponses(8, 2, "outil-alpha"), ...reponses(7, 3, "outil-beta")];
 
-    const partage = outilsComparables(jeu);
+    const partage = couplesComparables(jeu);
 
-    expect(partage.compares).toEqual(["outil-alpha"]);
-    expect(partage.incomplets).toEqual(["outil-beta"]);
+    expect(partage.compares).toEqual([ALPHA_DESACTIVEE]);
+    expect(partage.incomplets).toEqual([{ outil_id: "outil-beta", mode: "web_desactivee" }]);
+  });
+
+  it("refuse une réponse API sans mode plutôt que de la ranger dans un mode supposé", () => {
+    // §6 : le mode est obligatoire sur le canal API. Absent, le couple n'est pas décidable.
+    const sansMode = [reponse({ id: ulid("api-sans-mode"), mode: undefined })];
+
+    expect(() => couplesComparables(sansMode)).toThrow(/mode/);
   });
 
   it("ne compte que les réponses du run dans la part de manquantes", () => {
@@ -86,10 +175,49 @@ describe("seuil de réponses manquantes par outil", () => {
       reponse({ id: ulid("cf"), statut_reponse: "manquante", normalise: undefined, contexte: "contrefactuel_candidat" }),
     ];
 
-    expect(partReponsesManquantes(jeu, "outil-alpha")).toEqual({
+    expect(partReponsesManquantes(jeu, ALPHA_DESACTIVEE)).toEqual({
       numerateur: 1,
       denominateur: 2,
       valeur: 0.5,
     });
+  });
+
+  it("nomme chaque couple par une clé stable et lisible", () => {
+    // Le séparateur « / » n'appartient pas à l'alphabet d'un identifiant court (commun.schema.json) :
+    // deux couples distincts ne peuvent pas partager une clé.
+    expect(cleCouple({ outil_id: "outil-alpha", mode: "web_activee" })).toBe("outil-alpha/web_activee");
+    expect(cleCouple(ALPHA_DESACTIVEE)).toBe("outil-alpha/web_desactivee");
+  });
+});
+
+describe("répartition des unités par candidat (conformité n° 30)", () => {
+  const partage = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: ["candidat-c"] };
+
+  it("garde les unités des candidats comparés et rapporte à part ceux sous le seuil, sans les effacer", () => {
+    const jeu = [
+      unite({ reponse_id: ulid("u-a"), candidat_id: "candidat-a" }),
+      unite({ reponse_id: ulid("u-c"), candidat_id: "candidat-c" }),
+      unite({ reponse_id: ulid("u-b"), candidat_id: "candidat-b" }),
+    ];
+
+    const repartition = repartirParCandidat(jeu, partage);
+
+    expect(repartition.comparees.map((u) => u.candidat_id)).toEqual(["candidat-a", "candidat-b"]);
+    expect(repartition.candidats_a_part).toEqual(["candidat-c"]);
+  });
+
+  it("laisse de côté les questions d'attribution, qui ne nomment aucun candidat", () => {
+    const jeu = [unite({ candidat_id: null, gabarit: "Q-ATT" }), unite({ candidat_id: "candidat-a" })];
+
+    const repartition = repartirParCandidat(jeu, partage);
+
+    expect(repartition.comparees.map((u) => u.candidat_id)).toEqual(["candidat-a"]);
+    expect(repartition.candidats_a_part).toEqual([]);
+  });
+
+  it("refuse un candidat présent dans les unités mais absent du partage", () => {
+    const jeu = [unite({ candidat_id: "candidat-a" }), unite({ candidat_id: "candidat-inconnu" })];
+
+    expect(() => repartirParCandidat(jeu, partage)).toThrow(/candidat-inconnu/);
   });
 });

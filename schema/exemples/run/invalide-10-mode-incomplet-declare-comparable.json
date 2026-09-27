@@ -1,5 +1,5 @@
 {
-  "id": "45BA12PKAC7CZTYF0FKW29YE3D",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -127,7 +127,7 @@
         "clause_restrictive_signalee": false,
         "par_mode": {
           "web_activee": {
-            "reponses_manquantes_part": 0.04,
+            "reponses_manquantes_part": 0.3,
             "run_incomplet": false
           },
           "web_desactivee": {
@@ -166,7 +166,7 @@
   "taux_echantillon_humain": 0.1,
   "kappa_paire_juges": 0.81,
   "symetrie": {
-    "statut_global": "rouge",
+    "statut_global": "vert",
     "conditions": [
       {
         "code": "nombre_questions_par_candidat",
