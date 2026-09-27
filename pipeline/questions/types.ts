@@ -262,10 +262,22 @@ export interface CompensationTirage {
   readonly theme_origine: Theme;
 }
 
+/**
+ * §5 : les deux quotas du tirage, sans valeur par défaut. Conformité n° 59 : inscrits dans le tirage
+ * publié (`tirage.parametres`), pour que le fichier de tirage suffise à rejouer.
+ */
+export interface ParametresTirage {
+  /** Nombre de questions tirées dans chaque strate candidat × thème × gabarit. */
+  readonly questions_par_strate: number;
+  /** §5 (protocole 0.9) : nombre de questions d'attribution tirées par thème. */
+  readonly questions_attribution_par_theme: number;
+}
+
 export interface Tirage {
   readonly run_id: string;
   readonly date_gel: string;
   readonly graine_tirage: GraineTirage;
+  readonly parametres: ParametresTirage;
   readonly entrees: readonly EntreeTirage[];
   readonly exclusions: readonly ExclusionTirage[];
   readonly bilan_reprise: readonly BilanReprise[];

@@ -19,7 +19,7 @@ import { entreesPour } from "../pipeline/questions/tirage.ts";
 import type { CandidatNomme, Item, Mesure, Question, RunAuGel, Tirage } from "../pipeline/questions/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "./aides/fabriques.ts";
-import { completer, graine, identifiant, itemF, itemP, mesure } from "./questions/fabriques.ts";
+import { completer, graine, identifiant, itemF, itemP, mesure, quotas } from "./questions/fabriques.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
 const GEL = "2026-12-01T06:00:00+01:00";
@@ -100,6 +100,8 @@ function jeuNominal(): Jeu {
       run_id: identifiant("run:cli"),
       date_gel: GEL,
       graine_tirage: graine(),
+      // Conformité n° 59 : un tirage porte ses quotas.
+      parametres: quotas(),
       entrees: entreesPour(questions, items, mesures, run as unknown as RunAuGel),
       exclusions: [],
       bilan_reprise: [],

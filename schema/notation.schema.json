@@ -183,7 +183,14 @@
                 "description": "La page doit être conservée : sans elle, l'audit humain postérieur et la reproductibilité du §9 sont impossibles."
               },
               "archive_url": { "type": "string", "pattern": "^https?://" }
-            }
+            },
+            "allOf": [
+              {
+                "$comment": "Conformité n° 64, §7 : « un lien mort ou une page qui ne soutient pas l'affirmation est un défaut de sourçage ». Une page qui n'existe plus ne contient rien : un lien mort ne peut pas être noté « soutient ».",
+                "if": { "properties": { "verdict_existence": { "const": "mort" } }, "required": ["verdict_existence"] },
+                "then": { "properties": { "verdict_soutien": { "not": { "const": "soutient" } } } }
+              }
+            ]
           }
         }
       }

@@ -332,8 +332,9 @@ describe("exemples de schema/exemples/", () => {
   // 127 → 132 : cinq exemples invalides de run ajoutés (conformité n° 10, 19, 21 et par_mode).
   // 132 → 137 : un exemple valide et quatre invalides d'item ajoutés (conformité n° 11, 12, 13).
   // 137 → 140 : deux exemples invalides de question et un de tirage (conformité n° 37, prémisse résolue au gel).
-  it("charge les 140 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(140);
+  // 140 → 146 : six exemples invalides (conformité n° 59, 61, 62, 64 ×2, 66).
+  it("charge les 146 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(146);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -363,7 +364,9 @@ describe("exemples de schema/exemples/", () => {
       contexte: contenu["contexte"] as string,
       objet_note: contenu["objet_note"] as { type: string; id: string },
     }));
-    expect(notants).toHaveLength(16);
+    // 16 → 18 : une notation et un verdict invalides ajoutés (conformité n° 64), copies d'exemples
+    // valides dont seul le sourçage change ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(18);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

@@ -33,7 +33,7 @@
 
     "empreinte": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
-      "description": "sha256 de la forme canonique du contenu notant (type, mesure, positions, paraphrases, citations, quantifications, dates de validité). Ne couvre ni les statuts ni l'historique : une contestation ne change pas ce qui a été jugé."
+      "description": "sha256 de la forme canonique du contenu notant (§4), calculée par validation/domaine/empreinte.ts:empreinteContenuNotant : type, candidat, mesure et sa version, dates de validité ; pour chaque état positionnel, position, citation verbatim normalisée, quantification et empreinte de la source ; pour un item A, le corpus examiné et l'empreinte de la source de couverture du thème ; pour un item O, la date du changement et les deux états. La paraphrase en est exclue (conformité n° 55), comme les statuts, l'historique et les validations : corriger une paraphrase ou enregistrer une contestation ne change pas ce qui a été jugé."
     },
 
     "libelle_lisible": {

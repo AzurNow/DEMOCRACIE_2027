@@ -7,10 +7,6 @@
     "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
     "version": "1"
   },
-  "parametres": {
-    "questions_par_strate": 1,
-    "questions_attribution_par_theme": 1
-  },
   "entrees": [
     {
       "question_id": "q_3aee55a036e1bc56fa8a62d2ada903d5",
@@ -56,7 +52,11 @@
           },
           "role": "principal",
           "statut_validation_au_gel": "verifie",
-          "statut_contestation_au_gel": "arbitree"
+          "statut_contestation_au_gel": "arbitree",
+          "decision_panel_au_gel": {
+            "decision": "maintien",
+            "date": "2026-10-14T18:00:00+02:00"
+          }
         }
       ],
       "reponse_attendue": {

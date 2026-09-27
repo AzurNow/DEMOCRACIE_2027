@@ -108,7 +108,8 @@
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git"
         },
         "donnees_commit": {
-          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git"
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git",
+          "description": "Commit de data/ lu au gel. Obligatoire dès que le run est publié (publie, publie_provisoire, et invalide, que le §6 publie aussi) : conformité n° 66, voir allOf."
         },
         "amendements_appliques": {
           "type": "array",
@@ -1105,6 +1106,16 @@
           "publication",
           "depot"
         ]
+      }
+    },
+    {
+      "$comment": "Conformité n° 66, §9 : « la version du protocole, du code et des données utilisée est inscrite en tête de chaque rapport ». Tout run publié la porte : publié, publié provisoire (§12), et invalide, que le §6 publie aussi (« les deux runs sont publiés, le premier marqué invalide avec la raison »). Un run planifié ou en cours n'a pas encore de rapport.",
+      "if": {
+        "properties": { "statut": { "enum": ["publie", "publie_provisoire", "invalide"] } },
+        "required": ["statut"]
+      },
+      "then": {
+        "properties": { "versions": { "required": ["donnees_commit"] } }
       }
     },
     {

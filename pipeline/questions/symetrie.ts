@@ -441,8 +441,22 @@ function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {
   return { code: "aucun_nom_candidat_dans_q_att", statut: "vert" };
 }
 
+/**
+ * §5 : les items A et F « constituent au moins 20 % des questions de chaque run ». Un tirage vide
+ * n'a pas de part : 0/0 n'est pas une part atteinte, et un run sans question n'est pas un run
+ * (conformité n° 60). La condition est rouge, sans mesure, et le refus ne dépend plus du seul
+ * `tirage.schema.json`, que `verifierSymetrie` ne lit pas.
+ */
 function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   const total = contexte.entrees.length;
+  if (total === 0) {
+    return {
+      code: "part_items_a_f_minimale",
+      statut: "rouge",
+      seuil: PART_MINIMALE_ITEMS_A_F,
+      commentaire: "tirage vide : la part des items A et F n'est pas définie, et un run sans question ne part pas.",
+    };
+  }
   const absencesEtFictifs = contexte.entrees.filter((entree) => {
     const type = typePrincipal(contexte, entree);
     return type !== null && ["A", "F"].includes(type);
@@ -453,7 +467,7 @@ function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   return {
     code: "part_items_a_f_minimale",
     statut: atteint ? "vert" : "rouge",
-    mesure: total === 0 ? 0 : absencesEtFictifs / total,
+    mesure: absencesEtFictifs / total,
     seuil: PART_MINIMALE_ITEMS_A_F,
   };
 }

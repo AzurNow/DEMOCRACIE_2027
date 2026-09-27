@@ -134,11 +134,15 @@
         "modele_demande": { "type": "string", "minLength": 1 },
         "modele_renvoye": {
           "type": ["string", "null"],
-          "description": "null si l'API n'en renvoie pas. Jamais recopié depuis modele_demande : une valeur absente doit rester absente et visible."
+          "description": "Identifiant de version renvoyé par l'API (§6). Clé obligatoire pour le canal api (conformité n° 61, voir allOf) ; null si l'API n'en renvoie pas, et seulement dans ce cas. Jamais recopié depuis modele_demande : une valeur absente doit rester absente et visible, et une clé absente ne se confond plus avec un null."
         },
         "horodatage_requete": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
         "horodatage_reponse": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
-        "latence_ms": { "type": "integer", "minimum": 0 },
+        "latence_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "§6 : latence enregistrée. Obligatoire et non nulle pour le canal api (conformité n° 61) : c'est le client qui la mesure, entre horodatage_requete et horodatage_reponse, elle ne dépend pas de ce que l'API renvoie."
+        },
         "stop_reason": { "type": ["string", "null"] },
         "parametres_effectifs": {
           "type": "object",
@@ -245,6 +249,16 @@
           { "not": { "required": ["normalise"] } },
           { "not": { "required": ["brut_sha256"] } }
         ]
+      }
+    },
+    {
+      "$comment": "Conformité n° 61, §6 : « identifiant de version renvoyé par l'API, horodatage, latence » sont enregistrés. Pour une réponse d'API obtenue, les deux clés sont présentes ; modele_renvoye peut valoir null (l'API ne le renvoie pas), latence_ms jamais. Le canal application n'a pas d'API : le §6 ne lui demande ni l'un ni l'autre.",
+      "if": {
+        "properties": { "canal": { "const": "api" }, "statut_reponse": { "const": "obtenue" } },
+        "required": ["canal", "statut_reponse"]
+      },
+      "then": {
+        "properties": { "metadonnees": { "required": ["modele_renvoye", "latence_ms"] } }
       }
     },
     {

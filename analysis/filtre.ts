@@ -110,6 +110,32 @@ export class VerdictEnDouble extends Error {
   }
 }
 
+/**
+ * Conformité n° 64 (§7, §8) : `au_moins_un_lien_soutenant` dit qu'un MÊME lien est vivant et
+ * soutient l'affirmation (schema/verdict.schema.json) ; un lien vivant est un lien cité. Un verdict
+ * qui conclut au soutien sans lien existant, ou qui trouve un lien existant sans citation, se
+ * contredit : le sourçage valide ne le lit pas, et ne le compte pas non plus en silence.
+ */
+export class SourcageIncoherent extends Error {
+  readonly verdict_id: Ulid;
+
+  constructor(verdict: Verdict, detail: string) {
+    super(`Verdict ${verdict.id} : sourçage retenu incohérent, ${detail} (§7, sourçage).`);
+    this.name = "SourcageIncoherent";
+    this.verdict_id = verdict.id;
+  }
+}
+
+function verifierSourcage(verdict: Verdict): void {
+  const sourcage = verdict.sourcage_retenu;
+  if (sourcage.au_moins_un_lien_soutenant && !sourcage.au_moins_un_lien_existant) {
+    throw new SourcageIncoherent(verdict, "un lien soutenant est déclaré sans aucun lien existant");
+  }
+  if (sourcage.au_moins_un_lien_existant && !sourcage.cite) {
+    throw new SourcageIncoherent(verdict, "un lien existant est déclaré sur une réponse qui ne cite rien");
+  }
+}
+
 /** Réponses obtenues du run sans verdict : elles appartiennent au dénominateur, il manque leur note. */
 export class ReponsesNonNotees extends Error {
   readonly reponses: readonly Ulid[];
@@ -181,6 +207,7 @@ function indexer(entrees: EntreesAnalyse): IndexEntrees {
  * parce que le recalcul de robustesse (d) l'exclut (`robustesse.ts`).
  */
 function uniteDepuis(verdict: Verdict, reponse: Reponse, index: IndexEntrees): UniteAnalyse {
+  verifierSourcage(verdict);
   const tronquee = projection(reponse).troncature;
   return composer(verdict, reponse, contexteQuestion(reponse, index), tronquee);
 }

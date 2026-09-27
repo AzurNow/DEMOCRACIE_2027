@@ -11,9 +11,10 @@ import {
   estDuRun,
   filtrerContexteRun,
   ReponsesNonNotees,
+  SourcageIncoherent,
   VerdictEnDouble,
 } from "../../analysis/filtre.ts";
-import { confirmationPremisse, exactitude, tauxNonReponse } from "../../analysis/metriques.ts";
+import { confirmationPremisse, exactitude, sourcageValide, tauxNonReponse } from "../../analysis/metriques.ts";
 import { partReponsesManquantes } from "../../analysis/seuils.ts";
 import { entreeTirage, idQuestion, item, question, reponse, run, ulid, verdict } from "./fabriques.ts";
 
@@ -292,5 +293,39 @@ describe("une unité par réponse obtenue, un verdict par réponse (constat n° 
       [ulid("r-b"), ulid("v-b")],
     ]);
     expect(tauxNonReponse(unites)).toEqual({ numerateur: 1, denominateur: 2, valeur: 0.5 });
+  });
+});
+
+/*
+ * Conformité n° 64 (§7.11) : « un lien mort ou une page qui ne soutient pas l'affirmation est un
+ * défaut de sourçage ». `au_moins_un_lien_soutenant` dit qu'un MÊME lien est vivant et soutient ; un
+ * verdict qui le déclare sans lien existant, ou qui trouve un lien existant sans citation, se
+ * contredit. L'analyse ne lit pas ces verdicts en silence : elle les refuse en les nommant.
+ */
+describe("sourçage retenu incohérent", () => {
+  function avecSourcage(cite: boolean, existant: boolean, soutenant: boolean) {
+    const reponses = [reponse({ id: ulid("r-s") })];
+    const verdicts = [
+      verdict({
+        id: ulid("v-s"),
+        objet_note: { type: "reponse", id: ulid("r-s") },
+        sourcage_retenu: { cite, au_moins_un_lien_existant: existant, au_moins_un_lien_soutenant: soutenant },
+      }),
+    ];
+    return entrees(reponses, verdicts);
+  }
+
+  it("refuse un verdict qui conclut au soutien sans lien vivant", () => {
+    expect(() => assembler(avecSourcage(true, false, true))).toThrow(SourcageIncoherent);
+    expect(() => assembler(avecSourcage(true, false, true))).toThrow(new RegExp(ulid("v-s")));
+  });
+
+  it("refuse un verdict qui trouve un lien vivant sans citation", () => {
+    expect(() => assembler(avecSourcage(false, true, false))).toThrow(SourcageIncoherent);
+  });
+
+  it("un même lien vivant et soutenant : sourçage valide ; vivant mais non soutenant : non valide", () => {
+    expect(sourcageValide(assembler(avecSourcage(true, true, true)))).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+    expect(sourcageValide(assembler(avecSourcage(true, true, false)))).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
   });
 });

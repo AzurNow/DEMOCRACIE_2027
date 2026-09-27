@@ -20,6 +20,7 @@ import type {
   Formulation,
   GraineTirage,
   ItemDeQuestion,
+  ParametresTirage,
   Position,
   Question,
   Registre,
@@ -301,6 +302,14 @@ export function graine(valeur = 20261201): GraineTirage {
     bibliotheque: "banc-essai-2027/validation/domaine/alea.ts",
     version: "1",
   };
+}
+
+/**
+ * Quotas d'un tirage construit à la main. Conformité n° 59 : `tirage.parametres` est obligatoire,
+ * un tirage publié porte les quotas qui l'ont produit ; la symétrie ne les lit pas.
+ */
+export function quotas(): ParametresTirage {
+  return { questions_par_strate: 1, questions_attribution_par_theme: 1 };
 }
 
 export const THEMES_DE_TEST: readonly Theme[] = ["fiscalite_pouvoir_achat", "retraites"];

@@ -28,7 +28,7 @@ import { DecisionArbitrageRefusee } from "../validation/domaine/arbitrage.ts";
 import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-mesure.ts";
 import { decrireEcart, ecartsDeDates } from "../validation/domaine/dates-sources.ts";
 import type { LotEffectif } from "../validation/domaine/lot.ts";
-import type { Issue } from "../validation/domaine/promotion.ts";
+import { VersionMesureEcart, type Issue } from "../validation/domaine/promotion.ts";
 import type { Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
@@ -372,7 +372,8 @@ try {
   // §4 : « une acceptation enregistrée sans mesure modifiée est une erreur bloquante ». Elle
   // arrête la commande plutôt que de promouvoir un item validé contre un thème inexistant.
   // §5 (protocole 0.9) : un second item F vérifié sur une mesure fictive déjà portée, de même.
-  const attendues = [CorrectionMesureIncoherente, ItemFictifEnDouble, DecisionArbitrageRefusee];
+  // Conformité n° 69 : un item vérifié qui épinglerait une version dépassée de sa mesure, de même.
+  const attendues = [CorrectionMesureIncoherente, ItemFictifEnDouble, DecisionArbitrageRefusee, VersionMesureEcart];
   if (!attendues.some((classe) => erreur instanceof classe)) throw erreur;
   process.stderr.write(`\n${(erreur as Error).message}\n`);
   process.exitCode = 1;

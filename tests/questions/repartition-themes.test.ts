@@ -16,7 +16,7 @@ import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { conditionDeSymetrie, verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
 import { entreesPour, tirer } from "../../pipeline/questions/tirage.ts";
 import type { CodeGabarit, Item, Mesure, Question, Theme, Tirage } from "../../pipeline/questions/types.ts";
-import { candidat, completer, graine, identifiant, itemP, mesure, perimetre, run } from "./fabriques.ts";
+import { candidat, completer, graine, identifiant, itemP, mesure, perimetre, quotas, run } from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const FISC: Theme = "fiscalite_pouvoir_achat";
@@ -74,6 +74,8 @@ function tirageEnRetard(jeu: readonly Item[], questions: readonly Question[]): T
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
+    // Conformité n° 59 : un tirage porte ses quotas.
+    parametres: quotas(),
     entrees: entreesPour(choisies, jeu, MESURES, RUN),
     exclusions: [],
     bilan_reprise: [],

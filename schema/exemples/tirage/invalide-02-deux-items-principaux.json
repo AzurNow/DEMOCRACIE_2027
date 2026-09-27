@@ -7,6 +7,10 @@
     "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
     "version": "1"
   },
+  "parametres": {
+    "questions_par_strate": 1,
+    "questions_attribution_par_theme": 1
+  },
   "entrees": [
     {
       "question_id": "q_9eeeb68b8df88bee0fc88a5772576c59",

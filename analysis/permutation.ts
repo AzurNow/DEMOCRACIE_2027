@@ -2,19 +2,21 @@
  * Test de permutation de l'homogénéité des taux d'erreur entre candidats (§8, QR3/H4).
  *
  * « Pour chaque outil et chaque mode, un test de permutation de l'homogénéité des taux d'erreur
- * entre candidats : les étiquettes de candidat sont permutées entre items 10 000 fois ; la
+ * entre candidats : les étiquettes de candidat sont permutées entre items 10 000 fois […] ; la
  * statistique est l'écart maximal absolu entre l'exactitude d'un candidat et l'exactitude
- * moyenne de l'outil. »
+ * **globale** de l'outil — calculée sur l'ensemble de ses réponses classées aux questions qui
+ * nomment un candidat — […] et non comme la moyenne des exactitudes par candidat, qui donnerait le
+ * même poids à un candidat de 10 items qu'à un candidat de 30. »
  *
  * Trois points de lecture, tous conséquents :
  *
  * 1. **Les étiquettes sont permutées entre items, pas entre réponses.** Une étiquette voyage avec
  *    l'item entier — ses trois formulations et ses deux échantillons. Permuter par réponse
  *    fabriquerait de l'indépendance qui n'existe pas et rendrait la valeur p trop petite.
- * 2. **« L'exactitude moyenne de l'outil » est son exactitude globale** (exactes / classées sur
- *    ses réponses aux questions qui nomment un candidat comparé — conformité n° 30), invariante
- *    par permutation. La moyenne non pondérée des exactitudes par candidat, elle, bougerait d'une
- *    permutation à l'autre.
+ * 2. **L'exactitude globale de l'outil** (exactes / classées sur ses réponses aux questions qui
+ *    nomment un candidat comparé — conformité n° 30 ; les questions d'attribution, qui n'en nomment
+ *    aucun, sortent du test) est invariante par permutation. La moyenne non pondérée des
+ *    exactitudes par candidat, que le §8 écarte, bougerait d'une permutation à l'autre.
  * 3. **L'exactitude d'un candidat garde la définition de `metriques.ts`** : l'agrégat par grappe
  *    est produit par `exactitude()`, et la statistique ne fait qu'en sommer numérateurs et
  *    dénominateurs. La métrique ne vit pas ici une deuxième fois.

@@ -34,6 +34,7 @@ import {
   mesure,
   perimetre,
   question,
+  quotas,
   run,
 } from "./fabriques.ts";
 
@@ -120,6 +121,8 @@ function symetrieDe(questions: readonly Question[]): Symetrie {
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
+    // Conformité n° 59 : un tirage porte ses quotas.
+    parametres: quotas(),
     entrees: entreesPour(questionsTirables(questions, ITEMS, RUN), ITEMS, MESURES, RUN),
     exclusions: [],
     bilan_reprise: [],

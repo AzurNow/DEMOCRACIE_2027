@@ -218,6 +218,13 @@
       "regle_protocole": "§6, applications grand public ; §10, conditions d'utilisation"
     },
     {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-05-api-sans-modele-renvoye.json",
+      "attendu": "invalide",
+      "motif": "Réponse d'API obtenue dont metadonnees n'a pas la clé modele_renvoye (copie de valide-01 privée de cette seule clé). §6 enregistre « l'identifiant de version renvoyé par l'API » : la clé est obligatoire, et null reste la seule façon de dire que l'API ne le renvoie pas. Une clé absente et un null ne se confondent plus (conformité n° 61).",
+      "regle_protocole": "§6, conditions d'interrogation, ligne « Enregistré »"
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-01-juge-exacte.json",
       "attendu": "valide",
@@ -269,6 +276,13 @@
       "attendu": "invalide",
       "motif": "Notation de l'échantillon aléatoire de 10 % portée par un juge automatique. §7 : double notation HUMAINE à l'aveugle ; une note de juge sous ce motif entrerait dans le recalcul (a) du §8, qui doit rester sur la seule notation humaine.",
       "regle_protocole": "§7, règle de décision ; §8, robustesse (a)"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-06-lien-mort-soutenant.json",
+      "attendu": "invalide",
+      "motif": "Lien cité dont le test HTTP dit « mort » et que la notation déclare « soutient » (copie de valide-01 dont seul le sourçage change). Une page qui n'existe plus ne contient pas l'affirmation : un lien mort ne soutient rien (conformité n° 64).",
+      "regle_protocole": "§7, sourçage"
     },
     {
       "objet": "verdict",
@@ -324,6 +338,13 @@
       "regle_protocole": "§8, sourçage valide ; annexe C"
     },
     {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-06-soutien-sans-lien-existant.json",
+      "attendu": "invalide",
+      "motif": "Sourçage retenu qui conclut au soutien (au_moins_un_lien_soutenant) sans aucun lien existant (copie de valide-01 dont seul le sourçage change). Le soutien porte sur un MÊME lien, vivant et soutenant : sans lien vivant, pas de soutien (conformité n° 64).",
+      "regle_protocole": "§7, sourçage ; §8, sourçage valide"
+    },
+    {
       "objet": "run",
       "fichier": "run/valide-01-mensuel-publie.json",
       "attendu": "valide",
@@ -333,62 +354,69 @@
       "objet": "tirage",
       "fichier": "tirage/valide-01-tirage-nominal.json",
       "attendu": "valide",
-      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). La graine déclare le générateur réellement employé, splitmix64-sha256-v1 (constat n° 24). Chaque entrée fige les statuts d'items au gel, la réponse attendue et la vérité de la prémisse orientée résolues à cette date : fausse pour la Q-ACT d'un item O dont la formulation orientée affirme l'ancienne position, le changement étant acquis (constat n° 37)."
+      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). La graine déclare le générateur réellement employé, splitmix64-sha256-v1 (constat n° 24). Chaque entrée fige les statuts d'items au gel, la réponse attendue et la vérité de la prémisse orientée résolues à cette date : fausse pour la Q-ACT d'un item O dont la formulation orientée affirme l'ancienne position, le changement étant acquis (constat n° 37). Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage."
     },
     {
       "objet": "tirage",
       "fichier": "tirage/valide-02-attribution-sans-candidat.json",
       "attendu": "valide",
-      "motif": "Entrée d'attribution : aucun candidat nommé (§5), plusieurs items de rôles distincts, et la liste exacte des candidats attendus résolue au gel."
+      "motif": "Entrée d'attribution : aucun candidat nommé (§5), plusieurs items de rôles distincts, et la liste exacte des candidats attendus résolue au gel. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage."
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-01-attribution-nommant-un-candidat.json",
       "attendu": "invalide",
-      "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure.",
+      "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, garanties de symétrie"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-02-deux-items-principaux.json",
       "attendu": "invalide",
-      "motif": "Deux items principaux dans une entrée : la grappe du bootstrap (§8) devient indéterminée, et tous les intervalles de confiance publiés avec elle.",
+      "motif": "Deux items principaux dans une entrée : la grappe du bootstrap (§8) devient indéterminée, et tous les intervalles de confiance publiés avec elle. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§8, bootstrap en grappes"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-03-reprise-sans-origine.json",
       "attendu": "invalide",
-      "motif": "Question déclarée reprise sans run d'origine ni empreinte du texte précédent. §8 compare premier et dernier run « sur les questions communes » : sans ces deux champs, « commune » n'est pas décidable et la tendance mesurerait nos propres corrections.",
+      "motif": "Question déclarée reprise sans run d'origine ni empreinte du texte précédent. §8 compare premier et dernier run « sur les questions communes » : sans ces deux champs, « commune » n'est pas décidable et la tendance mesurerait nos propres corrections. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, reprise 80/20 ; §8, tendance"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-04-arbitre-sans-decision-figee.json",
       "attendu": "invalide",
-      "motif": "Item arbitré au gel sans decision_panel_au_gel. La symétrie d'un tirage publié doit se revérifier sur le tirage seul : sans la décision figée, un tiers devrait lire l'état courant des items, qui a pu changer après le gel.",
+      "motif": "Item arbitré au gel sans decision_panel_au_gel. La symétrie d'un tirage publié doit se revérifier sur le tirage seul : sans la décision figée, un tiers devrait lire l'état courant des items, qui a pu changer après le gel. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage ; annexe E, point 6"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-05-decision-figee-sans-arbitrage.json",
       "attendu": "invalide",
-      "motif": "decision_panel_au_gel sur un item dont statut_contestation_au_gel vaut « aucune ». Une décision du panel n'existe que pour un item arbitré.",
+      "motif": "decision_panel_au_gel sur un item dont statut_contestation_au_gel vaut « aucune ». Une décision du panel n'existe que pour un item arbitré. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage ; annexe E, point 6"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-06-graine-au-dela-de-2-53.json",
       "attendu": "invalide",
-      "motif": "Graine du tirage supérieure à 2^53 − 1, borne de run.graines.tirage dont elle est la copie : le tirage ne serait plus rejouable exactement depuis la valeur publiée.",
+      "motif": "Graine du tirage supérieure à 2^53 − 1, borne de run.graines.tirage dont elle est la copie : le tirage ne serait plus rejouable exactement depuis la valeur publiée. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage avec graine publiée ; §9, reproductibilité"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-07-entree-sans-premisse-resolue.json",
       "attendu": "invalide",
-      "motif": "Entrée de tirage sans premisse_fausse. La vérité de la prémisse de la formulation orientée se résout au gel, comme la réponse attendue (constat n° 37) : sans elle, le dénominateur de la confirmation de prémisse (§8) n'est pas calculable depuis le tirage publié.",
+      "motif": "Entrée de tirage sans premisse_fausse. La vérité de la prémisse de la formulation orientée se résout au gel, comme la réponse attendue (constat n° 37) : sans elle, le dénominateur de la confirmation de prémisse (§8) n'est pas calculable depuis le tirage publié. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, protocole 0.11 ; §8"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-08-tirage-sans-quotas.json",
+      "attendu": "invalide",
+      "motif": "Tirage sans ses quotas (copie de valide-01 privée de parametres). §5 : le quota par strate est « publié avec » le périmètre du run et n'a pas de valeur par défaut ; sans lui, le fichier de tirage ne suffit plus à rejouer le tirage (conformité n° 59).",
+      "regle_protocole": "§5, tirage"
     },
     {
       "objet": "run",
@@ -508,6 +536,13 @@
       "regle_protocole": "§8, seuils de non-publication ; §12, go/no-go (protocole 0.11)"
     },
     {
+      "objet": "run",
+      "fichier": "run/invalide-16-publie-sans-version-des-donnees.json",
+      "attendu": "invalide",
+      "motif": "Run publié dont versions n'a pas donnees_commit (copie de valide-01 privée de cette seule clé). §9 : la version des données utilisée est inscrite en tête de chaque rapport ; elle est obligatoire dès que le run est publié, même provisoire ou invalidé (conformité n° 66).",
+      "regle_protocole": "§9, reproductibilité"
+    },
+    {
       "objet": "lecture-comparateur",
       "fichier": "lecture-comparateur/valide-01-position-affichee.json",
       "attendu": "valide",
@@ -538,6 +573,13 @@
       "fichier": "lecture-comparateur/invalide-03-cadence-excessive.json",
       "attendu": "invalide",
       "motif": "Cadence de cinq pages par seconde. §6 fixe au plus une page par seconde en lecture de pages publiques ; la contrainte vit dans le schéma, pas dans un commentaire de code.",
+      "regle_protocole": "§6, comparateurs citoyens"
+    },
+    {
+      "objet": "lecture-comparateur",
+      "fichier": "lecture-comparateur/invalide-04-robots-non-respecte.json",
+      "attendu": "invalide",
+      "motif": "Lecture de pages publiques déclarée sans respect de robots.txt (copie de valide-01 en lecture_pages, cadence d'une page par seconde). §6 : la lecture des pages se fait « dans le respect de robots.txt », sans exception prévue (conformité n° 62).",
       "regle_protocole": "§6, comparateurs citoyens"
     },
     {

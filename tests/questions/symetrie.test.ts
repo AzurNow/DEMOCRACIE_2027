@@ -31,6 +31,7 @@ import {
   mesure,
   perimetre,
   question,
+  quotas,
   run,
 } from "./fabriques.ts";
 
@@ -112,6 +113,8 @@ function tirageDe(questions: readonly Question[], items: readonly Item[] = ITEMS
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
+    // Conformité n° 59 : un tirage porte ses quotas.
+    parametres: quotas(),
     entrees: entreesPour(questions, items, MESURES, RUN),
     exclusions: [],
     bilan_reprise: [],
@@ -505,6 +508,8 @@ describe("noms de candidats dans les questions d'attribution", () => {
       run_id: RUN.id,
       date_gel: GEL,
       graine_tirage: graine(),
+      // Conformité n° 59 : un tirage porte ses quotas.
+      parametres: quotas(),
       entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], nommes),
       exclusions: [],
       bilan_reprise: [],
@@ -548,6 +553,17 @@ describe("part minimale des items A et F", () => {
     expect(condition.mesure).toBeLessThan(0.2);
     expect(condition.statut).toBe("rouge");
   });
+
+  // Conformité n° 60 : sur un tirage vide, la part valait 0/0, lue comme atteinte ; les six
+  // conditions étaient vertes et seul tirage.schema.json (entrees minItems 1) arrêtait le run.
+  it("refuse un tirage vide : condition rouge, part non définie, statut global rouge", () => {
+    const symetrie = verifier([]);
+    const condition = conditionDe(symetrie, "part_items_a_f_minimale");
+    expect(condition.statut).toBe("rouge");
+    expect(condition).not.toHaveProperty("mesure");
+    expect(condition.commentaire).toMatch(/tirage vide/);
+    expect(symetrie.statut_global).toBe("rouge");
+  });
 });
 
 describe("candidats traités à part", () => {
@@ -579,6 +595,8 @@ describe("entrées du tirage sans question correspondante", () => {
       run_id: RUN.id,
       date_gel: GEL,
       graine_tirage: graine(),
+      // Conformité n° 59 : un tirage porte ses quotas.
+      parametres: quotas(),
       entrees: [orpheline],
       exclusions: [],
       bilan_reprise: [],

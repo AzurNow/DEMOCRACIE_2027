@@ -84,9 +84,20 @@
         },
         "au_moins_un_lien_soutenant": {
           "type": "boolean",
-          "description": "Au moins un MÊME lien dont verdict_existence vaut existe ET verdict_soutien vaut soutient (§8 : « au moins une source existante qui soutient l'affirmation »). Un lien mort qui soutient et un lien vivant hors sujet ne font pas un sourçage soutenant. Traduction appliquée aux notations individuelles : analysis/robustesse.ts, sourcageDeNotation."
+          "description": "Au moins un MÊME lien dont verdict_existence vaut existe ET verdict_soutien vaut soutient (§8 : « au moins une source existante qui soutient l'affirmation »). Un lien mort qui soutient et un lien vivant hors sujet ne font pas un sourçage soutenant. C'est ce booléen, et lui seul, que lit le sourçage valide du §8 (analysis/metriques.ts, sourcageValide). Traduction appliquée aux notations individuelles : analysis/robustesse.ts, sourcageDeNotation."
         }
-      }
+      },
+      "allOf": [
+        {
+          "$comment": "Conformité n° 64. Un lien soutenant est un lien vivant (même lien, voir au_moins_un_lien_soutenant) : conclure au soutien sans lien existant contredirait la définition. Un lien vivant est un lien cité : en trouver un sans citation contredirait cite.",
+          "if": { "properties": { "au_moins_un_lien_soutenant": { "const": true } }, "required": ["au_moins_un_lien_soutenant"] },
+          "then": { "properties": { "au_moins_un_lien_existant": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "au_moins_un_lien_existant": { "const": true } }, "required": ["au_moins_un_lien_existant"] },
+          "then": { "properties": { "cite": { "const": true } } }
+        }
+      ]
     },
 
     "notations_sources": {

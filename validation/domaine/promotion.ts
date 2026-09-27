@@ -368,15 +368,18 @@ export function appliquerValidations(
   trace: TracePromotion,
 ): Item {
   const validations = dossier.decisions.map((decision) => projeterValidation(decision, item));
-  const versionResultante = modifie ? item.version + 1 : item.version;
+  const epingle: Item = { ...item, mesure_version: versionMesurePromue(dossier, item, statut) };
+  // La version de la mesure fait partie du contenu notant (§4) : la déplacer est une modification.
+  const contenuModifie = modifie || epingle.mesure_version !== item.mesure_version;
+  const versionResultante = contenuModifie ? item.version + 1 : item.version;
 
   return {
-    ...item,
+    ...epingle,
     version: versionResultante,
     // L'empreinte n'est recalculée que si le contenu notant a changé. La recalculer sur un item
     // intact remplacerait l'empreinte contre laquelle les deux annotateurs ont jugé par une
     // autre, calculée ici : l'épinglage des décisions ne pointerait plus sur rien.
-    empreinte: modifie ? empreinteContenuNotant(item) : item.empreinte,
+    empreinte: contenuModifie ? empreinteContenuNotant(epingle) : item.empreinte,
     statut_validation: statut,
     validations,
     ...(statut === "verifie" ? attestationsDuVerifie(dossier, item, options) : {}),
@@ -392,6 +395,43 @@ export function appliquerValidations(
       },
     ],
   };
+}
+
+/**
+ * Conformité n° 69 (§4, « Contenu notant » et « Correction de thème ») : un item vérifié épingle la
+ * version de la mesure qui porte le thème en vigueur. Après une correction de thème acceptée et
+ * appliquée (`acceptee_et_appliquee` : la mesure porte le thème demandé), c'est la version courante
+ * de la mesure. Sans correction, l'item doit déjà l'épingler ; sinon l'écart est une erreur
+ * bloquante, nommée, et rien n'est promu : l'item a été jugé contre une autre version de la mesure
+ * que celle qui entrerait au tirage. Un item rejeté ou non évaluable n'engendre aucune question :
+ * son épinglage est laissé tel quel.
+ */
+function versionMesurePromue(dossier: Dossier, item: Item, statut: StatutPromu): number {
+  if (statut !== "verifie") return item.mesure_version;
+  const themeCorrige = examinerCorrectionsDeMesure(dossier).some(
+    (examen) => examen.verdict === "acceptee_et_appliquee",
+  );
+  if (themeCorrige) return dossier.mesure.version;
+  if (item.mesure_version !== dossier.mesure.version) throw new VersionMesureEcart(item, dossier.mesure);
+  return item.mesure_version;
+}
+
+/** Un item vérifié épinglerait une version de sa mesure qui n'est pas la version courante. */
+export class VersionMesureEcart extends Error {
+  readonly item_id: string;
+  readonly mesure_id: string;
+
+  constructor(item: Item, mesure: Mesure) {
+    super(
+      `Item ${item.id} : il épingle la mesure ${mesure.id} en version ${item.mesure_version}, alors que ` +
+        `la mesure est en version ${mesure.version}, sans correction de thème acceptée dans ce dossier. ` +
+        `L'item a été jugé contre une autre version de la mesure que celle qui entrerait au tirage ` +
+        `(§4, contenu notant) : rien n'est promu.`,
+    );
+    this.name = "VersionMesureEcart";
+    this.item_id = item.id;
+    this.mesure_id = mesure.id;
+  }
 }
 
 /**

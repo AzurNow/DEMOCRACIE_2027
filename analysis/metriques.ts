@@ -157,15 +157,15 @@ function verifierConfirmations(unites: readonly UniteAnalyse[]): void {
 }
 
 /**
- * Sourçage valide : au moins un lien existant ET soutenant / réponses obtenues (§7 : « un lien
- * mort ou une page qui ne soutient pas l'affirmation est un défaut de sourçage »).
+ * Sourçage valide : réponses citant au moins un MÊME lien à la fois existant et soutenant / réponses
+ * obtenues (§8 ; §7 : « un lien mort ou une page qui ne soutient pas l'affirmation est un défaut de
+ * sourçage »). C'est exactement `au_moins_un_lien_soutenant` (schema/verdict.schema.json, conformité
+ * n° 64) : lu seul, il ne peut plus se lire comme un lien vivant d'un côté et un lien soutenant de
+ * l'autre. Un verdict qui le déclare sans lien existant est refusé à l'assemblage
+ * (`filtre.ts:SourcageIncoherent`).
  */
 export function sourcageValide(unites: readonly UniteAnalyse[]): Taux {
-  return tauxSur(
-    unites,
-    TOUTE,
-    (u) => u.sourcage.au_moins_un_lien_existant && u.sourcage.au_moins_un_lien_soutenant,
-  );
+  return tauxSur(unites, TOUTE, (u) => u.sourcage.au_moins_un_lien_soutenant);
 }
 
 export interface MetriquesPrimaires {

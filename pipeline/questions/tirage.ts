@@ -36,7 +36,12 @@
  *
  * Les deux quotas (par strate candidat × thème × gabarit, et d'attribution par thème) n'ont aucune
  * valeur dans le protocole : ce sont des paramètres obligatoires de l'appel, sans valeur par
- * défaut.
+ * défaut. Ils sont recopiés dans `tirage.parametres` (conformité n° 59) : avec la graine, le fichier
+ * de tirage porte tout ce que le tirage lit en dehors des questions, des items, des mesures et du run.
+ *
+ * Une formulation dont la relecture conclut à un sens changé (`relecture.sens_preserve: false`)
+ * n'est jamais interrogée (§5, conformité n° 58) : si sa question est tirable, `tirer` lève
+ * `FormulationAuSensChange` avant tout usage de la graine.
  */
 
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
@@ -65,6 +70,7 @@ import type {
   ItemAuGel,
   Mesure,
   MotifExclusion,
+  ParametresTirage,
   Question,
   RunAuGel,
   Theme,
@@ -75,12 +81,7 @@ import { estStatutValidation } from "./types.ts";
 /** §5 : 80 % des questions sont reprises du run précédent, 20 % sont neuves. */
 export const PART_REPRISE = 0.8;
 
-export interface ParametresTirage {
-  /** Nombre de questions tirées dans chaque strate candidat × thème × gabarit. */
-  readonly questions_par_strate: number;
-  /** §5 (protocole 0.9) : nombre de questions d'attribution tirées par thème. */
-  readonly questions_attribution_par_theme: number;
-}
+export type { ParametresTirage } from "./types.ts";
 
 /** Ce que le run précédent dit d'une question : sa signature (§5, 0.9) et son empreinte neutre. */
 export interface QuestionPrecedente {
@@ -290,9 +291,33 @@ function separer(demande: DemandeTirage, index: Index, interroges: ReadonlySet<s
     // §5 (protocole 0.11) : une prémisse indécidable au gel est une question mal formée. Elle arrête
     // le tirage avant tout usage de la graine, qu'elle eût été tirée ou non.
     premisseFausseAuGel(question, demande.items, demande.run.date_gel);
+    verifierRelecture(question);
     tirables.push(question);
   }
   return { tirables, exclusions: exclusions.sort((a, b) => comparer(a.question_id, b.question_id)) };
+}
+
+/**
+ * §5 : « les formulations sont produites par un modèle puis relues par un annotateur qui vérifie
+ * qu'elles ne changent pas le sens » (conformité n° 58). Une formulation relue « sens changé » reste
+ * dans le fichier de sa question, trace de la relecture ; elle n'est jamais posée à un outil. Le
+ * tirage ne l'écarte pas en silence : il s'arrête en la nommant.
+ */
+export class FormulationAuSensChange extends Error {
+  constructor(question: Question, formulation: Question["formulations"][number]) {
+    super(
+      `Question ${question.id} : la formulation ${formulation.id} (${formulation.registre}) a été relue ` +
+        `par ${formulation.relecture.annotateur_id} le ${formulation.relecture.date} avec ` +
+        `sens_preserve: false. Une formulation qui change le sens n'est jamais interrogée (§5) : ` +
+        `la reformuler et la faire relire avant le tirage.`,
+    );
+    this.name = "FormulationAuSensChange";
+  }
+}
+
+function verifierRelecture(question: Question): void {
+  const fautive = question.formulations.find((formulation) => !formulation.relecture.sens_preserve);
+  if (fautive !== undefined) throw new FormulationAuSensChange(question, fautive);
 }
 
 function concerneLeRun(question: Question, interroges: ReadonlySet<string>): boolean {
@@ -738,6 +763,14 @@ function verifierQuota(valeur: unknown, nom: keyof ParametresTirage, libelle: st
   );
 }
 
+/** Les deux quotas employés, et eux seuls : ce que `tirage.schema.json` publie (conformité n° 59). */
+function quotasPublies(parametres: ParametresTirage): ParametresTirage {
+  return {
+    questions_par_strate: parametres.questions_par_strate,
+    questions_attribution_par_theme: parametres.questions_attribution_par_theme,
+  };
+}
+
 export function tirer(demande: DemandeTirage): ResultatTirage {
   verifierGraine(demande.graine);
   verifierQuota(demande.parametres.questions_par_strate, "questions_par_strate", "par strate");
@@ -768,6 +801,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
       run_id: demande.run.id,
       date_gel: demande.run.date_gel,
       graine_tirage: demande.graine,
+      parametres: quotasPublies(demande.parametres),
       entrees: resultats.flatMap((resultat) => resultat.entrees),
       exclusions: separation.exclusions,
       bilan_reprise: resultats.map((resultat) => resultat.bilan),
