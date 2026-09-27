@@ -11,13 +11,10 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ## 0. Fusions en attente
 
-- [ ] **PR #43** (clôture du 2026-09-27) : elle contient #36 et #37. Fusionner #43 seule suffit, puis
-      fermer #36 et #37.
-- [ ] **Appliquer la 0.12** (section 1) avant ou avec la PR #38 : le code de #38 à #42 applique déjà
-      ses règles.
-- [ ] **La pile #38 → #39 → #40 → #41 → #42, dans cet ordre**, en supprimant la branche à chaque
-      fusion pour que GitHub rebascule la suivante sur `main`. Sinon, demander à l'agent de
-      rebasculer les bases (`LESSONS.md`, pile de PR).
+- [ ] **PR #44** (rattrapage : #39 à #42, fusionnées dans leurs branches parentes et non dans
+      `main`) et **PR #45** (protocole 0.12), ensemble : le code applique déjà la 0.12.
+- [ ] **PR #46** (intervalles du test d'asymétrie, n° 29), après #44.
+- [ ] Après les fusions, supprimer les branches `lots/*` fusionnées.
 
 ---
 
@@ -25,27 +22,19 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ### Protocole (`docs/PROTOCOLE.md`)
 
-- [ ] **Appliquer la révision 0.12, ou autoriser l'agent à l'écrire.** Elle écrit :
-      - au §4, le comptage des items P du seuil de couverture (items tirables au gel, décision du
-        2026-09-27) et le fait qu'un candidat sous le seuil n'est rapporté que par son nom et la
-        mention ;
-      - au §8, l'exactitude de référence du test d'asymétrie restreinte aux candidats comparés ;
-      - à l'annexe F, « par outil et par mode » ;
-      - au §4, la grille des items T2 gagne la question « J'ai écouté l'extrait et la
-        transcription est fidèle » ; l'item n'est vérifié que si les deux annotateurs répondent
-        oui, et ils sont publiés comme vérificateurs de la transcription (décision du 2026-09-27,
-        conformité n° 12).
-
-      Le texte proposé est dans la conversation du 2026-09-27. À fusionner avec les PR #38 et #39,
-      dont le code applique déjà ces règles.
-- [ ] **Trancher quatre points ouverts par la PR #39** (à écrire dans la 0.12) :
+- [ ] **Trancher le bootstrap de l'écart maximal (PR #46, n° 29).** Un rééchantillon où un
+      candidat n'a aucune réponse classée est écarté et compté (choix retenu, bootstrap non
+      stratifié, comme les taux). Autre option : stratifier par candidat, ce qui rend l'écart
+      toujours défini mais le fait sortir du « même bootstrap » écrit en 0.12. Recommandé : garder
+      le choix retenu et l'écrire au §8.
+- [ ] **Trancher quatre points ouverts par la PR #39** (à écrire dans la révision suivante, 0.13) :
       - un run à symétrie rouge porte-t-il encore un go/no-go ? Recommandé : non. Le schéma impose
         aujourd'hui `publie_provisoire`, ce qui contredit le statut `invalide` ;
       - un run `invalide` doit-il déclarer sa publication et son dépôt, puisque le §12 dit « publié
         tel quel » ?
       - la déclaration de candidature doit-elle dater au plus tard du jour du gel (lecture retenue) ?
       - deux preuves à la même URL comptent-elles pour un seul sondage (lecture retenue) ?
-- [ ] **Trancher quatre points ouverts par la PR #40** (à écrire dans la 0.12) :
+- [ ] **Trancher quatre points ouverts par la PR #40** (à écrire dans la révision suivante, 0.13) :
       - un item T2 sans deux « oui » à la question d'écoute part en arbitrage, où l'arbitre ne peut
         que rejeter ou le déclarer non évaluable (choix retenu). À confirmer ;
       - à quelle source se rapporte le `valide_du` d'un item O (état antérieur ?), d'un item A
@@ -55,7 +44,7 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
       - un item rejeté, non évaluable ou retiré par le panel garde-t-il son attestation d'écoute ?
         Aujourd'hui, elle n'est ni exigée ni interdite ;
       - la table « type de document → tier » est-elle à mentionner dans `docs/CONTRATS.md` §5 ?
-- [ ] **Trancher quatre points ouverts par la PR #41** (à écrire dans la 0.12) :
+- [ ] **Trancher quatre points ouverts par la PR #41** (à écrire dans la révision suivante, 0.13) :
       - « Quand les items le permettent » (§5) se juge par strate thème × gabarit, compensations
         exclues (choix retenu). Jugé par thème, il ferait passer au rouge un tirage conforme à la
         compensation de la 0.9 ;
