@@ -156,6 +156,22 @@ code, `String.fromCodePoint` en TypeScript, et un `grep` sur les octets après �
 fonction existait depuis deux jours et gardait les indéterminées au dénominateur. Seule la passe de
 conformité l'a vu. Avant de barrer un point, `grep` la fonction qu'il nomme et lire ce qu'elle fait.
 
+**Chercher la règle dans le protocole courant avant de la poser à l'auteur.** Le 2026-09-27, j'ai
+demandé où passait la borne des 60 jours (§3). La 0.11, fusionnée deux jours plus tôt, l'écrivait
+déjà : instant de gel, bornes comprises. L'auteur a répondu l'inverse du texte. Il a fallu reposer
+la question, et une réponse non vérifiée aurait fait coder une règle contraire au protocole. Avant
+chaque question de mesure, `grep` le protocole sur ses mots-clés et citer ce qu'il dit déjà.
+
+**Une réponse de l'auteur ne vaut pas autorisation d'écrire le protocole.** Le même jour, après deux
+décisions de l'auteur, j'ai voulu écrire la 0.12 dans `docs/PROTOCOLE.md`. Le mode automatique l'a
+refusé, à juste titre : CLAUDE.md réserve ce fichier à un accord explicite. Préparer le texte exact
+dans la réponse, et ne l'écrire que sur demande.
+
+**Relire le plan contre les briefs avant de les lancer.** Le 2026-09-27, le constat n° 29
+(intervalles du test d'asymétrie) figurait dans le groupe « analyse » du plan, mais dans aucun des
+cinq briefs. Il n'est apparu qu'au décompte de clôture. Une liste de constats annoncée se coche
+contre les briefs réellement envoyés.
+
 **Une PR qui traite un constat change son état dans le rapport, dans le même diff.** Le 2026-09-25,
 la PR #29 a traité six constats de conformité. Le rapport les marquait encore « ouvert », et la
 matrice n'avait pas bougé depuis la 0.8 à travers sept PR. À la reprise du 2026-09-27, le décompte
@@ -277,6 +293,12 @@ de la pile, ou une seule PR depuis le sommet.
 l'intérieur du dépôt, et ESLint y a signalé quatre fonctions déjà découpées, en double, depuis des
 copies périmées. Le répertoire est désormais ignoré par ESLint et par Git ; la surprise aurait été
 plus coûteuse en CI, où le répertoire n'existe pas et où l'erreur n'aurait jamais été reproduite.
+
+**Un worktree neuf n'a pas de `node_modules` complet : lancer `pnpm install --frozen-lockfile
+--offline` avant `pnpm check`.** Le 2026-09-27, après un rebase dans le worktree d'un sous-agent,
+`pnpm check` est sorti en erreur sur « tsc: command not found ». Un sous-agent avait contourné le
+problème en pointant `PATH` vers le dépôt principal, donc vers des binaires d'une autre version
+possible. L'installation hors ligne prend deux secondes et ne touche pas au lockfile.
 
 **Un garde-fou qu'on n'a pas vu attraper quelque chose ne garde rien.** L'extraction de la logique
 pure du client l'a fait dépendre de `domaine/`, avec ce risque : un futur module de `domaine/`

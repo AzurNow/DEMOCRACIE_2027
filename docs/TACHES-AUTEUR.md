@@ -5,7 +5,19 @@ traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une t�
 puis retirée à la clôture de session suivante.
 
 Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.11, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #35.
+`docs/PROTOCOLE.md` 0.11, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #43.
+
+---
+
+## 0. Fusions en attente
+
+- [ ] **PR #43** (clôture du 2026-09-27) : elle contient #36 et #37. Fusionner #43 seule suffit, puis
+      fermer #36 et #37.
+- [ ] **Appliquer la 0.12** (section 1) avant ou avec la PR #38 : le code de #38 à #42 applique déjà
+      ses règles.
+- [ ] **La pile #38 → #39 → #40 → #41 → #42, dans cet ordre**, en supprimant la branche à chaque
+      fusion pour que GitHub rebascule la suivante sur `main`. Sinon, demander à l'agent de
+      rebasculer les bases (`LESSONS.md`, pile de PR).
 
 ---
 
@@ -18,7 +30,11 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
         2026-09-27) et le fait qu'un candidat sous le seuil n'est rapporté que par son nom et la
         mention ;
       - au §8, l'exactitude de référence du test d'asymétrie restreinte aux candidats comparés ;
-      - à l'annexe F, « par outil et par mode ».
+      - à l'annexe F, « par outil et par mode » ;
+      - au §4, la grille des items T2 gagne la question « J'ai écouté l'extrait et la
+        transcription est fidèle » ; l'item n'est vérifié que si les deux annotateurs répondent
+        oui, et ils sont publiés comme vérificateurs de la transcription (décision du 2026-09-27,
+        conformité n° 12).
 
       Le texte proposé est dans la conversation du 2026-09-27. À fusionner avec les PR #38 et #39,
       dont le code applique déjà ces règles.
@@ -29,6 +45,36 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
         tel quel » ?
       - la déclaration de candidature doit-elle dater au plus tard du jour du gel (lecture retenue) ?
       - deux preuves à la même URL comptent-elles pour un seul sondage (lecture retenue) ?
+- [ ] **Trancher quatre points ouverts par la PR #40** (à écrire dans la 0.12) :
+      - un item T2 sans deux « oui » à la question d'écoute part en arbitrage, où l'arbitre ne peut
+        que rejeter ou le déclarer non évaluable (choix retenu). À confirmer ;
+      - à quelle source se rapporte le `valide_du` d'un item O (état antérieur ?), d'un item A
+        (couverture ?) et d'un item F ? Il n'est pas contrôlé tant que le §4 ne le dit pas.
+        L'exemple `schema/exemples/item/valide-02` ne passerait pas `pnpm promote` et sera corrigé
+        une fois la règle écrite ;
+      - un item rejeté, non évaluable ou retiré par le panel garde-t-il son attestation d'écoute ?
+        Aujourd'hui, elle n'est ni exigée ni interdite ;
+      - la table « type de document → tier » est-elle à mentionner dans `docs/CONTRATS.md` §5 ?
+- [ ] **Trancher quatre points ouverts par la PR #41** (à écrire dans la 0.12) :
+      - « Quand les items le permettent » (§5) se juge par strate thème × gabarit, compensations
+        exclues (choix retenu). Jugé par thème, il ferait passer au rouge un tirage conforme à la
+        compensation de la 0.9 ;
+      - `pnpm symmetry` doit recevoir le jeu complet des questions engendrées, pas seulement les
+        tirées. Sinon, la condition ne peut plus passer au rouge. À écrire au §5 ;
+      - la prémisse d'une Q-ACT orientée sur un item O affirme-t-elle une position (choix retenu),
+        ou la Q-ACT sort-elle du dénominateur de la confirmation de prémisse ?
+      - quels générateurs servent pour l'échantillon humain et le test contrefactuel ? Le §7 ne les
+        nomme pas.
+- [ ] **Trancher trois points ouverts par la PR #42** :
+      - n° 54 : le §4 exige une localisation exacte (page d'un PDF), mais le schéma d'une source ne
+        sait pas si elle est un PDF. Recommandé : un champ obligatoire `format` (`pdf`, `html`,
+        `audio`, `video`), écrit par le pipeline depuis la fiche d'extraction, avec « pdf ⇒ page ».
+        Le modèle de données change : tous les exemples d'item et les fixtures sont touchés ;
+      - n° 69 : quand le thème d'une mesure est corrigé via un item, que deviennent les autres items
+        de cette mesure, jugés contre l'ancien thème ? Recommandé : retour en attente et nouvelle
+        validation, à écrire au §4. D'ici là, leur promotion est bloquée (`VersionMesureEcart`) ;
+      - n° 64 : un lien `inaccessible` ou `non_testable` peut-il être noté « soutient » (lecture
+        d'une copie archivée) ? Aujourd'hui, oui ; seul un lien `mort` ne le peut pas.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
 - [ ] **Nommer le fournisseur SMTP de l'adresse dédiée** au §10, à la place de
       `[fournisseur à nommer par l'auteur avant le gel]` (protocole 0.10, PR #32).
@@ -68,11 +114,18 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 - [ ] **Quotas du tirage** : `tirage.quota_par_strate`, et la nouvelle clé
       `tirage.quota_attribution_par_theme` (protocole 0.9, n° 39). Aucun code ne lit encore ces
       clés : le chargeur les lira sous ces noms-là (`docs/DETTE.md`, 2026-09-25, point 4).
-- [ ] **Corriger deux commentaires du fichier.**
+- [ ] **Corriger trois commentaires du fichier.**
       - Ligne 68 : « faux pour un candidat retiré, dont les items O restent mesurés » contredit la
         0.9, où un candidat retiré sort des runs (n° 32).
       - Commentaire des comparateurs : « jamais d'API » contredit le §6, qui prévoit l'export ouvert
-        ou l'API d'un comparateur quand il en offre une (n° 52).
+        ou l'API d'un comparateur quand il en offre une (n° 52 et 62).
+      - Ligne 85, gabarit d'un outil : `modes: [avec_recherche, sans_recherche]` ; les schémas
+        imposent `web_activee` et `web_desactivee` (n° 63).
+- [ ] **Retirer `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min`** (lignes 40-41).
+      Personne ne lit ces deux copies des 80 % et 20 % : le code les tient du protocole
+      (`PART_REPRISE`, `PART_MINIMALE_ITEMS_A_F`), et les modifier ici ne changerait rien sans que
+      rien ne le signale (n° 74). Recommandé : les retirer, puisque ces parts sont fixées par le §5
+      et non par run.
 
 ### Prompts (`prompts/`)
 
