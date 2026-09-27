@@ -33,6 +33,16 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
         tel quel » ?
       - la déclaration de candidature doit-elle dater au plus tard du jour du gel (lecture retenue) ?
       - deux preuves à la même URL comptent-elles pour un seul sondage (lecture retenue) ?
+- [ ] **Trancher quatre points ouverts par la PR #40** (à écrire dans la 0.12) :
+      - un item T2 sans deux « oui » à la question d'écoute part en arbitrage, où l'arbitre ne peut
+        que rejeter ou le déclarer non évaluable (choix retenu). À confirmer ;
+      - à quelle source se rapporte le `valide_du` d'un item O (état antérieur ?), d'un item A
+        (couverture ?) et d'un item F ? Il n'est pas contrôlé tant que le §4 ne le dit pas.
+        L'exemple `schema/exemples/item/valide-02` ne passerait pas `pnpm promote` et sera corrigé
+        une fois la règle écrite ;
+      - un item rejeté, non évaluable ou retiré par le panel garde-t-il son attestation d'écoute ?
+        Aujourd'hui, elle n'est ni exigée ni interdite ;
+      - la table « type de document → tier » est-elle à mentionner dans `docs/CONTRATS.md` §5 ?
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
 - [ ] **Nommer le fournisseur SMTP de l'adresse dédiée** au §10, à la place de
       `[fournisseur à nommer par l'auteur avant le gel]` (protocole 0.10, PR #32).
