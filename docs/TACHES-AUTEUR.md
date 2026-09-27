@@ -92,11 +92,18 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 - [ ] **Quotas du tirage** : `tirage.quota_par_strate`, et la nouvelle clé
       `tirage.quota_attribution_par_theme` (protocole 0.9, n° 39). Aucun code ne lit encore ces
       clés : le chargeur les lira sous ces noms-là (`docs/DETTE.md`, 2026-09-25, point 4).
-- [ ] **Corriger deux commentaires du fichier.**
+- [ ] **Corriger trois commentaires du fichier.**
       - Ligne 68 : « faux pour un candidat retiré, dont les items O restent mesurés » contredit la
         0.9, où un candidat retiré sort des runs (n° 32).
       - Commentaire des comparateurs : « jamais d'API » contredit le §6, qui prévoit l'export ouvert
-        ou l'API d'un comparateur quand il en offre une (n° 52).
+        ou l'API d'un comparateur quand il en offre une (n° 52 et 62).
+      - Ligne 85, gabarit d'un outil : `modes: [avec_recherche, sans_recherche]` ; les schémas
+        imposent `web_activee` et `web_desactivee` (n° 63).
+- [ ] **Retirer `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min`** (lignes 40-41).
+      Personne ne lit ces deux copies des 80 % et 20 % : le code les tient du protocole
+      (`PART_REPRISE`, `PART_MINIMALE_ITEMS_A_F`), et les modifier ici ne changerait rien sans que
+      rien ne le signale (n° 74). Recommandé : les retirer, puisque ces parts sont fixées par le §5
+      et non par run.
 
 ### Prompts (`prompts/`)
 
