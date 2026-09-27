@@ -53,6 +53,16 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
         ou la Q-ACT sort-elle du dénominateur de la confirmation de prémisse ?
       - quels générateurs servent pour l'échantillon humain et le test contrefactuel ? Le §7 ne les
         nomme pas.
+- [ ] **Trancher trois points ouverts par la PR #42** :
+      - n° 54 : le §4 exige une localisation exacte (page d'un PDF), mais le schéma d'une source ne
+        sait pas si elle est un PDF. Recommandé : un champ obligatoire `format` (`pdf`, `html`,
+        `audio`, `video`), écrit par le pipeline depuis la fiche d'extraction, avec « pdf ⇒ page ».
+        Le modèle de données change : tous les exemples d'item et les fixtures sont touchés ;
+      - n° 69 : quand le thème d'une mesure est corrigé via un item, que deviennent les autres items
+        de cette mesure, jugés contre l'ancien thème ? Recommandé : retour en attente et nouvelle
+        validation, à écrire au §4. D'ici là, leur promotion est bloquée (`VersionMesureEcart`) ;
+      - n° 64 : un lien `inaccessible` ou `non_testable` peut-il être noté « soutient » (lecture
+        d'une copie archivée) ? Aujourd'hui, oui ; seul un lien `mort` ne le peut pas.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
 - [ ] **Nommer le fournisseur SMTP de l'adresse dédiée** au §10, à la place de
       `[fournisseur à nommer par l'auteur avant le gel]` (protocole 0.10, PR #32).
