@@ -5,7 +5,19 @@ traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une t�
 puis retirée à la clôture de session suivante.
 
 Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.11, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #35.
+`docs/PROTOCOLE.md` 0.11, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #43.
+
+---
+
+## 0. Fusions en attente
+
+- [ ] **PR #43** (clôture du 2026-09-27) : elle contient #36 et #37. Fusionner #43 seule suffit, puis
+      fermer #36 et #37.
+- [ ] **Appliquer la 0.12** (section 1) avant ou avec la PR #38 : le code de #38 à #42 applique déjà
+      ses règles.
+- [ ] **La pile #38 → #39 → #40 → #41 → #42, dans cet ordre**, en supprimant la branche à chaque
+      fusion pour que GitHub rebascule la suivante sur `main`. Sinon, demander à l'agent de
+      rebasculer les bases (`LESSONS.md`, pile de PR).
 
 ---
 

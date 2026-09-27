@@ -13,9 +13,92 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-27 — Constats moyens et bas de la conformité (PR #38 à #42 : `analysis/`, `pipeline/questions/`, `pipeline/collecte/sources.py`, `validation/domaine/`, `outils/promote.ts`, `schema/`)
+
+### 1. La répartition par thème redevient verte en silence si `pnpm symmetry` ne reçoit que les questions tirées — *haute*
+
+Depuis #41 (n° 23), `repartition_themes` ne passe au rouge que si le candidat en retard avait des
+questions tirables pour combler l'écart. Elle les cherche dans les questions passées à
+`verifierSymetrie`. L'en-tête de `outils/symmetry.ts` parle des « questions publiées du run », et
+rien n'impose que ce soit le jeu engendré complet.
+
+**Pourquoi ça casse.** Avec les seules questions tirées, un candidat en retard n'a jamais de
+tirable en réserve : la condition rend `ecart_tolere` pour tout écart, y compris celui d'un tirage
+fautif. Le test bloquant du §5 est vert, le run part, et la répartition par thème, déséquilibrée
+entre candidats, fausse les comparaisons sans que rien ne le signale.
+
+**Ce qu'il faut faire.** L'auteur écrit au §5, en 0.12, que la barrière reçoit le jeu engendré
+complet. Ensuite, `pnpm symmetry` refuse un jeu de questions qui ne contient pas toutes les
+questions engendrées au gel (comparer à `tirage.entrees` et `tirage.exclusions`), avec un test.
+
+### 2. Les seuils de l'analyse ne tiennent que si le futur `pnpm analyze` passe par les bonnes portes — *haute*
+
+Depuis #38, les statistiques par candidat et la famille de Holm exigent un partage :
+`candidatsComparables(run)` et `couplesComparables(reponses)`. Rien n'empêche un appelant de
+fabriquer son propre partage (les tests utilisent `TOUS_COMPARES`), ni d'appeler `corrigerHolm`
+directement. Les graines `bootstrap` et `permutation` du run ne sont pas non plus contrôlées
+contre le générateur employé (n° 24, côté analyse, #41).
+
+**Pourquoi ça casse.** Un `pnpm analyze` qui passe « tous comparés » publie l'exactitude d'un
+candidat sous le seuil et garde un couple incomplet dans la famille de Holm. Toutes les valeurs p
+corrigées sont alors fausses, et aucun test ne tombe, puisque les fonctions sont justes.
+
+**Ce qu'il faut faire.** Au lot qui écrira `pnpm analyze` : un seul point d'entrée, qui dérive les
+deux partages du run et des réponses et vérifie les graines de l'analyse avec
+`GENERATEUR_DU_TIRAGE`, et un test de bout en bout avec un candidat sous le seuil et un couple
+incomplet.
+
+### 3. Le code applique des règles que le protocole n'écrit pas encore — *moyenne*
+
+#38 à #42 implémentent des lectures tranchées par l'auteur le 2026-09-27 ou proposées par les
+sous-agents, en attente de la 0.12 :
+- items P comptés s'ils sont tirables au gel ;
+- candidats sous le seuil hors de l'exactitude de référence ;
+- question d'écoute T2 et arbitrage `transcription_non_verifiee` ;
+- jugement par strate du n° 23 ;
+- prémisse d'une Q-ACT sur un item O ;
+- déclaration datée au plus tard du gel ;
+- sondages distincts par URL.
+
+La liste complète est dans `docs/TACHES-AUTEUR.md`.
+
+**Pourquoi ça casse.** Si l'auteur tranche autrement en 0.12, le code mesure selon une règle que
+le protocole gelé ne dit pas. Seule une passe de conformité le verrait.
+
+**Ce qu'il faut faire.** Écrire la 0.12, puis refaire la passe de conformité avant le gel du
+15 octobre, en vérifiant chacune de ces règles contre le texte.
+
+### 4. Une correction de thème bloque la promotion des autres items de la mesure — *moyenne*
+
+`validation/domaine/promotion.ts:versionMesurePromue` (#42, n° 69) lève `VersionMesureEcart` pour
+tout item vérifié qui épingle une version de mesure dépassée sans correction acceptée dans son
+propre dossier. C'est le cas des items des autres candidats quand le thème a été corrigé via un
+premier item.
+
+**Pourquoi ça casse.** C'est bruyant, mais toute la promotion s'arrête, et aucun chemin ne permet
+d'en sortir tant que l'auteur n'a pas dit ce que deviennent ces items (question dans
+`docs/TACHES-AUTEUR.md`).
+
+**Ce qu'il faut faire.** Décision de l'auteur, recommandé : retour en attente et nouvelle
+validation. Puis un chemin outillé (par exemple `pnpm lots --revalider-mesure`), testé.
+
+### 5. Le nombre d'exemples de schéma est écrit en dur à cinq endroits — *basse*
+
+`outils/schemas.ts`, `outils/schemas/registre.ts`, `schema/README.md`, `tests/schemas.test.ts` et
+`tests/questions/invariants.test.ts` répètent le total d'exemples.
+
+**Pourquoi ça casse.** Chaque lot qui ajoute un exemple modifie les cinq fichiers. Deux lots
+parallèles entrent donc toujours en conflit : #40 et #41 l'ont fait, et il a fallu additionner à la
+main (132 + 5 + 3 = 140).
+
+**Ce qu'il faut faire.** Garder un seul compteur, dans le test qui compare le manifeste au disque,
+et retirer les chiffres des commentaires et du README.
+
+---
+
 ## 2026-09-25 (clôturée le 2026-09-27) — Protocole 0.9 à 0.11, alignement 0.9, textes hors Git, kappa publié, contestation et notification (PR #28 à #35 : `docs/PROTOCOLE.md`, `pipeline/questions/`, `analysis/`, `validation/`, `outils/`, `pipeline/notification/`, `.gitignore`)
 
-### 1. Le seuil de 20 % se calcule encore par outil, alors que la 0.11 le calcule par outil et par mode — *haute*
+### ~~1. Le seuil de 20 % se calcule encore par outil, alors que la 0.11 le calcule par outil et par mode~~ — réglé le 2026-09-27 par `couplesComparables`, `corrigerFamilleAsymetrie` et les motifs de kappa indéfini (conformité n° 80, 82, 84, #38)
 
 `analysis/seuils.ts:partReponsesManquantes` filtre les réponses du run sur `outil_id` seul. Depuis
 la 0.11 (n° 84), le §8 et le §12 appliquent le seuil par outil et par mode, sur le canal API. Deux
