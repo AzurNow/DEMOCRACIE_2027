@@ -11,10 +11,7 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ## 0. Fusions en attente
 
-- [ ] **PR #44** (rattrapage : #39 à #42, fusionnées dans leurs branches parentes et non dans
-      `main`) et **PR #45** (protocole 0.12), ensemble : le code applique déjà la 0.12.
-- [ ] **PR #46** (intervalles du test d'asymétrie, n° 29), après #44.
-- [ ] Après les fusions, supprimer les branches `lots/*` fusionnées.
+- [ ] Supprimer les branches `lots/*` déjà fusionnées (#38 à #46).
 
 ---
 
@@ -22,54 +19,46 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ### Protocole (`docs/PROTOCOLE.md`)
 
-- [ ] **Trancher le bootstrap de l'écart maximal (PR #46, n° 29).** Un rééchantillon où un
-      candidat n'a aucune réponse classée est écarté et compté (choix retenu, bootstrap non
-      stratifié, comme les taux). Autre option : stratifier par candidat, ce qui rend l'écart
-      toujours défini mais le fait sortir du « même bootstrap » écrit en 0.12. Recommandé : garder
-      le choix retenu et l'écrire au §8.
-- [ ] **Trancher quatre points ouverts par la PR #39** (à écrire dans la révision suivante, 0.13) :
-      - un run à symétrie rouge porte-t-il encore un go/no-go ? Recommandé : non. Le schéma impose
-        aujourd'hui `publie_provisoire`, ce qui contredit le statut `invalide` ;
-      - un run `invalide` doit-il déclarer sa publication et son dépôt, puisque le §12 dit « publié
-        tel quel » ?
-      - la déclaration de candidature doit-elle dater au plus tard du jour du gel (lecture retenue) ?
-      - deux preuves à la même URL comptent-elles pour un seul sondage (lecture retenue) ?
-- [ ] **Trancher quatre points ouverts par la PR #40** (à écrire dans la révision suivante, 0.13) :
-      - un item T2 sans deux « oui » à la question d'écoute part en arbitrage, où l'arbitre ne peut
-        que rejeter ou le déclarer non évaluable (choix retenu). À confirmer ;
-      - à quelle source se rapporte le `valide_du` d'un item O (état antérieur ?), d'un item A
-        (couverture ?) et d'un item F ? Il n'est pas contrôlé tant que le §4 ne le dit pas.
-        L'exemple `schema/exemples/item/valide-02` ne passerait pas `pnpm promote` et sera corrigé
-        une fois la règle écrite ;
-      - un item rejeté, non évaluable ou retiré par le panel garde-t-il son attestation d'écoute ?
-        Aujourd'hui, elle n'est ni exigée ni interdite ;
-      - la table « type de document → tier » est-elle à mentionner dans `docs/CONTRATS.md` §5 ?
-- [ ] **Trancher quatre points ouverts par la PR #41** (à écrire dans la révision suivante, 0.13) :
-      - « Quand les items le permettent » (§5) se juge par strate thème × gabarit, compensations
-        exclues (choix retenu). Jugé par thème, il ferait passer au rouge un tirage conforme à la
-        compensation de la 0.9 ;
-      - `pnpm symmetry` doit recevoir le jeu complet des questions engendrées, pas seulement les
-        tirées. Sinon, la condition ne peut plus passer au rouge. À écrire au §5 ;
-      - la prémisse d'une Q-ACT orientée sur un item O affirme-t-elle une position (choix retenu),
-        ou la Q-ACT sort-elle du dénominateur de la confirmation de prémisse ?
-      - quels générateurs servent pour l'échantillon humain et le test contrefactuel ? Le §7 ne les
-        nomme pas.
-- [ ] **Trancher trois points ouverts par la PR #42** :
-      - n° 54 : le §4 exige une localisation exacte (page d'un PDF), mais le schéma d'une source ne
-        sait pas si elle est un PDF. Recommandé : un champ obligatoire `format` (`pdf`, `html`,
-        `audio`, `video`), écrit par le pipeline depuis la fiche d'extraction, avec « pdf ⇒ page ».
-        Le modèle de données change : tous les exemples d'item et les fixtures sont touchés ;
-      - n° 69 : quand le thème d'une mesure est corrigé via un item, que deviennent les autres items
-        de cette mesure, jugés contre l'ancien thème ? Recommandé : retour en attente et nouvelle
-        validation, à écrire au §4. D'ici là, leur promotion est bloquée (`VersionMesureEcart`) ;
-      - n° 64 : un lien `inaccessible` ou `non_testable` peut-il être noté « soutient » (lecture
-        d'une copie archivée) ? Aujourd'hui, oui ; seul un lien `mort` ne le peut pas.
+- [ ] **Faire écrire la 0.13** (dire « écris la 0.13 ») : elle reprend les seize décisions du
+      2026-09-27 ci-dessous. Elles sont prises, mais ni écrites ni toutes codées.
+
+  Décisions du 2026-09-27 (toutes selon la recommandation) :
+  1. §5 : `pnpm symmetry` reçoit le jeu complet des questions engendrées au gel, publié avec le
+     run ; un jeu incomplet est refusé. *Code à faire.*
+  2. §5 : « quand les items le permettent » se juge par strate thème × gabarit, compensations
+     exclues. *Déjà codé (#41).*
+  3. §12 : un run à symétrie rouge ne porte pas de go/no-go. *Code à faire (schéma).*
+  4. §12 : un run invalide déclare sa publication et son dépôt Zenodo. *Code à faire (schéma).*
+  5. §4 (n° 69) : quand le thème d'une mesure est corrigé via un item, les autres items de la
+     mesure retournent en attente, épinglés sur la nouvelle version. *Code à faire.*
+  6. §4 (n° 12) : un item T2 sans deux « oui » à l'écoute part en arbitrage
+     `transcription_non_verifiee` (rejeter ou non évaluable). *Déjà codé (#40).*
+  7. §4 (n° 17) : `valide_du` d'un item O = date de la source de l'état antérieur ; d'un item A =
+     date de la source de couverture ; item F non contrôlé ; divergence motivée. *Code à faire ;
+     corriger l'exemple item/valide-02.*
+  8. §4 (n° 12) : attestation d'écoute interdite sur un item rejeté ou non évaluable, conservée
+     sur un item retiré par le panel après vérification. *Code à faire (schéma).*
+  9. §4 (n° 54) : chaque source porte un champ `format` (pdf, html, audio, video), écrit par le
+     pipeline ; pdf ⇒ page. *Code à faire (modèle de données).*
+  10. §7 (n° 64) : « soutient » reste permis sur un lien inaccessible ou non testable. *Rien à
+      coder.*
+  11. §5 (n° 37) : la formulation orientée d'une Q-ACT sur un item O note aussi la position que
+      sa prémisse suppose actuelle. *Déjà codé (#41).*
+  12. §8 (n° 29) : un rééchantillon où l'écart maximal n'est pas défini est écarté et compté.
+      *Déjà codé (#46).*
+  13. §3 : la déclaration de candidature date au plus tard du jour du gel. *Déjà codé (#39).*
+  14. §3 : les sondages se comptent par URL distinctes. *Déjà codé (#39).*
+  15. §7 : l'échantillon humain et le test contrefactuel tirent avec SplitMix64
+      (splitmix64-sha256-v1), graine dérivée et clé lisible comme au §8. *Code à faire
+      (exemples de schéma encore en PCG64).*
+  16. `docs/CONTRATS.md` §5 reçoit la table type de document → tier ;
+      `fiche-source.schema.json` l'applique. *Code et texte à faire.*
+
+  Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
+  du test et de l'exactitude par candidat) : rien à faire.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
 - [ ] **Nommer le fournisseur SMTP de l'adresse dédiée** au §10, à la place de
       `[fournisseur à nommer par l'auteur avant le gel]` (protocole 0.10, PR #32).
-- [ ] **Trancher le constat n° 81** : les réponses aux Q-ATT sortent de l'exactitude par candidat et
-      du test d'asymétrie, faute de candidat, et le §8 ne le dit pas. Écrire la phrase, ou demander
-      qu'on change le code (`docs/conformite/2026-09-24.md`, n° 81).
 - [ ] **Relecture par un avocat** (§10 : diffamation, droit d'auteur, RGPD, conditions d'utilisation
       des API).
 - [ ] **Déposer la version 1.0 sur Zenodo** et publier l'empreinte et le DOI (critère de J1).
