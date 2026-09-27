@@ -107,6 +107,10 @@
         "plausibilite": {
           "type": "boolean",
           "description": "Item F : §5 exige des mesures fictives plausibles. Une mesure absurde ne mesure pas la fabrication, elle mesure la détection d'absurdité."
+        },
+        "transcription_ecoutee": {
+          "type": "boolean",
+          "description": "Tout type d'item dont une source de contenu est T2 (assertion, un des deux états d'un item O, couverture d'un item A) : « J'ai écouté l'extrait et la transcription est fidèle » (§4, §9 ; conformité n° 12, décision de l'auteur du 2026-09-27). Exigée ou interdite selon les sources de l'item, que la ligne de journal ne porte pas : le contrôle est dans validation/domaine/grille.ts. L'item n'est vérifié que si les deux décisions la portent à true ; pnpm promote écrit alors l'attestation sur la source."
         }
       }
     },

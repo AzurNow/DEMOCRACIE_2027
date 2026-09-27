@@ -135,13 +135,13 @@ exactement un `principal` — au plus un pour une question d'attribution, aucun 
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 132 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 137 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
 | Objet | Ce que les trois exemples invalides vérifient |
 | --- | --- |
-| item | source T3 déclarée vérifiée · item vérifié avec une seule validation · item d'absence portant une citation de position |
+| item | source T3 déclarée vérifiée · item vérifié avec une seule validation · item d'absence portant une citation de position · item O vérifié dont l'état postérieur est T3 · item vérifié dont la source T2 n'a pas d'attestation d'écoute · item en attente dont la source T2 porte déjà une attestation · site de parti non déclaré de campagne déclaré T1 |
 | mesure | mesure fictive sans vérification contre les corpus T1 · thème hors des dix · identifiant lisible au lieu d'opaque |
 | question | deux items principaux · Q-ATT nommant un candidat · deux formulations au lieu de trois · question directe sans item principal |
 | reponse | réponse manquante portant un contenu · réponse d'API sans mode · artefact contrefactuel sans traçabilité |
@@ -161,7 +161,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | diagnostic-lot | kappa indéfini remplacé par 0 à côté de son motif · diagnostic sans `supersede_par` · lot de réannotation sans date de calibration |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 132/132 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 137/137 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

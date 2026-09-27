@@ -11,7 +11,7 @@
       "objet": "item",
       "fichier": "item/valide-02-obsolete-deux-etats.json",
       "attendu": "valide",
-      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation."
+      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation. Modifié ouvertement (conformité n° 12) : transcription_verifiee_par de l'état postérieur T2 passe de \"a1\" aux deux annotateurs [\"a1\", \"a3\"], forme exigée depuis la décision de l'auteur du 2026-09-27 ; même changement dans invalide-10 et invalide-11, qui en sont des copies."
     },
     {
       "objet": "item",
@@ -803,6 +803,41 @@
       "attendu": "invalide",
       "motif": "Item vérifié sur deux décisions discordantes sans bloc arbitrage. §4 : vérifié seulement avec deux décisions concordantes, ou par une décision d'arbitrage.",
       "regle_protocole": "§4, règle de concordance"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/valide-04-position-t2-en-attente-sans-attestation.json",
+      "attendu": "valide",
+      "motif": "Item P en staging (en_attente) dont la source est un enregistrement T2 avec son extrait, sans attestation d'écoute : le pipeline n'écoute rien, l'attestation est écrite par pnpm promote à partir des deux décisions (conformité n° 12).",
+      "regle_protocole": "§4, hiérarchie des sources (T2) ; §9"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-13-obsolete-verifie-etat-posterieur-t3.json",
+      "attendu": "invalide",
+      "motif": "Item O vérifié dont l'état postérieur n'est sourcé que par un article de presse (T3). « Un item ne devient obsolète qu'avec une preuve T1 ou T2 du changement » : un item dont un état est T3 reste à confirmer (conformité n° 13). Erreurs : /statut_validation (const) et la racine (then).",
+      "regle_protocole": "§4, hiérarchie des sources ; cycle de vie et dates"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-14-verifie-t2-sans-attestation.json",
+      "attendu": "invalide",
+      "motif": "Item P vérifié dont la source T2 ne porte pas l'attestation d'écoute (transcription_verifiee_par, transcription_verifiee_le). §4 et §9 : la transcription est vérifiée à l'oreille ; décision de l'auteur du 2026-09-27, par les deux annotateurs (conformité n° 12). Erreurs : /assertion/source (deux required, then) et la racine (then).",
+      "regle_protocole": "§4, hiérarchie des sources (T2) ; §9"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-15-attente-t2-avec-attestation.json",
+      "attendu": "invalide",
+      "motif": "Item P en staging (en_attente) dont la source T2 porte déjà une attestation d'écoute. Seul pnpm promote l'écrit, à partir des deux décisions : une attestation écrite par le pipeline, qui n'écoute rien, serait fausse (conformité n° 12). Erreurs : /assertion/source (deux not) et la racine (then).",
+      "regle_protocole": "§4, hiérarchie des sources (T2) ; §9"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-16-site-parti-non-declare-en-t1.json",
+      "attendu": "invalide",
+      "motif": "Site de parti sans déclaration de tenir lieu de site de campagne (site_parti_tient_lieu_de_campagne = false) déclaré T1. §4 (0.11) : sans cette déclaration, un site de parti relève de T3. Le tier découle du type de document par la table commun#/$defs/tier_selon_type_document (conformité n° 11). Erreurs : /assertion/source/tier (const) et /assertion/source (then).",
+      "regle_protocole": "§4, hiérarchie des sources"
     },
     {
       "objet": "decision-arbitrage",

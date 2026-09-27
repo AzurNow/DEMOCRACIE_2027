@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.collecte.sources import ListeSourcesInvalide, Source, analyser_sources, lire_sources
+from pipeline.collecte.sources import REFERENTIEL, ListeSourcesInvalide, Source, analyser_sources, lire_sources
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
 
@@ -173,3 +173,93 @@ def test_cle_de_premier_niveau_inconnue_est_refusee() -> None:
 
 def test_toml_mal_forme_est_refuse() -> None:
     assert "TOML" in _refus("[[source]\n")[0]
+
+
+# ------------------------------------------------ conformité n° 11 : tier lié au type de document
+#
+# La table vit une seule fois, dans `schema/commun.schema.json:$defs/tier_selon_type_document` ;
+# `sources.py` la lit là. `TABLE_ATTENDUE` est la table du §4 recopiée à la main dans le test, et
+# `tests/sources-items-schema.test.ts` confronte le schéma lui-même à la même table : un écart entre
+# le lecteur Python et le schéma fait échouer l'un des deux.
+
+TABLE_ATTENDUE = {
+    ("programme_pdf", None): "T1",
+    ("site_officiel", None): "T1",
+    ("tribune_signee", None): "T1",
+    ("communique_campagne", None): "T1",
+    ("site_parti", True): "T1",
+    ("site_parti", False): "T3",
+    ("enregistrement_video", None): "T2",
+    ("enregistrement_audio", None): "T2",
+    ("article_presse", None): "T3",
+}
+
+
+def _source_toml(type_document: str, tier: str, mention: bool | None) -> str:
+    texte = SOURCE_VALIDE.replace('"programme_pdf"', f'"{type_document}"').replace('"T1"', f'"{tier}"')
+    if mention is not None:
+        texte += f"site_parti_tient_lieu_de_campagne = {'true' if mention else 'false'}\n"
+    return texte
+
+
+def test_la_table_lue_dans_le_schema_est_celle_du_protocole() -> None:
+    assert REFERENTIEL.tier_par_type == TABLE_ATTENDUE
+
+
+def test_la_table_couvre_toute_l_enumeration_type_document() -> None:
+    assert {type_document for type_document, _ in REFERENTIEL.tier_par_type} == set(REFERENTIEL.type_document)
+
+
+def test_site_parti_mention_false_declare_t1_est_refuse() -> None:
+    erreurs = _refus(_source_toml("site_parti", "T1", False))
+
+    assert len(erreurs) == 1
+    assert "source n°1" in erreurs[0]
+    assert "tier" in erreurs[0] and "T1" in erreurs[0] and "T3" in erreurs[0]
+
+
+def test_site_parti_mention_true_declare_t1_est_accepte() -> None:
+    assert analyser_sources(_source_toml("site_parti", "T1", True))[0].tier == "T1"
+
+
+def test_site_parti_mention_false_declare_t3_est_accepte() -> None:
+    assert analyser_sources(_source_toml("site_parti", "T3", False))[0].tier == "T3"
+
+
+def test_article_presse_declare_t1_est_refuse() -> None:
+    erreurs = _refus(_source_toml("article_presse", "T1", None))
+    assert len(erreurs) == 1
+    assert "article_presse" in erreurs[0] and "T3" in erreurs[0]
+
+
+def test_enregistrement_video_declare_t1_est_refuse() -> None:
+    erreurs = _refus(_source_toml("enregistrement_video", "T1", None))
+    assert len(erreurs) == 1
+    assert "enregistrement_video" in erreurs[0] and "T2" in erreurs[0]
+
+
+def test_programme_pdf_declare_t2_est_refuse() -> None:
+    erreurs = _refus(_source_toml("programme_pdf", "T2", None))
+    assert len(erreurs) == 1
+    assert "programme_pdf" in erreurs[0] and "T1" in erreurs[0]
+
+
+@pytest.mark.parametrize(("cle", "tier_admis"), list(TABLE_ATTENDUE.items()))
+@pytest.mark.parametrize("tier", ["T1", "T2", "T3"])
+def test_chaque_combinaison_suit_la_table(cle: tuple[str, bool | None], tier_admis: str, tier: str) -> None:
+    type_document, mention = cle
+    texte = _source_toml(type_document, tier, mention)
+    if tier == tier_admis:
+        assert analyser_sources(texte)[0].tier == tier
+    else:
+        assert len(_refus(texte)) == 1
+
+
+def test_tier_hors_enumeration_ne_produit_pas_d_erreur_de_table_en_plus() -> None:
+    # Un tier inconnu est déjà refusé par l'énumération : un second message sur la table serait du bruit.
+    assert len(_refus(SOURCE_VALIDE.replace('tier = "T1"', 'tier = "T4"'))) == 1
+
+
+def test_site_parti_sans_mention_ne_produit_pas_d_erreur_de_table_en_plus() -> None:
+    # Sans mention, le tier admis est indécidable : seul le manque de la mention est rapporté.
+    assert len(_refus(_sans_ligne(SITE_PARTI_VALIDE, "site_parti_tient_lieu_de_campagne"))) == 1

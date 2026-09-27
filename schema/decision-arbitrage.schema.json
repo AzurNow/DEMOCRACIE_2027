@@ -21,7 +21,7 @@
 
     "motif": {
       "type": "string",
-      "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee"],
+      "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee", "transcription_non_verifiee"],
       "description": "Le désaccord tranché, tel que la règle de concordance le produit (`validation/domaine/promotion.ts`). Une décision prise sur un autre motif que celui de l'item au moment de la promotion ne s'applique pas."
     },
 

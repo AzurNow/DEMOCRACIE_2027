@@ -17,7 +17,7 @@
  */
 
 import { applicabiliteDe } from "./decision.ts";
-import { CLES_GRILLE, questionsSpecifiques } from "./grille.ts";
+import { CLES_GRILLE, questionsSpecifiquesDe } from "./grille.ts";
 import type { Decision, Item } from "./types.ts";
 
 export type Categorie = "grille" | "decision" | "navigation" | "edition" | "aide";
@@ -76,7 +76,7 @@ export function questionsObligatoires(item: Item): readonly string[] {
   } else {
     questions.push(...questionsDUneGrille(item));
   }
-  questions.push(...questionsSpecifiques(item.type));
+  questions.push(...questionsSpecifiquesDe(item));
   return questions;
 }
 

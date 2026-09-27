@@ -12,7 +12,7 @@ import {
   LIBELLES_GRILLE,
   LIBELLES_GRILLE_ABSENCE,
   LIBELLES_SPECIFIQUES,
-  questionsSpecifiques,
+  questionsSpecifiquesDe,
 } from "../domaine/grille.ts";
 import { gestesPourDecision } from "../domaine/interaction.ts";
 import { progression, type EtatAnnotateur } from "../domaine/journal.ts";
@@ -87,7 +87,7 @@ export function construireVueItem(
         lieu.type_affichage === "media" ? acces.transcription(lieu.source.sha256) : null,
     })),
     questions: questionsAffichees(item),
-    questions_specifiques: questionsSpecifiques(item.type).map((cle) => ({
+    questions_specifiques: questionsSpecifiquesDe(item).map((cle) => ({
       cle,
       libelle: LIBELLES_SPECIFIQUES[cle],
       etat: null,

@@ -68,7 +68,7 @@ export function construireDecision(
 ): DecisionAcceptee | DecisionRefusee {
   const manquements = [
     ...controlerFormeDesReponses(soumission, contexte.item),
-    ...controlerSpecifiques(contexte.item.type, soumission.questions_specifiques ?? {}),
+    ...controlerSpecifiques(contexte.item,soumission.questions_specifiques ?? {}),
     ...controlerCorrections(soumission),
     ...controlerDurees(soumission),
   ];

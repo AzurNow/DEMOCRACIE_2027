@@ -66,10 +66,14 @@
 
     "valide_du": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
-      "description": "§4 : date de la source. Divergence possible avec source.date_source uniquement si valide_du_motif est renseigné (mesure annoncée pour application différée)."
+      "description": "§4 : date de la source. Pour un item P, égale à assertion.source.date_source, sauf si valide_du_motif est renseigné (mesure annoncée pour application différée). JSON Schema ne compare pas deux champs : l'égalité est contrôlée par pnpm promote (validation/domaine/dates-sources.ts, conformité n° 17), qui refuse la promotion en nommant l'item et les deux dates."
     },
 
-    "valide_du_motif": { "type": "string", "minLength": 3 },
+    "valide_du_motif": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Seule justification admise d'un valide_du différent de la date de la source (conformité n° 17). Ne fait pas partie du contenu notant : il justifie une date, il ne la change pas."
+    },
 
     "valide_au": {
       "type": ["string", "null"],
@@ -151,7 +155,12 @@
       "properties": {
         "date_changement": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
-          "description": "Frontière unique, non dupliquée dans les états. Règle semi-ouverte : date_gel >= date_changement ⇒ l'état postérieur est attendu (\"position modifiée\") ; sinon l'état antérieur. Sert aussi au calcul des 14 jours du §11 (erreur d'obsolescence fraîche, comptée mais signalée à part)."
+          "description": "Frontière unique, non dupliquée dans les états. Règle semi-ouverte : date_gel >= date_changement ⇒ l'état postérieur est attendu (\"position modifiée\") ; sinon l'état antérieur. Sert aussi au calcul des 14 jours du §11 (erreur d'obsolescence fraîche, comptée mais signalée à part). Égale à etat_posterieur.source.date_source, sauf si date_changement_motif est renseigné : contrôlé par pnpm promote (conformité n° 17), JSON Schema ne comparant pas deux champs."
+        },
+        "date_changement_motif": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Seule justification admise d'une date_changement différente de la date de la source postérieure (conformité n° 17), sur le modèle de valide_du_motif. Hors contenu notant."
         },
         "etat_anterieur": { "$ref": "#/$defs/etat_positionnel" },
         "etat_posterieur": { "$ref": "#/$defs/etat_positionnel" },
@@ -224,7 +233,7 @@
         },
         "motif": {
           "type": "string",
-          "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee"]
+          "enum": ["versions_differentes", "desaccord", "corrections_divergentes", "paraphrase_seule", "confirmation_absence_manquante", "correction_mesure_refusee", "transcription_non_verifiee"]
         },
         "issue": { "type": "string", "enum": ["verifie", "rejete", "non_evaluable"] },
         "motivation": { "type": "string", "minLength": 1, "description": "§4 : « avec une motivation publiée »." }
@@ -338,17 +347,42 @@
       }
     },
     {
-      "$comment": "§4 : seuls T1 et T2 servent à la notation ; un item T3 est conservé avec le statut à confirmer et n'engendre aucune question.",
+      "$comment": "§4 : seuls T1 et T2 servent à la notation ; un item T3 est conservé avec le statut à confirmer et n'engendre aucune question. « Un item ne devient obsolète qu'avec une preuve T1 ou T2 du changement » : la règle vaut pour l'assertion d'un item P, pour chacun des deux états d'un item O et pour la source de couverture d'un item A (conformité n° 13).",
       "if": {
-        "required": ["assertion"],
-        "properties": {
-          "assertion": {
-            "required": ["source"],
-            "properties": { "source": { "required": ["tier"], "properties": { "tier": { "const": "T3" } } } }
+        "anyOf": [
+          {
+            "required": ["assertion"],
+            "properties": { "assertion": { "required": ["source"], "properties": { "source": { "$ref": "#/$defs/source_t3" } } } }
+          },
+          {
+            "required": ["obsolescence"],
+            "properties": {
+              "obsolescence": { "required": ["etat_anterieur"], "properties": { "etat_anterieur": { "required": ["source"], "properties": { "source": { "$ref": "#/$defs/source_t3" } } } } }
+            }
+          },
+          {
+            "required": ["obsolescence"],
+            "properties": {
+              "obsolescence": { "required": ["etat_posterieur"], "properties": { "etat_posterieur": { "required": ["source"], "properties": { "source": { "$ref": "#/$defs/source_t3" } } } } }
+            }
+          },
+          {
+            "required": ["absence"],
+            "properties": { "absence": { "required": ["source_couverture_theme"], "properties": { "source_couverture_theme": { "$ref": "#/$defs/source_t3" } } } }
           }
-        }
+        ]
       },
       "then": { "properties": { "statut_validation": { "const": "a_confirmer" } } }
+    },
+    {
+      "$comment": "§4 et §9 (conformité n° 12, décision de l'auteur du 2026-09-27) : un item vérifié dont une source est T2 porte, sur cette source, l'attestation d'écoute écrite par pnpm promote à partir des deux décisions.",
+      "if": { "properties": { "statut_validation": { "const": "verifie" } }, "required": ["statut_validation"] },
+      "then": { "$ref": "#/$defs/sources_du_contenu_attestees_si_t2" }
+    },
+    {
+      "$comment": "Conformité n° 12 : en staging (en_attente) et pour un item à confirmer, aucune attestation d'écoute. Le pipeline n'écoute rien ; s'il pouvait écrire ce champ, l'attestation publiée pourrait être fausse.",
+      "if": { "properties": { "statut_validation": { "enum": ["en_attente", "a_confirmer"] } }, "required": ["statut_validation"] },
+      "then": { "$ref": "#/$defs/sources_du_contenu_sans_attestation" }
     },
     {
       "$comment": "§4 (protocole 0.10) : un item est vérifié avec DEUX décisions concordantes, ou, après un désaccord, par une décision d'arbitrage d'issue « verifie ». Les deux validations restent publiées, discordantes, à côté du bloc arbitrage qui les a tranchées.",
@@ -382,6 +416,50 @@
   ],
 
   "$defs": {
+    "source_t3": {
+      "required": ["tier"],
+      "properties": { "tier": { "const": "T3" } }
+    },
+
+    "source_attestee_si_t2": {
+      "if": { "required": ["tier"], "properties": { "tier": { "const": "T2" } } },
+      "then": { "required": ["transcription_verifiee_par", "transcription_verifiee_le"] }
+    },
+
+    "source_sans_attestation": {
+      "allOf": [
+        { "not": { "required": ["transcription_verifiee_par"] } },
+        { "not": { "required": ["transcription_verifiee_le"] } }
+      ]
+    },
+
+    "sources_du_contenu_attestees_si_t2": {
+      "$comment": "Les quatre emplacements où un item porte une source de contenu : assertion (P), deux états (O), couverture du thème (A). Les sources nouvelles d'une contestation n'en sont pas : personne ne les écoute à la validation.",
+      "properties": {
+        "assertion": { "properties": { "source": { "$ref": "#/$defs/source_attestee_si_t2" } } },
+        "obsolescence": {
+          "properties": {
+            "etat_anterieur": { "properties": { "source": { "$ref": "#/$defs/source_attestee_si_t2" } } },
+            "etat_posterieur": { "properties": { "source": { "$ref": "#/$defs/source_attestee_si_t2" } } }
+          }
+        },
+        "absence": { "properties": { "source_couverture_theme": { "$ref": "#/$defs/source_attestee_si_t2" } } }
+      }
+    },
+
+    "sources_du_contenu_sans_attestation": {
+      "properties": {
+        "assertion": { "properties": { "source": { "$ref": "#/$defs/source_sans_attestation" } } },
+        "obsolescence": {
+          "properties": {
+            "etat_anterieur": { "properties": { "source": { "$ref": "#/$defs/source_sans_attestation" } } },
+            "etat_posterieur": { "properties": { "source": { "$ref": "#/$defs/source_sans_attestation" } } }
+          }
+        },
+        "absence": { "properties": { "source_couverture_theme": { "$ref": "#/$defs/source_sans_attestation" } } }
+      }
+    },
+
     "etat_positionnel": {
       "type": "object",
       "additionalProperties": false,

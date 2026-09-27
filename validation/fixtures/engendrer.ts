@@ -393,8 +393,9 @@ function ajouterItemsO(atelier: Fabrique, archives: Archives, depart: number): n
             type_document: "enregistrement_video",
             url: "https://demonstration.invalid/declaration",
             extrait: { debut: "00:00:08", fin: "00:00:14" },
-            transcription_verifiee_par: "a1",
-            transcription_verifiee_le: "2026-11-04",
+            // Conformité n° 12 : plus d'attestation d'écoute en staging. Le pipeline n'écoute
+            // rien ; les deux annotateurs répondent à la question d'écoute, et `pnpm promote`
+            // écrit l'attestation. Le schéma d'item l'interdit désormais sur un item en attente.
           }),
           test_verbatim: testVerbatim(CITATION_POSTERIEURE, TEXTE_VIDEO),
         },

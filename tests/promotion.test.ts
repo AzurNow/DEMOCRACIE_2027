@@ -404,13 +404,17 @@ describe("items d'absence", () => {
 describe("items obsolètes", () => {
   it("réduit les deux grilles par ET vers les cinq clés de l'item", () => {
     const item = itemO();
+    // Modifié ouvertement (conformité n° 12) : l'état postérieur de `itemO()` est T2, la question
+    // d'écoute est donc posée et l'item n'est vérifié qu'avec deux « oui ». Sans eux, il partirait
+    // en arbitrage « transcription_non_verifiee » et ce test ne vérifierait plus la réduction.
+    const specifiques = { changement_explicite: true, transcription_ecoutee: true };
     const issue = evaluerPromotion(
       dossier(item, [
         decision({
           annotateur_id: "a1",
           item,
           decision: "accepter",
-          questions_specifiques: { changement_explicite: true },
+          questions_specifiques: specifiques,
           reponses_par_etat: {
             anterieur: { ...GRILLE_TOUT_VRAI, theme_correct: null, quantification_correcte: null },
             posterieur: { ...GRILLE_TOUT_VRAI, quantification_correcte: null },
@@ -420,7 +424,7 @@ describe("items obsolètes", () => {
           annotateur_id: "a2",
           item,
           decision: "accepter",
-          questions_specifiques: { changement_explicite: true },
+          questions_specifiques: specifiques,
           reponses_par_etat: {
             anterieur: {
               ...GRILLE_TOUT_VRAI,

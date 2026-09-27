@@ -300,8 +300,9 @@ describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5,
 
 describe("exemples de schema/exemples/", () => {
   // 127 → 132 : cinq exemples invalides de run ajoutés (conformité n° 10, 19, 21 et par_mode).
-  it("charge les 132 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(132);
+  // 132 → 137 : un exemple valide et quatre invalides d'item ajoutés (conformité n° 11, 12, 13).
+  it("charge les 137 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(137);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

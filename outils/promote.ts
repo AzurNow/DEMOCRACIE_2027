@@ -26,6 +26,7 @@ import { resolve } from "node:path";
 import { tauxNonEvaluable } from "../validation/domaine/analyse-lot.ts";
 import { DecisionArbitrageRefusee } from "../validation/domaine/arbitrage.ts";
 import { CorrectionMesureIncoherente } from "../validation/domaine/corrections-mesure.ts";
+import { decrireEcart, ecartsDeDates } from "../validation/domaine/dates-sources.ts";
 import type { LotEffectif } from "../validation/domaine/lot.ts";
 import type { Issue } from "../validation/domaine/promotion.ts";
 import type { Item, Lot } from "../validation/domaine/types.ts";
@@ -135,6 +136,30 @@ function controlerFictifUnique(verdicts: readonly Verdict[], options: Options): 
     .filter((verdict) => verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options))
     .map((verdict) => (verdict.issue as Extract<Issue, { sort: "promouvoir" }>).item);
   verifierFictifUnique(aEcrire, itemsDeData(options));
+}
+
+/**
+ * §4 (conformité n° 17) : les items que `--ecrire` écrirait, corrections comprises, dont une date de
+ * validité ne suit pas la date de sa source sans motif écrit. JSON Schema ne compare pas deux
+ * champs : le contrôle est `ecartsDeDates`, et un seul écart bloque l'écriture.
+ */
+function datesIncoherentes(verdicts: readonly Verdict[], options: Options): readonly NonConforme[] {
+  const trouves: NonConforme[] = [];
+  for (const verdict of verdicts) {
+    if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
+    const item = verdict.issue.item;
+    for (const ecart of ecartsDeDates(item)) {
+      trouves.push({ lot_id: verdict.lot_id, item_id: item.id, erreur: decrireEcart(item.id, ecart) });
+    }
+  }
+  return trouves;
+}
+
+function imprimerDatesIncoherentes(liste: readonly NonConforme[]): void {
+  if (liste.length === 0) return;
+  const items = new Set(liste.map((ecart) => ecart.item_id));
+  process.stdout.write(`\nItems à promouvoir dont les dates ne suivent pas leurs sources : ${items.size}\n`);
+  for (const ecart of liste) process.stdout.write(`  ${ecart.erreur}  [${ecart.lot_id}]\n`);
 }
 
 function imprimerNonConformes(liste: readonly NonConforme[]): void {
@@ -302,10 +327,12 @@ function principal(): void {
   });
 
   const fautifs = nonConformes(verdicts, options);
+  const dates = datesIncoherentes(verdicts, options);
 
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
   imprimerNonConformes(fautifs);
+  imprimerDatesIncoherentes(dates);
   controlerFictifUnique(verdicts, options);
 
   if (introuvables.length > 0) {
@@ -320,6 +347,14 @@ function principal(): void {
     process.stderr.write(
       "\nDes items à promouvoir ne sont pas conformes à schema/item.schema.json : rien n'est écrit\n" +
         "dans data/ tant que leurs corrections ne sont pas reprises.\n",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  if (dates.length > 0) {
+    process.stderr.write(
+      "\nDes items à promouvoir ont une date de validité qui ne suit pas leur source (§4) : rien n'est\n" +
+        "écrit dans data/ tant que la date n'est pas celle de la source ou que son motif n'est pas écrit.\n",
     );
     process.exitCode = 1;
     return;
