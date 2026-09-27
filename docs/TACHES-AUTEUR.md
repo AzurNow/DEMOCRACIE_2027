@@ -43,6 +43,16 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
       - un item rejeté, non évaluable ou retiré par le panel garde-t-il son attestation d'écoute ?
         Aujourd'hui, elle n'est ni exigée ni interdite ;
       - la table « type de document → tier » est-elle à mentionner dans `docs/CONTRATS.md` §5 ?
+- [ ] **Trancher quatre points ouverts par la PR #41** (à écrire dans la 0.12) :
+      - « Quand les items le permettent » (§5) se juge par strate thème × gabarit, compensations
+        exclues (choix retenu). Jugé par thème, il ferait passer au rouge un tirage conforme à la
+        compensation de la 0.9 ;
+      - `pnpm symmetry` doit recevoir le jeu complet des questions engendrées, pas seulement les
+        tirées. Sinon, la condition ne peut plus passer au rouge. À écrire au §5 ;
+      - la prémisse d'une Q-ACT orientée sur un item O affirme-t-elle une position (choix retenu),
+        ou la Q-ACT sort-elle du dénominateur de la confirmation de prémisse ?
+      - quels générateurs servent pour l'échantillon humain et le test contrefactuel ? Le §7 ne les
+        nomme pas.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
 - [ ] **Nommer le fournisseur SMTP de l'adresse dédiée** au §10, à la place de
       `[fournisseur à nommer par l'auteur avant le gel]` (protocole 0.10, PR #32).
