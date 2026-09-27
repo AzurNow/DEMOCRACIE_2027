@@ -153,11 +153,24 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "regime_inclusion",
         "candidats",
         "outils"
       ],
       "description": "Instantané au gel, jamais une liste globale : le périmètre du §3 s'apprécie \"à la date de gel du run\".",
       "properties": {
+        "regime_inclusion": {
+          "type": "string",
+          "enum": [
+            "avant_liste_officielle",
+            "liste_officielle"
+          ],
+          "description": "§3 (protocole 0.11) : « chaque run déclare son régime ». Avant la liste officielle du Conseil constitutionnel, un candidat non retiré est inclus sur sa déclaration de candidature et au moins deux sondages publiés dans les 60 jours précédant l'instant de gel (la fenêtre, que le JSON Schema ne sait pas comparer, est contrôlée par pipeline/questions/perimetre.ts:inclusionAvantListe). À partir de la liste, le périmètre est exactement cette liste, et sa version archivée (liste_officielle) est la seule preuve d'inclusion exigée."
+        },
+        "liste_officielle": {
+          "$ref": "#/$defs/preuve_archivee",
+          "description": "§3 : la liste officielle du Conseil constitutionnel, archivée. Exigée dans le régime liste_officielle, interdite avant : un run qui la porte ne peut plus appliquer la règle des sondages."
+        },
         "candidats": {
           "type": "array",
           "minItems": 1,
@@ -200,7 +213,7 @@
               },
               "preuves_inclusion": {
                 "type": "array",
-                "description": "§3 : deux sondages publiés en 60 jours par un institut reconnu. Sans ces références, \"quiconque applique ces règles doit obtenir la même liste\" est invérifiable par un tiers.",
+                "description": "§3 : dans le régime avant_liste_officielle, au moins deux sondages publiés dans les 60 jours précédant l'instant de gel, exigés pour tout candidat non retiré. Sans ces références, \"quiconque applique ces règles doit obtenir la même liste\" est invérifiable par un tiers.",
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -254,16 +267,17 @@
                       "parti"
                     ]
                   }
-                }
+                },
+                "description": "§3 : candidature déclarée publiquement par l'intéressé ou par son parti. Exigée pour tout candidat non retiré dans le régime avant_liste_officielle."
               },
               "items_p_verifies": {
                 "type": "integer",
                 "minimum": 0,
-                "description": "Compté au gel et STOCKÉ. §4 et §8 en dépendent tous les deux ; le recalculer à la génération du site ferait vivre le seuil à deux endroits."
+                "description": "Compté au gel et STOCKÉ. §4 et §8 en dépendent tous les deux ; le recalculer à la génération du site ferait vivre le seuil à deux endroits. Compte un item P qui pourrait entrer au tirage à l'instant de gel (décision de l'auteur du 2026-09-27, conformité n° 19) : pipeline/questions/couverture.ts:itemsPComptesAuGel."
               },
               "sous_seuil": {
                 "type": "boolean",
-                "description": "§4 : moins de 10 items P vérifiés ⇒ rapporté à part, mention \"couverture insuffisante\", hors comparaisons inter-candidats."
+                "description": "§4 : moins de 10 items P vérifiés ⇒ rapporté à part, mention \"couverture insuffisante\", hors comparaisons inter-candidats. Au moins 10 ⇒ comparé : la valeur est liée à items_p_verifies dans les deux sens."
               },
               "interroge": {
                 "type": "boolean",
@@ -272,7 +286,7 @@
             },
             "allOf": [
               {
-                "$comment": "Cohérence dure du seuil du §4 : sous 10 items P vérifiés, sous_seuil ne peut pas être faux.",
+                "$comment": "Cohérence dure du seuil du §4, dans les deux sens (conformité n° 19) : sous 10 items P vérifiés, sous_seuil est vrai ; à 10 ou plus, il est faux, sans quoi un candidat couvert sortirait des comparaisons.",
                 "if": {
                   "properties": {
                     "items_p_verifies": {
@@ -289,9 +303,17 @@
                       "const": true
                     }
                   }
+                },
+                "else": {
+                  "properties": {
+                    "sous_seuil": {
+                      "const": false
+                    }
+                  }
                 }
               },
               {
+                "$comment": "§3 : un candidat retiré n'est plus interrogé. Les preuves d'inclusion exigées d'un candidat non retiré dépendent du régime du run (perimetre.allOf).",
                 "if": {
                   "properties": {
                     "statut_au_gel": {
@@ -308,11 +330,6 @@
                       "const": false
                     }
                   }
-                },
-                "else": {
-                  "required": [
-                    "preuves_inclusion"
-                  ]
                 }
               }
             ]
@@ -518,7 +535,74 @@
             ]
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "$comment": "§3, régime avant la liste officielle (conformité n° 10) : tout candidat non retiré porte sa déclaration de candidature et au moins deux preuves de sondage ; la liste officielle n'existe pas encore.",
+          "if": {
+            "properties": {
+              "regime_inclusion": {
+                "const": "avant_liste_officielle"
+              }
+            },
+            "required": [
+              "regime_inclusion"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "liste_officielle"
+              ]
+            },
+            "properties": {
+              "candidats": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "statut_au_gel": {
+                        "const": "retire"
+                      }
+                    },
+                    "required": [
+                      "statut_au_gel"
+                    ]
+                  },
+                  "else": {
+                    "required": [
+                      "declaration_candidature",
+                      "preuves_inclusion"
+                    ],
+                    "properties": {
+                      "preuves_inclusion": {
+                        "minItems": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "$comment": "§3, régime de la liste officielle : la seule preuve d'inclusion exigée est la liste du Conseil constitutionnel, archivée.",
+          "if": {
+            "properties": {
+              "regime_inclusion": {
+                "const": "liste_officielle"
+              }
+            },
+            "required": [
+              "regime_inclusion"
+            ]
+          },
+          "then": {
+            "required": [
+              "liste_officielle"
+            ]
+          }
+        }
+      ]
     },
     "juges": {
       "type": "array",
@@ -965,7 +1049,7 @@
       }
     },
     {
-      "$comment": "§12 : un run dont la symétrie est rouge ne peut pas être publié sans la mention provisoire.",
+      "$comment": "§5 et §12 (protocole 0.11, conformité n° 21) : une symétrie rouge bloque le lancement ; un run dont la symétrie est rouge est planifié (il ne part pas) ou marqué invalide avec la raison, publié tel quel et réexécuté. Jamais en cours, jamais publié, même provisoire.",
       "if": {
         "properties": {
           "symetrie": {
@@ -988,8 +1072,6 @@
           "statut": {
             "enum": [
               "planifie",
-              "en_cours",
-              "publie_provisoire",
               "invalide"
             ]
           },
@@ -1081,9 +1163,83 @@
           }
         }
       }
+    },
+    {
+      "$comment": "§8 et §12 (protocole 0.11) : un run publié, même provisoire, déclare pour chaque assistant inclus sa part de réponses manquantes et son verdict par mode (par_mode). Sans elle, un mode au-delà de 0,20 serait comparé sans que rien ne le dise.",
+      "if": {
+        "properties": {
+          "statut": {
+            "enum": [
+              "publie",
+              "publie_provisoire"
+            ]
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "properties": {
+          "perimetre": {
+            "properties": {
+              "outils": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "famille": {
+                        "const": "assistant"
+                      },
+                      "inclus": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "famille",
+                      "inclus"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "par_mode"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
+    "preuve_archivee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "date_publication",
+        "sha256",
+        "archive_url"
+      ],
+      "description": "Un document publié, archivé et empreint : ce que la règle 2 de CLAUDE.md exige d'une source (URL, SHA-256, lien d'archive, date). commun#/$defs/source porte en plus un tier et un type de document, propres aux sources d'items.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "date_publication": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile"
+        },
+        "sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256"
+        },
+        "archive_url": {
+          "type": "string",
+          "pattern": "^https?://"
+        }
+      }
+    },
     "motif_kappa_indefini": {
       "type": "string",
       "enum": [

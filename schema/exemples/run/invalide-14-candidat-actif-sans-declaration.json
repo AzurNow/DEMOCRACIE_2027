@@ -1,5 +1,5 @@
 {
-  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "id": "C5E7G9J1M3P5S7V9X1Z3B5D7F9",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -70,11 +70,6 @@
             "sha256": "4e85dcc8b719c7d50497e06793d54494a6c5c98b8c04725f22dc6f36240eea1b"
           }
         ],
-        "declaration_candidature": {
-          "url": "https://exemple-candidat.fr/declaration",
-          "date": "2026-06-02",
-          "par": "interesse"
-        },
         "items_p_verifies": 31,
         "sous_seuil": false,
         "interroge": true
@@ -165,6 +160,7 @@
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
       "taux_changement_contrefactuel": 0.021,
+      "kappa_juge_humain": 0.78,
       "retire": false
     }
   ],

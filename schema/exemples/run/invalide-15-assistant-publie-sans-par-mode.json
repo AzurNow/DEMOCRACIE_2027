@@ -1,5 +1,5 @@
 {
-  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "id": "D6F8H0K2N4Q6S8V0X2Z4C6E8G0",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -130,17 +130,7 @@
         "mode_de_tete": "web_activee",
         "alias_aveugle": "O07",
         "cgu_relues_le": "2026-11-10",
-        "clause_restrictive_signalee": false,
-        "par_mode": {
-          "web_activee": {
-            "reponses_manquantes_part": 0.04,
-            "run_incomplet": false
-          },
-          "web_desactivee": {
-            "reponses_manquantes_part": 0.02,
-            "run_incomplet": false
-          }
-        }
+        "clause_restrictive_signalee": false
       },
       {
         "outil_id": "comparateur-gamma",
@@ -165,6 +155,7 @@
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
       "taux_changement_contrefactuel": 0.021,
+      "kappa_juge_humain": 0.78,
       "retire": false
     }
   ],
