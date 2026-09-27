@@ -10,7 +10,8 @@
  * - **La graine.** Le générateur est celui du dépôt (`validation/domaine/alea.ts`, SplitMix64
  *   amorcé par sha256 d'une chaîne). La chaîne d'amorce est construite à partir des seuls champs
  *   publiés de `graine_tirage` et du `run_id` : un tiers qui a le fichier de tirage a tout ce
- *   qu'il faut pour rejouer, ce qu'exige le §9.
+ *   qu'il faut pour rejouer, ce qu'exige le §9. Une graine qui déclare un autre générateur
+ *   (`GENERATEUR_DU_TIRAGE`) est refusée avant tout tirage (constat n° 24).
  * - **Ce qui entre au tirage** (§5, protocole 0.9). Une question dont un item n'est pas vérifié,
  *   est contesté ou en attente n'est pas tirable. Une question dont la réponse attendue n'est pas
  *   définie au gel — item hors de sa fenêtre de validité, position « sans objet » sur un gabarit
@@ -39,10 +40,16 @@
  */
 
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
-import { generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
+import { ALGORITHME_ALEA, generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
 import { itemEngendreDesQuestions, mesureDe, themeDe } from "./engendrement.ts";
 import { decisionPanelAuGel } from "./contestation.ts";
-import { ItemHorsValidite, ItemIntrouvable, reponseAttendue, ReponseNonDefinieAuGel } from "./reponse-attendue.ts";
+import {
+  ItemHorsValidite,
+  ItemIntrouvable,
+  premisseFausseAuGel,
+  reponseAttendue,
+  ReponseNonDefinieAuGel,
+} from "./reponse-attendue.ts";
 import type { CandidatDuPerimetre } from "./reponse-attendue.ts";
 import { signatureQuestion } from "./signature.ts";
 import { estCompare } from "./symetrie.ts";
@@ -232,6 +239,34 @@ export function questionsTirables(
   );
 }
 
+/** Clé d'une strate candidat × thème × gabarit, partagée avec la symétrie (`symetrie.ts`). */
+export function cleStrateCandidat(candidat_id: string, theme: Theme, gabarit: CodeGabarit): string {
+  return `${candidat_id}|${theme}|${gabarit}`;
+}
+
+/**
+ * §5 (constat n° 23) : par strate candidat × thème × gabarit, le nombre de questions que la règle de
+ * tirabilité admet au gel (`questionsTirables`, appliquée telle quelle), le thème étant lu comme au
+ * tirage (`themeDeQuestion`). C'est ce que « les items le permettent » veut dire pour la symétrie.
+ * Les questions d'attribution, sans candidat, n'y figurent pas.
+ */
+export function tirablesParStrate(
+  questions: readonly Question[],
+  items: readonly Item[],
+  mesures: readonly Mesure[],
+  run: GelDuRun,
+): ReadonlyMap<string, number> {
+  const index = indexer(items, mesures);
+  const comptes = new Map<string, number>();
+  for (const question of questionsTirables(questions, items, run)) {
+    if (question.candidat_id === undefined) continue;
+    const cle = cleStrateCandidat(question.candidat_id, themeDeQuestion(question, index), question.gabarit);
+    const courant = comptes.get(cle);
+    comptes.set(cle, courant === undefined ? 1 : courant + 1);
+  }
+  return comptes;
+}
+
 interface Separation {
   readonly tirables: readonly Question[];
   readonly exclusions: readonly ExclusionTirage[];
@@ -248,8 +283,14 @@ function separer(demande: DemandeTirage, index: Index, interroges: ReadonlySet<s
   for (const question of demande.questions) {
     if (!concerneLeRun(question, interroges) || !statutsAdmis(question, index.items)) continue;
     const exclusion = motifDExclusion(question, demande.items, demande.run);
-    if (exclusion === undefined) tirables.push(question);
-    else exclusions.push(exclusionDe(question, index, exclusion));
+    if (exclusion !== undefined) {
+      exclusions.push(exclusionDe(question, index, exclusion));
+      continue;
+    }
+    // §5 (protocole 0.11) : une prémisse indécidable au gel est une question mal formée. Elle arrête
+    // le tirage avant tout usage de la graine, qu'elle eût été tirée ou non.
+    premisseFausseAuGel(question, demande.items, demande.run.date_gel);
+    tirables.push(question);
   }
   return { tirables, exclusions: exclusions.sort((a, b) => comparer(a.question_id, b.question_id)) };
 }
@@ -327,6 +368,7 @@ function entreeDe(
     grappe_id: question.grappe_id,
     items_au_gel: question.items.map((entree) => itemAuGel(entree, index, run.date_gel)),
     reponse_attendue: reponseAttendue(question, items, run.date_gel, run.perimetre.candidats),
+    premisse_fausse: premisseFausseAuGel(question, items, run.date_gel),
     ...(question.candidat_id === undefined ? {} : { candidat_id: question.candidat_id }),
   };
 
@@ -655,6 +697,38 @@ function tirerParmi(
 
 /* ------------------------------------------------------------------ tirage */
 
+/**
+ * Le générateur que `tirer` emploie réellement, tel qu'une graine publiée doit le déclarer (§5 :
+ * « une graine publiée, ce qui rend le tirage reproductible » ; constat n° 24). `algorithme` vient du
+ * module lui-même ; `bibliotheque` et `version` désignent ce module du dépôt. Une graine qui en
+ * nomme un autre (PCG64, numpy…) promettrait un tirage qu'un tiers ne pourrait pas rejouer.
+ */
+export const GENERATEUR_DU_TIRAGE: Omit<GraineTirage, "valeur"> = {
+  algorithme: ALGORITHME_ALEA,
+  bibliotheque: "banc-essai-2027/validation/domaine/alea.ts",
+  version: "1",
+};
+
+/** Une graine dont la déclaration ne désigne pas le générateur employé. */
+export class GraineNonConforme extends Error {
+  constructor(champ: keyof typeof GENERATEUR_DU_TIRAGE, declare: string, attendu: string) {
+    super(
+      `Graine du tirage non conforme : ${champ} « ${declare} » déclaré, alors que le tirage emploie ` +
+        `${attendu} (${GENERATEUR_DU_TIRAGE.algorithme}, ${GENERATEUR_DU_TIRAGE.bibliotheque}, ` +
+        `version ${GENERATEUR_DU_TIRAGE.version}). Un tiers qui rejouerait avec le générateur déclaré ` +
+        `obtiendrait un autre tirage (§5, §9).`,
+    );
+    this.name = "GraineNonConforme";
+  }
+}
+
+function verifierGraine(graine: GraineTirage): void {
+  for (const champ of ["algorithme", "bibliotheque", "version"] as const) {
+    const attendu = GENERATEUR_DU_TIRAGE[champ];
+    if (graine[champ] !== attendu) throw new GraineNonConforme(champ, graine[champ], `« ${attendu} »`);
+  }
+}
+
 /** Un quota est un entier ≥ 1, fourni par l'appelant : le protocole n'en fixe aucun. */
 function verifierQuota(valeur: unknown, nom: keyof ParametresTirage, libelle: string): void {
   if (typeof valeur === "number" && Number.isInteger(valeur) && valeur >= 1) return;
@@ -665,6 +739,7 @@ function verifierQuota(valeur: unknown, nom: keyof ParametresTirage, libelle: st
 }
 
 export function tirer(demande: DemandeTirage): ResultatTirage {
+  verifierGraine(demande.graine);
   verifierQuota(demande.parametres.questions_par_strate, "questions_par_strate", "par strate");
   verifierQuota(
     demande.parametres.questions_attribution_par_theme,

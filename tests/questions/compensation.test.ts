@@ -58,7 +58,7 @@ function tirerSur(jeu: Jeu, candidats: readonly CandidatAuGel[], quota: number, 
     graine: graine(valeur),
     parametres: { questions_par_strate: quota, questions_attribution_par_theme: 1 },
   });
-  return { ...resultat, symetrie: verifierSymetrie(resultat.tirage, jeu.questions, jeu.items, perimetreDuRun) };
+  return { ...resultat, symetrie: verifierSymetrie(resultat.tirage, jeu.questions, jeu.items, jeu.mesures, perimetreDuRun) };
 }
 
 function compte(resultat: ReturnType<typeof tirerSur>, candidat_id: string, theme?: Theme): number {

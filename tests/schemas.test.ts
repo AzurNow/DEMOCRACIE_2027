@@ -87,12 +87,13 @@ function nouveauRepertoire(): RepertoireJetable {
 describe("schémas réels : manifeste et méta-schéma", () => {
   // 127 → 132 : cinq exemples invalides de run ajoutés (conformité n° 10, 19, 21 et par_mode).
   // 132 → 137 : un exemple valide et quatre invalides d'item ajoutés (conformité n° 11, 12, 13).
-  it("1. les 137 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 137 → 140 : deux exemples invalides de question et un de tirage (conformité n° 37, prémisse résolue au gel).
+  it("1. les 140 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(137);
+    expect(manifeste.exemples).toHaveLength(140);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -197,7 +198,8 @@ describe("couplage du registre commun", () => {
 describe("aucun fichier du disque n'est ignoré", () => {
   // 127 → 132 : cinq exemples invalides de run ajoutés (conformité n° 10, 19, 21 et par_mode).
   // 132 → 137 : un exemple valide et quatre invalides d'item ajoutés (conformité n° 11, 12, 13).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 137 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(137);
+  // 137 → 140 : deux exemples invalides de question et un de tirage (conformité n° 37, prémisse résolue au gel).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 140 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(140);
   });
 });

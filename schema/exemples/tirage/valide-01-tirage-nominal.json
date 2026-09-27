@@ -3,9 +3,9 @@
   "date_gel": "2026-12-01T06:00:00+01:00",
   "graine_tirage": {
     "valeur": 20261201,
-    "algorithme": "PCG64",
-    "bibliotheque": "numpy.random.Generator",
-    "version": "2.1.3"
+    "algorithme": "splitmix64-sha256-v1",
+    "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+    "version": "1"
   },
   "entrees": [
     {
@@ -34,6 +34,7 @@
           "regle": "semi_ouvert"
         }
       },
+      "premisse_fausse": false,
       "reprise": false
     },
     {
@@ -67,6 +68,7 @@
           "regle": "semi_ouvert"
         }
       },
+      "premisse_fausse": true,
       "reprise": true,
       "run_origine_id": "44CX8VSV75Q6ZAHDEJ8VA81YQE",
       "empreinte_texte_precedente": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb"

@@ -24,7 +24,7 @@ import { tirer } from "../../pipeline/questions/tirage.ts";
 import type { ParametresTirage } from "../../pipeline/questions/tirage.ts";
 import type { Item, QuestionEngendree } from "../../pipeline/questions/types.ts";
 import { empreinteContenuNotant } from "../../validation/domaine/empreinte.ts";
-import { candidat, completer, graine, itemF, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
+import { candidat, completer, completerSur, graine, itemF, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta", "demo-gamma"];
@@ -150,8 +150,14 @@ describe("n° 39 : identifiant de la Q-ATT", () => {
 
 const PARAMETRES: ParametresTirage = { questions_par_strate: 5, questions_attribution_par_theme: 5 };
 
+/*
+ * Protocole 0.11 (constat n° 37) : les questions sur l'item O GAMMA portent, sur leur formulation
+ * orientée, la position affirmée (`completerSur`), sans quoi leur prémisse est indécidable au gel et
+ * le tirage les refuse. Les assertions de ce bloc sont inchangées.
+ */
+
 function tirerSur(items: readonly Item[], parametres: ParametresTirage = PARAMETRES) {
-  const questions = engendrer(items, [REELLE, FICTIVE], PERIMETRE).map(completer);
+  const questions = engendrer(items, [REELLE, FICTIVE], PERIMETRE).map(completerSur(items));
   return tirer({ questions, items, mesures: [REELLE, FICTIVE], run: RUN, graine: graine(), parametres });
 }
 
@@ -165,7 +171,7 @@ describe("n° 39 : tirage des Q-ATT", () => {
 
   it("une Q-ATT dont un seul des items est contesté n'est pas tirable", () => {
     const conteste = { ...BETA, statut_contestation: "contestee" as const };
-    const questions = engendrer([ALPHA, BETA, GAMMA], [REELLE], PERIMETRE).map(completer);
+    const questions = engendrer([ALPHA, BETA, GAMMA], [REELLE], PERIMETRE).map(completerSur([ALPHA, BETA, GAMMA]));
     const resultat = tirer({
       questions,
       items: [ALPHA, conteste, GAMMA],
@@ -179,7 +185,7 @@ describe("n° 39 : tirage des Q-ATT", () => {
 
   it("une Q-ATT dont un seul des items est en attente n'est pas tirable", () => {
     const attente = { ...GAMMA, statut_validation: "en_attente" as const };
-    const questions = engendrer([ALPHA, BETA, GAMMA], [REELLE], PERIMETRE).map(completer);
+    const questions = engendrer([ALPHA, BETA, GAMMA], [REELLE], PERIMETRE).map(completerSur([ALPHA, BETA, GAMMA]));
     const resultat = tirer({
       questions,
       items: [ALPHA, BETA, attente],
@@ -193,15 +199,15 @@ describe("n° 39 : tirage des Q-ATT", () => {
 
   it("la symétrie se vérifie sur un tirage portant des Q-ATT sans principal", () => {
     const items = [ALPHA, BETA, GAMMA, FICTIF];
-    const questions = engendrer(items, [REELLE, FICTIVE], PERIMETRE).map(completer);
+    const questions = engendrer(items, [REELLE, FICTIVE], PERIMETRE).map(completerSur(items));
     const { tirage } = tirer({ questions, items, mesures: [REELLE, FICTIVE], run: RUN, graine: graine(), parametres: PARAMETRES });
-    expect(() => verifierSymetrie(tirage, questions, items, RUN)).not.toThrow();
+    expect(() => verifierSymetrie(tirage, questions, items, [REELLE, FICTIVE], RUN)).not.toThrow();
   });
 
   it("les Q-ATT suivent leur propre quota par thème, distinct du quota des strates candidat", () => {
     const mesures = Array.from({ length: 4 }, (_, rang) => mesure({ cle: `apm-q${rang}`, theme: "sante" }));
     const items = mesures.map((referent, rang) => itemP({ cle: `apm-q${rang}`, candidat_id: "demo-alpha", mesure: referent }));
-    const questions = engendrer(items, mesures, PERIMETRE).map(completer);
+    const questions = engendrer(items, mesures, PERIMETRE).map(completerSur(items));
     const avec = (parametres: ParametresTirage) =>
       tirer({ questions, items, mesures, run: RUN, graine: graine(), parametres }).tirage.entrees;
     const attribution = (entrees: ReturnType<typeof avec>) => entrees.filter((entree) => entree.candidat_id === undefined);

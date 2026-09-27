@@ -129,7 +129,12 @@ export interface Formulation {
   readonly registre: Registre;
   readonly texte: string;
   readonly empreinte_texte: string;
-  readonly premisse_fausse?: boolean;
+  /**
+   * §5 (protocole 0.11) : sur la seule formulation orientée, la position que sa prémisse affirme,
+   * notée par le relecteur. Exigée sur un item O ; la vérité de la prémisse se résout au gel, dans
+   * le tirage (`EntreeTirage.premisse_fausse`), jamais sur la question.
+   */
+  readonly position_affirmee?: Position;
   readonly production: { readonly modele: string; readonly version_prompt: string };
   readonly relecture: {
     readonly annotateur_id: string;
@@ -197,6 +202,11 @@ export interface EntreeTirage {
   readonly grappe_id: string;
   readonly items_au_gel: readonly ItemAuGel[];
   readonly reponse_attendue: ReponseAttendue;
+  /**
+   * §5 (protocole 0.11) : la prémisse de la formulation orientée est-elle fausse à l'instant du
+   * gel ? Résolue comme `reponse_attendue` (`premisseFausseAuGel`), une fois, ici.
+   */
+  readonly premisse_fausse: boolean;
   readonly reprise: boolean;
   readonly run_origine_id?: string;
   readonly empreinte_texte_precedente?: string;

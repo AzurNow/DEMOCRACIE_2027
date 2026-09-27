@@ -74,6 +74,11 @@ export interface UniteAnalyse {
   readonly candidat_id: IdentifiantCourt | null;
   readonly theme: Theme | null;
   readonly registre: Registre;
+  /**
+   * Formulation orientée : la vérité de sa prémisse au gel, lue dans le tirage
+   * (`entree.premisse_fausse`, protocole 0.11), jamais sur la question. `null` pour une formulation
+   * neutre ou familière, qui ne porte aucune prémisse.
+   */
   readonly premisse_fausse: boolean | null;
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
@@ -262,7 +267,7 @@ function composer(
     candidat_id: question.candidat_id === undefined ? null : question.candidat_id,
     theme: entree.theme === undefined ? null : entree.theme,
     registre: formulation.registre,
-    premisse_fausse: formulation.premisse_fausse === undefined ? null : formulation.premisse_fausse,
+    premisse_fausse: formulation.registre === "oriente" ? entree.premisse_fausse : null,
     categorie: verdict.categorie_retenue,
     drapeaux: verdict.drapeaux_retenus,
     obsolescence_fraiche: verdict.obsolescence_fraiche === undefined ? null : verdict.obsolescence_fraiche,

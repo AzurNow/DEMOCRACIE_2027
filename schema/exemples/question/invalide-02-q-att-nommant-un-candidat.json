@@ -72,8 +72,7 @@
         "annotateur_id": "a2",
         "date": "2026-11-18T15:00:00+01:00",
         "sens_preserve": true
-      },
-      "premisse_fausse": false
+      }
     }
   ],
   "engendree_le": "2026-11-18T14:00:00+01:00",

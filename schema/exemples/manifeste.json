@@ -164,6 +164,20 @@
       "regle_protocole": "§5 et §8, protocole 0.9"
     },
     {
+      "objet": "question",
+      "fichier": "question/invalide-05-premisse-fausse-figee.json",
+      "attendu": "invalide",
+      "motif": "Formulation orientée portant le booléen premisse_fausse, figé sur la question. Sur un item O, la vérité de la prémisse dépend de la date (constat n° 37) : la formulation porte la position affirmée, et la valeur se résout au gel dans tirage.entrees[].premisse_fausse.",
+      "regle_protocole": "§5, protocole 0.11"
+    },
+    {
+      "objet": "question",
+      "fichier": "question/invalide-06-position-affirmee-hors-orientee.json",
+      "attendu": "invalide",
+      "motif": "Position affirmée portée par la formulation neutre. Seule la formulation orientée porte une prémisse ; une position affirmée ailleurs ferait entrer une formulation neutre dans le dénominateur de la confirmation de prémisse (§8).",
+      "regle_protocole": "§5, protocole 0.11 ; §8"
+    },
+    {
       "objet": "reponse",
       "fichier": "reponse/valide-01-api-obtenue.json",
       "attendu": "valide",
@@ -319,7 +333,7 @@
       "objet": "tirage",
       "fichier": "tirage/valide-01-tirage-nominal.json",
       "attendu": "valide",
-      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). Chaque entrée fige les statuts d'items au gel et la réponse attendue résolue à cette date."
+      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). La graine déclare le générateur réellement employé, splitmix64-sha256-v1 (constat n° 24). Chaque entrée fige les statuts d'items au gel, la réponse attendue et la vérité de la prémisse orientée résolues à cette date : fausse pour la Q-ACT d'un item O dont la formulation orientée affirme l'ancienne position, le changement étant acquis (constat n° 37)."
     },
     {
       "objet": "tirage",
@@ -368,6 +382,13 @@
       "attendu": "invalide",
       "motif": "Graine du tirage supérieure à 2^53 − 1, borne de run.graines.tirage dont elle est la copie : le tirage ne serait plus rejouable exactement depuis la valeur publiée.",
       "regle_protocole": "§5, tirage avec graine publiée ; §9, reproductibilité"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-07-entree-sans-premisse-resolue.json",
+      "attendu": "invalide",
+      "motif": "Entrée de tirage sans premisse_fausse. La vérité de la prémisse de la formulation orientée se résout au gel, comme la réponse attendue (constat n° 37) : sans elle, le dénominateur de la confirmation de prémisse (§8) n'est pas calculable depuis le tirage publié.",
+      "regle_protocole": "§5, protocole 0.11 ; §8"
     },
     {
       "objet": "run",

@@ -23,11 +23,7 @@
           },
           "role": "principal",
           "statut_validation_au_gel": "verifie",
-          "statut_contestation_au_gel": "aucune",
-          "decision_panel_au_gel": {
-            "decision": "maintien",
-            "date": "2026-10-14T18:00:00+02:00"
-          }
+          "statut_contestation_au_gel": "aucune"
         }
       ],
       "reponse_attendue": {
@@ -38,7 +34,6 @@
           "regle": "semi_ouvert"
         }
       },
-      "premisse_fausse": false,
       "reprise": false
     },
     {

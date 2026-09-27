@@ -118,8 +118,8 @@ function porteursDeGrappe(entrees: Entrees): readonly PorteurDeGrappe[] {
 
 function violations(entrees: Entrees): readonly Violation[] {
   const grappes = grappeSuitItemPrincipal(porteursDeGrappe(entrees), entrees.items);
-  // §5 (protocole 0.3) : une prémisse fausse hors d'un item F ou O fausserait le dénominateur de
-  // la confirmation de prémisse (§8). Les questions et les items suffisent à le vérifier.
+  // §5 (protocoles 0.3 et 0.11) : une prémisse fausse hors d'un item F ou O, ou une formulation orientée
+  // sur un item O sans position affirmée, fausserait le dénominateur de la confirmation de prémisse (§8).
   const premisses = premisseFausseSurItemFOuO(entrees.questions, entrees.items);
   return [
     ...grappes,
@@ -158,7 +158,7 @@ function imprimerInvariants(liste: readonly Violation[]): void {
 
 function principal(): void {
   const entrees = lireEntrees();
-  const symetrie = verifierSymetrie(entrees.tirage, entrees.questions, entrees.items, entrees.run);
+  const symetrie = verifierSymetrie(entrees.tirage, entrees.questions, entrees.items, entrees.mesures, entrees.run);
   const liste = violations(entrees);
 
   imprimerSymetrie(symetrie);

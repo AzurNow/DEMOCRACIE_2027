@@ -9,7 +9,7 @@
         "item_version": 1,
         "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
       },
-      "role": "attendu_dans_liste"
+      "role": "principal"
     }
   ],
   "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
@@ -57,7 +57,8 @@
         "annotateur_id": "a2",
         "date": "2026-11-18T15:00:00+01:00",
         "sens_preserve": true
-      }
+      },
+      "premisse_fausse": true
     }
   ],
   "engendree_le": "2026-11-18T14:00:00+01:00",

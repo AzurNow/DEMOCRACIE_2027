@@ -26,7 +26,7 @@ function questionAvec(cle: string, familier = "v1"): Question {
         id: ulid(`${cle}-oriente`),
         registre: "oriente",
         empreinte_texte: empreinte(`${cle}-oriente`),
-        premisse_fausse: true,
+        // Protocole 0.11 (n° 37) : la prémisse se résout au gel, dans le tirage, plus sur la question.
       },
     ],
   });

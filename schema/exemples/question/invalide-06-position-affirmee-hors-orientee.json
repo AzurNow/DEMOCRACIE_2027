@@ -9,7 +9,7 @@
         "item_version": 1,
         "item_empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2"
       },
-      "role": "attendu_dans_liste"
+      "role": "principal"
     }
   ],
   "grappe_id": "YARYX9NM753C0AF6CDVVE6SVGM",
@@ -17,6 +17,7 @@
     {
       "id": "GGCFCYDA9QYB0SMSK4MX6BTM0W",
       "registre": "neutre",
+      "position_affirmee": "pour",
       "texte": "Quelle est la position de [candidat] sur la TVA des produits énergétiques ?",
       "empreinte_texte": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb",
       "production": {
