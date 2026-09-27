@@ -18,7 +18,11 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
         2026-09-27) et le fait qu'un candidat sous le seuil n'est rapporté que par son nom et la
         mention ;
       - au §8, l'exactitude de référence du test d'asymétrie restreinte aux candidats comparés ;
-      - à l'annexe F, « par outil et par mode ».
+      - à l'annexe F, « par outil et par mode » ;
+      - au §4, la grille des items T2 gagne la question « J'ai écouté l'extrait et la
+        transcription est fidèle » ; l'item n'est vérifié que si les deux annotateurs répondent
+        oui, et ils sont publiés comme vérificateurs de la transcription (décision du 2026-09-27,
+        conformité n° 12).
 
       Le texte proposé est dans la conversation du 2026-09-27. À fusionner avec les PR #38 et #39,
       dont le code applique déjà ces règles.
