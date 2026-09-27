@@ -222,10 +222,36 @@ describe("métriques secondaires", () => {
       unite({ candidat_id: null, theme: null, gabarit: "Q-ATT", registre: "familier" }),
     ];
 
-    expect([...exactitudeParCandidat(jeu).keys()]).toEqual(["candidat-a", "candidat-b"]);
+    // Conformité n° 30 : l'exactitude par candidat prend le partage du seuil de couverture. Ici les
+    // deux candidats sont comparés ; l'assertion sur les clés est inchangée.
+    const partage = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: [] };
+    expect([...exactitudeParCandidat(jeu, partage).compares.keys()]).toEqual(["candidat-a", "candidat-b"]);
     expect([...exactitudeParTheme(jeu).keys()]).toEqual(["retraites", "sante"]);
     expect(exactitudeParGabarit(jeu).get("Q-ATT")).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(exactitudeParFormulation(jeu).get("oriente")).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+  });
+});
+
+describe("exactitude par candidat et seuil de couverture (conformité n° 30, §4 et §8)", () => {
+  it("n'établit aucune exactitude pour un candidat sous le seuil, et le rapporte à part", () => {
+    // candidat-c compte moins de 10 items P vérifiés au gel (sous_seuil lu dans le run) : §8,
+    // « aucune statistique par candidat » ; §4, « rapporté à part, couverture insuffisante ».
+    const partage = { compares: ["candidat-a"], rapportes_a_part: ["candidat-c"] };
+    const jeu = [
+      unite({ candidat_id: "candidat-a", categorie: "exacte" }),
+      unite({ candidat_id: "candidat-c", categorie: "inexacte" }),
+    ];
+
+    const parCandidat = exactitudeParCandidat(jeu, partage);
+
+    expect([...parCandidat.compares]).toEqual([["candidat-a", { numerateur: 1, denominateur: 1, valeur: 1 }]]);
+    expect(parCandidat.rapportes_a_part).toEqual(["candidat-c"]);
+  });
+
+  it("refuse un candidat des unités absent du partage plutôt que de le classer en silence", () => {
+    const partage = { compares: ["candidat-a"], rapportes_a_part: [] };
+
+    expect(() => exactitudeParCandidat([unite({ candidat_id: "candidat-z" })], partage)).toThrow(/candidat-z/);
   });
 });
 

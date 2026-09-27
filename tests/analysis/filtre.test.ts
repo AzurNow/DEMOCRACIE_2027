@@ -95,7 +95,9 @@ describe("filtre de contexte", () => {
     expect(unites).toHaveLength(2);
     expect(exactitude(unites)).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(tauxNonReponse(unites)).toEqual({ numerateur: 1, denominateur: 2, valeur: 0.5 });
-    expect(partReponsesManquantes(reponses, "outil-alpha")).toEqual({
+    // Conformité n° 84, protocole 0.11 : la part se calcule par couple outil × mode (canal API).
+    // Les réponses de ce jeu sont toutes du couple outil-alpha / web_desactivee de la fabrique.
+    expect(partReponsesManquantes(reponses, { outil_id: "outil-alpha", mode: "web_desactivee" })).toEqual({
       numerateur: 1,
       denominateur: 3,
       valeur: 1 / 3,

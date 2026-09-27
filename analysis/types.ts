@@ -64,6 +64,15 @@ export type Mode = (typeof MODES)[number];
 export const CANAUX = ["api", "application"] as const;
 export type Canal = (typeof CANAUX)[number];
 
+/**
+ * §8 (protocole 0.11) : l'unité du seuil de réponses manquantes et de la famille de Holm du test
+ * d'asymétrie. Un couple n'existe que sur le canal API, le seul qui porte un mode (§6).
+ */
+export interface CoupleOutilMode {
+  readonly outil_id: IdentifiantCourt;
+  readonly mode: Mode;
+}
+
 export const CATEGORIES_RETENUES = ["exacte", "inexacte", "non_reponse", "indeterminee"] as const;
 export type CategorieRetenue = (typeof CATEGORIES_RETENUES)[number];
 

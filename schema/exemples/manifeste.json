@@ -425,6 +425,33 @@
       "regle_protocole": "§9, reproductibilité et publication"
     },
     {
+      "objet": "run",
+      "fichier": "run/valide-03-kappa-juge-humain-indefini.json",
+      "attendu": "valide",
+      "motif": "Run publié dont le kappa juge-humain d'un juge est indéfini (accord attendu maximal) : publié absent avec son motif, jamais comme une valeur (§7, protocole 0.11)."
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-08-juge-sans-kappa-ni-motif.json",
+      "attendu": "invalide",
+      "motif": "Run publié dont un juge ne déclare ni kappa juge-humain ni motif d'indéfinition. §7 publie l'accord juge-humain pour chaque juge ; un kappa indéfini est publié absent AVEC son motif, et l'absence sans motif serait un kappa passé sous silence.",
+      "regle_protocole": "§7, calibration et fiabilité publiée (protocole 0.11)"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-09-kappa-paire-avec-motif.json",
+      "attendu": "invalide",
+      "motif": "Kappa de la paire de juges publié à la fois comme valeur et comme indéfini. §7 : un kappa indéfini est publié absent avec son motif ; un kappa défini n'en porte pas, sinon le lecteur ne sait pas lequel croire.",
+      "regle_protocole": "§7, calibration et fiabilité publiée (protocole 0.11)"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-10-mode-incomplet-declare-comparable.json",
+      "attendu": "invalide",
+      "motif": "Mode web activée d'un outil à 30 % de réponses manquantes déclaré comparable. §8 : au-delà de 20 % des réponses du canal API pour ce couple outil × mode, il est marqué « run incomplet » et exclu des comparaisons du run.",
+      "regle_protocole": "§8, seuils de non-publication ; §12, go/no-go (protocole 0.11)"
+    },
+    {
       "objet": "lecture-comparateur",
       "fichier": "lecture-comparateur/valide-01-position-affichee.json",
       "attendu": "valide",

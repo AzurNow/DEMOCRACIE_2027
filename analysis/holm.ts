@@ -1,15 +1,16 @@
 /**
- * Correction de Holm (§8, protocole 0.3 : « Correction de Holm sur l'ensemble des outils » pour le
- * test d'asymétrie). Elle ne s'applique qu'à lui : le §8 le dit « seul endroit du protocole où une
- * valeur p est calculée », et les effets de condition n'en portent aucune.
+ * Correction de Holm (§8, protocole 0.11 : « Correction de Holm sur la famille de toutes les
+ * valeurs p du run, une par couple outil × mode » pour le test d'asymétrie). Elle ne s'applique
+ * qu'à lui : le §8 le dit « seul endroit du protocole où une valeur p est calculée », et les effets
+ * de condition n'en portent aucune.
  *
  * Procédure descendante, sans hypothèse d'indépendance : les m valeurs p sont triées
  * croissantes, la i-ème est multipliée par (m − i + 1), puis le maximum courant est propagé pour
  * que les valeurs corrigées restent ordonnées comme les brutes, enfin tout est borné à 1.
  *
- * La fonction est pure et ne connaît rien des outils : c'est l'appelant qui décide ce qui forme
- * une famille, et la famille est publiée telle qu'elle a été formée — l'ordre d'entrée est rendu
- * tel quel.
+ * La fonction est pure et ne connaît rien des outils : la famille est formée par
+ * `corrigerFamilleAsymetrie` (`permutation.ts`), seul appelant, et elle est publiée telle qu'elle
+ * a été formée — l'ordre d'entrée est rendu tel quel.
  */
 
 export interface ValeurP {

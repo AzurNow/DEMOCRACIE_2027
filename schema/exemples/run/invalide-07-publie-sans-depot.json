@@ -125,15 +125,21 @@
         "alias_aveugle": "O07",
         "cgu_relues_le": "2026-11-10",
         "clause_restrictive_signalee": false,
-        "reponses_manquantes_part": 0.03,
-        "run_incomplet": false
+        "par_mode": {
+          "web_activee": {
+            "reponses_manquantes_part": 0.04,
+            "run_incomplet": false
+          },
+          "web_desactivee": {
+            "reponses_manquantes_part": 0.02,
+            "run_incomplet": false
+          }
+        }
       },
       {
         "outil_id": "comparateur-gamma",
         "famille": "comparateur",
-        "inclus": true,
-        "reponses_manquantes_part": 0,
-        "run_incomplet": false
+        "inclus": true
       }
     ]
   },

@@ -15,7 +15,7 @@
  *
  * Les réponses manquantes ne figurent dans aucun de ces dénominateurs : elles n'ont pas de
  * verdict, donc pas d'unité d'analyse (§6, « comptée comme telle et jamais comme une erreur »).
- * Leur part par outil est dans `seuils.ts`.
+ * Leur part par couple outil × mode est dans `seuils.ts`.
  */
 
 import type { UniteAnalyse } from "./filtre.ts";
@@ -35,6 +35,7 @@ import {
   type Verdict,
 } from "./types.ts";
 import { filtrerContexteRun, indexerVerdictsDuRun } from "./filtre.ts";
+import { repartirParCandidat, type PartageCandidats } from "./seuils.ts";
 
 type Predicat<T = UniteAnalyse> = (objet: T) => boolean;
 
@@ -237,8 +238,30 @@ export function exactitudeParCle(
   return new Map([...groupes].map(([k, membres]) => [k, exactitude(membres)]));
 }
 
-export function exactitudeParCandidat(unites: readonly UniteAnalyse[]): Map<IdentifiantCourt, Taux> {
-  return exactitudeParCle(unites, (u) => u.candidat_id);
+export interface ExactitudesParCandidat {
+  /** Exactitude de chaque candidat comparé présent dans les unités. */
+  readonly compares: Map<IdentifiantCourt, Taux>;
+  /**
+   * §4 : candidats sous le seuil de couverture présents dans les unités, rapportés à part avec la
+   * mention « couverture insuffisante ». Sans taux : §8, « aucune statistique par candidat sous
+   * 10 items P vérifiés ».
+   */
+  readonly rapportes_a_part: readonly IdentifiantCourt[];
+}
+
+/**
+ * Le partage vient de `candidatsComparables(run)` (`seuils.ts`), qui lit le seuil au gel ; il
+ * n'est jamais recalculé ici (conformité n° 30).
+ */
+export function exactitudeParCandidat(
+  unites: readonly UniteAnalyse[],
+  partage: PartageCandidats,
+): ExactitudesParCandidat {
+  const { comparees, candidats_a_part } = repartirParCandidat(unites, partage);
+  return {
+    compares: exactitudeParCle(comparees, (u) => u.candidat_id),
+    rapportes_a_part: candidats_a_part,
+  };
 }
 
 export function exactitudeParTheme(unites: readonly UniteAnalyse[]): Map<Theme, Taux> {
