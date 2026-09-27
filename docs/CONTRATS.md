@@ -276,6 +276,20 @@ manquant, inconnu, hors énumération, mal typé) **refuse tout le fichier avant
 téléchargement** ; chaque problème est rapporté avec le numéro et l'URL de la source fautive. Aucune
 valeur par défaut. Les énumérations sont lues dans `schema/commun.schema.json`, jamais recopiées.
 
+Le tier suit le type de document (§4, protocole 0.13), selon une table fermée écrite une fois dans
+`commun#/$defs/tier_selon_type_document`, lue par la collecte et appliquée par
+`schema/fiche-source.schema.json` :
+
+| `type_document` | Tier admis |
+| --- | --- |
+| `programme_pdf`, `site_officiel`, `tribune_signee`, `communique_campagne` | `T1` |
+| `site_parti` avec `site_parti_tient_lieu_de_campagne = true` | `T1` |
+| `site_parti` avec `site_parti_tient_lieu_de_campagne = false` | `T3` |
+| `enregistrement_video`, `enregistrement_audio` | `T2` |
+| `article_presse` | `T3` |
+
+Un tier qui contredit son type refuse tout le fichier, comme tout autre problème.
+
 ### 5.2 Politesse
 
 Norme du §6, appliquée à toute la collecte : respect de `robots.txt` et au plus une requête par
