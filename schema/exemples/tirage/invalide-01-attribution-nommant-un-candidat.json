@@ -3,9 +3,13 @@
   "date_gel": "2026-12-01T06:00:00+01:00",
   "graine_tirage": {
     "valeur": 20261201,
-    "algorithme": "PCG64",
-    "bibliotheque": "numpy.random.Generator",
-    "version": "2.1.3"
+    "algorithme": "splitmix64-sha256-v1",
+    "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+    "version": "1"
+  },
+  "parametres": {
+    "questions_par_strate": 1,
+    "questions_attribution_par_theme": 1
   },
   "entrees": [
     {
@@ -46,6 +50,7 @@
           "regle": "semi_ouvert"
         }
       },
+      "premisse_fausse": false,
       "reprise": false,
       "candidat_id": "cand-a"
     }

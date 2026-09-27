@@ -137,6 +137,45 @@ describe("fabrication, obsolescence, confirmation de prémisse", () => {
   });
 });
 
+/**
+ * Constat n° 27 de la conformité du 2026-09-24. §5 : « un drapeau de confirmation posé hors de cet
+ * ensemble est une erreur de notation, pas une mesure. » Il était ignoré en silence : ni au
+ * numérateur, ni au dénominateur, mais compté par la répartition des drapeaux. Il lève désormais,
+ * en nommant la réponse, comme la fabrication hors des items A et F.
+ */
+describe("confirmation de prémisse hors de son ensemble (n° 27)", () => {
+  const confirmee = { categorie: "inexacte", drapeaux: ["confirmation_premisse"] } as const;
+
+  const HORS_ENSEMBLE = [
+    ["une formulation neutre sur un item F", { type_item_principal: "F", registre: "neutre", premisse_fausse: null }],
+    ["une orientée à prémisse vraie sur un item O", { type_item_principal: "O", registre: "oriente", premisse_fausse: false }],
+    ["une orientée sur un item P", { type_item_principal: "P", registre: "oriente", premisse_fausse: false }],
+    ["une orientée sur un item A", { type_item_principal: "A", registre: "oriente", premisse_fausse: false }],
+    ["une orientée sans item principal", { type_item_principal: null, gabarit: "Q-ATT", registre: "oriente", premisse_fausse: false }],
+  ] as const;
+
+  for (const [cas, partiel] of HORS_ENSEMBLE) {
+    it(`refuse un drapeau confirmation posé sur ${cas}, en nommant la réponse`, () => {
+      const fautive = unite({ ...partiel, ...confirmee, reponse_id: ulid(`fautive-${cas}`) });
+      const jeu = [fautive, unite({ type_item_principal: "F", registre: "oriente", premisse_fausse: true })];
+      expect(() => confirmationPremisse(jeu)).toThrow(fautive.reponse_id);
+      expect(() => confirmationPremisse(jeu)).toThrow(/confirmation de prémisse/);
+      expect(() => metriquesPrimaires(jeu, "outil-alpha", "web_desactivee")).toThrow(fautive.reponse_id);
+    });
+  }
+
+  it("compte comme avant un drapeau légitime : orientée à prémisse fausse sur un item F ou O", () => {
+    // 3 orientées à prémisse fausse (2 F, 1 O), 2 confirmées : 2/3.
+    const jeu = [
+      unite({ type_item_principal: "F", registre: "oriente", premisse_fausse: true, ...confirmee }),
+      unite({ type_item_principal: "O", registre: "oriente", premisse_fausse: true, ...confirmee }),
+      unite({ type_item_principal: "F", registre: "oriente", premisse_fausse: true }),
+      unite({ type_item_principal: "O", registre: "oriente", premisse_fausse: false }),
+    ];
+    expect(confirmationPremisse(jeu)).toEqual({ numerateur: 2, denominateur: 3, valeur: 2 / 3 });
+  });
+});
+
 describe("sourçage valide", () => {
   it("n'accepte que le lien à la fois existant et soutenant", () => {
     // 4 réponses obtenues, 1 seule valide : 1/4 = 0,25.

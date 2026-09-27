@@ -18,8 +18,11 @@
  *   seconde pour un arbitrage « paraphrase seule », seulement). Un contenu proposé sur une autre
  *   version de l'item n'est pas proposé pour celle-ci. Si aucun ne convient, il rejette.
  * - **Un item A n'est vérifié que si les deux annotateurs ont confirmé l'absence**, arbitrage ou non.
+ *   De même, un item dont une source de contenu est T2 n'est vérifié que si les deux ont écouté
+ *   l'extrait et jugé la transcription fidèle (conformité n° 12) : l'arbitre ne l'écoute pas à leur place.
  */
 
+import { porteUneSourceT2, transcriptionEcouteeParLesDeux } from "./ecoute-t2.ts";
 import { canoniser } from "./empreinte.ts";
 import {
   appliquerCorrections,
@@ -160,6 +163,9 @@ function motifsIssue(dossier: Dossier, motif: MotifArbitrage, decision: Decision
   }
   if (dossier.item.type === "A" && !absenceConfirmeeParLesDeux(dossier)) {
     return ["item A : vérifié seulement si les deux annotateurs ont confirmé l'absence (§4)"];
+  }
+  if (porteUneSourceT2(dossier.item) && !transcriptionEcouteeParLesDeux(dossier.decisions)) {
+    return ["source T2 : vérifié seulement si les deux annotateurs ont écouté l'extrait et jugé la transcription fidèle (§4, §9)"];
   }
   if (decision.contenu_retenu === undefined) return ["l'issue « verifie » exige un contenu retenu"];
   const resolu = contenuRetenu(dossier, motif, decision.contenu_retenu);

@@ -12,11 +12,13 @@
  * imaginaires dans le kappa par question.
  */
 
+import { porteUneSourceT2 } from "./ecoute-t2.ts";
 import type {
   CleGrille,
   CleSpecifique,
   EtatObsolescence,
   Grille,
+  Item,
   QuestionsSpecifiques,
   TypeItem,
 } from "./types.ts";
@@ -52,6 +54,8 @@ export const LIBELLES_SPECIFIQUES: Readonly<Record<CleSpecifique, string>> = {
     "La source postérieure dit-elle que la position a changé ou été retirée (et pas simplement autre chose) ?",
   fictivite_verifiee: "Les corpus balayés et les termes recherchés justifient-ils la fictivité ?",
   plausibilite: "La mesure est-elle plausible (ni absurde, ni fantaisiste) ?",
+  // Libellé décidé par l'auteur le 2026-09-27 (conformité n° 12), à ne pas reformuler.
+  transcription_ecoutee: "J'ai écouté l'extrait et la transcription est fidèle",
 };
 
 const QUESTIONS_SPECIFIQUES: Readonly<Record<TypeItem, readonly CleSpecifique[]>> = {
@@ -63,6 +67,18 @@ const QUESTIONS_SPECIFIQUES: Readonly<Record<TypeItem, readonly CleSpecifique[]>
 
 export function questionsSpecifiques(type: TypeItem): readonly CleSpecifique[] {
   return QUESTIONS_SPECIFIQUES[type];
+}
+
+/**
+ * Les questions propres au type, plus celles qui dépendent des sources de l'item : la question
+ * d'écoute est posée dès qu'une source de contenu est T2 (§4, §9 ; conformité n° 12), une seule
+ * fois par item, quel que soit le nombre d'états T2. Comme `confirmation_absence`, elle décide du
+ * sort de l'item (promotion.ts) et n'entre pas dans le kappa par question, calculé sur les cinq
+ * clés de `CLES_GRILLE` seulement (analyse-lot.ts).
+ */
+export function questionsSpecifiquesDe(item: Item): readonly CleSpecifique[] {
+  const ecoute: readonly CleSpecifique[] = porteUneSourceT2(item) ? ["transcription_ecoutee"] : [];
+  return [...questionsSpecifiques(item.type), ...ecoute];
 }
 
 /** Contexte de l'item : ce dont dépend l'applicabilité au-delà du seul type. */
@@ -176,10 +192,10 @@ export function controlerGrille(
 }
 
 export function controlerSpecifiques(
-  type: TypeItem,
+  item: Item,
   reponses: QuestionsSpecifiques,
 ): readonly ManquementGrille[] {
-  const attendues = questionsSpecifiques(type);
+  const attendues = questionsSpecifiquesDe(item);
   const manquements: ManquementGrille[] = [];
   for (const cle of attendues) {
     if (typeof reponses[cle] !== "boolean") {

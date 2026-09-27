@@ -64,9 +64,7 @@
         "extrait": {
           "debut": "00:00:08",
           "fin": "00:00:14"
-        },
-        "transcription_verifiee_par": "a1",
-        "transcription_verifiee_le": "2026-11-04"
+        }
       },
       "test_verbatim": {
         "passe": true,

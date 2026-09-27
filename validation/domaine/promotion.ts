@@ -23,6 +23,7 @@ import {
   type RegistreCorrectionsMesure,
   type ResultatCorrectionMesure,
 } from "./corrections-mesure.ts";
+import { attesterTranscriptions, porteUneSourceT2, transcriptionEcouteeParLesDeux } from "./ecoute-t2.ts";
 import { empreinteContenuNotant } from "./empreinte.ts";
 import { reduireEtats } from "./grille.ts";
 import type {
@@ -50,6 +51,9 @@ export const MOTIFS_ARBITRAGE = [
   "paraphrase_seule",
   "confirmation_absence_manquante",
   "correction_mesure_refusee",
+  // Conformité n° 12 : item à source T2 que les deux annotateurs n'ont pas tous deux déclaré
+  // avoir écouté, transcription fidèle. Même mécanique que `confirmation_absence_manquante`.
+  "transcription_non_verifiee",
 ] as const;
 export type MotifArbitrage = (typeof MOTIFS_ARBITRAGE)[number];
 
@@ -272,6 +276,10 @@ function verifier(
   if (manqueConfirmation) {
     return { sort: "arbitrage", motif: "confirmation_absence_manquante" };
   }
+  // §4, §9 (conformité n° 12) : une transcription T2 est vérifiée à l'oreille, par les deux.
+  if (porteUneSourceT2(dossier.item) && !transcriptionEcouteeParLesDeux([premiere, seconde])) {
+    return { sort: "arbitrage", motif: "transcription_non_verifiee" };
+  }
 
   const corrige = fusionnerCorrections(dossier.item, premiere, seconde);
   if (corrige.sort === "arbitrage") return corrige;
@@ -360,20 +368,21 @@ export function appliquerValidations(
   trace: TracePromotion,
 ): Item {
   const validations = dossier.decisions.map((decision) => projeterValidation(decision, item));
-  const versionResultante = modifie ? item.version + 1 : item.version;
+  const epingle: Item = { ...item, mesure_version: versionMesurePromue(dossier, item, statut) };
+  // La version de la mesure fait partie du contenu notant (§4) : la déplacer est une modification.
+  const contenuModifie = modifie || epingle.mesure_version !== item.mesure_version;
+  const versionResultante = contenuModifie ? item.version + 1 : item.version;
 
   return {
-    ...item,
+    ...epingle,
     version: versionResultante,
     // L'empreinte n'est recalculée que si le contenu notant a changé. La recalculer sur un item
     // intact remplacerait l'empreinte contre laquelle les deux annotateurs ont jugé par une
     // autre, calculée ici : l'épinglage des décisions ne pointerait plus sur rien.
-    empreinte: modifie ? empreinteContenuNotant(item) : item.empreinte,
+    empreinte: contenuModifie ? empreinteContenuNotant(epingle) : item.empreinte,
     statut_validation: statut,
     validations,
-    ...(item.type === "A" && statut === "verifie"
-      ? { absence: ajouterConfirmation(dossier, item, options) }
-      : {}),
+    ...(statut === "verifie" ? attestationsDuVerifie(dossier, item, options) : {}),
     ...(trace.arbitrage === undefined ? {} : { arbitrage: trace.arbitrage }),
     historique: [
       ...(item.historique ?? []),
@@ -385,6 +394,58 @@ export function appliquerValidations(
         version_resultante: versionResultante,
       },
     ],
+  };
+}
+
+/**
+ * Conformité n° 69 (§4, « Contenu notant » et « Correction de thème ») : un item vérifié épingle la
+ * version de la mesure qui porte le thème en vigueur. Après une correction de thème acceptée et
+ * appliquée (`acceptee_et_appliquee` : la mesure porte le thème demandé), c'est la version courante
+ * de la mesure. Sans correction, l'item doit déjà l'épingler ; sinon l'écart est une erreur
+ * bloquante, nommée, et rien n'est promu : l'item a été jugé contre une autre version de la mesure
+ * que celle qui entrerait au tirage. Un item rejeté ou non évaluable n'engendre aucune question :
+ * son épinglage est laissé tel quel.
+ */
+function versionMesurePromue(dossier: Dossier, item: Item, statut: StatutPromu): number {
+  if (statut !== "verifie") return item.mesure_version;
+  const themeCorrige = examinerCorrectionsDeMesure(dossier).some(
+    (examen) => examen.verdict === "acceptee_et_appliquee",
+  );
+  if (themeCorrige) return dossier.mesure.version;
+  if (item.mesure_version !== dossier.mesure.version) throw new VersionMesureEcart(item, dossier.mesure);
+  return item.mesure_version;
+}
+
+/** Un item vérifié épinglerait une version de sa mesure qui n'est pas la version courante. */
+export class VersionMesureEcart extends Error {
+  readonly item_id: string;
+  readonly mesure_id: string;
+
+  constructor(item: Item, mesure: Mesure) {
+    super(
+      `Item ${item.id} : il épingle la mesure ${mesure.id} en version ${item.mesure_version}, alors que ` +
+        `la mesure est en version ${mesure.version}, sans correction de thème acceptée dans ce dossier. ` +
+        `L'item a été jugé contre une autre version de la mesure que celle qui entrerait au tirage ` +
+        `(§4, contenu notant) : rien n'est promu.`,
+    );
+    this.name = "VersionMesureEcart";
+    this.item_id = item.id;
+    this.mesure_id = mesure.id;
+  }
+}
+
+/**
+ * Ce que la promotion d'un item vérifié écrit à partir des deux décisions : la confirmation
+ * d'absence d'un item A, et l'attestation d'écoute de chaque source T2 (conformité n° 12). Ni l'une
+ * ni l'autre n'est du contenu notant (l'empreinte ne lit des sources que leur sha256) : elles ne
+ * changent ni la version ni l'empreinte.
+ */
+function attestationsDuVerifie(dossier: Dossier, item: Item, options: OptionsPromotion): Partial<Item> {
+  const atteste = attesterTranscriptions(item, dossier.decisions);
+  return {
+    ...(atteste.assertion === undefined ? {} : { assertion: atteste.assertion }),
+    ...(atteste.obsolescence === undefined ? {} : { obsolescence: atteste.obsolescence }),
+    ...(item.type === "A" ? { absence: ajouterConfirmation(dossier, atteste, options) } : {}),
   };
 }
 

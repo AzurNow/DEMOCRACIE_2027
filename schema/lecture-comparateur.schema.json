@@ -35,7 +35,10 @@
       "description": "§6 : export ouvert ou API quand il en existe un, sinon lecture des pages publiques dans le respect de robots.txt et à un rythme d'au plus une page par seconde."
     },
 
-    "robots_respecte": { "type": "boolean" },
+    "robots_respecte": {
+      "const": true,
+      "description": "Conformité n° 62. §6 : la lecture des pages publiques se fait « dans le respect de robots.txt », sans exception prévue. Une lecture qui ne l'a pas respecté n'est pas une lecture du protocole : elle ne s'enregistre pas ici. Le champ reste booléen pour dire explicitement ce qui a été fait, et ne peut valoir que true."
+    },
 
     "cadence_max_pages_par_seconde": {
       "type": "number",

@@ -42,7 +42,8 @@ export type CleSpecifique =
   | "confirmation_absence"
   | "changement_explicite"
   | "fictivite_verifiee"
-  | "plausibilite";
+  | "plausibilite"
+  | "transcription_ecoutee";
 
 /** `null` = sans objet pour ce type d'item. Jamais « non répondu » : voir grille.ts. */
 export type Grille = Readonly<Record<CleGrille, boolean | null>>;
@@ -111,7 +112,8 @@ export interface Source {
   readonly type_document: string;
   readonly page?: number;
   readonly extrait?: { readonly debut: string; readonly fin: string };
-  readonly transcription_verifiee_par?: string;
+  /** Les deux annotateurs qui ont écouté l'extrait, triés ; écrit par `pnpm promote` seulement (conformité n° 12). */
+  readonly transcription_verifiee_par?: readonly string[];
   readonly transcription_verifiee_le?: string;
   readonly sha256: string;
   readonly texte_sha256?: string;
@@ -159,6 +161,8 @@ export interface BlocAbsence {
 
 export interface BlocObsolescence {
   readonly date_changement: string;
+  /** Seule justification d'une `date_changement` différente de la date de la source postérieure (conformité n° 17). */
+  readonly date_changement_motif?: string;
   readonly etat_anterieur: EtatPositionnel;
   readonly etat_posterieur: EtatPositionnel;
   readonly remplace_item_id?: string | null;
@@ -176,6 +180,8 @@ export interface Item {
   readonly statut_validation: string;
   readonly statut_contestation: "aucune" | "contestee" | "arbitree";
   readonly valide_du: string;
+  /** Seule justification d'un `valide_du` différent de la date de la source (conformité n° 17). */
+  readonly valide_du_motif?: string;
   readonly valide_au: string | null;
   readonly assertion?: EtatPositionnel;
   readonly absence?: BlocAbsence;

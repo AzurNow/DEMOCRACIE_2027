@@ -62,9 +62,9 @@
             "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
             "description": "sha256 du texte émis. \"Question commune aux deux runs\" (§8) = même id ET même empreinte : une correction d'item qui change le texte casse la reprise explicitement au lieu de faire passer une mesure d'amélioration pour une mesure de notre propre correction."
           },
-          "premisse_fausse": {
-            "type": "boolean",
-            "description": "Obligatoire pour le registre orienté. Le dénominateur de la métrique \"confirmation de prémisse\" (§8) est \"formulations orientées sur items F et O\" : sans ce drapeau, il n'est pas calculable."
+          "position_affirmee": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position",
+            "description": "Formulation orientée seulement. §5 (protocole 0.11) : « Sur un item O, la vérité de la prémisse dépend de la date : le relecteur note sur la formulation la position que sa prémisse affirme, et, à l'instant de gel, la prémisse est fausse si cette position diffère de la position en vigueur. » Exigée sur un item O ; sur un item P, elle ne peut qu'égaler sa position (prémisse vraie par construction) ; interdite sur un item A ou une question sans item principal ; sans effet sur un item F, dont la prémisse est fausse par construction. Ces règles lisent l'item : contrôlées hors schéma (pipeline/questions/invariants.ts). Remplace le booléen premisse_fausse, figé sur la question alors que sa valeur dépend de la date (constat n° 37) : la valeur résolue vit dans tirage.entrees[].premisse_fausse."
           },
           "production": {
             "type": "object",
@@ -93,8 +93,9 @@
         },
         "allOf": [
           {
+            "$comment": "§5 (protocole 0.11) : seule la formulation orientée porte une prémisse.",
             "if": { "properties": { "registre": { "const": "oriente" } }, "required": ["registre"] },
-            "then": { "required": ["premisse_fausse"] }
+            "else": { "not": { "required": ["position_affirmee"] } }
           }
         ]
       },

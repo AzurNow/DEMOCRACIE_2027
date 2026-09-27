@@ -27,7 +27,7 @@ function questionAvecTexte(cle: string, texte: string) {
         id: ulid(`${cle}-oriente`),
         registre: "oriente",
         empreinte_texte: empreinte(`${texte}-oriente`),
-        premisse_fausse: true,
+        // Protocole 0.11 (n° 37) : la prémisse se résout au gel, dans le tirage, plus sur la question.
       },
     ],
   });

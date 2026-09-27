@@ -15,6 +15,13 @@ geste à faire et une observation à constater, pas une intention.
 - [ ] **Position du lecteur audio ou vidéo.** Ouvrir un item dont la source est un enregistrement
       audio ou vidéo : vérifier que le lecteur, une fois les métadonnées chargées, est positionné
       sur l'instant de la citation, pas au tout début du fichier.
+- [ ] **Question d'écoute d'une source T2.** Avec le jeu de démonstration (`BANC_DEMO=1`), ouvrir
+      un item O dont l'état postérieur est un enregistrement vidéo : vérifier que la question
+      « J'ai écouté l'extrait et la transcription est fidèle » s'affiche, avec les questions propres
+      au type, qu'une décision est refusée tant qu'elle reste sans réponse, et qu'elle est acceptée
+      avec « non » comme avec « oui ». Ouvrir ensuite un item dont la seule source est un PDF :
+      vérifier que la question n'apparaît pas (conformité n° 12 ; la logique est testée sans DOM
+      dans `tests/transcription-t2.test.ts`).
 - [ ] **Ordre des boutons de décision.** Ouvrir un item : vérifier que les boutons Accepter,
       Rejeter et Non évaluable apparaissent dans le même ordre et à la même taille sur plusieurs
       items successifs — aucun raccourci visuel ne doit rendre l'un plus rapide à atteindre que les

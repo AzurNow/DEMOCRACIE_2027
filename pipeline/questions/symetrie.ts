@@ -7,9 +7,10 @@
  *
  * Une condition n'est pas binaire : la répartition par thème, dont le §5 dit « répartition par
  * thème identique par candidat quand les items le permettent ; sinon, l'écart est imprimé dans
- * le rapport du run ». Elle vaut donc `ecart_tolere`, jamais rouge, et l'écart est écrit dans
- * les données — un écart imprimé dans un rapport mais absent des données serait un chiffre du
- * site sans fichier source.
+ * le rapport du run ». Un écart que les items permettaient d'éviter est rouge (constat n° 23) ;
+ * un écart que les items imposaient vaut `ecart_tolere`, et il est écrit dans les données — un
+ * écart imprimé dans un rapport mais absent des données serait un chiffre du site sans fichier
+ * source.
  *
  * `nombre_questions_par_candidat` porte sur les cinq gabarits hors Q-ATT : le même §5 interdit
  * d'attribuer une question d'attribution à un candidat (`schema/README.md`, point ouvert 2).
@@ -34,6 +35,8 @@ import type {
   Tirage,
 } from "./types.ts";
 import { REGISTRES } from "./types.ts";
+import type { CodeGabarit, Mesure, Theme } from "./types.ts";
+import { cleStrateCandidat, tirablesParStrate } from "./tirage.ts";
 
 /** §5 : les items d'absence et fictifs constituent au moins 20 % des questions de chaque run. */
 export const PART_MINIMALE_ITEMS_A_F = 0.2;
@@ -52,15 +55,28 @@ interface Contexte {
   readonly libelles: readonly string[];
   /** Nombre de compensations inscrites dans le tirage (§5, protocole 0.9). */
   readonly compensations: number;
+  /** Les questions compensatrices, clé `candidat|question` : elles ne comptent pas dans leur strate d'origine. */
+  readonly compensatrices: ReadonlySet<string>;
+  /**
+   * Questions tirables au gel par strate candidat × thème × gabarit (constat n° 23), calculées à la
+   * demande : seul un écart de thème les lit.
+   */
+  readonly tirables: () => ReadonlyMap<string, number>;
 }
 
+/**
+ * `questions` : toutes les questions candidates au tirage, pas seulement les tirées — la
+ * répartition par thème juge le tirage contre ce que les items permettaient (constat n° 23).
+ * `mesures` : le référentiel, qui porte le thème d'une question non tirée.
+ */
 export function verifierSymetrie(
   tirage: Tirage,
   questions: readonly Question[],
   items: readonly Item[],
+  mesures: readonly Mesure[],
   run: RunAuGel,
 ): Symetrie {
-  const contexte = construireContexte(tirage, questions, items, run);
+  const contexte = construireContexte(tirage, { questions, items, mesures }, run);
   const conditions: readonly ConditionSymetrie[] = [
     nombreQuestionsParCandidat(contexte),
     repartitionGabaritsFormulations(contexte),
@@ -72,12 +88,14 @@ export function verifierSymetrie(
   return { statut_global: agreger(conditions), conditions };
 }
 
-function construireContexte(
-  tirage: Tirage,
-  questions: readonly Question[],
-  items: readonly Item[],
-  run: RunAuGel,
-): Contexte {
+interface Corpus {
+  readonly questions: readonly Question[];
+  readonly items: readonly Item[];
+  readonly mesures: readonly Mesure[];
+}
+
+function construireContexte(tirage: Tirage, corpus: Corpus, run: RunAuGel): Contexte {
+  const { questions, items } = corpus;
   const parId = new Map(questions.map((question) => [question.id, question]));
   for (const entree of tirage.entrees) {
     if (!parId.has(entree.question_id)) {
@@ -95,6 +113,8 @@ function construireContexte(
       .map((candidat) => candidat.candidat_id),
     libelles: libellesDuPerimetre(perimetre),
     compensations: tirage.compensations.length,
+    compensatrices: new Set(tirage.compensations.map((c) => `${c.candidat_id}|${c.question_id}`)),
+    tirables: () => tirablesParStrate(questions, items, corpus.mesures, run),
   };
 }
 
@@ -245,17 +265,97 @@ function repartitionThemes(contexte: Contexte): ConditionSymetrie {
   if (ecart === 0) {
     return { code: "repartition_themes", statut: "vert", mesure: 0, seuil: 0 };
   }
-  return {
-    code: "repartition_themes",
-    statut: "ecart_tolere",
+  const socle = {
+    code: "repartition_themes" as const,
     mesure: ecart,
     seuil: 0,
     detail_par_candidat: detailParTheme(table, contexte.compares),
+  };
+  const fautes = retardsEvitables(contexte, table);
+  if (fautes.length > 0) {
+    return {
+      ...socle,
+      statut: "rouge",
+      commentaire:
+        "Répartition par thème non identique alors que les items le permettaient (§5, constat " +
+        `n° 23) : ${fautes.join(" ; ")}.`,
+    };
+  }
+  return {
+    ...socle,
+    statut: "ecart_tolere",
     commentaire:
       "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une " +
       `répartition identique (§5). ${contexte.compensations} compensation(s) inscrite(s) dans ` +
       "le tirage (même gabarit, autre thème, §5, protocole 0.9).",
   };
+}
+
+/**
+ * Constat n° 23. Le §5 tire par strate candidat × thème × gabarit, et comble une strate déficitaire
+ * par le même gabarit sur un autre thème (protocole 0.9). « Les items le permettent » se juge donc
+ * strate par strate, sur les questions PROPRES de chaque strate (hors questions compensatrices, qui
+ * comptent dans leur thème d'origine sans y avoir été tirées pour lui) : un candidat en retard sur
+ * un thème est fautif si, dans une strate de ce thème, il a reçu moins de questions propres que le
+ * mieux servi des candidats comparés alors que ses questions tirables de cette strate auraient suffi
+ * à l'égaler. Un retard que seules des questions non tirables (contestées, hors validité…) auraient
+ * comblé, ou qu'impose la compensation d'un autre candidat, reste toléré.
+ */
+function retardsEvitables(
+  contexte: Contexte,
+  parTheme: ReadonlyMap<string, ReadonlyMap<string, number>>,
+): readonly string[] {
+  const propres = compterPar(entreesPropres(contexte), contexte.compares, (entree) => [
+    `${entree.theme}|${entree.gabarit}`,
+  ]);
+  const tirables = contexte.tirables();
+  return clesObservees(propres).flatMap((cle) => {
+    const [theme, gabarit] = cle.split("|") as [Theme, CodeGabarit];
+    const strate: StrateJugee = { theme, gabarit, plafond: plafondDe(propres, contexte.compares, cle) };
+    return contexte.compares
+      .filter((candidat) => estEnRetard(parTheme, contexte.compares, candidat, theme))
+      .flatMap((candidat) => retardDansStrate(strate, effectif(propres, candidat, cle), tirablesDe(tirables, candidat, strate), candidat));
+  });
+}
+
+interface StrateJugee {
+  readonly theme: Theme;
+  readonly gabarit: CodeGabarit;
+  /** Le plus grand nombre de questions propres reçu dans la strate par un candidat comparé. */
+  readonly plafond: number;
+}
+
+function retardDansStrate(strate: StrateJugee, recues: number, tirables: number, candidat: string): readonly string[] {
+  if (recues >= strate.plafond || tirables < strate.plafond) return [];
+  return [
+    `${candidat}, ${strate.theme} × ${strate.gabarit} : ${recues} question(s) reçue(s) contre ${strate.plafond}, ` +
+      `${tirables} tirable(s)`,
+  ];
+}
+
+/** Entrées comparées tirées pour leur propre strate : les questions compensatrices en sont retirées. */
+function entreesPropres(contexte: Contexte): readonly EntreeTirage[] {
+  return entreesComparees(contexte).filter(
+    (entree) => !contexte.compensatrices.has(`${String(entree.candidat_id)}|${entree.question_id}`),
+  );
+}
+
+function plafondDe(table: ReadonlyMap<string, ReadonlyMap<string, number>>, compares: readonly string[], cle: string): number {
+  return Math.max(...compares.map((candidat) => effectif(table, candidat, cle)));
+}
+
+function estEnRetard(
+  parTheme: ReadonlyMap<string, ReadonlyMap<string, number>>,
+  compares: readonly string[],
+  candidat: string,
+  theme: Theme,
+): boolean {
+  return effectif(parTheme, candidat, theme) < plafondDe(parTheme, compares, theme);
+}
+
+function tirablesDe(tirables: ReadonlyMap<string, number>, candidat: string, strate: StrateJugee): number {
+  const nombre = tirables.get(cleStrateCandidat(candidat, strate.theme, strate.gabarit));
+  return nombre === undefined ? 0 : nombre;
 }
 
 /** Par candidat, son plus grand excédent sur le candidat le moins fourni d'un même thème. */
@@ -341,8 +441,22 @@ function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {
   return { code: "aucun_nom_candidat_dans_q_att", statut: "vert" };
 }
 
+/**
+ * §5 : les items A et F « constituent au moins 20 % des questions de chaque run ». Un tirage vide
+ * n'a pas de part : 0/0 n'est pas une part atteinte, et un run sans question n'est pas un run
+ * (conformité n° 60). La condition est rouge, sans mesure, et le refus ne dépend plus du seul
+ * `tirage.schema.json`, que `verifierSymetrie` ne lit pas.
+ */
 function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   const total = contexte.entrees.length;
+  if (total === 0) {
+    return {
+      code: "part_items_a_f_minimale",
+      statut: "rouge",
+      seuil: PART_MINIMALE_ITEMS_A_F,
+      commentaire: "tirage vide : la part des items A et F n'est pas définie, et un run sans question ne part pas.",
+    };
+  }
   const absencesEtFictifs = contexte.entrees.filter((entree) => {
     const type = typePrincipal(contexte, entree);
     return type !== null && ["A", "F"].includes(type);
@@ -353,7 +467,7 @@ function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   return {
     code: "part_items_a_f_minimale",
     statut: atteint ? "vert" : "rouge",
-    mesure: total === 0 ? 0 : absencesEtFictifs / total,
+    mesure: absencesEtFictifs / total,
     seuil: PART_MINIMALE_ITEMS_A_F,
   };
 }

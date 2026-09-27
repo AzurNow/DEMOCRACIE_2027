@@ -31,6 +31,7 @@ import {
   mesure,
   perimetre,
   question,
+  quotas,
   run,
 } from "./fabriques.ts";
 
@@ -112,6 +113,8 @@ function tirageDe(questions: readonly Question[], items: readonly Item[] = ITEMS
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
+    // Conformité n° 59 : un tirage porte ses quotas.
+    parametres: quotas(),
     entrees: entreesPour(questions, items, MESURES, RUN),
     exclusions: [],
     bilan_reprise: [],
@@ -132,7 +135,7 @@ const SYMETRIQUES: readonly Question[] = [
 ];
 
 function verifier(questions: readonly Question[], items: readonly Item[] = ITEMS): Symetrie {
-  return verifierSymetrie(tirageDe(questions, items), QUESTIONS, items, RUN);
+  return verifierSymetrie(tirageDe(questions, items), QUESTIONS, items, MESURES, RUN);
 }
 
 describe("tirage parfaitement symétrique", () => {
@@ -159,9 +162,15 @@ describe("nombre de questions par candidat", () => {
   });
 
   it("rend le statut global rouge, le rouge l'emportant sur un écart toléré", () => {
-    // Une question de plus se pose forcément sur un thème : l'écart de thèmes suit, toléré.
+    // Une question de plus se pose forcément sur un thème : l'écart de thèmes suit. Constat n° 23 :
+    // il n'est toléré que si les items de beta ne permettaient pas d'égaler alpha. Avant la
+    // correction, l'item A de beta restait tirable et l'écart passait pour toléré ; il est ici
+    // contesté, donc non tirable, et l'écart reste toléré pour la bonne raison. La contestation
+    // rend aussi rouge la condition sur les items contestés : le statut global n'en est que plus rouge.
+    const betaA = itemsDe("demo-beta").a;
+    const items = ITEMS.map((item) => (item.id === betaA.id ? { ...item, statut_contestation: "contestee" as const } : item));
     const enPlus = [...SYMETRIQUES, choisir(itemsDe("demo-alpha").a, "Q-FER")];
-    const symetrie = verifier(enPlus);
+    const symetrie = verifier(enPlus, items);
     expect(conditionDe(symetrie, "nombre_questions_par_candidat").statut).toBe("rouge");
     expect(conditionDe(symetrie, "repartition_themes").statut).toBe("ecart_tolere");
     expect(symetrie.statut_global).toBe("rouge");
@@ -220,7 +229,14 @@ describe("répartition des gabarits et des formulations", () => {
 });
 
 describe("répartition par thème", () => {
-  it("tolère l'écart, l'imprime par candidat, et ne passe jamais au rouge", () => {
+  /*
+   * Constat n° 23 : ce cas affirmait « ne passe jamais au rouge ». Or beta y porte un item P tirable
+   * sur les retraites (p2), dont les questions auraient égalé alpha : c'est exactement le tirage
+   * fautif que le §5 refuse (« quand les items le permettent »). L'assertion passe donc de
+   * `ecart_tolere` à `rouge` ; l'écart reste imprimé, par candidat. Le cas toléré est couvert par
+   * `repartition-themes.test.ts`.
+   */
+  it("passe au rouge quand les items du candidat en retard permettaient l'égalité, et imprime l'écart", () => {
     const jeuBeta = itemsDe("demo-beta");
     const deplacees = [
       ...questionsSymetriques("demo-alpha"),
@@ -232,12 +248,14 @@ describe("répartition par thème", () => {
       choisir(jeuBeta.f, "Q-ORI"),
     ];
     const condition = conditionDe(verifier(deplacees), "repartition_themes");
-    expect(condition.statut).toBe("ecart_tolere");
+    expect(condition.statut).toBe("rouge");
     expect(condition.mesure).toBe(2);
     expect(condition.detail_par_candidat?.map((detail) => detail.candidat_id).sort()).toEqual(
       [...CANDIDATS].sort(),
     );
-    expect(verifier(deplacees).statut_global).toBe("ecart_tolere");
+    expect(condition.commentaire).toContain("demo-beta");
+    expect(condition.commentaire).toContain("retraites");
+    expect(verifier(deplacees).statut_global).toBe("rouge");
   });
 });
 
@@ -370,7 +388,7 @@ describe("décision du panel figée au gel", () => {
 
   function conditionSur(tirage: Tirage, items: readonly Item[]) {
     return conditionDe(
-      verifierSymetrie(tirage, QUESTIONS, items, RUN),
+      verifierSymetrie(tirage, QUESTIONS, items, MESURES, RUN),
       "aucun_item_conteste_ou_en_attente",
     );
   }
@@ -451,7 +469,7 @@ describe("noms de candidats dans les questions d'attribution", () => {
       texte_neutre: "Quels candidats, dont Candidat demo-alpha, proposent le tarif de base ?",
     });
     const tirage = tirageDe([...SYMETRIQUES, fuite]);
-    const symetrie = verifierSymetrie(tirage, [...QUESTIONS, fuite], ITEMS, RUN);
+    const symetrie = verifierSymetrie(tirage, [...QUESTIONS, fuite], ITEMS, MESURES, RUN);
     expect(conditionDe(symetrie, "aucun_nom_candidat_dans_q_att").statut).toBe("rouge");
     // Une seule condition rouge suffit, toutes les autres étant vertes.
     const autres = symetrie.conditions.filter(
@@ -490,12 +508,14 @@ describe("noms de candidats dans les questions d'attribution", () => {
       run_id: RUN.id,
       date_gel: GEL,
       graine_tirage: graine(),
+      // Conformité n° 59 : un tirage porte ses quotas.
+      parametres: quotas(),
       entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], nommes),
       exclusions: [],
       bilan_reprise: [],
       compensations: [],
     };
-    const symetrie = verifierSymetrie(tirage, [...QUESTIONS, ...engendrees], items, nommes);
+    const symetrie = verifierSymetrie(tirage, [...QUESTIONS, ...engendrees], items, [...MESURES, mesureAmbigue], nommes);
     expect(conditionDe(symetrie, "aucun_nom_candidat_dans_q_att").statut).toBe("vert");
   });
 });
@@ -533,6 +553,17 @@ describe("part minimale des items A et F", () => {
     expect(condition.mesure).toBeLessThan(0.2);
     expect(condition.statut).toBe("rouge");
   });
+
+  // Conformité n° 60 : sur un tirage vide, la part valait 0/0, lue comme atteinte ; les six
+  // conditions étaient vertes et seul tirage.schema.json (entrees minItems 1) arrêtait le run.
+  it("refuse un tirage vide : condition rouge, part non définie, statut global rouge", () => {
+    const symetrie = verifier([]);
+    const condition = conditionDe(symetrie, "part_items_a_f_minimale");
+    expect(condition.statut).toBe("rouge");
+    expect(condition).not.toHaveProperty("mesure");
+    expect(condition.commentaire).toMatch(/tirage vide/);
+    expect(symetrie.statut_global).toBe("rouge");
+  });
 });
 
 describe("candidats traités à part", () => {
@@ -549,7 +580,7 @@ describe("candidats traités à part", () => {
       choisir(itemsDe("demo-beta").p1, "Q-DIR"),
       choisir(itemsDe("demo-alpha").p1, "Q-ATT"),
     ];
-    const symetrie = verifierSymetrie(tirageDe(desequilibre), QUESTIONS, ITEMS, perimetre);
+    const symetrie = verifierSymetrie(tirageDe(desequilibre), QUESTIONS, ITEMS, MESURES, perimetre);
     expect(conditionDe(symetrie, "nombre_questions_par_candidat").statut).toBe("vert");
   });
 });
@@ -564,11 +595,13 @@ describe("entrées du tirage sans question correspondante", () => {
       run_id: RUN.id,
       date_gel: GEL,
       graine_tirage: graine(),
+      // Conformité n° 59 : un tirage porte ses quotas.
+      parametres: quotas(),
       entrees: [orpheline],
       exclusions: [],
       bilan_reprise: [],
       compensations: [],
     };
-    expect(() => verifierSymetrie(tirage, QUESTIONS, ITEMS, RUN)).toThrow(/introuvable/i);
+    expect(() => verifierSymetrie(tirage, QUESTIONS, ITEMS, MESURES, RUN)).toThrow(/introuvable/i);
   });
 });

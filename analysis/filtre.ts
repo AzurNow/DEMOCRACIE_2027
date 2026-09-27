@@ -74,6 +74,11 @@ export interface UniteAnalyse {
   readonly candidat_id: IdentifiantCourt | null;
   readonly theme: Theme | null;
   readonly registre: Registre;
+  /**
+   * Formulation orientée : la vérité de sa prémisse au gel, lue dans le tirage
+   * (`entree.premisse_fausse`, protocole 0.11), jamais sur la question. `null` pour une formulation
+   * neutre ou familière, qui ne porte aucune prémisse.
+   */
   readonly premisse_fausse: boolean | null;
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
@@ -102,6 +107,32 @@ export class VerdictEnDouble extends Error {
     this.name = "VerdictEnDouble";
     this.objet = objet;
     this.verdicts = verdicts;
+  }
+}
+
+/**
+ * Conformité n° 64 (§7, §8) : `au_moins_un_lien_soutenant` dit qu'un MÊME lien est vivant et
+ * soutient l'affirmation (schema/verdict.schema.json) ; un lien vivant est un lien cité. Un verdict
+ * qui conclut au soutien sans lien existant, ou qui trouve un lien existant sans citation, se
+ * contredit : le sourçage valide ne le lit pas, et ne le compte pas non plus en silence.
+ */
+export class SourcageIncoherent extends Error {
+  readonly verdict_id: Ulid;
+
+  constructor(verdict: Verdict, detail: string) {
+    super(`Verdict ${verdict.id} : sourçage retenu incohérent, ${detail} (§7, sourçage).`);
+    this.name = "SourcageIncoherent";
+    this.verdict_id = verdict.id;
+  }
+}
+
+function verifierSourcage(verdict: Verdict): void {
+  const sourcage = verdict.sourcage_retenu;
+  if (sourcage.au_moins_un_lien_soutenant && !sourcage.au_moins_un_lien_existant) {
+    throw new SourcageIncoherent(verdict, "un lien soutenant est déclaré sans aucun lien existant");
+  }
+  if (sourcage.au_moins_un_lien_existant && !sourcage.cite) {
+    throw new SourcageIncoherent(verdict, "un lien existant est déclaré sur une réponse qui ne cite rien");
   }
 }
 
@@ -176,6 +207,7 @@ function indexer(entrees: EntreesAnalyse): IndexEntrees {
  * parce que le recalcul de robustesse (d) l'exclut (`robustesse.ts`).
  */
 function uniteDepuis(verdict: Verdict, reponse: Reponse, index: IndexEntrees): UniteAnalyse {
+  verifierSourcage(verdict);
   const tronquee = projection(reponse).troncature;
   return composer(verdict, reponse, contexteQuestion(reponse, index), tronquee);
 }
@@ -262,7 +294,7 @@ function composer(
     candidat_id: question.candidat_id === undefined ? null : question.candidat_id,
     theme: entree.theme === undefined ? null : entree.theme,
     registre: formulation.registre,
-    premisse_fausse: formulation.premisse_fausse === undefined ? null : formulation.premisse_fausse,
+    premisse_fausse: formulation.registre === "oriente" ? entree.premisse_fausse : null,
     categorie: verdict.categorie_retenue,
     drapeaux: verdict.drapeaux_retenus,
     obsolescence_fraiche: verdict.obsolescence_fraiche === undefined ? null : verdict.obsolescence_fraiche,

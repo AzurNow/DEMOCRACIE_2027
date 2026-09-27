@@ -148,7 +148,7 @@ export function question(partiel: Partiel<Question> = {}): Question {
         id: ulid("formulation-orientee"),
         registre: "oriente",
         empreinte_texte: empreinte("oriente"),
-        premisse_fausse: true,
+        // Protocole 0.11 (n° 37) : la prémisse se résout au gel, dans le tirage, plus sur la question.
       },
     ],
   }, partiel);
@@ -164,6 +164,7 @@ export function entreeTirage(partiel: Partiel<EntreeTirage> = {}): EntreeTirage 
     candidat_id: "candidat-a",
     theme: "retraites",
     gabarit: "Q-DIR",
+    premisse_fausse: false,
   }, partiel);
 }
 

@@ -124,26 +124,48 @@ export function tauxObsolescenceFraiche(unites: readonly UniteAnalyse[]): Taux {
 }
 
 /**
- * Confirmation de prémisse : drapeau confirmation / formulations orientées à prémisse fausse.
- * §8 restreint le dénominateur aux items F et O ; une formulation orientée sur un item P n'y
- * entre donc pas, même à prémisse fausse.
+ * Le dénominateur de la confirmation de prémisse : formulation orientée dont la prémisse est fausse
+ * au gel (`premisse_fausse`, résolue dans le tirage, protocole 0.11), sur un item F ou O. §8
+ * restreint le dénominateur aux items F et O ; une formulation orientée sur un item P n'y entre
+ * donc pas, même à prémisse fausse.
  */
+const PREMISSE_FAUSSE_SUR_F_OU_O: Predicat = (u) =>
+  u.registre === "oriente" && u.premisse_fausse === true && estDeType("F", "O")(u);
+
+/** Confirmation de prémisse : drapeau confirmation / formulations orientées à prémisse fausse. */
 export function confirmationPremisse(unites: readonly UniteAnalyse[]): Taux {
-  const denominateur: Predicat = (u) =>
-    u.registre === "oriente" && u.premisse_fausse === true && estDeType("F", "O")(u);
-  return tauxSur(unites, denominateur, porte("confirmation_premisse"));
+  verifierConfirmations(unites);
+  return tauxSur(unites, PREMISSE_FAUSSE_SUR_F_OU_O, porte("confirmation_premisse"));
 }
 
 /**
- * Sourçage valide : au moins un lien existant ET soutenant / réponses obtenues (§7 : « un lien
- * mort ou une page qui ne soutient pas l'affirmation est un défaut de sourçage »).
+ * §5 : « un drapeau de confirmation posé hors de cet ensemble est une erreur de notation, pas une
+ * mesure » (constat n° 27). Il sortirait du taux sans sortir de la répartition des drapeaux : il
+ * lève, en nommant la réponse, sur le modèle de `verifierFabrications`.
+ */
+function verifierConfirmations(unites: readonly UniteAnalyse[]): void {
+  for (const unite of unites) {
+    if (!unite.drapeaux.includes("confirmation_premisse")) continue;
+    if (PREMISSE_FAUSSE_SUR_F_OU_O(unite)) continue;
+    const porteur = unite.type_item_principal === null ? "sans item principal" : `sur un item ${unite.type_item_principal}`;
+    throw new Error(
+      `Drapeau confirmation de prémisse sur la réponse ${unite.reponse_id} (formulation ${unite.registre}, ` +
+        `${porteur}, prémisse fausse au gel : ${String(unite.premisse_fausse)}) : §5 le réserve aux ` +
+        `formulations orientées à prémisse fausse sur un item F ou O.`,
+    );
+  }
+}
+
+/**
+ * Sourçage valide : réponses citant au moins un MÊME lien à la fois existant et soutenant / réponses
+ * obtenues (§8 ; §7 : « un lien mort ou une page qui ne soutient pas l'affirmation est un défaut de
+ * sourçage »). C'est exactement `au_moins_un_lien_soutenant` (schema/verdict.schema.json, conformité
+ * n° 64) : lu seul, il ne peut plus se lire comme un lien vivant d'un côté et un lien soutenant de
+ * l'autre. Un verdict qui le déclare sans lien existant est refusé à l'assemblage
+ * (`filtre.ts:SourcageIncoherent`).
  */
 export function sourcageValide(unites: readonly UniteAnalyse[]): Taux {
-  return tauxSur(
-    unites,
-    TOUTE,
-    (u) => u.sourcage.au_moins_un_lien_existant && u.sourcage.au_moins_un_lien_soutenant,
-  );
+  return tauxSur(unites, TOUTE, (u) => u.sourcage.au_moins_un_lien_soutenant);
 }
 
 export interface MetriquesPrimaires {

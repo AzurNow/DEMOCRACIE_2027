@@ -5,7 +5,7 @@
   "description": "Les questions effectivement tirées pour un run, avec ce qu'elles valaient AU GEL : versions d'items, statuts d'items, réponse attendue résolue à la date de gel. Fichier autonome, référencé par run.tirage avec son empreinte — il compte environ 400 entrées, et l'intégrer à l'objet run obligerait tout contrôle go/no-go à le charger entier. C'est ce gel qui rend le critère du §12 décidable après coup et l'analyse de robustesse §8(b) reproductible.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "date_gel", "graine_tirage", "entrees", "exclusions", "bilan_reprise", "compensations"],
+  "required": ["run_id", "date_gel", "graine_tirage", "parametres", "entrees", "exclusions", "bilan_reprise", "compensations"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -27,9 +27,32 @@
           "maximum": 9007199254740991,
           "description": "Même borne que run.graines.*.valeur (2^53 − 1), dont elle est la copie."
         },
-        "algorithme": { "type": "string", "minLength": 1 },
+        "algorithme": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Le générateur réellement employé : pipeline/questions/tirage.ts refuse une graine qui en déclare un autre (constat n° 24, GENERATEUR_DU_TIRAGE : splitmix64-sha256-v1)."
+        },
         "bibliotheque": { "type": "string", "minLength": 1 },
         "version": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "parametres": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["questions_par_strate", "questions_attribution_par_theme"],
+      "description": "Conformité n° 59. §5 : « Le quota de questions par strate n'est pas fixé ici : il est déclaré dans `config/perimetre.yaml` avec le reste du périmètre du run et publié avec lui. Ce paramètre n'a pas de valeur par défaut » ; le quota d'attribution par thème est « déclaré séparément ». Recopiés ici par pipeline/questions/tirage.ts:tirer, tels qu'il les a employés : avec la graine, le fichier de tirage suffit pour rejouer le tirage sur les mêmes questions, items et mesures.",
+      "properties": {
+        "questions_par_strate": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Nombre de questions tirées dans chaque strate candidat × thème × gabarit."
+        },
+        "questions_attribution_par_theme": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Nombre de questions d'attribution tirées par thème."
+        }
       }
     },
 
@@ -103,7 +126,7 @@
     "entree_tirage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["question_id", "gabarit", "items_au_gel", "reponse_attendue", "reprise"],
+      "required": ["question_id", "gabarit", "items_au_gel", "reponse_attendue", "premisse_fausse", "reprise"],
       "properties": {
         "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
         "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
@@ -160,6 +183,11 @@
         },
 
         "reponse_attendue": { "$ref": "#/$defs/reponse_attendue" },
+
+        "premisse_fausse": {
+          "type": "boolean",
+          "description": "§5 (protocole 0.11) : la prémisse de la formulation orientée de la question est-elle fausse à l'instant du gel ? Résolue AU GEL, comme reponse_attendue, et jamais stockée sur la question (constat n° 37) : vraie par construction sur un item F ; sur un item O, vraie si la position affirmée par la formulation (question.formulations[].position_affirmee) diffère de la position en vigueur au gel, selon la règle semi-ouverte ; fausse sinon. Dénominateur de la confirmation de prémisse (§8), lu ici par l'analyse. Seule résolution : pipeline/questions/reponse-attendue.ts:premisseFausseAuGel."
+        },
 
         "reprise": {
           "type": "boolean",

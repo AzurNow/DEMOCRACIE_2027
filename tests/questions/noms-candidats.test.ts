@@ -17,7 +17,7 @@ import { LibelleCandidatAbsent } from "../../pipeline/questions/gabarits.ts";
 import { verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
 import { entreesPour } from "../../pipeline/questions/tirage.ts";
 import type { CandidatAuGel, Item, Question, StatutSymetrie } from "../../pipeline/questions/types.ts";
-import { candidat, completer, graine, itemP, mesure, nomme, question, run } from "./fabriques.ts";
+import { candidat, completer, graine, itemP, mesure, nomme, question, quotas, run } from "./fabriques.ts";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const MESURE = mesure({ cle: "noms", libelle: "tarif réduit des cantines" });
@@ -72,8 +72,8 @@ function attribution(texte: string): Question {
 
 function barriere(texte: string): StatutSymetrie | undefined {
   const q = attribution(texte);
-  const tirage = { run_id: RUN.id, date_gel: GEL, graine_tirage: graine(), entrees: entreesPour([q], [ITEM], [MESURE], RUN), exclusions: [], bilan_reprise: [], compensations: [] };
-  const symetrie = verifierSymetrie(tirage, [q], [ITEM], RUN);
+  const tirage = { run_id: RUN.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], RUN), exclusions: [], bilan_reprise: [], compensations: [] };
+  const symetrie = verifierSymetrie(tirage, [q], [ITEM], [MESURE], RUN);
   return symetrie.conditions.find((c) => c.code === "aucun_nom_candidat_dans_q_att")?.statut;
 }
 
@@ -126,7 +126,7 @@ describe("cas 9 : un nom inexploitable dans le périmètre est refusé, jamais s
   ] as const)("%s sans aucun mot : la vérification de symétrie lève", (_champ, surcharge) => {
     const vide = run([{ ...DUPONT, ...surcharge }, DUPRE], GEL);
     const q = attribution("Quels candidats proposent tarif réduit des cantines ?");
-    const tirage = { run_id: vide.id, date_gel: GEL, graine_tirage: graine(), entrees: entreesPour([q], [ITEM], [MESURE], vide), exclusions: [], bilan_reprise: [], compensations: [] };
-    expect(() => verifierSymetrie(tirage, [q], [ITEM], vide)).toThrow(/sans aucun mot/);
+    const tirage = { run_id: vide.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], vide), exclusions: [], bilan_reprise: [], compensations: [] };
+    expect(() => verifierSymetrie(tirage, [q], [ITEM], [MESURE], vide)).toThrow(/sans aucun mot/);
   });
 });

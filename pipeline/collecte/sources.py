@@ -4,8 +4,9 @@ Format : `docs/CONTRATS.md` §5. Un seul champ manquant, inconnu ou hors énumé
 le fichier, avant le moindre téléchargement, avec un message par problème qui nomme la source
 fautive. Aucune valeur par défaut.
 
-Les énumérations (tier, type_document, publication) et le motif d'identifiant sont lus dans
-`schema/commun.schema.json`, où ils vivent une seule fois : ce module n'en recopie aucune.
+Les énumérations (tier, type_document, publication), le motif d'identifiant et la table
+type de document → tier (§4, conformité n° 11) sont lus dans `schema/commun.schema.json`, où ils
+vivent une seule fois : ce module n'en recopie aucun.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlsplit
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
@@ -45,12 +47,54 @@ class ListeSourcesInvalide(Exception):
         self.erreurs = list(erreurs)
 
 
+CleTable = tuple[str, bool | None]
+"""(type_document, mention de site de parti) ; la mention vaut `None` pour tout autre type."""
+
+
 @dataclass(frozen=True)
 class _Referentiel:
     tier: tuple[str, ...]
     type_document: tuple[str, ...]
     publication: tuple[str, ...]
     motif_identifiant: re.Pattern[str]
+    tier_par_type: dict[CleTable, str]
+
+
+class TableTierIllisible(Exception):
+    """La table du schéma n'a pas la forme stricte que ce lecteur sait lire : on s'arrête, on ne devine pas."""
+
+
+def _valeurs(contrainte: dict[str, Any]) -> list[Any]:
+    if "const" in contrainte:
+        return [contrainte["const"]]
+    if isinstance(contrainte.get("enum"), list):
+        return list(contrainte["enum"])
+    raise TableTierIllisible(f"contrainte ni const ni enum : {contrainte!r}")
+
+
+def _entrees_de_la_table(conditionnelle: dict[str, Any]) -> dict[CleTable, str]:
+    """Une conditionnelle `if type_document [et mention] → then tier` en entrées de la table."""
+    si: dict[str, Any] = conditionnelle["if"]["properties"]
+    alors = str(conditionnelle["then"]["properties"]["tier"]["const"])
+    if set(si) - {"type_document", MENTION_SITE_PARTI}:
+        raise TableTierIllisible(f"condition inattendue dans la table des tiers : {sorted(si)}")
+    mentions = _valeurs(si[MENTION_SITE_PARTI]) if MENTION_SITE_PARTI in si else [None]
+    return {
+        (str(type_document), mention): alors
+        for type_document in _valeurs(si["type_document"])
+        for mention in mentions
+    }
+
+
+def _lire_table(definitions: dict[str, Any]) -> dict[CleTable, str]:
+    table: dict[CleTable, str] = {}
+    for conditionnelle in definitions["tier_selon_type_document"]["allOf"]:
+        entrees = _entrees_de_la_table(conditionnelle)
+        doublons = set(entrees) & set(table)
+        if doublons:
+            raise TableTierIllisible(f"entrée présente deux fois dans la table des tiers : {sorted(doublons)}")
+        table.update(entrees)
+    return table
 
 
 def _charger_referentiel() -> _Referentiel:
@@ -61,6 +105,7 @@ def _charger_referentiel() -> _Referentiel:
         type_document=tuple(proprietes["type_document"]["enum"]),
         publication=tuple(proprietes["publication"]["enum"]),
         motif_identifiant=re.compile(definitions["identifiant_court"]["pattern"]),
+        tier_par_type=_lire_table(definitions),
     )
 
 
@@ -142,13 +187,33 @@ def _problemes_de_mention(table: dict[str, object]) -> list[str]:
     return []
 
 
+def _probleme_de_tier(table: dict[str, object]) -> list[str]:
+    """§4 : le tier découle du type de document (et, pour un site de parti, de la mention).
+
+    Muet quand la clé de la table est incomplète ou hors énumération : ce manque est déjà rapporté
+    par les contrôles de clés, de valeurs ou de mention, et le tier admis y est indécidable.
+    """
+    cle = (str(table.get("type_document")), table.get(MENTION_SITE_PARTI))
+    admis = REFERENTIEL.tier_par_type.get(cle) if isinstance(cle[1], bool | None) else None
+    tier = table.get("tier")
+    if admis is None or tier not in REFERENTIEL.tier or tier == admis:
+        return []
+    mention = "" if cle[1] is None else f" avec {MENTION_SITE_PARTI} = {str(cle[1]).lower()}"
+    return [f"champ « tier » {tier!r} incompatible avec type_document {cle[0]!r}{mention} : {admis} attendu (§4)"]
+
+
 def _nom(numero: int, table: dict[str, object]) -> str:
     url = table.get("url")
     return f"source n°{numero} ({url})" if isinstance(url, str) else f"source n°{numero} (sans url)"
 
 
 def _erreurs_de_la_source(numero: int, table: dict[str, object]) -> list[str]:
-    problemes = _problemes_de_cles(table) + _problemes_de_valeurs(table) + _problemes_de_mention(table)
+    problemes = (
+        _problemes_de_cles(table)
+        + _problemes_de_valeurs(table)
+        + _problemes_de_mention(table)
+        + _probleme_de_tier(table)
+    )
     return [f"{_nom(numero, table)} : {probleme}" for probleme in problemes]
 
 

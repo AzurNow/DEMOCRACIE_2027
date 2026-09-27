@@ -170,6 +170,117 @@ export function positionEnVigueur(item: Item, date_gel: string): Position | unde
   return positionDe(item.assertion);
 }
 
+/* ------------------------------------------ prémisse de la formulation orientée */
+
+/**
+ * §5 (protocole 0.11) : une formulation orientée ne porte une prémisse fausse que sur un item F ou
+ * O. Une position affirmée qui rendrait fausse la prémisse d'un item P, ou portée par une question
+ * sur un item A ou sans item principal, est hors de cet ensemble : erreur, jamais une mesure.
+ */
+export class PremisseHorsEnsemble extends Error {
+  constructor(question_id: string, motif: string) {
+    super(`Question ${question_id} : prémisse orientée hors des items F et O (§5) : ${motif}.`);
+    this.name = "PremisseHorsEnsemble";
+  }
+}
+
+/** §5 (protocole 0.11) : sur un item O, le relecteur note la position que la prémisse affirme. */
+export class PremisseNonNotee extends Error {
+  constructor(question_id: string, item_id: string) {
+    super(
+      `Question ${question_id} : la formulation orientée sur l'item O ${item_id} ne porte aucune ` +
+        `position affirmée ; la vérité de sa prémisse au gel est indécidable (§5, protocole 0.11).`,
+    );
+    this.name = "PremisseNonNotee";
+  }
+}
+
+/** Ce que la résolution de la prémisse lit d'une question : ses items et ses formulations. */
+export interface QuestionAPremisse {
+  readonly id: string;
+  readonly items: readonly { readonly reference: { readonly item_id: string }; readonly role: string }[];
+  readonly formulations: readonly { readonly registre: string; readonly position_affirmee?: Position }[];
+}
+
+/**
+ * La règle, écrite une fois pour la résolution au gel et pour l'invariant indépendant de la date
+ * (`invariants.ts`). `en_vigueur` : la position de l'item à l'instant considéré. Item F : fausse par
+ * construction. Item O : fausse si la position affirmée diffère de la position en vigueur. Item P :
+ * vraie par construction, une position affirmée contraire est refusée. Item A, ou question sans item
+ * principal : aucune prémisse, une position affirmée est refusée.
+ */
+export function verdictDePremisse(
+  question_id: string,
+  item: Pick<Item, "id" | "type"> | undefined,
+  affirmee: Position | undefined,
+  en_vigueur: Position | undefined,
+): boolean {
+  if (item?.type === "F") return true;
+  if (item === undefined || item.type === "A") {
+    if (affirmee === undefined) return false;
+    const porteur = item === undefined ? "question sans item principal" : `item A ${item.id}`;
+    throw new PremisseHorsEnsemble(question_id, `position « ${affirmee} » affirmée sur une ${porteur}`);
+  }
+  if (affirmee === undefined) {
+    if (item.type === "O") throw new PremisseNonNotee(question_id, item.id);
+    return false;
+  }
+  return premisseSurPosition(question_id, item, affirmee, en_vigueur);
+}
+
+function premisseSurPosition(
+  question_id: string,
+  item: Pick<Item, "id" | "type">,
+  affirmee: Position,
+  en_vigueur: Position | undefined,
+): boolean {
+  const fausse = affirmee !== en_vigueur;
+  if (fausse && item.type === "P") {
+    throw new PremisseHorsEnsemble(
+      question_id,
+      `position « ${affirmee} » affirmée sur l'item P ${item.id}, de position « ${String(en_vigueur)} » : ` +
+        `prémisse fausse sur un item P, interdite à l'engendrement`,
+    );
+  }
+  return fausse;
+}
+
+/**
+ * Toutes les positions qu'un item peut avoir en vigueur, quelle que soit la date : la sienne pour
+ * un item P, ses deux états pour un item O, aucune (`undefined`) pour un item A ou F. C'est ce que
+ * lit le contrôle de la prémisse indépendant de la date (`invariants.ts`).
+ */
+export function positionsPossibles(item: Item): readonly (Position | undefined)[] {
+  if (item.obsolescence !== undefined) {
+    return [positionDe(item.obsolescence.etat_anterieur), positionDe(item.obsolescence.etat_posterieur)];
+  }
+  if (item.assertion !== undefined) return [positionDe(item.assertion)];
+  return [undefined];
+}
+
+/** La position affirmée par la formulation orientée de la question ; la question en porte exactement une. */
+export function positionAffirmee(question: Pick<QuestionAPremisse, "id" | "formulations">): Position | undefined {
+  const orientees = question.formulations.filter((formulation) => formulation.registre === "oriente");
+  const orientee = orientees[0];
+  if (orientees.length !== 1 || orientee === undefined) {
+    throw new Error(`Question ${question.id} : ${orientees.length} formulations orientées au lieu d'une (§5).`);
+  }
+  return orientee.position_affirmee;
+}
+
+/**
+ * §5 (protocole 0.11) : la prémisse de la formulation orientée est-elle fausse à l'instant du gel ?
+ * Résolue dans le tirage, comme la réponse attendue, avec la même position en vigueur
+ * (`positionEnVigueur` : règle semi-ouverte, changement acquis le jour même). Seule résolution du
+ * dépôt : l'analyse lit la valeur gelée (`tirage.entrees[].premisse_fausse`), jamais la question.
+ */
+export function premisseFausseAuGel(question: QuestionAPremisse, items: readonly Item[], date_gel: string): boolean {
+  const parId = new Map(items.map((item) => [item.id, item]));
+  const item = itemPrincipal(question, parId);
+  const en_vigueur = item === undefined ? undefined : positionEnVigueur(item, date_gel);
+  return verdictDePremisse(question.id, item, positionAffirmee(question), en_vigueur);
+}
+
 /* ------------------------------------------------ liste d'une attribution */
 
 /**
@@ -327,7 +438,7 @@ export function reponseAttendue(
 }
 
 /** L'item principal, `undefined` s'il n'y en a aucun ; plusieurs principaux sont un refus. */
-function itemPrincipal(question: QuestionNotable, parId: ReadonlyMap<string, Item>): Item | undefined {
+function itemPrincipal(question: Pick<QuestionAPremisse, "items">, parId: ReadonlyMap<string, Item>): Item | undefined {
   const principaux = question.items.filter((entree) => entree.role === "principal");
   if (principaux.length > 1) throw new QuestionSansPrincipal(principaux.length);
   const premier = principaux[0];

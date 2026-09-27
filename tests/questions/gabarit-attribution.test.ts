@@ -25,7 +25,7 @@ import type { Item, Question, Symetrie } from "../../pipeline/questions/types.ts
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import {
   candidat,
-  completer,
+  completerSur,
   graine,
   itemA,
   itemF,
@@ -34,6 +34,7 @@ import {
   mesure,
   perimetre,
   question,
+  quotas,
   run,
 } from "./fabriques.ts";
 
@@ -105,7 +106,9 @@ const ITEMS: readonly Item[] = CANDIDATS.flatMap((candidat_id) => [
 ]);
 
 const ENGENDREES = engendrer(ITEMS, MESURES, PERIMETRE);
-const QUESTIONS: readonly Question[] = ENGENDREES.map(completer);
+// Protocole 0.11 (constat n° 37) : la formulation orientée d'une question sur un item O porte la
+// position affirmée, sans quoi sa prémisse est indécidable au gel et le tirage refuse la question.
+const QUESTIONS: readonly Question[] = ENGENDREES.map(completerSur(ITEMS));
 const RUN = run(CANDIDATS.map((candidat_id) => candidat({ candidat_id })), GEL);
 
 /**
@@ -118,12 +121,14 @@ function symetrieDe(questions: readonly Question[]): Symetrie {
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
+    // Conformité n° 59 : un tirage porte ses quotas.
+    parametres: quotas(),
     entrees: entreesPour(questionsTirables(questions, ITEMS, RUN), ITEMS, MESURES, RUN),
     exclusions: [],
     bilan_reprise: [],
     compensations: [],
   };
-  return verifierSymetrie(tirage, questions, ITEMS, RUN);
+  return verifierSymetrie(tirage, questions, ITEMS, MESURES, RUN);
 }
 
 function empreinte(valeur: unknown): string {

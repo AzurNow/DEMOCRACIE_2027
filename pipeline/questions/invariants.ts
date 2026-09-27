@@ -12,7 +12,14 @@
 
 import { fictifsEnDouble, type ItemFictifCandidat } from "../../validation/domaine/fictif-unique.ts";
 import { gabaritParCode } from "./gabarits.ts";
-import type { CodeGabarit, Item, Mesure } from "./types.ts";
+import {
+  PremisseHorsEnsemble,
+  PremisseNonNotee,
+  positionAffirmee,
+  positionsPossibles,
+  verdictDePremisse,
+} from "./reponse-attendue.ts";
+import type { CodeGabarit, Item, Mesure, Position } from "./types.ts";
 
 export interface Violation {
   readonly invariant: string;
@@ -265,30 +272,27 @@ export interface PorteurDePremisse {
     readonly reference: { readonly item_id: string };
     readonly role: string;
   }[];
-  readonly formulations: readonly { readonly id: string; readonly premisse_fausse?: boolean }[];
-}
-
-export interface ItemType {
-  readonly id: string;
-  readonly type: string;
+  readonly formulations: readonly {
+    readonly id: string;
+    readonly registre: string;
+    readonly position_affirmee?: Position;
+  }[];
 }
 
 const INVARIANT_PREMISSE = "une prémisse fausse ne porte que sur un item F ou O";
 
-/** §5 (protocole 0.3) : les seuls types dont la prémisse orientée peut être fausse. */
-const TYPES_A_PREMISSE_FAUSSE: ReadonlySet<string> = new Set(["F", "O"]);
-
 /**
- * §5 (protocole 0.3) : « Une formulation orientée ne porte une prémisse fausse que sur un item F
- * ou O […] Le dénominateur de la confirmation de prémisse (section 8) est donc exactement
- * l'ensemble de ces formulations. » Un drapeau `premisse_fausse: true` sur une question dont
- * l'item principal est d'un autre type ferait entrer dans ce dénominateur une formulation dont la
- * prémisse est vraie par construction. Seules les questions portant au moins un drapeau `true`
- * sont contrôlées ; `false` ou l'absence du champ n'affirment aucune prémisse fausse.
+ * §5 (protocole 0.11) : « Une formulation orientée ne porte une prémisse fausse que sur un item F
+ * ou O : l'engendrement l'interdit sur un item P, dont la prémisse orientée est vraie par
+ * construction. Sur un item O, […] le relecteur note sur la formulation la position que sa
+ * prémisse affirme. » La vérité de la prémisse se résout au gel (`premisseFausseAuGel`) ; ce
+ * contrôle garde, sur le corpus entier et avant tout tirage, ce qui ne dépend pas de la date. La
+ * règle n'est pas réécrite ici : `verdictDePremisse` est appelée pour chaque position que l'item
+ * peut avoir en vigueur (`positionsPossibles`), et chacun de ses refus devient une violation.
  */
 export function premisseFausseSurItemFOuO(
   questions: readonly PorteurDePremisse[],
-  items: readonly ItemType[],
+  items: readonly Item[],
 ): readonly Violation[] {
   const parId = new Map(items.map((item) => [item.id, item]));
   return questions
@@ -296,49 +300,35 @@ export function premisseFausseSurItemFOuO(
     .sort((a, b) => (a.objet < b.objet ? -1 : a.objet > b.objet ? 1 : 0));
 }
 
-function violationDePremisse(
-  question: PorteurDePremisse,
-  parId: ReadonlyMap<string, ItemType>,
-): readonly Violation[] {
-  const drapees = question.formulations.filter((formulation) => formulation.premisse_fausse === true);
-  if (drapees.length === 0) return [];
-  const identifiants = drapees.map((formulation) => formulation.id).join(", ");
+function violationDePremisse(question: PorteurDePremisse, parId: ReadonlyMap<string, Item>): readonly Violation[] {
+  const orientees = question.formulations.filter((formulation) => formulation.registre === "oriente");
+  const identifiants = orientees.map((formulation) => formulation.id).join(", ");
+  const violation = (detail: string): readonly Violation[] => [
+    { invariant: INVARIANT_PREMISSE, objet: question.id, detail: `formulation ${identifiants} : ${detail}` },
+  ];
   const principaux = question.items.filter((entree) => entree.role === "principal");
   const premier = principaux[0];
-  if (principaux.length !== 1 || premier === undefined) {
-    return [
-      {
-        invariant: INVARIANT_PREMISSE,
-        objet: question.id,
-        detail: `${principaux.length} items principaux : le type portant la prémisse fausse de ${identifiants} n'est pas vérifiable.`,
-      },
-    ];
-  }
-  return violationDeType(question.id, premier.reference.item_id, identifiants, parId);
+  if (principaux.length > 1) return violation(`${principaux.length} items principaux, prémisse non vérifiable.`);
+  if (premier === undefined) return refusDePremisse(question, undefined, [undefined], violation);
+  const item = parId.get(premier.reference.item_id);
+  if (item === undefined) return violation(`item principal ${premier.reference.item_id} introuvable, prémisse non vérifiable.`);
+  return refusDePremisse(question, item, positionsPossibles(item), violation);
 }
 
-function violationDeType(
-  question_id: string,
-  item_id: string,
-  identifiants: string,
-  parId: ReadonlyMap<string, ItemType>,
+function refusDePremisse(
+  question: PorteurDePremisse,
+  item: Item | undefined,
+  positions: readonly (Position | undefined)[],
+  violation: (detail: string) => readonly Violation[],
 ): readonly Violation[] {
-  const item = parId.get(item_id);
-  if (item === undefined) {
-    return [
-      {
-        invariant: INVARIANT_PREMISSE,
-        objet: question_id,
-        detail: `item principal ${item_id} introuvable : le type portant la prémisse fausse de ${identifiants} n'est pas vérifiable.`,
-      },
-    ];
+  const affirmee = positionAffirmee(question);
+  for (const en_vigueur of positions) {
+    try {
+      verdictDePremisse(question.id, item, affirmee, en_vigueur);
+    } catch (erreur) {
+      if (erreur instanceof PremisseHorsEnsemble || erreur instanceof PremisseNonNotee) return violation(erreur.message);
+      throw erreur;
+    }
   }
-  if (TYPES_A_PREMISSE_FAUSSE.has(item.type)) return [];
-  return [
-    {
-      invariant: INVARIANT_PREMISSE,
-      objet: question_id,
-      detail: `formulation(s) ${identifiants} à prémisse fausse sur l'item principal ${item_id}, de type ${item.type}.`,
-    },
-  ];
+  return [];
 }

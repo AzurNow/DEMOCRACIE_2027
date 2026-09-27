@@ -180,7 +180,7 @@
         },
         "site_parti_tient_lieu_de_campagne": {
           "type": "boolean",
-          "description": "§4 : un site de parti n'est T1 que si le candidat déclare qu'il tient lieu de site de campagne, \"ce qui est alors noté\". Ce champ est cette note."
+          "description": "§4 : un site de parti n'est T1 que si le candidat déclare qu'il tient lieu de site de campagne, \"ce qui est alors noté\" ; sans cette déclaration, il relève de T3. Ce champ est cette note, et sa valeur décide du tier ($defs/tier_selon_type_document)."
         },
         "page": { "type": "integer", "minimum": 1 },
         "extrait": {
@@ -192,8 +192,18 @@
             "fin": { "type": "string", "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$" }
           }
         },
-        "transcription_verifiee_par": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
-        "transcription_verifiee_le": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+        "transcription_verifiee_par": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "description": "§4 et §9 : la transcription d'une source T2 est vérifiée à l'oreille sur l'extrait. Décision de l'auteur du 2026-09-27 (conformité n° 12) : les DEUX annotateurs répondent « J'ai écouté l'extrait et la transcription est fidèle » ; pnpm promote écrit ici leurs deux identifiants pseudonymisés, triés. Jamais écrit par le pipeline, qui n'écoute rien : item.schema.json l'interdit en staging et l'exige d'un item vérifié."
+        },
+        "transcription_verifiee_le": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+          "description": "Date civile de la plus tardive des deux décisions qui attestent l'écoute, telle qu'écrite dans son horodatage (fuseau de l'annotateur). Écrite par pnpm promote avec transcription_verifiee_par, jamais seule."
+        },
         "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
         "texte_sha256": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
@@ -218,9 +228,24 @@
       },
       "allOf": [
         {
+          "$comment": "Conformité n° 12 : l'extrait est exigé dès la collecte ; l'attestation d'écoute ne l'est pas ici, elle dépend du statut de l'item (item.schema.json). Hors T2, il n'y a rien à écouter : l'attestation est interdite.",
           "if": { "properties": { "tier": { "const": "T2" } }, "required": ["tier"] },
-          "then": { "required": ["extrait", "transcription_verifiee_par", "transcription_verifiee_le"] }
+          "then": { "required": ["extrait"] },
+          "else": {
+            "allOf": [
+              { "not": { "required": ["transcription_verifiee_par"] } },
+              { "not": { "required": ["transcription_verifiee_le"] } }
+            ]
+          }
         },
+        {
+          "$comment": "L'attestation va par paire : des vérificateurs sans date, ou une date sans vérificateurs, n'attestent rien.",
+          "dependentRequired": {
+            "transcription_verifiee_par": ["transcription_verifiee_le"],
+            "transcription_verifiee_le": ["transcription_verifiee_par"]
+          }
+        },
+        { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier_selon_type_document" },
         {
           "if": { "properties": { "type_document": { "const": "programme_pdf" } }, "required": ["type_document"] },
           "then": { "required": ["page"] }
@@ -228,6 +253,33 @@
         {
           "if": { "properties": { "type_document": { "const": "site_parti" } }, "required": ["type_document"] },
           "then": { "required": ["site_parti_tient_lieu_de_campagne"] }
+        }
+      ]
+    },
+
+    "tier_selon_type_document": {
+      "$comment": "Conformité n° 11. Table fermée type de document → tier, écrite UNE fois, ici. pipeline/collecte/sources.py la lit dans ce fichier (forme stricte : chaque entrée est un if sur type_document, et au plus sur site_parti_tient_lieu_de_campagne, et un then qui fixe tier) ; tests/collecte/test_sources.py et tests/sources-items-schema.test.ts confrontent chacun leur lecteur à la même table attendue.",
+      "description": "§4 : T1 = programme officiel, site officiel, site de parti quand le candidat déclare qu'il tient lieu de site de campagne, tribune signée, communiqué de campagne ; T2 = déclaration orale enregistrée ; T3 = propos rapportés par un média, et site de parti sans cette déclaration.",
+      "allOf": [
+        {
+          "if": { "properties": { "type_document": { "enum": ["programme_pdf", "site_officiel", "tribune_signee", "communique_campagne"] } }, "required": ["type_document"] },
+          "then": { "properties": { "tier": { "const": "T1" } } }
+        },
+        {
+          "if": { "properties": { "type_document": { "const": "site_parti" }, "site_parti_tient_lieu_de_campagne": { "const": true } }, "required": ["type_document", "site_parti_tient_lieu_de_campagne"] },
+          "then": { "properties": { "tier": { "const": "T1" } } }
+        },
+        {
+          "if": { "properties": { "type_document": { "const": "site_parti" }, "site_parti_tient_lieu_de_campagne": { "const": false } }, "required": ["type_document", "site_parti_tient_lieu_de_campagne"] },
+          "then": { "properties": { "tier": { "const": "T3" } } }
+        },
+        {
+          "if": { "properties": { "type_document": { "enum": ["enregistrement_video", "enregistrement_audio"] } }, "required": ["type_document"] },
+          "then": { "properties": { "tier": { "const": "T2" } } }
+        },
+        {
+          "if": { "properties": { "type_document": { "const": "article_presse" } }, "required": ["type_document"] },
+          "then": { "properties": { "tier": { "const": "T3" } } }
         }
       ]
     },

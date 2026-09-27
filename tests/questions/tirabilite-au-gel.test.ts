@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 import { engendrer } from "../../pipeline/questions/engendrement.ts";
 import { questionsTirables, tirer } from "../../pipeline/questions/tirage.ts";
 import type { CodeGabarit, Item, Question } from "../../pipeline/questions/types.ts";
-import { candidat, completer, graine, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
+import { candidat, completerSur, graine, itemO, itemP, mesure, perimetre, run } from "./fabriques.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 
 /** Minuit UTC du 1er décembre 2026 : la date civile « 2026-12-01 » tombe exactement sur le gel. */
@@ -45,7 +45,9 @@ const O_SANS_OBJET = itemO({
   date_changement: "2026-10-01",
 });
 const ITEMS = [OK, FIN_AU_GEL, DEBUT_AU_GEL, SANS_OBJET, O_SANS_OBJET];
-const QUESTIONS: readonly Question[] = engendrer(ITEMS, MESURES, perimetre(CANDIDATS)).map(completer);
+// Protocole 0.11 (constat n° 37) : la formulation orientée d'une question sur un item O porte la
+// position affirmée, sans quoi sa prémisse est indécidable au gel et le tirage refuse la question.
+const QUESTIONS: readonly Question[] = engendrer(ITEMS, MESURES, perimetre(CANDIDATS)).map(completerSur(ITEMS));
 
 function questionDe(item: Item, gabarit: CodeGabarit): Question {
   const trouvee = QUESTIONS.find(

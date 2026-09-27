@@ -11,9 +11,10 @@ import {
   estDuRun,
   filtrerContexteRun,
   ReponsesNonNotees,
+  SourcageIncoherent,
   VerdictEnDouble,
 } from "../../analysis/filtre.ts";
-import { exactitude, tauxNonReponse } from "../../analysis/metriques.ts";
+import { confirmationPremisse, exactitude, sourcageValide, tauxNonReponse } from "../../analysis/metriques.ts";
 import { partReponsesManquantes } from "../../analysis/seuils.ts";
 import { entreeTirage, idQuestion, item, question, reponse, run, ulid, verdict } from "./fabriques.ts";
 
@@ -146,7 +147,9 @@ describe("filtre de contexte", () => {
     const jeu = {
       ...entrees(reponses, verdicts),
       items: [item({ type: "O" })],
-      entrees_tirage: [entreeTirage({ theme: "immigration" })],
+      // Protocole 0.11 (constat n° 37) : la prémisse fausse se lit dans le tirage, résolue au gel,
+      // et non plus sur la formulation de la question.
+      entrees_tirage: [entreeTirage({ theme: "immigration", premisse_fausse: true })],
     };
 
     const [unite] = assembler(jeu);
@@ -173,6 +176,48 @@ describe("filtre de contexte", () => {
 
     expect(unite?.theme).toBeNull();
     expect(unite?.candidat_id).toBeNull();
+  });
+});
+
+/**
+ * Constat n° 37, protocole 0.11 (§5) : la prémisse d'une formulation orientée sur un item O se
+ * résout au gel. Le dénominateur de la confirmation de prémisse (§8) lit la valeur gelée dans le
+ * tirage : la même question, avec les mêmes réponses, n'y entre qu'au run où sa prémisse est fausse.
+ */
+describe("prémisse fausse lue dans le tirage, au gel (n° 37)", () => {
+  function uniteOrientee(premisse_fausse: boolean, drapeaux: ("confirmation_premisse")[] = []) {
+    const reponses = [reponse({ id: ulid("r-o"), formulation_id: ulid("formulation-orientee") })];
+    const verdicts = [verdict({ objet_note: { type: "reponse", id: ulid("r-o") }, categorie_retenue: drapeaux.length === 0 ? "exacte" : "inexacte", drapeaux_retenus: drapeaux })];
+    return assembler({
+      ...entrees(reponses, verdicts),
+      questions: [question({ gabarit: "Q-ORI" })],
+      items: [item({ type: "O" })],
+      entrees_tirage: [entreeTirage({ gabarit: "Q-ORI", premisse_fausse })],
+    });
+  }
+
+  it("le dénominateur de la confirmation de prémisse suit la valeur au gel, pas la question", () => {
+    // Même question, même item O : avant le changement la prémisse est vraie (hors dénominateur),
+    // après elle est fausse (1 au dénominateur).
+    expect(confirmationPremisse(uniteOrientee(false))).toEqual({ numerateur: 0, denominateur: 0 });
+    expect(confirmationPremisse(uniteOrientee(true))).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+    expect(confirmationPremisse(uniteOrientee(true, ["confirmation_premisse"]))).toEqual({
+      numerateur: 1,
+      denominateur: 1,
+      valeur: 1,
+    });
+  });
+
+  it("une confirmation posée au run où la prémisse est vraie est une erreur de notation (n° 27)", () => {
+    expect(() => confirmationPremisse(uniteOrientee(false, ["confirmation_premisse"]))).toThrow(ulid("r-o"));
+  });
+
+  it("n'attache aucune prémisse aux formulations neutre et familière, quel que soit le tirage", () => {
+    const reponses = [reponse({ id: ulid("r-n") })];
+    const verdicts = [verdict({ objet_note: { type: "reponse", id: ulid("r-n") } })];
+    const [unite] = assembler({ ...entrees(reponses, verdicts), entrees_tirage: [entreeTirage({ premisse_fausse: true })] });
+    expect(unite?.registre).toBe("neutre");
+    expect(unite?.premisse_fausse).toBeNull();
   });
 });
 
@@ -248,5 +293,39 @@ describe("une unité par réponse obtenue, un verdict par réponse (constat n° 
       [ulid("r-b"), ulid("v-b")],
     ]);
     expect(tauxNonReponse(unites)).toEqual({ numerateur: 1, denominateur: 2, valeur: 0.5 });
+  });
+});
+
+/*
+ * Conformité n° 64 (§7.11) : « un lien mort ou une page qui ne soutient pas l'affirmation est un
+ * défaut de sourçage ». `au_moins_un_lien_soutenant` dit qu'un MÊME lien est vivant et soutient ; un
+ * verdict qui le déclare sans lien existant, ou qui trouve un lien existant sans citation, se
+ * contredit. L'analyse ne lit pas ces verdicts en silence : elle les refuse en les nommant.
+ */
+describe("sourçage retenu incohérent", () => {
+  function avecSourcage(cite: boolean, existant: boolean, soutenant: boolean) {
+    const reponses = [reponse({ id: ulid("r-s") })];
+    const verdicts = [
+      verdict({
+        id: ulid("v-s"),
+        objet_note: { type: "reponse", id: ulid("r-s") },
+        sourcage_retenu: { cite, au_moins_un_lien_existant: existant, au_moins_un_lien_soutenant: soutenant },
+      }),
+    ];
+    return entrees(reponses, verdicts);
+  }
+
+  it("refuse un verdict qui conclut au soutien sans lien vivant", () => {
+    expect(() => assembler(avecSourcage(true, false, true))).toThrow(SourcageIncoherent);
+    expect(() => assembler(avecSourcage(true, false, true))).toThrow(new RegExp(ulid("v-s")));
+  });
+
+  it("refuse un verdict qui trouve un lien vivant sans citation", () => {
+    expect(() => assembler(avecSourcage(false, true, false))).toThrow(SourcageIncoherent);
+  });
+
+  it("un même lien vivant et soutenant : sourçage valide ; vivant mais non soutenant : non valide", () => {
+    expect(sourcageValide(assembler(avecSourcage(true, true, true)))).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+    expect(sourcageValide(assembler(avecSourcage(true, true, false)))).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
   });
 });

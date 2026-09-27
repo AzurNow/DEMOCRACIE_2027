@@ -25,7 +25,8 @@ import {
   validerEntreeRegistre,
   type DecisionCorrectionMesure,
 } from "../validation/domaine/corrections-mesure.ts";
-import { evaluerPromotion, type Dossier } from "../validation/domaine/promotion.ts";
+import { empreinteContenuNotant } from "../validation/domaine/empreinte.ts";
+import { appliquerValidations, evaluerPromotion, VersionMesureEcart, type Dossier } from "../validation/domaine/promotion.ts";
 import type { Correction, Decision, EntreeDecision, Item } from "../validation/domaine/types.ts";
 import { ajouterAuRegistre, lireRegistre, RegistreIllisible } from "../validation/io/mesures-fichier.ts";
 import { urnSchema } from "../outils/schemas/noms.ts";
@@ -304,6 +305,85 @@ describe("promotion en fonction du registre", () => {
       OPTIONS_PROMOTION,
     );
     expect(issue.sort === "attente" && issue.motif).toBe("correction_mesure_en_attente");
+  });
+});
+
+/*
+ * Conformité n° 69 (§4.37) : « mesure et sa version » font partie du contenu notant. Après une
+ * correction de thème acceptée, la mesure porte le nouveau thème dans une nouvelle version ; l'item
+ * promu gardait l'ancienne `mesure_version`, et rien ne comparait l'épinglage à la mesure courante.
+ */
+describe("version de la mesure épinglée par l'item promu", () => {
+  it("26. correction de thème acceptée : l'item promu porte la version de la mesure qui porte le thème", () => {
+    const item = itemP();
+    const issue = evaluerPromotion(
+      dossier(item, deuxCorrections(item), {
+        mesure: mesure({ theme: "ecologie_energie", version: 2 }),
+        registre_corrections_mesure: [entree({ mesure_version: 1 })],
+      }),
+      OPTIONS_PROMOTION,
+    );
+    if (issue.sort !== "promouvoir") throw new Error(`promotion attendue, obtenu ${issue.sort}`);
+    expect(issue.item.mesure_version).toBe(2);
+    // Le contenu notant a changé (§4 : « mesure et sa version ») : nouvelle empreinte, version suivante.
+    expect(issue.item.empreinte).toBe(empreinteContenuNotant(issue.item));
+    expect(issue.item.empreinte).not.toBe(item.empreinte);
+    expect(issue.item.version).toBe(item.version + 1);
+  });
+
+  it("27. item vérifié épinglant une version dépassée de sa mesure, sans correction : écart bloquant", () => {
+    const item = itemP();
+    const acceptations = [
+      decision({ annotateur_id: "a1", item, decision: "accepter" }),
+      decision({ annotateur_id: "a2", item, decision: "accepter" }),
+    ];
+    const evaluer = () =>
+      evaluerPromotion(dossier(item, acceptations, { mesure: mesure({ version: 2 }) }), OPTIONS_PROMOTION);
+    expect(evaluer).toThrow(VersionMesureEcart);
+    expect(evaluer).toThrow(new RegExp(`${item.id}.*version 1.*version 2`));
+  });
+
+  it("28. même épinglage, versions égales : promotion sans changement de version ni d'empreinte", () => {
+    const item = itemP();
+    const acceptations = [
+      decision({ annotateur_id: "a1", item, decision: "accepter" }),
+      decision({ annotateur_id: "a2", item, decision: "accepter" }),
+    ];
+    const issue = evaluerPromotion(dossier(item, acceptations), OPTIONS_PROMOTION);
+    if (issue.sort !== "promouvoir") throw new Error(`promotion attendue, obtenu ${issue.sort}`);
+    expect(issue.item.mesure_version).toBe(1);
+    expect(issue.item.version).toBe(item.version);
+    expect(issue.item.empreinte).toBe(item.empreinte);
+  });
+
+  it("28 bis. contenu d'item inchangé (arbitrage retenant l'original) : l'épinglage déplacé change quand même empreinte et version", () => {
+    const item = itemP();
+    const promu = appliquerValidations(
+      dossier(item, deuxCorrections(item), {
+        mesure: mesure({ theme: "ecologie_energie", version: 2 }),
+        registre_corrections_mesure: [entree({ mesure_version: 1 })],
+      }),
+      item,
+      "verifie",
+      OPTIONS_PROMOTION,
+      false,
+      { changement: "promotion vers data/ après arbitrage", motif: "original retenu" },
+    );
+    expect(promu.mesure_version).toBe(2);
+    expect(promu.empreinte).toBe(empreinteContenuNotant(promu));
+    expect(promu.version).toBe(item.version + 1);
+  });
+
+  it("29. un item rejeté n'engendre aucune question : son épinglage n'est ni déplacé ni bloquant", () => {
+    const item = itemP();
+    const rejets = [
+      decision({ annotateur_id: "a1", item, decision: "rejeter" }),
+      decision({ annotateur_id: "a2", item, decision: "rejeter" }),
+    ];
+    const issue = evaluerPromotion(dossier(item, rejets, { mesure: mesure({ version: 2 }) }), OPTIONS_PROMOTION);
+    if (issue.sort !== "promouvoir") throw new Error(`promotion attendue, obtenu ${issue.sort}`);
+    expect(issue.statut).toBe("rejete");
+    expect(issue.item.mesure_version).toBe(1);
   });
 });
 

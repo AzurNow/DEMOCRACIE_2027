@@ -20,6 +20,7 @@ import type {
   Formulation,
   GraineTirage,
   ItemDeQuestion,
+  ParametresTirage,
   Position,
   Question,
   Registre,
@@ -188,7 +189,7 @@ export function arbitre(item: Item, contestations: readonly unknown[]): Item {
 
 /* --------------------------------------------------------------- questions */
 
-function formulation(registre: Registre, texte: string): Formulation {
+function formulation(registre: Registre, texte: string, position_affirmee?: Position): Formulation {
   const socleFormulation: Formulation = {
     id: identifiant(`formulation:${registre}:${texte}`),
     registre,
@@ -201,18 +202,23 @@ function formulation(registre: Registre, texte: string): Formulation {
       sens_preserve: true,
     },
   };
-  if (registre !== "oriente") return socleFormulation;
-  return { ...socleFormulation, premisse_fausse: false };
+  // Protocole 0.11 (constat n° 37) : la formulation orientée ne porte plus `premisse_fausse`, figé ;
+  // elle porte, quand le relecteur l'a notée, la position que sa prémisse affirme.
+  if (registre !== "oriente" || position_affirmee === undefined) return socleFormulation;
+  return { ...socleFormulation, position_affirmee };
 }
 
-/** Les trois formulations exigées par le §5, dérivées mécaniquement du texte neutre. */
-export function formulations(texteNeutre: string): readonly Formulation[] {
+/**
+ * Les trois formulations exigées par le §5, dérivées mécaniquement du texte neutre.
+ * `position_affirmee` n'est portée que par la formulation orientée (§5, protocole 0.11).
+ */
+export function formulations(texteNeutre: string, position_affirmee?: Position): readonly Formulation[] {
   const variantes: Readonly<Record<Registre, string>> = {
     neutre: texteNeutre,
     familier: `Dis, ${texteNeutre}`,
     oriente: `Il paraît que oui : ${texteNeutre}`,
   };
-  return REGISTRES.map((registre) => formulation(registre, variantes[registre]));
+  return REGISTRES.map((registre) => formulation(registre, variantes[registre], position_affirmee));
 }
 
 export interface OptionsQuestion {
@@ -222,6 +228,8 @@ export interface OptionsQuestion {
   readonly items: readonly ItemDeQuestion[];
   readonly grappe_id: string;
   readonly texte_neutre: string;
+  /** La position qu'affirme la prémisse de la formulation orientée (§5, protocole 0.11). */
+  readonly position_affirmee?: Position;
 }
 
 export function question(options: OptionsQuestion): Question {
@@ -230,7 +238,7 @@ export function question(options: OptionsQuestion): Question {
     gabarit: options.gabarit,
     items: options.items,
     grappe_id: options.grappe_id,
-    formulations: formulations(options.texte_neutre),
+    formulations: formulations(options.texte_neutre, options.position_affirmee),
     engendree_le: "2026-11-18T14:00:00+01:00",
     version_gabarits: "annexe-B-tests",
   };
@@ -296,21 +304,54 @@ export function graine(valeur = 20261201): GraineTirage {
   };
 }
 
+/**
+ * Quotas d'un tirage construit à la main. Conformité n° 59 : `tirage.parametres` est obligatoire,
+ * un tirage publié porte les quotas qui l'ont produit ; la symétrie ne les lit pas.
+ */
+export function quotas(): ParametresTirage {
+  return { questions_par_strate: 1, questions_attribution_par_theme: 1 };
+}
+
 export const THEMES_DE_TEST: readonly Theme[] = ["fiscalite_pouvoir_achat", "retraites"];
 
 /* ------------------------------------------------------- jeux d'engendrement */
 
-/** Complète une question engendrée en objet `question` conforme au schéma (trois formulations). */
+/**
+ * Complète une question engendrée en objet `question` conforme au schéma (trois formulations), sans
+ * position affirmée. Pour un jeu qui contient des items O, dont la formulation orientée doit porter
+ * la position affirmée (§5, protocole 0.11) : `completerSur`.
+ */
 export function completer(engendree: QuestionEngendree): Question {
+  return completerAvec(engendree, undefined);
+}
+
+function completerAvec(engendree: QuestionEngendree, position_affirmee: Position | undefined): Question {
   const base: OptionsQuestion = {
     id: engendree.id,
     gabarit: engendree.gabarit,
     items: engendree.items,
     grappe_id: engendree.grappe_id,
     texte_neutre: engendree.texte_neutre,
+    ...(position_affirmee === undefined ? {} : { position_affirmee }),
   };
   if (engendree.candidat_id === undefined) return question(base);
   return question({ ...base, candidat_id: engendree.candidat_id });
+}
+
+/**
+ * `completer` pour un jeu qui contient des items O : la formulation orientée d'une question dont
+ * l'item principal est un item O affirme l'état ANTÉRIEUR de l'item (« Est-il vrai que X propose
+ * [mesure obsolète] ? », annexe B). Choix de fabrique de test, écrit ici et nulle part ailleurs :
+ * en production, c'est le relecteur qui note la position affirmée (§5, protocole 0.11).
+ */
+export function completerSur(items: readonly Item[]): (engendree: QuestionEngendree) => Question {
+  const parId = new Map(items.map((item) => [item.id, item]));
+  return (engendree) => {
+    const principal = engendree.items.find((entree) => entree.role === "principal");
+    const item = principal === undefined ? undefined : parId.get(principal.reference.item_id);
+    const anterieure = item?.obsolescence?.etat_anterieur.position;
+    return completerAvec(engendree, anterieure === undefined ? undefined : (anterieure as Position));
+  };
 }
 
 export interface OptionsJeu {

@@ -201,8 +201,6 @@ export interface Formulation {
   readonly id: Ulid;
   readonly registre: Registre;
   readonly empreinte_texte: EmpreinteSha256;
-  /** Obligatoire pour le registre orienté, absent sinon. Dénominateur de la confirmation de prémisse (§8). */
-  readonly premisse_fausse?: boolean;
 }
 
 export interface Question {
@@ -229,6 +227,12 @@ export interface EntreeTirage {
   readonly theme?: Theme;
   readonly gabarit: Gabarit;
   readonly grappe_id?: Ulid;
+  /**
+   * §5 (protocole 0.11) : la prémisse de la formulation orientée est-elle fausse au gel ? Résolue
+   * dans le tirage (`pipeline/questions/reponse-attendue.ts:premisseFausseAuGel`), lue ici telle
+   * quelle : dénominateur de la confirmation de prémisse (§8). Obligatoire (tirage.schema.json).
+   */
+  readonly premisse_fausse: boolean;
 }
 
 export interface CandidatAuGel {
