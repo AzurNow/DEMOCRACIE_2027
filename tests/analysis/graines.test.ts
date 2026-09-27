@@ -125,6 +125,9 @@ describe("les intervalles et les tests se rejouent depuis la graine du run", () 
         // Conformité n° 30 : le test prend le partage du seuil de couverture ; les deux sont comparés.
         { compares: ["candidat-a", "candidat-b"], rapportes_a_part: [] },
         { permutations: 10, graine_du_run: 0.5, cle: ["x"] },
+        // Conformité n° 29 : le test prend aussi les options du bootstrap de ses intervalles ;
+        // elles sont valides ici, seule la graine de permutation est fautive.
+        { reechantillonnages: 10, graine_du_run: 3, cle: ["x"] },
       ),
     ).toThrow(/entier/);
   });

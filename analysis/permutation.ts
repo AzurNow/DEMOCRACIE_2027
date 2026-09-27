@@ -27,9 +27,29 @@
  * Valeur p de Monte-Carlo : (1 + nombre de permutations au moins aussi extrêmes) / (1 + B). Le
  * « 1 + » compte l'échantillon observé lui-même ; sans lui, une valeur p nulle serait publiable,
  * ce qu'aucun nombre fini de permutations ne justifie.
+ *
+ * **Intervalles publiés (conformité n° 29).** « Sont publiés la valeur p corrigée, l'écart maximal
+ * avec son intervalle, et l'exactitude de chaque candidat avec son intervalle. » (§8) Les deux
+ * intervalles viennent du bootstrap en grappes de `bootstrap.ts` (grappe = item), amorcé depuis
+ * `run.graines.bootstrap` — le §8 ne le dit pas explicitement pour l'écart ; c'est la lecture du
+ * paragraphe « Incertitude », à écrire en révision 0.12. Clés, après la clé de l'appelant (outil,
+ * mode) : `ecart_maximal` / `global` pour l'écart, `exactitude_candidat` / identifiant du candidat
+ * pour chaque exactitude. L'écart est recalculé sur chaque rééchantillon par `ecartMaximal`, sur
+ * les grappes des seuls candidats comparés ; il y est **indéfini** dès qu'un candidat du test n'a
+ * aucune réponse classée dans le rééchantillon, puisque son exactitude, un des termes du maximum,
+ * n'existe pas. Ce rééchantillon est écarté des bornes et compté (§8, règle des taux appliquée
+ * telle quelle) — jamais remplacé par le maximum sur les candidats restants, qui mesurerait autre
+ * chose que la statistique observée.
  */
 
 import { generateur, melanger, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
+import {
+  intervalleNomme,
+  valeurDuTaux,
+  type IntervalleNomme,
+  type OptionsBootstrap,
+  type StatistiqueNumerique,
+} from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { graineDerivee } from "./graines.ts";
 import { corrigerHolm, type ValeurP, type ValeurPCorrigee } from "./holm.ts";
@@ -69,6 +89,8 @@ export interface GrappeEtiquetee {
 export interface ExactitudeCandidat {
   readonly candidat_id: IdentifiantCourt;
   readonly exactitude: Taux;
+  /** Bootstrap en grappes sur les seuls items du candidat (conformité n° 29). */
+  readonly intervalle: IntervalleNomme;
 }
 
 export interface ResultatPermutation {
@@ -76,6 +98,8 @@ export interface ResultatPermutation {
   readonly valeur_p: number;
   readonly permutations: number;
   readonly exactitude_outil: Taux;
+  /** §8 : « l'écart maximal avec son intervalle » (conformité n° 29). */
+  readonly intervalle_ecart_maximal: IntervalleNomme;
   readonly candidats: readonly ExactitudeCandidat[];
   /**
    * §4 : candidats sous le seuil de couverture présents dans les unités, rapportés à part avec la
@@ -170,6 +194,7 @@ export function testHomogeneiteCandidats(
   unites: readonly UniteAnalyse[],
   partage: PartageCandidats,
   options: OptionsPermutation,
+  bootstrap: OptionsBootstrap,
 ): ResultatPermutation | null {
   verifierOptions(options);
   const { comparees } = repartirParCandidat(unites, partage);
@@ -183,9 +208,49 @@ export function testHomogeneiteCandidats(
     valeur_p: valeurPDe(grappes, observee, options),
     permutations: options.permutations,
     exactitude_outil: exactitudeDesGrappes(grappes),
-    candidats: [...parCandidat.compares].map(([candidat_id, t]) => ({ candidat_id, exactitude: t })),
+    intervalle_ecart_maximal: intervalleNomme(comparees, ecartSurTousLesCandidats(candidats.size), {
+      ...bootstrap,
+      cle: [...bootstrap.cle, METRIQUE_ECART, STRATE_ECART],
+    }),
+    candidats: [...parCandidat.compares].map(([candidat_id, t]) => ({
+      candidat_id,
+      exactitude: t,
+      intervalle: intervalleDuCandidat(comparees, candidat_id, bootstrap),
+    })),
     candidats_rapportes_a_part: parCandidat.rapportes_a_part,
   };
+}
+
+/** Composants de clé de graine des intervalles du test (`graines.ts`) : lisibles, stables. */
+const METRIQUE_ECART = "ecart_maximal";
+const STRATE_ECART = "global";
+const METRIQUE_EXACTITUDE_CANDIDAT = "exactitude_candidat";
+
+/**
+ * L'écart maximal sur un rééchantillon, indéfini (`null`) quand un des `attendus` candidats du
+ * test n'y a aucune réponse classée : son exactitude, terme du maximum, n'existe pas (§8, règle
+ * du dénominateur nul). Les unités sont celles des candidats comparés : aucun autre ne peut y
+ * apparaître, le compte suffit.
+ */
+function ecartSurTousLesCandidats(attendus: number): StatistiqueNumerique {
+  return (unites) => {
+    const grappes = grappesEtiquetees(unites);
+    if (new Set(grappes.map((g) => g.candidat_id)).size < attendus) return null;
+    return ecartMaximal(grappes);
+  };
+}
+
+/** L'exactitude de `metriques.ts`, bootstrappée sur les seules grappes du candidat. */
+function intervalleDuCandidat(
+  comparees: readonly UniteAnalyse[],
+  candidat_id: IdentifiantCourt,
+  bootstrap: OptionsBootstrap,
+): IntervalleNomme {
+  return intervalleNomme(
+    comparees.filter((u) => u.candidat_id === candidat_id),
+    valeurDuTaux(exactitude),
+    { ...bootstrap, cle: [...bootstrap.cle, METRIQUE_EXACTITUDE_CANDIDAT, candidat_id] },
+  );
 }
 
 /** Le test d'un couple outil × mode ; `null` quand il n'a pas eu d'objet. */

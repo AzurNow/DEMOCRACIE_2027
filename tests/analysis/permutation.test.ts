@@ -9,6 +9,8 @@
 import { describe, expect, it } from "vitest";
 import { generateur, graineDepuisTexte } from "../../validation/domaine/alea.ts";
 import { graineDerivee } from "../../analysis/graines.ts";
+import { intervalleBootstrap, percentile } from "../../analysis/bootstrap.ts";
+import { exactitude } from "../../analysis/metriques.ts";
 import {
   corrigerFamilleAsymetrie,
   ecartMaximal,
@@ -20,6 +22,13 @@ import {
 import { grappe, ulid, unite } from "./fabriques.ts";
 
 const OPTIONS = { permutations: 200, graine_du_run: 20261201, cle: ["test", "permutation"] };
+
+/**
+ * Conformité n° 29 : le test publie aussi l'intervalle de l'écart maximal et celui de l'exactitude
+ * de chaque candidat (§8), par le bootstrap en grappes. Il prend donc les options du bootstrap ;
+ * les tests écrits avant ce constat les reçoivent, et leurs assertions ne changent pas.
+ */
+const BOOTSTRAP = { reechantillonnages: 200, graine_du_run: 20261202, cle: ["outil-alpha", "web_activee"] };
 
 /**
  * Conformité n° 30 : le test prend le partage du seuil de couverture (§4, §8). Les tests écrits
@@ -58,7 +67,7 @@ describe("statistique et valeur p", () => {
       ...items("candidat-b", 2, false, "b-inexactes"),
     ];
 
-    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
 
     expect(resultat?.statistique_observee).toBe(0);
     expect(resultat?.valeur_p).toBe(1);
@@ -79,7 +88,7 @@ describe("statistique et valeur p", () => {
       ...items("candidat-d", 5, false),
     ];
 
-    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
 
     expect(resultat?.statistique_observee).toBeCloseTo(0.75, 12);
     expect(resultat?.valeur_p).toBeCloseTo(1 / 201, 12);
@@ -103,7 +112,7 @@ describe("statistique et valeur p", () => {
     const globale = 11 / 40;
     const moyenneDesCandidats = (1 + 1 / 30) / 2;
 
-    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
 
     expect(resultat?.exactitude_outil).toEqual({ numerateur: 11, denominateur: 40, valeur: globale });
     expect(resultat?.statistique_observee).toBeCloseTo(1 - globale, 12);
@@ -111,8 +120,8 @@ describe("statistique et valeur p", () => {
   });
 
   it("ne teste rien quand il n'y a pas deux candidats à comparer", () => {
-    expect(testHomogeneiteCandidats([], TOUS_COMPARES, OPTIONS)).toBeNull();
-    expect(testHomogeneiteCandidats(items("candidat-a", 3, true), TOUS_COMPARES, OPTIONS)).toBeNull();
+    expect(testHomogeneiteCandidats([], TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toBeNull();
+    expect(testHomogeneiteCandidats(items("candidat-a", 3, true), TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toBeNull();
   });
 });
 
@@ -124,7 +133,7 @@ describe("candidats sous le seuil de couverture (conformité n° 30, §4 et §8)
     const jeu = [...items("candidat-a", 5, true), ...items("candidat-b", 5, true), ...items("candidat-c", 5, false)];
     const partage = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: ["candidat-c"] };
 
-    const resultat = testHomogeneiteCandidats(jeu, partage, OPTIONS);
+    const resultat = testHomogeneiteCandidats(jeu, partage, OPTIONS, BOOTSTRAP);
 
     expect(resultat?.statistique_observee).toBe(0);
     expect(resultat?.valeur_p).toBe(1);
@@ -137,24 +146,176 @@ describe("candidats sous le seuil de couverture (conformité n° 30, §4 et §8)
     const jeu = [...items("candidat-a", 3, true), ...items("candidat-c", 3, false)];
     const partage = { compares: ["candidat-a"], rapportes_a_part: ["candidat-c"] };
 
-    expect(testHomogeneiteCandidats(jeu, partage, OPTIONS)).toBeNull();
+    expect(testHomogeneiteCandidats(jeu, partage, OPTIONS, BOOTSTRAP)).toBeNull();
   });
 
   it("refuse un candidat des unités absent du partage", () => {
     const jeu = [...items("candidat-a", 2, true), ...items("candidat-x", 2, false)];
 
-    expect(() => testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS)).toThrow(/candidat-x/);
+    expect(() => testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toThrow(/candidat-x/);
+  });
+});
+
+describe("intervalles publiés avec le test d'asymétrie (conformité n° 29, §8)", () => {
+  // §8 : « Sont publiés la valeur p corrigée, l'écart maximal avec son intervalle, et l'exactitude
+  // de chaque candidat avec son intervalle. » Lecture retenue (à écrire en 0.12) : l'intervalle de
+  // l'écart vient du même bootstrap en grappes que les taux, grappe = item, l'écart recalculé sur
+  // chaque rééchantillon avec `ecartMaximal`.
+  /** Échoue bruyamment sur une absence plutôt que de laisser `?.` transformer l'assertion. */
+  function present<T>(valeur: T | null | undefined): T {
+    if (valeur === null || valeur === undefined) throw new Error("Valeur attendue, absente.");
+    return valeur;
+  }
+  const hex = (cle: readonly string[]) => graineDerivee(BOOTSTRAP.graine_du_run, cle).toString(16).padStart(16, "0");
+
+  /** Trois candidats de vingt items : A 15 exactes, B 8, C 12. Globale 35/60 ; écart max |8/20 − 35/60|. */
+  function jeuOrdinaire() {
+    return [
+      ...items("candidat-a", 15, true, "a-exactes"),
+      ...items("candidat-a", 5, false, "a-inexactes"),
+      ...items("candidat-b", 8, true, "b-exactes"),
+      ...items("candidat-b", 12, false, "b-inexactes"),
+      ...items("candidat-c", 12, true, "c-exactes"),
+      ...items("candidat-c", 8, false, "c-inexactes"),
+    ];
+  }
+
+  it("rend l'écart maximal avec son intervalle, qui contient l'écart observé, sa clé et sa graine", () => {
+    const resultat = present(testHomogeneiteCandidats(jeuOrdinaire(), TOUS_COMPARES, OPTIONS, BOOTSTRAP));
+    const cle = ["bootstrap", "outil-alpha", "web_activee", "ecart_maximal", "global"];
+    const observee = resultat.statistique_observee;
+
+    expect(observee).toBeCloseTo(35 / 60 - 8 / 20, 12);
+    const nomme = resultat.intervalle_ecart_maximal;
+    expect(nomme.cle).toEqual(cle);
+    expect(nomme.graine).toBe(hex(cle));
+    expect(nomme.raison_sans_intervalle).toBeNull();
+    const intervalle = present(nomme.intervalle);
+    expect(intervalle.nombre_grappes).toBe(60);
+    expect(intervalle.reechantillonnages).toBe(200);
+    expect(intervalle.bas).toBeLessThanOrEqual(observee);
+    expect(intervalle.haut).toBeGreaterThanOrEqual(observee);
+    expect(intervalle.bas).toBeLessThan(intervalle.haut);
+  });
+
+  it("donne à chaque candidat d'effectifs très différents un intervalle calculé sur ses seules grappes", () => {
+    // A : 30 items, 20 exactes. B : 3 items, 1 exacte. L'intervalle de B porte sur 3 grappes, pas 33.
+    const jeu = [
+      ...items("candidat-a", 20, true, "a-exactes"),
+      ...items("candidat-a", 10, false, "a-inexactes"),
+      ...items("candidat-b", 1, true, "b-exactes"),
+      ...items("candidat-b", 2, false, "b-inexactes"),
+    ];
+    const seul = (candidat: string) => jeu.filter((u) => u.candidat_id === candidat);
+
+    const resultat = present(testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP));
+    const a = present(resultat.candidats.find((c) => c.candidat_id === "candidat-a"));
+    const b = present(resultat.candidats.find((c) => c.candidat_id === "candidat-b"));
+
+    expect(a.exactitude).toEqual({ numerateur: 20, denominateur: 30, valeur: 20 / 30 });
+    expect(b.exactitude).toEqual({ numerateur: 1, denominateur: 3, valeur: 1 / 3 });
+    const cleA = ["bootstrap", "outil-alpha", "web_activee", "exactitude_candidat", "candidat-a"];
+    const cleB = ["bootstrap", "outil-alpha", "web_activee", "exactitude_candidat", "candidat-b"];
+    expect(a.intervalle.cle).toEqual(cleA);
+    expect(b.intervalle.cle).toEqual(cleB);
+    expect(a.intervalle.graine).toBe(hex(cleA));
+    expect(present(a.intervalle.intervalle).nombre_grappes).toBe(30);
+    expect(present(b.intervalle.intervalle).nombre_grappes).toBe(3);
+    // Même bootstrap que tout taux du §8, sur les seules unités du candidat, avec sa clé.
+    expect(a.intervalle.intervalle).toEqual(
+      intervalleBootstrap(seul("candidat-a"), exactitude, { ...BOOTSTRAP, cle: cleA.slice(1) }),
+    );
+    expect(b.intervalle.intervalle).toEqual(
+      intervalleBootstrap(seul("candidat-b"), exactitude, { ...BOOTSTRAP, cle: cleB.slice(1) }),
+    );
+  });
+
+  it("rend à part un candidat sous le seuil, sans taux ni intervalle, et le retire du bootstrap de l'écart", () => {
+    const jeu = [
+      ...items("candidat-a", 4, true, "a-exactes"),
+      ...items("candidat-a", 1, false, "a-inexactes"),
+      ...items("candidat-b", 2, true, "b-exactes"),
+      ...items("candidat-b", 3, false, "b-inexactes"),
+      ...items("candidat-c", 7, false),
+    ];
+    const partage = { compares: ["candidat-a", "candidat-b"], rapportes_a_part: ["candidat-c"] };
+
+    const resultat = testHomogeneiteCandidats(jeu, partage, OPTIONS, BOOTSTRAP);
+
+    expect(resultat?.candidats_rapportes_a_part).toEqual(["candidat-c"]);
+    expect(resultat?.candidats.map((c) => c.candidat_id)).toEqual(["candidat-a", "candidat-b"]);
+    expect(resultat?.intervalle_ecart_maximal.intervalle?.nombre_grappes).toBe(10);
+    expect(JSON.stringify(resultat?.candidats)).not.toContain("candidat-c");
+  });
+
+  it("écarte et compte les rééchantillons où l'écart n'est pas défini (candidat sans réponse classée tirée)", () => {
+    // A : 5 items (3 exactes). B : 1 item exact, grappe d'indice 5. Un rééchantillon qui ne tire
+    // pas B n'a pas d'exactitude de B : l'écart maximal, qui porte sur tous les candidats comparés,
+    // n'y est pas défini. §8 : écarté du calcul des bornes, et compté.
+    const jeu = [
+      ...items("candidat-a", 3, true, "a-exactes"),
+      ...items("candidat-a", 2, false, "a-inexactes"),
+      ...items("candidat-b", 1, true, "b-exactes"),
+    ];
+    const grappes = [...new Set(jeu.map((u) => u.grappe_id))].map((id) => jeu.filter((u) => u.grappe_id === id));
+    const cle = ["bootstrap", "outil-alpha", "web_activee", "ecart_maximal", "global"];
+    const rng = generateur(graineDerivee(BOOTSTRAP.graine_du_run, cle));
+    const valeurs: number[] = [];
+    let indefinis = 0;
+    for (let b = 0; b < BOOTSTRAP.reechantillonnages; b += 1) {
+      const indices = grappes.map(() => rng.entier(grappes.length));
+      if (!indices.includes(5)) indefinis += 1;
+      else valeurs.push(ecartMaximal(grappesEtiquetees(indices.flatMap((i) => grappes[i] ?? []))));
+    }
+    valeurs.sort((x, y) => x - y);
+
+    const intervalle = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP)?.intervalle_ecart_maximal
+      .intervalle;
+
+    expect(indefinis).toBeGreaterThan(0);
+    expect(intervalle?.reechantillonnages_indefinis).toBe(indefinis);
+    expect(intervalle?.bas).toBe(percentile(valeurs, 0.025));
+    expect(intervalle?.haut).toBe(percentile(valeurs, 0.975));
+  });
+
+  it("donne à chaque intervalle du résultat sa propre graine, et les mêmes bornes à entrée égale", () => {
+    const premier = testHomogeneiteCandidats(jeuOrdinaire(), TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+    const second = testHomogeneiteCandidats(jeuOrdinaire(), TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+    const graines = [
+      premier?.intervalle_ecart_maximal.graine,
+      ...(premier?.candidats ?? []).map((c) => c.intervalle.graine),
+    ];
+
+    expect(graines).toHaveLength(4);
+    expect(new Set(graines).size).toBe(4);
+    expect(second).toEqual(premier);
+  });
+
+  it("ne rend aucun intervalle quand le test est sans objet (moins de deux candidats comparés)", () => {
+    expect(testHomogeneiteCandidats(items("candidat-a", 5, true), TOUS_COMPARES, OPTIONS, BOOTSTRAP)).toBeNull();
+    const partage = { compares: ["candidat-a"], rapportes_a_part: ["candidat-b"] };
+    const jeu = [...items("candidat-a", 5, true), ...items("candidat-b", 5, false)];
+    expect(testHomogeneiteCandidats(jeu, partage, OPTIONS, BOOTSTRAP)).toBeNull();
   });
 });
 
 describe("famille de Holm du test d'asymétrie (conformité n° 82, protocole 0.11)", () => {
-  /** Un résultat de test dont seule la valeur p compte ici. */
+  /**
+   * Un résultat de test dont seule la valeur p compte ici. Conformité n° 29 : le résultat porte
+   * désormais l'intervalle de l'écart maximal ; il est posé absent, la famille de Holm ne le lit pas.
+   */
   function resultat(valeur_p: number) {
     return {
       statistique_observee: 0.1,
       valeur_p,
       permutations: 200,
       exactitude_outil: { numerateur: 1, denominateur: 2, valeur: 0.5 },
+      intervalle_ecart_maximal: {
+        cle: ["bootstrap", "outil-alpha", "web_activee", "ecart_maximal", "global"],
+        graine: "0000000000000000",
+        intervalle: null,
+        raison_sans_intervalle: "aucune_grappe" as const,
+      },
       candidats: [],
       candidats_rapportes_a_part: [],
     };
@@ -280,7 +441,7 @@ describe("contrat de rejeu depuis run.graines.permutation (constat n° 6)", () =
       if (ecartMaximal(permuterEtiquettes(grappes, rng)) >= observee - 1e-12) extremes += 1;
     }
 
-    expect(testHomogeneiteCandidats(jeu, TOUS_COMPARES, options)?.valeur_p).toBe((1 + extremes) / 41);
+    expect(testHomogeneiteCandidats(jeu, TOUS_COMPARES, options, BOOTSTRAP)?.valeur_p).toBe((1 + extremes) / 41);
   });
 });
 

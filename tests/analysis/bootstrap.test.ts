@@ -10,9 +10,13 @@ import { describe, expect, it } from "vitest";
 import {
   differenceAppariee,
   intervalleBootstrap,
+  intervalleNomme,
+  intervalleStatistique,
   percentile,
   reechantillonner,
+  reechantillonnerStatistique,
   REECHANTILLONNAGES_PRODUCTION,
+  valeurDuTaux,
 } from "../../analysis/bootstrap.ts";
 import { graineDerivee } from "../../analysis/graines.ts";
 import { exactitude } from "../../analysis/metriques.ts";
@@ -194,5 +198,123 @@ describe("différence appariée par grappe", () => {
     expect(resultat.intervalle?.degenere).toBeNull();
     expect(resultat.intervalle?.nombre_grappes).toBe(2);
     expect(resultat.qualificatif).toBe("etablie");
+  });
+});
+
+describe("statistique numérique (conformité n° 29)", () => {
+  // Le §8 exige l'intervalle de l'écart maximal du test d'asymétrie, qui n'est pas un rapport
+  // d'effectifs. Le bootstrap est généralisé à `(unites) => number | null` : mêmes grappes, même
+  // graine, mêmes rééchantillonnages, mêmes quantiles. Les taux passent par cette même voie.
+  const OPTIONS_FIGEES = {
+    reechantillonnages: 2000,
+    graine_du_run: 20261201,
+    cle: ["outil-alpha", "web_desactivee", "exactitude", "global"],
+  };
+
+  /** 7 grappes de 2 exactes, 3 grappes d'une inexacte : exactitude 14/17. */
+  function jeuFige() {
+    const jeu = [];
+    for (let i = 0; i < 7; i += 1) jeu.push(...grappe(`g-exacte-${i}`, 2, { categorie: "exacte" }));
+    for (let i = 0; i < 3; i += 1) jeu.push(...grappe(`g-inexacte-${i}`, 1, { categorie: "inexacte" }));
+    return jeu;
+  }
+
+  /** 1 grappe exacte, 1 grappe de 2 inexactes, 3 grappes de non-réponse : des rééchantillons sans classée. */
+  function jeuCreux() {
+    const jeu = [...grappe("c-exacte", 1, { categorie: "exacte" }), ...grappe("c-inexacte", 2, { categorie: "inexacte" })];
+    for (let i = 0; i < 3; i += 1) jeu.push(...grappe(`c-nr-${i}`, 1, { categorie: "non_reponse" }));
+    return jeu;
+  }
+
+  it("garde exactement les bornes d'un intervalle de taux figé avant le changement", () => {
+    // Bornes relevées sur le code d'avant le constat n° 29 (`intervalleBootstrap` typé Taux),
+    // 2 000 rééchantillonnages, graine 20261201. Elles ne doivent pas bouger d'un bit, ni par
+    // l'ancienne entrée, ni par la voie numérique.
+    const fige = {
+      bas: 0.5714285714285714,
+      haut: 1,
+      nombre_grappes: 10,
+      reechantillonnages: 2000,
+      reechantillonnages_indefinis: 0,
+      degenere: null,
+    };
+    const creux = {
+      bas: 0,
+      haut: 1,
+      nombre_grappes: 5,
+      reechantillonnages: 2000,
+      reechantillonnages_indefinis: 158,
+      degenere: null,
+    };
+    const optionsCreux = { ...OPTIONS_FIGEES, cle: ["outil-alpha", "web_desactivee", "exactitude", "creux"] };
+
+    expect(intervalleBootstrap(jeuFige(), exactitude, OPTIONS_FIGEES)).toEqual(fige);
+    expect(intervalleStatistique(jeuFige(), valeurDuTaux(exactitude), OPTIONS_FIGEES)).toEqual(fige);
+    expect(intervalleBootstrap(jeuCreux(), exactitude, optionsCreux)).toEqual(creux);
+    expect(intervalleStatistique(jeuCreux(), valeurDuTaux(exactitude), optionsCreux)).toEqual(creux);
+  });
+
+  it("rééchantillonne une statistique qui n'est pas un taux, sur les grappes tirées", () => {
+    // Statistique : nombre de réponses exactes (pas un rapport). Grappe 0 : 1 exacte ; grappe 1 :
+    // 3 exactes. Rejouer le générateur avec la graine dérivée donne la même liste.
+    const jeu = [...grappe("n-a", 1, { categorie: "exacte" }), ...grappe("n-b", 3, { categorie: "exacte" })];
+    const compte = (unites: readonly { categorie: string }[]) => unites.filter((u) => u.categorie === "exacte").length;
+    const options = { reechantillonnages: 30, graine_du_run: 7, cle: ["outil-alpha", "compte"] };
+
+    const rng = generateur(graineDerivee(7, ["bootstrap", "outil-alpha", "compte"]));
+    const attendues: number[] = [];
+    for (let i = 0; i < 30; i += 1) {
+      attendues.push([rng.entier(2), rng.entier(2)].reduce((s, indice) => s + (indice === 0 ? 1 : 3), 0));
+    }
+    attendues.sort((x, y) => x - y);
+
+    expect(reechantillonnerStatistique(jeu, compte, options).valeurs).toEqual(attendues);
+  });
+
+  it("écarte et compte un rééchantillon où la statistique numérique est indéfinie (§8)", () => {
+    // Indéfinie quand la grappe inexacte manque au rééchantillon : deux grappes tirées avec
+    // remise, elle manque quand les deux indices valent 0. Le compte rejoué doit être exact.
+    const jeu = [...grappe("n-a", 1, { categorie: "exacte" }), ...grappe("n-b", 1, { categorie: "inexacte" })];
+    const avecInexacte = (unites: readonly { categorie: string }[]) =>
+      unites.some((u) => u.categorie === "inexacte") ? unites.length : null;
+    const options = { reechantillonnages: 40, graine_du_run: 11, cle: ["outil-alpha", "indefinie"] };
+
+    const rng = generateur(graineDerivee(11, ["bootstrap", "outil-alpha", "indefinie"]));
+    let indefinis = 0;
+    for (let i = 0; i < 40; i += 1) {
+      const tirees = [rng.entier(2), rng.entier(2)];
+      if (tirees.every((t) => t === 0)) indefinis += 1;
+    }
+
+    const echantillon = reechantillonnerStatistique(jeu, avecInexacte, options);
+
+    expect(indefinis).toBeGreaterThan(0);
+    expect(echantillon.indefinis).toBe(indefinis);
+    expect(echantillon.valeurs).toHaveLength(40 - indefinis);
+    expect(intervalleStatistique(jeu, avecInexacte, options)?.reechantillonnages_indefinis).toBe(indefinis);
+  });
+
+  it("rend un intervalle nommé : clé complète, graine publiée, raison quand il est absent", () => {
+    const options = {
+      reechantillonnages: 50,
+      graine_du_run: 20261201,
+      cle: ["outil-alpha", "web_desactivee", "exactitude", "global"],
+    };
+
+    const nomme = intervalleNomme(jeuFige(), valeurDuTaux(exactitude), options);
+
+    expect(nomme.cle).toEqual(["bootstrap", "outil-alpha", "web_desactivee", "exactitude", "global"]);
+    // Vecteur du §8 : amorce 0xd8bcfbd164a58f33.
+    expect(nomme.graine).toBe("d8bcfbd164a58f33");
+    expect(nomme.intervalle).toEqual(intervalleStatistique(jeuFige(), valeurDuTaux(exactitude), options));
+    expect(nomme.raison_sans_intervalle).toBeNull();
+
+    const sansGrappe = intervalleNomme([], valeurDuTaux(exactitude), options);
+    expect(sansGrappe.intervalle).toBeNull();
+    expect(sansGrappe.raison_sans_intervalle).toBe("aucune_grappe");
+
+    const sansClassee = intervalleNomme(grappe("nr", 2, { categorie: "non_reponse" }), valeurDuTaux(exactitude), options);
+    expect(sansClassee.intervalle).toBeNull();
+    expect(sansClassee.raison_sans_intervalle).toBe("aucun_reechantillon_defini");
   });
 });
