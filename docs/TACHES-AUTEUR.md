@@ -13,6 +13,22 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ### Protocole (`docs/PROTOCOLE.md`)
 
+- [ ] **Appliquer la révision 0.12, ou autoriser l'agent à l'écrire.** Elle écrit :
+      - au §4, le comptage des items P du seuil de couverture (items tirables au gel, décision du
+        2026-09-27) et le fait qu'un candidat sous le seuil n'est rapporté que par son nom et la
+        mention ;
+      - au §8, l'exactitude de référence du test d'asymétrie restreinte aux candidats comparés ;
+      - à l'annexe F, « par outil et par mode ».
+
+      Le texte proposé est dans la conversation du 2026-09-27. À fusionner avec les PR #38 et #39,
+      dont le code applique déjà ces règles.
+- [ ] **Trancher quatre points ouverts par la PR #39** (à écrire dans la 0.12) :
+      - un run à symétrie rouge porte-t-il encore un go/no-go ? Recommandé : non. Le schéma impose
+        aujourd'hui `publie_provisoire`, ce qui contredit le statut `invalide` ;
+      - un run `invalide` doit-il déclarer sa publication et son dépôt, puisque le §12 dit « publié
+        tel quel » ?
+      - la déclaration de candidature doit-elle dater au plus tard du jour du gel (lecture retenue) ?
+      - deux preuves à la même URL comptent-elles pour un seul sondage (lecture retenue) ?
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
 - [ ] **Nommer le fournisseur SMTP de l'adresse dédiée** au §10, à la place de
       `[fournisseur à nommer par l'auteur avant le gel]` (protocole 0.10, PR #32).
