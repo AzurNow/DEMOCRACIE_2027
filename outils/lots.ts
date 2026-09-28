@@ -38,7 +38,8 @@ import {
   preparerReannotation,
   tailleDeComposition,
 } from "../validation/domaine/lot.ts";
-import type { ItemDuLot, Lot, NatureLot } from "../validation/domaine/types.ts";
+import { lotJugeEncore } from "../validation/domaine/renvoi-mesure.ts";
+import type { Item, ItemDuLot, Lot, NatureLot } from "../validation/domaine/types.ts";
 import { lireLots, ecrireLot, ecrireLots } from "../validation/io/lots-fichier.ts";
 import { chargerItemsEffectifs } from "../validation/io/items-effectifs.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
@@ -108,15 +109,29 @@ function dateDeCalibration(table: Arguments): string {
   return valeur;
 }
 
+/**
+ * Les items qu'un lot juge encore. Protocole 0.13, §4 : un item renvoyé en attente après une
+ * correction de thème n'est plus jugé par le lot qui épingle son ancienne version ; il rentre dans
+ * la réserve, et le prochain lot l'épinglera dans sa nouvelle version.
+ */
+function itemsPris(lots: readonly Lot[], items: ReadonlyMap<string, Item>): ReadonlySet<string> {
+  const pris = new Set<string>();
+  for (const lot of lots) {
+    for (const entree of lot.items) {
+      const item = items.get(entree.item_id);
+      if (item === undefined || lotJugeEncore(item, entree)) pris.add(entree.item_id);
+    }
+  }
+  return pris;
+}
+
 function itemsDisponibles(options: Options): readonly ItemDuLot[] {
   const staging = chargerStaging(options.staging);
-  const dejaPris = new Set<string>();
-  for (const lot of lireLots(options.lots)) {
-    for (const entree of lot.items) dejaPris.add(entree.item_id);
-  }
+  const effectifs = chargerItemsEffectifs(staging.items, options.data);
+  const dejaPris = itemsPris(lireLots(options.lots), effectifs);
 
   const disponibles: ItemDuLot[] = [];
-  for (const item of chargerItemsEffectifs(staging.items, options.data).values()) {
+  for (const item of effectifs.values()) {
     if (dejaPris.has(item.id)) continue;
     if (item.statut_validation !== "en_attente") continue;
     if (item.statut_contestation !== "aucune") continue;

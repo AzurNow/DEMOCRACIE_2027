@@ -156,6 +156,7 @@
         "tier",
         "url",
         "type_document",
+        "format",
         "sha256",
         "archive_url",
         "date_source",
@@ -177,6 +178,11 @@
             "enregistrement_audio",
             "article_presse"
           ]
+        },
+        "format": {
+          "type": "string",
+          "enum": ["pdf", "html", "audio", "video"],
+          "description": "Protocole 0.13 (§4, n° 54) : « Chaque source déclare son format (PDF, page web, audio, vidéo), relevé par la collecte et non deviné. » pipeline/collecte/source.py:source_de le lit dans l'outil de la fiche d'extraction (pymupdf → pdf, html.parser → html) et, pour un texte dérivé d'une transcription, dans le type de contenu reçu (audio/* → audio, video/* → video) ; jamais dans l'URL. « Une citation tirée d'un PDF porte toujours sa page » : la règle vit dans item#/$defs/etat_positionnel, seul endroit où une source porte une citation."
         },
         "site_parti_tient_lieu_de_campagne": {
           "type": "boolean",

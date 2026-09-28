@@ -334,8 +334,9 @@ describe("exemples de schema/exemples/", () => {
   // 137 → 140 : deux exemples invalides de question et un de tirage (conformité n° 37, prémisse résolue au gel).
   // 140 → 146 : six exemples invalides (conformité n° 59, 61, 62, 64 ×2, 66).
   // 146 → 152 : un exemple valide et cinq invalides de run (protocole 0.13, §7 et §12).
-  it("charge les 152 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(152);
+  // 152 → 158 : protocole 0.13, quatre invalides et un valide d'item (format, attestation), un invalide de fiche-source (tiers).
+  it("charge les 158 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(158);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

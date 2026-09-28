@@ -1,5 +1,5 @@
 {
-  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas.",
+  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants.",
   "exemples": [
     {
       "objet": "item",
@@ -11,7 +11,7 @@
       "objet": "item",
       "fichier": "item/valide-02-obsolete-deux-etats.json",
       "attendu": "valide",
-      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation. Modifié ouvertement (conformité n° 12) : transcription_verifiee_par de l'état postérieur T2 passe de \"a1\" aux deux annotateurs [\"a1\", \"a3\"], forme exigée depuis la décision de l'auteur du 2026-09-27 ; même changement dans invalide-10 et invalide-11, qui en sont des copies."
+      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation. Modifié ouvertement (conformité n° 12) : transcription_verifiee_par de l'état postérieur T2 passe de \"a1\" aux deux annotateurs [\"a1\", \"a3\"], forme exigée depuis la décision de l'auteur du 2026-09-27 ; même changement dans invalide-10 et invalide-11, qui en sont des copies. Modifié ouvertement (protocole 0.13, §4 « Cycle de vie et dates ») : valide_du aligné sur la date de la source de l'état antérieur (2026-06-15 → 2026-09-01), et date_changement_motif ajouté, la date du changement (3 novembre) divergeant de celle de la source postérieure (12 octobre)."
     },
     {
       "objet": "item",
@@ -813,6 +813,13 @@
     },
     {
       "objet": "fiche-source",
+      "fichier": "fiche-source/invalide-03-tier-contraire-au-type.json",
+      "attendu": "invalide",
+      "motif": "Fiche d'un programme PDF déclaré T2. docs/CONTRATS.md §5 (protocole 0.13) : la fiche applique la table des tiers par type de document (commun#/$defs/tier_selon_type_document) ; un programme officiel est T1. Erreur : /tier (const).",
+      "regle_protocole": "§4, hiérarchie des sources"
+    },
+    {
+      "objet": "fiche-source",
       "fichier": "fiche-source/valide-03-enregistrement-video.json",
       "attendu": "valide",
       "motif": "Fiche d'un enregistrement vidéo T2 : url_finale est la page que yt-dlp a effectivement lue. Copie du fichier doré tests/collecte/dore/fiche-video.json."
@@ -942,6 +949,40 @@
       "attendu": "invalide",
       "motif": "Site de parti sans déclaration de tenir lieu de site de campagne (site_parti_tient_lieu_de_campagne = false) déclaré T1. §4 (0.11) : sans cette déclaration, un site de parti relève de T3. Le tier découle du type de document par la table commun#/$defs/tier_selon_type_document (conformité n° 11). Erreurs : /assertion/source/tier (const) et /assertion/source (then).",
       "regle_protocole": "§4, hiérarchie des sources"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-17-citation-pdf-sans-page.json",
+      "attendu": "invalide",
+      "motif": "Citation tirée d'une tribune signée publiée en PDF (format pdf), sans page. Protocole 0.13 (§4, n° 54) : « une citation tirée d'un PDF porte toujours sa page ». Le type tribune_signee évite la règle programme_pdf ⇒ page de commun : seule la règle d'item#/$defs/etat_positionnel parle. Erreur : /assertion/source (required, page).",
+      "regle_protocole": "§4, définition d'un item"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-18-source-sans-format.json",
+      "attendu": "invalide",
+      "motif": "Source sans format. Protocole 0.13 (§4, n° 54) : chaque source déclare son format, relevé par la collecte et non deviné. Erreur : /assertion/source (required, format).",
+      "regle_protocole": "§4, définition d'un item"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-19-rejete-avec-attestation.json",
+      "attendu": "invalide",
+      "motif": "Item O rejeté dont la source T2 de l'état postérieur porte l'attestation d'écoute. Protocole 0.13 (§4, grille de validation) : « L'attestation n'existe que sur un item vérifié. » Erreurs : /obsolescence/etat_posterieur/source (not, deux fois : transcription_verifiee_par et transcription_verifiee_le).",
+      "regle_protocole": "§4, grille de validation"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-20-non-evaluable-avec-attestation.json",
+      "attendu": "invalide",
+      "motif": "Item O non évaluable (accepter face à non évaluable) dont la source T2 porte l'attestation d'écoute. Protocole 0.13 (§4, grille de validation) : l'attestation n'existe que sur un item vérifié. Erreurs : /obsolescence/etat_posterieur/source (not, deux fois : transcription_verifiee_par et transcription_verifiee_le).",
+      "regle_protocole": "§4, grille de validation"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/valide-05-retire-par-panel-attestation-conservee.json",
+      "attendu": "valide",
+      "motif": "Item O vérifié puis retiré par le panel (contestation arbitrée, décision retrait) : l'attestation d'écoute de la source T2 est conservée. Protocole 0.13 (§4, grille de validation) : « elle est conservée si le panel retire ensuite l'item »."
     },
     {
       "objet": "decision-arbitrage",

@@ -51,10 +51,34 @@ function itemA(): Objet {
   };
 }
 
+/**
+ * Modifié ouvertement (protocole 0.13, n° 54) : chaque source déclare son format, et une citation
+ * tirée d'un PDF porte sa page. Les sources de ce fichier reçoivent le format de leur type ; une
+ * source privée de sa page (type autre que programme_pdf) n'est donc jamais un PDF ici, et les
+ * cas de ce fichier restent ceux des n° 11 à 13. La règle 0.13 est testée dans
+ * `tests/sources-items-0-13.test.ts`.
+ */
+const FORMAT_PAR_TYPE: Readonly<Record<string, string>> = {
+  programme_pdf: "pdf",
+  site_officiel: "html",
+  tribune_signee: "html",
+  communique_campagne: "html",
+  site_parti: "html",
+  enregistrement_video: "video",
+  enregistrement_audio: "audio",
+  article_presse: "html",
+};
+
+function formatDuType(surcharges: Objet): Objet {
+  const type = surcharges["type_document"];
+  return typeof type === "string" ? { format: FORMAT_PAR_TYPE[type] } : {};
+}
+
 const SOURCE_T1: Objet = {
   tier: "T1",
   url: "https://exemple-candidat.fr/programme-2027.pdf",
   type_document: "programme_pdf",
+  format: "pdf",
   page: 14,
   sha256: "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
   archive_url: "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/programme-2027.pdf",
@@ -67,6 +91,7 @@ const SOURCE_T3: Objet = {
   tier: "T3",
   url: "https://exemple-media.fr/article-rapporte",
   type_document: "article_presse",
+  format: "html",
   sha256: "84393add8c489d33569360efd1bcb5f70ed5a22408127d241c751e5ea345eb7c",
   archive_url: "https://web.archive.org/web/20261020100000/https://exemple-media.fr/article-rapporte",
   date_source: "2026-10-20",
@@ -112,7 +137,7 @@ function toutesSous(cible: string): (liste: readonly string[]) => boolean {
 function itemPAvecSource(surcharges: Objet): Objet {
   const item = itemP();
   item["statut_validation"] = "a_confirmer";
-  (item["assertion"] as Objet)["source"] = { ...SOURCE_T1, ...surcharges };
+  (item["assertion"] as Objet)["source"] = { ...SOURCE_T1, ...formatDuType(surcharges), ...surcharges };
   return item;
 }
 
@@ -180,6 +205,7 @@ describe("conformité n° 11 : table fermée type de document → tier", () => {
       ...SOURCE_T1,
       tier,
       type_document,
+      ...formatDuType({ type_document }),
       ...(type_document === "programme_pdf" ? {} : { page: undefined }),
       ...(mention === undefined ? {} : { site_parti_tient_lieu_de_campagne: mention === "true" }),
       ...(tier === "T2" ? { extrait: EXTRAIT } : {}),
@@ -216,6 +242,7 @@ describe("conformité n° 12 : attestation d'écoute d'une transcription T2", ()
       ...SOURCE_T1,
       tier: "T2",
       type_document: "enregistrement_video",
+      format: "video",
       page: undefined,
       extrait: EXTRAIT,
       ...(attestation ? ATTESTATION : {}),
@@ -269,6 +296,7 @@ describe("conformité n° 12 : attestation d'écoute d'une transcription T2", ()
       ...SOURCE_T1,
       tier: "T2",
       type_document: "enregistrement_audio",
+      format: "audio",
       page: undefined,
       extrait: EXTRAIT,
     };

@@ -189,6 +189,8 @@ function source(
     tier: "T1",
     url: "https://demonstration.invalid/programme.pdf",
     type_document: "programme_pdf",
+    // Protocole 0.13 (n° 54) : format relevé par la collecte ; chaque surcharge d'un autre type le redonne.
+    format: "pdf",
     sha256: archive.sha256,
     texte_sha256: archive.texte_sha256,
     archive_url: "https://archive.invalid/demonstration/programme.pdf",
@@ -346,6 +348,7 @@ function ajouterItemsA(atelier: Fabrique, archives: Archives, depart: number): n
       absence: {
         source_couverture_theme: source(archives.page, {
           type_document: "site_officiel",
+          format: "html",
           url: "https://demonstration.invalid/plateforme",
         }),
         corpus_examine: [
@@ -391,6 +394,7 @@ function ajouterItemsO(atelier: Fabrique, archives: Archives, depart: number): n
           source: source(archives.video, {
             tier: "T2",
             type_document: "enregistrement_video",
+            format: "video",
             url: "https://demonstration.invalid/declaration",
             extrait: { debut: "00:00:08", fin: "00:00:14" },
             // Conformité n° 12 : plus d'attestation d'écoute en staging. Le pipeline n'écoute

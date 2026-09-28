@@ -33,6 +33,7 @@
       "tier": "T3",
       "url": "https://exemple-media.fr/article-rapporte",
       "type_document": "article_presse",
+      "format": "html",
       "sha256": "84393add8c489d33569360efd1bcb5f70ed5a22408127d241c751e5ea345eb7c",
       "archive_url": "https://web.archive.org/web/20261020100000/https://exemple-media.fr/article-rapporte",
       "date_source": "2026-10-20",

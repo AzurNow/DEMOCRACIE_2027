@@ -33,6 +33,7 @@
       "tier": "T2",
       "url": "https://exemple-media.fr/emission-du-12-octobre",
       "type_document": "enregistrement_video",
+      "format": "video",
       "extrait": {
         "debut": "00:42:10",
         "fin": "00:43:05"

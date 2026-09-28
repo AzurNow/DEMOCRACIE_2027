@@ -39,7 +39,7 @@ import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
-import { evaluerLots, type Introuvable, type Verdict } from "./evaluation-lots.ts";
+import { evaluerLots, type Introuvable, type RenvoyeDuLot, type Verdict } from "./evaluation-lots.ts";
 import { erreurDeSchema } from "./schemas/valider.ts";
 
 interface Options {
@@ -99,6 +99,21 @@ function imprimerIntrouvables(introuvables: readonly Introuvable[]): void {
   process.stdout.write(`\nItems des lots introuvables dans staging : ${introuvables.length}\n`);
   for (const introuvable of introuvables) {
     process.stdout.write(`  ${introuvable.item_id}  [${introuvable.lot_id}]\n`);
+  }
+}
+
+/**
+ * Protocole 0.13, §4 : un item renvoyé en attente après une correction de thème n'est plus jugé par
+ * son lot. Il n'est ni promu ni perdu : il est nommé ici, et rentre dans un prochain lot.
+ */
+function imprimerRenvoyes(renvoyes: readonly RenvoyeDuLot[]): void {
+  if (renvoyes.length === 0) return;
+  process.stdout.write(`\nRenvoyés en attente, que leur lot ne juge plus : ${renvoyes.length}\n`);
+  for (const renvoye of renvoyes) {
+    process.stdout.write(
+      `  ${renvoye.item.id}  [${renvoye.lot_id}]  jugé en version ${renvoye.version_du_lot}, ` +
+        `en attente en version ${renvoye.item.version} (mesure en version ${renvoye.item.mesure_version})\n`,
+    );
   }
 }
 
@@ -315,7 +330,7 @@ function principal(): void {
 
   // Les deux registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
   // --ecrire` y ajoutent les décisions.
-  const { effectifs, verdicts, introuvables } = evaluerLots({
+  const { effectifs, verdicts, introuvables, renvoyes } = evaluerLots({
     staging: chargerStaging(options.staging),
     data: lireItemsData(options.data),
     lots: lireLots(options.lots),
@@ -331,6 +346,7 @@ function principal(): void {
 
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
+  imprimerRenvoyes(renvoyes);
   imprimerNonConformes(fautifs);
   imprimerDatesIncoherentes(dates);
   controlerFictifUnique(verdicts, options);

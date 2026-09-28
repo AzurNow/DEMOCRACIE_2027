@@ -24,6 +24,7 @@
       "tier": "T1",
       "url": "https://demonstration.invalid/plateforme",
       "type_document": "site_officiel",
+      "format": "html",
       "sha256": "0d3789d5973292b235f2f3b4e7ce39bbf7a2b4226b871e715e00ac97cda31a04",
       "texte_sha256": "3ed180101367a2580c6aa33c320b1980004e813d2cbc372fe61c0cb97c04b3b9",
       "archive_url": "https://archive.invalid/demonstration/programme.pdf",

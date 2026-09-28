@@ -14,11 +14,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from pipeline.collecte.archivage import type_media
 from pipeline.collecte.lien_archive import archive_url_de
 from pipeline.collecte.manifeste import REPERTOIRE_FICHES, chemin_manifeste
 from pipeline.collecte.sources import MENTION_SITE_PARTI
+from pipeline.collecte.textes import page_html, pdf, transcription_vtt
 from pipeline.collecte.textes.fiche import chemin_fiche_extraction
 from pipeline.collecte.textes.pages import Page, page_de
+
+FORMAT_PAR_OUTIL = {pdf.OUTIL: "pdf", page_html.OUTIL: "html"}
+"""Protocole 0.13 (§4, n° 54) : le format d'une source est relevé par la collecte, jamais deviné de
+l'URL. L'outil qui a produit le texte canonique le dit pour un PDF et une page web."""
+
+FORMAT_PAR_GENRE_MEDIA = {"audio": "audio", "video": "video"}
+"""Pour un texte dérivé d'une transcription (outil webvtt), le type de contenu que la collecte a
+reçu (`type_contenu_recu` du manifeste, `audio/*` ou `video/*`) dit si c'est un audio ou une vidéo."""
 
 
 class PieceManquante(Exception):
@@ -27,6 +37,24 @@ class PieceManquante(Exception):
 
 class SourceSansArchive(Exception):
     """Ni le manifeste ni une reprise ne portent de lien d'archive : la source ne peut pas s'afficher."""
+
+
+class FormatIndecidable(Exception):
+    """Ni l'outil d'extraction ni le type de contenu reçu ne disent le format : il n'est pas deviné."""
+
+
+def format_de(extraction: dict[str, object], manifeste: dict[str, object]) -> str:
+    """Format (`pdf`, `html`, `audio`, `video`) relevé dans la fiche d'extraction et le manifeste."""
+    outil = extraction["extracteur"]["outil"]  # type: ignore[index]
+    if outil in FORMAT_PAR_OUTIL:
+        return FORMAT_PAR_OUTIL[outil]
+    if outil != transcription_vtt.OUTIL:
+        raise FormatIndecidable(f"outil d'extraction inconnu : {outil!r}")
+    type_contenu = str(manifeste["type_contenu_recu"])
+    genre = type_media(type_contenu).split("/", 1)[0]
+    if genre not in FORMAT_PAR_GENRE_MEDIA:
+        raise FormatIndecidable(f"texte dérivé d'une transcription pour un contenu {type_contenu} ni audio ni vidéo")
+    return FORMAT_PAR_GENRE_MEDIA[genre]
 
 
 def _lire(chemin: Path, quoi: str) -> dict[str, object]:
@@ -72,6 +100,7 @@ def source_de(
     if archive_url is None:
         raise SourceSansArchive(f"{sha256} : archivage Wayback en échec et jamais repris")
     source = _metadonnees(fiche)
+    source["format"] = format_de(extraction, manifeste)
     pages = _pages(extraction)
     if citation is not None and pages is not None:
         source["page"] = page_de(pages, *citation)

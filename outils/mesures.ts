@@ -12,13 +12,19 @@
  *   pnpm mesures
  *   pnpm mesures --mesure=<id> --theme=<theme> --decision=acceptee --ecrire
  *   pnpm mesures --mesure=<id> --theme=<theme> --decision=refusee --motif="..." --ecrire
+ *   pnpm mesures --renvoyer=<id> [--ecrire]
  *
- * La commande n'écrit ni dans `data/` ni dans `staging/`. Accepter une demande ne modifie pas
- * la mesure : c'est une décision, pas une correction. La mesure se corrige en amont, dans le
- * pipeline, et `pnpm promote` refuse de promouvoir tant que les deux ne concordent pas.
+ * La commande n'écrit jamais dans `data/`. Accepter une demande ne modifie pas la mesure : c'est
+ * une décision, pas une correction. La mesure se corrige en amont, dans le pipeline, et
+ * `pnpm promote` refuse de promouvoir tant que les deux ne concordent pas.
+ *
+ * Une fois la mesure corrigée (nouvelle version), `--renvoyer` renvoie en attente les autres items
+ * de la mesure, jugés contre l'ancien thème (protocole 0.13, §4) : c'est la seule écriture de la
+ * commande dans `staging/`, détaillée dans `renvoi-mesure.ts`.
  */
 
 import { resolve } from "node:path";
+import { estRefusAttendu, renvoyer } from "./renvoi-mesure.ts";
 import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "./arguments.ts";
 import {
   ancienneteEnJours,
@@ -39,23 +45,32 @@ import { instantLocal } from "../validation/serveur/contexte.ts";
 
 interface Options {
   readonly ecrire: boolean;
+  /** Dépôt dont l'arbre doit être propre et dont HEAD est inscrit par `--renvoyer --ecrire`. */
+  readonly racine: string;
   readonly staging: string;
   readonly lots: string;
   readonly decisions: string;
   readonly mesures: string;
+  /** `data/items/`, lu seulement : un item publié n'est pas renvoyé par `--renvoyer`. */
+  readonly data: string;
   /** Mesure visée par une décision à enregistrer. Chaîne vide : simple listage. */
   readonly mesure: string;
+  /** Mesure dont les items sont à renvoyer en attente. Chaîne vide : pas de renvoi. */
+  readonly renvoyer: string;
 }
 
 function lireOptions(table: Arguments): Options {
-  const racine = resolve(import.meta.dirname, "..");
+  const racine = texte(table, "racine", resolve(import.meta.dirname, ".."));
   return {
     ecrire: drapeau(table, "ecrire"),
+    racine,
     staging: texte(table, "staging", resolve(racine, "staging")),
     lots: texte(table, "lots", resolve(racine, "validation/lots")),
     decisions: texte(table, "decisions", resolve(racine, "validation/decisions")),
     mesures: texte(table, "mesures", resolve(racine, "validation/mesures")),
+    data: texte(table, "data", resolve(racine, "data/items")),
     mesure: texte(table, "mesure", ""),
+    renvoyer: texte(table, "renvoyer", ""),
   };
 }
 
@@ -196,6 +211,10 @@ function enregistrer(table: Arguments, options: Options): void {
 function principal(): void {
   const table = analyserArguments(process.argv.slice(2));
   const options = lireOptions(table);
+  if (options.renvoyer.length > 0) {
+    renvoyer({ ...options, mesure_id: options.renvoyer });
+    return;
+  }
   if (options.mesure.length > 0) {
     enregistrer(table, options);
     return;
@@ -203,4 +222,10 @@ function principal(): void {
   imprimerDemandes(demandesSansDecision(options, instantLocal(new Date())));
 }
 
-principal();
+try {
+  principal();
+} catch (erreur) {
+  if (!estRefusAttendu(erreur)) throw erreur;
+  process.stderr.write(`\n${(erreur as Error).message}\n`);
+  process.exitCode = 1;
+}
