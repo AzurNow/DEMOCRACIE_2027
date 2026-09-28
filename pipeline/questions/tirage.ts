@@ -320,7 +320,11 @@ function verifierRelecture(question: Question): void {
   if (fautive !== undefined) throw new FormulationAuSensChange(question, fautive);
 }
 
-function concerneLeRun(question: Question, interroges: ReadonlySet<string>): boolean {
+/**
+ * Les questions que le tirage examine : une question d'attribution, ou une question qui nomme un
+ * candidat interrogé. Seule définition, lue aussi par la complétude du jeu (`completude.ts`).
+ */
+export function concerneLeRun(question: Pick<Question, "candidat_id">, interroges: ReadonlySet<string>): boolean {
   return question.candidat_id === undefined || interroges.has(question.candidat_id);
 }
 

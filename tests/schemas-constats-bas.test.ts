@@ -209,6 +209,9 @@ describe("conformité n° 66 : la version des données figure dans tout run publ
 
   it("un run invalidé, publié lui aussi (§6), sans donnees_commit est invalide", () => {
     const objet = { ...runSansDonnees("invalide"), invalidation: { motif: "panne du fournisseur" } };
+    // Modifié ouvertement (protocole 0.13, §12) : un run invalide ne porte pas de go/no-go. Celui de
+    // valide-01 est retiré pour que la seule erreur reste l'absence de donnees_commit.
+    delete (objet as Objet)["go_no_go"];
     expect(chemins("run", objet)).toSatisfy(toutesSous("/versions"));
   });
 

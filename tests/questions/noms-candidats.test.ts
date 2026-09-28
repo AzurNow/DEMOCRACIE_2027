@@ -70,10 +70,22 @@ function attribution(texte: string): Question {
   });
 }
 
+/**
+ * Modifié ouvertement (protocole 0.13, §5) : la barrière reçoit le jeu complet des questions
+ * engendrées au gel, et non plus la seule Q-ATT tirée, qu'elle refuserait comme jeu incomplet. Les
+ * questions nominatives de l'item complètent le jeu ; seule la Q-ATT est tirée, comme avant.
+ */
+function jeuComplet(q: Question): readonly Question[] {
+  const nominatives = engendrer([ITEM], [MESURE], RUN.perimetre.candidats)
+    .filter((engendree) => engendree.candidat_id !== undefined)
+    .map(completer);
+  return [...nominatives, q];
+}
+
 function barriere(texte: string): StatutSymetrie | undefined {
   const q = attribution(texte);
   const tirage = { run_id: RUN.id, date_gel: GEL, graine_tirage: graine(), parametres: quotas() /* conformité n° 59 */, entrees: entreesPour([q], [ITEM], [MESURE], RUN), exclusions: [], bilan_reprise: [], compensations: [] };
-  const symetrie = verifierSymetrie(tirage, [q], [ITEM], [MESURE], RUN);
+  const symetrie = verifierSymetrie(tirage, jeuComplet(q), [ITEM], [MESURE], RUN);
   return symetrie.conditions.find((c) => c.code === "aucun_nom_candidat_dans_q_att")?.statut;
 }
 

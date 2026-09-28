@@ -1,5 +1,5 @@
 /**
- * `pnpm schemas` — valide les 146 exemples de `schema/exemples/` contre `schema/exemples/manifeste.json`
+ * `pnpm schemas` — valide les 152 exemples de `schema/exemples/` contre `schema/exemples/manifeste.json`
  * et les vingt-deux schémas contre le méta-schéma draft 2020-12. Fait partie de `pnpm check`
  * (`schema/README.md`, « Exemples et table de vérité »).
  *

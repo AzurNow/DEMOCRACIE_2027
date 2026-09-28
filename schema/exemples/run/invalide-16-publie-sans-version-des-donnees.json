@@ -22,9 +22,9 @@
     },
     "echantillon_humain": {
       "valeur": 20261202,
-      "algorithme": "PCG64",
-      "bibliotheque": "numpy.random.Generator",
-      "version": "2.1.3"
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
     },
     "bootstrap": {
       "valeur": 20261203,
@@ -40,9 +40,9 @@
     },
     "contrefactuel": {
       "valeur": 20261205,
-      "algorithme": "PCG64",
-      "bibliotheque": "numpy.random.Generator",
-      "version": "2.1.3"
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
     }
   },
   "perimetre": {
