@@ -54,6 +54,18 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
   16. `docs/CONTRATS.md` §5 reçoit la table type de document → tier ;
       `fiche-source.schema.json` l'applique. *Code et texte à faire.*
 
+  Décisions du 2026-09-28 sur le renvoi après correction de thème (PR #50), selon la
+  recommandation. La 1 précise le texte du §4 (« retournent en attente ») : à écrire dans la
+  prochaine révision.
+  1. §4 (n° 69) : un item déjà publié dans `data/` et jugé contre l'ancien thème n'est pas renvoyé
+     par `pnpm mesures --renvoyer` ; il se reprend par la contestation et le panel (`pnpm contester`,
+     `pnpm panel`), seul chemin de modification d'un item publié. *Codé (#50) : la commande le
+     nomme et sort en erreur.*
+  2. §4 (n° 69) : un item d'un lot en cours attend la fin de son lot avant d'être renvoyé ; le lot
+     et son kappa ne changent pas. *Codé (#50).*
+  3. Outillage : quand des items restent bloqués, la commande écrit ceux qu'elle peut renvoyer puis
+     sort en code 1 ; une relance ne refait rien. *Codé (#50).*
+
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).

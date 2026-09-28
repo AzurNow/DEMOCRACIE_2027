@@ -80,7 +80,8 @@ export interface ContexteRenvoi {
  *   l'épingle sur la nouvelle version (`promotion.ts:versionMesurePromue`) ;
  * - `decisions_incompletes` : son lot ne l'a pas encore jugé jusqu'au bout ; le renvoyer changerait
  *   un lot en cours. Il attend la fin de son lot, et une relance le renverra ;
- * - `publie` : déjà dans `data/`, que ce chemin n'écrit pas (question ouverte, rapport du lot G).
+ * - `publie` : déjà dans `data/`, que ce chemin n'écrit pas. Décision de l'auteur du 2026-09-28 : un
+ *   item publié ne change que par la contestation et le panel (`pnpm contester`, `pnpm panel`).
  */
 export type SortRenvoi = "renvoyer" | "demandeur" | "decisions_incompletes" | "publie";
 

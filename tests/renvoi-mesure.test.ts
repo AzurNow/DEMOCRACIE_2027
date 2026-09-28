@@ -129,7 +129,7 @@ describe("planifierRenvois : qui retourne en attente", () => {
     expect(sorts(ctx)[Y.id]).toBe("decisions_incompletes");
   });
 
-  it("Y déjà publié dans data/ n'est pas renvoyé par ce chemin (question ouverte) : il est nommé", () => {
+  it("Y déjà publié dans data/ n'est pas renvoyé par ce chemin (décision de l'auteur du 2026-09-28 : contestation et panel) : il est nommé", () => {
     expect(sorts(contexte({ publies: new Set([Y.id]) }))[Y.id]).toBe("publie");
   });
 

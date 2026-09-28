@@ -107,7 +107,7 @@ const RUBRIQUES: readonly (readonly [SortRenvoi, string])[] = [
   ["renvoyer", "Renvoyés en attente"],
   ["demandeur", "Demandeurs, validés par leur lot et épinglés sur la nouvelle version à la promotion"],
   ["decisions_incompletes", "Encore en cours de jugement, décisions incomplètes (relancer à la fin du lot)"],
-  ["publie", "Déjà publiés dans data/, non renvoyés par ce chemin (décision de l'auteur)"],
+  ["publie", "Déjà publiés dans data/, à reprendre par pnpm contester puis pnpm panel (décision de l'auteur)"],
 ];
 
 function imprimerRapport(mesure: Mesure, decision: DecisionCorrectionMesure, renvois: readonly Renvoi[]): void {
@@ -168,7 +168,8 @@ export function renvoyer(options: OptionsRenvoi): void {
   if (bloques(renvois).length > 0) {
     process.stderr.write(
       "\nDes items de la mesure jugés contre l'ancien thème ne sont pas renvoyés : lot en cours ou item\n" +
-        "déjà publié. Ils sont nommés ci-dessus ; les autres l'ont été (ou le seraient avec --ecrire).\n",
+        "déjà publié. Ils sont nommés ci-dessus ; les autres l'ont été (ou le seraient avec --ecrire).\n" +
+        "Un item publié se reprend par pnpm contester puis pnpm panel, jamais par ce chemin.\n",
     );
     process.exitCode = 1;
   }
