@@ -380,8 +380,8 @@
       "then": { "$ref": "#/$defs/sources_du_contenu_attestees_si_t2" }
     },
     {
-      "$comment": "Conformité n° 12 : en staging (en_attente) et pour un item à confirmer, aucune attestation d'écoute. Le pipeline n'écoute rien ; s'il pouvait écrire ce champ, l'attestation publiée pourrait être fausse.",
-      "if": { "properties": { "statut_validation": { "enum": ["en_attente", "a_confirmer"] } }, "required": ["statut_validation"] },
+      "$comment": "Conformité n° 12 : en staging (en_attente) et pour un item à confirmer, aucune attestation d'écoute. Le pipeline n'écoute rien ; s'il pouvait écrire ce champ, l'attestation publiée pourrait être fausse. Protocole 0.13 (§4, grille de validation) : « L'attestation n'existe que sur un item vérifié ; elle est conservée si le panel retire ensuite l'item. » Elle est donc interdite aussi sur un item rejeté ou non évaluable, et admise sur retire_par_panel.",
+      "if": { "properties": { "statut_validation": { "enum": ["en_attente", "a_confirmer", "rejete", "non_evaluable"] } }, "required": ["statut_validation"] },
       "then": { "$ref": "#/$defs/sources_du_contenu_sans_attestation" }
     },
     {
@@ -465,6 +465,17 @@
       "additionalProperties": false,
       "required": ["position", "paraphrase", "citation_verbatim", "source"],
       "description": "Une position sourcée. Sert à l'assertion d'un item P et aux deux états d'un item O.",
+      "allOf": [
+        {
+          "$comment": "Protocole 0.13 (§4, n° 54) : « une citation tirée d'un PDF porte toujours sa page ». Un état positionnel est le seul endroit où une source porte une citation : la source de couverture d'un item A et les sources nouvelles d'une contestation ne citent rien, un PDF y reste sans page. La page est le rang dans le fichier à partir de 1, jamais le folio imprimé (§4).",
+          "properties": {
+            "source": {
+              "if": { "properties": { "format": { "const": "pdf" } }, "required": ["format"] },
+              "then": { "required": ["page"] }
+            }
+          }
+        }
+      ],
       "properties": {
         "position": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position" },
         "paraphrase": { "type": "string", "minLength": 3 },

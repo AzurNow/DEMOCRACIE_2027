@@ -48,5 +48,11 @@
     "required": ["type_document"]
   },
   "then": { "required": ["site_parti_tient_lieu_de_campagne"] },
-  "else": { "not": { "required": ["site_parti_tient_lieu_de_campagne"] } }
+  "else": { "not": { "required": ["site_parti_tient_lieu_de_campagne"] } },
+  "allOf": [
+    {
+      "$comment": "docs/CONTRATS.md §5 (protocole 0.13) : la fiche applique la table des tiers par type de document, par référence à sa seule copie (commun#/$defs/tier_selon_type_document), comme la source d'un item. Une fiche au tier contraire à son type ne produit donc jamais une source qu'item.schema.json refuserait plus loin.",
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier_selon_type_document"
+    }
+  ]
 }

@@ -30,6 +30,8 @@ export function source(surcharges: Partial<Source> = {}): Source {
     tier: "T1",
     url: "https://demo.invalid/programme.pdf",
     type_document: "programme_pdf",
+    // Protocole 0.13 (n° 54) : chaque source déclare son format.
+    format: "pdf",
     page: 14,
     sha256: "1".repeat(64),
     texte_sha256: "2".repeat(64),

@@ -1,5 +1,5 @@
 {
-  "id": "E32YPTJYHY4ZPJ210Z6GW5DWZZ",
+  "id": "YARYX9NM753C0AF6CDVVE6SVGM",
   "version": 1,
   "empreinte": "76ae5a1406b53af518d9c2dce5e7381bbb62d25df353a2a1b5614f00c87587d2",
   "libelle_lisible": "TVA énergie à 5,5 %",
@@ -31,12 +31,11 @@
     },
     "source": {
       "tier": "T1",
-      "url": "https://exemple-candidat.fr/programme-2027.pdf",
-      "type_document": "programme_pdf",
+      "url": "https://exemple-candidat.fr/tribune-energie.pdf",
+      "type_document": "tribune_signee",
       "format": "pdf",
-      "page": 14,
       "sha256": "2c6ed1182b4176016ebb10fdc541e61c92c45c8d37e04ec8481a5d398b6e460e",
-      "archive_url": "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/programme-2027.pdf",
+      "archive_url": "https://web.archive.org/web/20260901120000/https://exemple-candidat.fr/tribune-energie.pdf",
       "date_source": "2026-09-01",
       "date_collecte": "2026-09-03T09:12:00+02:00",
       "publication": "publique"
@@ -59,6 +58,19 @@
   "validations": [
     {
       "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
       "decision": "accepter",
       "date": "2026-09-20T10:00:00+02:00",
       "lot_id": "lot-003",

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from pipeline.collecte.collecte import collecter
-from pipeline.collecte.source import PieceManquante, SourceSansArchive, source_de
+from pipeline.collecte.source import FormatIndecidable, PieceManquante, SourceSansArchive, format_de, source_de
 from pipeline.collecte.textes.extraction import Extrait, extraire_tout
 from pipeline.collecte.textes.pages import CitationSansPageUnique
 from pipeline.collecte.wayback import ArchivageEchoue, ArchivageReussi
@@ -44,6 +44,8 @@ def test_source_complete_d_un_programme_pdf_avec_page_de_la_citation(racine: Pat
         "tier": "T1",
         "url": URL_PDF,
         "type_document": "programme_pdf",
+        # Protocole 0.13 (n° 54) : le format est relevé par la collecte, jamais deviné de l'URL.
+        "format": "pdf",
         "page": 2,
         "sha256": SHA_PDF,
         "texte_sha256": texte_sha,
@@ -113,6 +115,8 @@ def test_site_parti_porte_sa_mention_et_une_citation_html_ne_donne_pas_de_page(
     assert produite["site_parti_tient_lieu_de_campagne"] is False
     assert list(produite)[:4] == ["tier", "url", "type_document", "site_parti_tient_lieu_de_campagne"]
     assert "page" not in produite
+    # Protocole 0.13 (n° 54) : fiche d'extraction html.parser, donc une page web.
+    assert produite["format"] == "html"
 
 
 def test_fiche_d_extraction_absente(racine: Path, horloge: HorlogeFactice) -> None:
@@ -128,3 +132,54 @@ def test_fiche_de_source_absente_pour_une_autre_cle(racine: Path, horloge: Horlo
 
     with pytest.raises(PieceManquante, match="fiche de source absente"):
         source_de(racine, cle("candidat-z", URL_PDF), SHA_PDF, texte_sha)
+
+
+# --------------------------------------------------------------------- format (protocole 0.13)
+# « Chaque source déclare son format (PDF, page web, audio, vidéo), relevé par la collecte et non
+# deviné » (§4, n° 54). Il se lit dans l'outil de la fiche d'extraction et, pour une transcription,
+# dans le type de contenu que la collecte a reçu ; jamais dans l'URL.
+
+
+def _extraction(outil: str) -> dict[str, object]:
+    return {"extracteur": {"outil": outil, "version": "x", "options": {}}}
+
+
+def _manifeste(type_contenu: str) -> dict[str, object]:
+    return {"type_contenu_recu": type_contenu}
+
+
+def test_format_pdf_d_une_fiche_pymupdf() -> None:
+    assert format_de(_extraction("pymupdf"), _manifeste("application/pdf")) == "pdf"
+
+
+def test_format_html_d_une_fiche_html_parser() -> None:
+    assert format_de(_extraction("html.parser"), _manifeste("text/html; charset=utf-8")) == "html"
+
+
+def test_format_video_d_une_transcription_d_un_contenu_video() -> None:
+    assert format_de(_extraction("webvtt"), _manifeste("video/mp4")) == "video"
+
+
+def test_format_audio_d_une_transcription_d_un_contenu_audio() -> None:
+    assert format_de(_extraction("webvtt"), _manifeste("audio/mp4")) == "audio"
+
+
+def test_transcription_d_un_contenu_ni_audio_ni_video_refusee() -> None:
+    with pytest.raises(FormatIndecidable, match="application/pdf"):
+        format_de(_extraction("webvtt"), _manifeste("application/pdf"))
+
+
+def test_outil_d_extraction_inconnu_refuse() -> None:
+    with pytest.raises(FormatIndecidable, match="tesseract"):
+        format_de(_extraction("tesseract"), _manifeste("application/pdf"))
+
+
+def test_source_d_un_pdf_sous_une_url_sans_extension_porte_le_format_pdf(racine: Path, horloge: HorlogeFactice) -> None:
+    url = "https://example.org/telecharger?id=7"
+    b = banc(racine, horloge, {url: [reponse(200, PDF, content_type="application/pdf")] * 2})
+    collecter([source(url)], b.dependances())
+    texte_sha = _extraire(racine, horloge)
+
+    produite = source_de(racine, cle("candidat-a", url), SHA_PDF, texte_sha, citation=(40, 44))
+
+    assert (produite["format"], produite["page"]) == ("pdf", 2)

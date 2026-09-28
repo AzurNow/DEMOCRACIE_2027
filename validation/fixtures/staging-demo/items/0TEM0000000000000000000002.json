@@ -27,6 +27,7 @@
       "tier": "T1",
       "url": "https://demonstration.invalid/programme.pdf",
       "type_document": "programme_pdf",
+      "format": "pdf",
       "sha256": "a12730e4523e449e57c21fe0bdaa48dc702660f4e1126e55e887aa89f9a019db",
       "texte_sha256": "7e84cf5efef7f3f0f22408839bc0cafaf4aa01a8b6a05d9a9c3466eb48cc2635",
       "archive_url": "https://archive.invalid/demonstration/programme.pdf",

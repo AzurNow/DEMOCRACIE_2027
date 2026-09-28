@@ -110,6 +110,8 @@ export interface Source {
   readonly tier: "T1" | "T2" | "T3";
   readonly url: string;
   readonly type_document: string;
+  /** Protocole 0.13 (§4, n° 54) : relevé par la collecte, jamais deviné ; une citation d'un PDF porte sa page. */
+  readonly format: "pdf" | "html" | "audio" | "video";
   readonly page?: number;
   readonly extrait?: { readonly debut: string; readonly fin: string };
   /** Les deux annotateurs qui ont écouté l'extrait, triés ; écrit par `pnpm promote` seulement (conformité n° 12). */

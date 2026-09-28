@@ -10,6 +10,7 @@ import type { RegistreCorrectionsMesure } from "../validation/domaine/correction
 import type { EtatAnnotateur } from "../validation/domaine/journal.ts";
 import { lotsApresSupersession, type LotEffectif } from "../validation/domaine/lot.ts";
 import type { Dossier, Issue } from "../validation/domaine/promotion.ts";
+import { lotJugeEncore } from "../validation/domaine/renvoi-mesure.ts";
 import type { EntreeDecision, Item, Lot } from "../validation/domaine/types.ts";
 import { statutContestationEffectif } from "../validation/io/items-effectifs.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
@@ -40,10 +41,22 @@ export interface SourcesEvaluation {
   readonly horodatage: string;
 }
 
+/**
+ * Un item que le lot épingle dans une version antérieure à son renvoi en attente (protocole 0.13,
+ * §4, correction de thème) : les décisions du lot restent au journal, mais ne le jugent plus.
+ */
+export interface RenvoyeDuLot {
+  readonly lot_id: string;
+  readonly item: Item;
+  /** Version de l'item que le lot épingle, donc celle que ses décisions ont jugée. */
+  readonly version_du_lot: number;
+}
+
 export interface Evaluation {
   readonly effectifs: readonly LotEffectif[];
   readonly verdicts: readonly Verdict[];
   readonly introuvables: readonly Introuvable[];
+  readonly renvoyes: readonly RenvoyeDuLot[];
 }
 
 function decisionsActives(etats: ReadonlyMap<string, EtatAnnotateur>, item_id: string): EntreeDecision[] {
@@ -64,11 +77,16 @@ function evaluerLot(effectif: LotEffectif, sources: SourcesEvaluation): Evaluati
   const etats = etatsDuLot(sources.repertoire_decisions, effectif.lot);
   const verdicts: Verdict[] = [];
   const introuvables: Introuvable[] = [];
+  const renvoyes: RenvoyeDuLot[] = [];
 
   for (const reference of effectif.items) {
     const item = sources.staging.items.get(reference.item_id);
     if (item === undefined) {
       introuvables.push({ lot_id: effectif.lot.lot_id, item_id: reference.item_id });
+      continue;
+    }
+    if (!lotJugeEncore(item, reference)) {
+      renvoyes.push({ lot_id: effectif.lot.lot_id, item, version_du_lot: reference.item_version });
       continue;
     }
     // Le contenu jugé est celui de `staging/` ; le statut de contestation est l'effectif : un item
@@ -84,7 +102,7 @@ function evaluerLot(effectif: LotEffectif, sources: SourcesEvaluation): Evaluati
     const issue = evaluerAvecArbitrage(dossier, sources.registre_arbitrage, sources);
     verdicts.push({ lot_id: effectif.lot.lot_id, item, dossier, issue });
   }
-  return { effectifs: [effectif], verdicts, introuvables };
+  return { effectifs: [effectif], verdicts, introuvables, renvoyes };
 }
 
 export function evaluerLots(sources: SourcesEvaluation): Evaluation {
@@ -94,5 +112,6 @@ export function evaluerLots(sources: SourcesEvaluation): Evaluation {
     effectifs,
     verdicts: evaluations.flatMap((evaluation) => evaluation.verdicts),
     introuvables: evaluations.flatMap((evaluation) => evaluation.introuvables),
+    renvoyes: evaluations.flatMap((evaluation) => evaluation.renvoyes),
   };
 }
