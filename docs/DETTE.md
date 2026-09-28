@@ -13,9 +13,64 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-09-28 — Protocole 0.12 et 0.13, intervalles de l'asymétrie, symétrie et run 0.13, items et sources 0.13 (PR #44 à #50 : `docs/PROTOCOLE.md`, `analysis/`, `pipeline/questions/`, `outils/symmetry.ts`, `schema/`, `pipeline/collecte/source.py`, `validation/`, `outils/mesures.ts`, `outils/lots.ts`, `outils/promote.ts`)
+
+### 1. Un item renvoyé redevient jugé par son ancien lot si le libellé de son entrée d'historique change — *haute*
+
+Depuis #50, `validation/domaine/renvoi-mesure.ts:renvoyeDepuis` reconnaît un item renvoyé après une
+correction de thème au préfixe `CHANGEMENT_RENVOI` de l'entrée d'historique, écrite en staging par
+`pnpm mesures --renvoyer`. `lotJugeEncore` en dépend, et à travers lui `outils/evaluation-lots.ts`
+(promotion) et `outils/lots.ts` (réserve). Les tests fabriquent leurs historiques avec la même
+constante.
+
+**Pourquoi ça casse.** Si le libellé change alors que des items renvoyés vivent déjà en staging avec
+l'ancien, `renvoyeDepuis` rend faux : l'ancien lot les juge de nouveau, ses deux décisions
+concordent (même version d'item), et `pnpm promote` publie des items validés contre l'ancien thème.
+La répartition par thème du tirage part de ces items, et aucun test ne tombe.
+
+**Ce qu'il faut faire.** Tenir le libellé pour un format publié : un test qui fige sa valeur
+littérale, ou un champ typé dans l'entrée d'historique (`renvoi_depuis_version`) au lieu d'un
+préfixe de texte, avec une migration si des items renvoyés existent déjà.
+
+### 2. `pnpm symmetry` ne vérifie pas que les items reçus sont ceux du gel — *haute*
+
+Depuis #49, la barrière refuse un jeu de questions incomplet, mais la référence « questions
+engendrées » est recalculée sur les items que l'appelant lui passe. Rien ne compare ces items au
+gel du run.
+
+**Pourquoi ça casse.** Un appel avec une partie des items seulement réduit la référence dans la même
+proportion : le jeu incomplet paraît complet, et le point 1 du 2026-09-27 revient par une autre
+porte. La répartition par thème redevient verte en silence.
+
+**Ce qu'il faut faire.** Au lot qui branchera `pnpm symmetry` sur un vrai run : comparer l'empreinte
+des items reçus à celle que le run publie au gel, avec un test sur un sous-ensemble d'items.
+
+### 3. Un run planifié peut encore porter un go/no-go — *basse*
+
+#49 interdit `go_no_go` sur un run invalide, mais `schema/run.schema.json` ne l'interdit pas hors
+des statuts publiés.
+
+**Pourquoi ça casse.** Un run planifié qui porte un go/no-go se lit comme décidé avant d'avoir
+tourné. Le lecteur du fichier s'en aperçoit, mais aucun contrôle ne l'arrête.
+
+**Ce qu'il faut faire.** Une contrainte `if` sur le statut, avec un exemple invalide.
+
+### 4. `pnpm validate` montre un item renvoyé dans son ancien lot sans le signaler — *basse*
+
+Depuis #50, un item renvoyé reste listé par son ancien lot dans l'interface de validation. Une
+décision prise là est enregistrée au journal, mais la promotion ne la lit plus.
+
+**Pourquoi ça casse.** Un annotateur juge pour rien, et le rapport de `pnpm promote` (« renvoyés
+en attente, que leur lot ne juge plus ») est le seul endroit où cela se voit.
+
+**Ce qu'il faut faire.** Marquer l'item comme renvoyé dans l'écran du lot, à partir de
+`lotJugeEncore`.
+
+---
+
 ## 2026-09-27 — Constats moyens et bas de la conformité (PR #38 à #42 : `analysis/`, `pipeline/questions/`, `pipeline/collecte/sources.py`, `validation/domaine/`, `outils/promote.ts`, `schema/`)
 
-### 1. La répartition par thème redevient verte en silence si `pnpm symmetry` ne reçoit que les questions tirées — *haute*
+### ~~1. La répartition par thème redevient verte en silence si `pnpm symmetry` ne reçoit que les questions tirées~~ — réglé le 2026-09-27 par `JeuDeQuestionsIncomplet` (protocole 0.13 §5, #49) ; reste la provenance des items, point 2 du 2026-09-28
 
 Depuis #41 (n° 23), `repartition_themes` ne passe au rouge que si le candidat en retard avait des
 questions tirables pour combler l'écart. Elle les cherche dans les questions passées à
@@ -48,7 +103,7 @@ deux partages du run et des réponses et vérifie les graines de l'analyse avec
 `GENERATEUR_DU_TIRAGE`, et un test de bout en bout avec un candidat sous le seuil et un couple
 incomplet.
 
-### 3. Le code applique des règles que le protocole n'écrit pas encore — *moyenne*
+### ~~3. Le code applique des règles que le protocole n'écrit pas encore~~ — réglé le 2026-09-27 par les révisions 0.12 et 0.13 (#45, #48) ; la passe de conformité reste due avant le gel (`docs/TACHES-AUTEUR.md`)
 
 #38 à #42 implémentent des lectures tranchées par l'auteur le 2026-09-27 ou proposées par les
 sous-agents, en attente de la 0.12 :
@@ -68,7 +123,7 @@ le protocole gelé ne dit pas. Seule une passe de conformité le verrait.
 **Ce qu'il faut faire.** Écrire la 0.12, puis refaire la passe de conformité avant le gel du
 15 octobre, en vérifiant chacune de ces règles contre le texte.
 
-### 4. Une correction de thème bloque la promotion des autres items de la mesure — *moyenne*
+### ~~4. Une correction de thème bloque la promotion des autres items de la mesure~~ — réglé le 2026-09-28 par `pnpm mesures --renvoyer` (#50)
 
 `validation/domaine/promotion.ts:versionMesurePromue` (#42, n° 69) lève `VersionMesureEcart` pour
 tout item vérifié qui épingle une version de mesure dépassée sans correction acceptée dans son

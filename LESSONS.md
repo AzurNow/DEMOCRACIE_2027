@@ -180,6 +180,15 @@ traités, et trois « code à aligner » (n° 80, 82, 84) passaient pour traité
 aurait refait du travail fait et oublié un écart haut. Une session menée sur l'autre machine se
 clôture aussi là-bas : cinq points de dette réglés attendaient d'être barrés.
 
+**Un sous-lot lancé s'inscrit hors de la conversation : son nom, son brief et son worktree.** Le
+2026-09-27, le sous-lot G (items et sources) a été coupé par la limite d'utilisation, sans commit.
+Son nom, son brief et son worktree ne vivaient que dans la conversation. Après un `/clear`, « reprenons
+le sous-lot G » ne renvoyait à rien dans le dépôt : il a fallu fouiller les transcriptions de session
+pour retrouver le brief. L'agent n'était pas non plus joignable depuis la nouvelle session, et il a
+fallu en relancer un, pointé sur le worktree, avec l'inventaire de ce qui était déjà écrit. À chaque
+lancement, noter dans `docs/TACHES-AUTEUR.md` (section 0) le sous-lot, sa branche et son worktree, et
+garder le brief en fichier sous `.claude/briefs/`.
+
 **Un sous-agent long écrit ses livrables au fil de l'eau.** Le 2026-09-24, la limite d'utilisation a
 coupé les trois sous-agents de la passe de conformité après une heure de lecture : aucun n'avait
 encore écrit une ligne de matrice. Ils ont pu reprendre avec leur contexte, mais le brief doit dire
