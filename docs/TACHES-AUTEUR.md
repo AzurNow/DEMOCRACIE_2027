@@ -4,14 +4,15 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.11, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #43.
+Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+`docs/PROTOCOLE.md` 0.13, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #50.
 
 ---
 
 ## 0. Fusions en attente
 
-- [ ] Supprimer les branches `lots/*` déjà fusionnées (#38 à #46).
+- [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #50), et
+      leurs worktrees sous `.claude/worktrees/`.
 
 ---
 
@@ -19,40 +20,12 @@ Mis à jour le 2026-09-27. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ### Protocole (`docs/PROTOCOLE.md`)
 
-- [ ] **Faire écrire la 0.13** (dire « écris la 0.13 ») : elle reprend les seize décisions du
-      2026-09-27 ci-dessous. Elles sont prises, mais ni écrites ni toutes codées.
-
-  Décisions du 2026-09-27 (toutes selon la recommandation) :
-  1. §5 : `pnpm symmetry` reçoit le jeu complet des questions engendrées au gel, publié avec le
-     run ; un jeu incomplet est refusé. *Code à faire.*
-  2. §5 : « quand les items le permettent » se juge par strate thème × gabarit, compensations
-     exclues. *Déjà codé (#41).*
-  3. §12 : un run à symétrie rouge ne porte pas de go/no-go. *Code à faire (schéma).*
-  4. §12 : un run invalide déclare sa publication et son dépôt Zenodo. *Code à faire (schéma).*
-  5. §4 (n° 69) : quand le thème d'une mesure est corrigé via un item, les autres items de la
-     mesure retournent en attente, épinglés sur la nouvelle version. *Code à faire.*
-  6. §4 (n° 12) : un item T2 sans deux « oui » à l'écoute part en arbitrage
-     `transcription_non_verifiee` (rejeter ou non évaluable). *Déjà codé (#40).*
-  7. §4 (n° 17) : `valide_du` d'un item O = date de la source de l'état antérieur ; d'un item A =
-     date de la source de couverture ; item F non contrôlé ; divergence motivée. *Code à faire ;
-     corriger l'exemple item/valide-02.*
-  8. §4 (n° 12) : attestation d'écoute interdite sur un item rejeté ou non évaluable, conservée
-     sur un item retiré par le panel après vérification. *Code à faire (schéma).*
-  9. §4 (n° 54) : chaque source porte un champ `format` (pdf, html, audio, video), écrit par le
-     pipeline ; pdf ⇒ page. *Code à faire (modèle de données).*
-  10. §7 (n° 64) : « soutient » reste permis sur un lien inaccessible ou non testable. *Rien à
-      coder.*
-  11. §5 (n° 37) : la formulation orientée d'une Q-ACT sur un item O note aussi la position que
-      sa prémisse suppose actuelle. *Déjà codé (#41).*
-  12. §8 (n° 29) : un rééchantillon où l'écart maximal n'est pas défini est écarté et compté.
-      *Déjà codé (#46).*
-  13. §3 : la déclaration de candidature date au plus tard du jour du gel. *Déjà codé (#39).*
-  14. §3 : les sondages se comptent par URL distinctes. *Déjà codé (#39).*
-  15. §7 : l'échantillon humain et le test contrefactuel tirent avec SplitMix64
-      (splitmix64-sha256-v1), graine dérivée et clé lisible comme au §8. *Code à faire
-      (exemples de schéma encore en PCG64).*
-  16. `docs/CONTRATS.md` §5 reçoit la table type de document → tier ;
-      `fiche-source.schema.json` l'applique. *Code et texte à faire.*
+- [x] **0.13 écrite** (#48) : les seize décisions du 2026-09-27 sont dans le protocole, et le code
+      est aligné sur toutes (#49 : symétrie, run, générateurs ; #50 : format, dates, attestation,
+      renvoi après correction de thème, tiers de la fiche).
+- [ ] **Faire refaire la passe de conformité** (compétence `conformite-protocole`) sur la 0.13 :
+      la matrice `docs/conformite/exigences.json` est restée à la 0.8. Avant le gel du 15 octobre.
+- [ ] **Faire écrire dans la prochaine révision** les décisions du 2026-09-28 ci-dessous.
 
   Décisions du 2026-09-28 sur le renvoi après correction de thème (PR #50), selon la
   recommandation. La 1 précise le texte du §4 (« retournent en attente ») : à écrire dans la
