@@ -125,6 +125,7 @@ function symetrieDe(questions: readonly Question[]): Symetrie {
     parametres: quotas(),
     entrees: entreesPour(questionsTirables(questions, ITEMS, MESURES, RUN), ITEMS, MESURES, RUN),
     exclusions: [],
+    contestes_au_gel: [],
     bilan_reprise: [],
     compensations: [],
   };

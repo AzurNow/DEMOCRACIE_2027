@@ -282,6 +282,16 @@ export interface ParametresTirage {
   readonly questions_attribution_par_theme: number;
 }
 
+/**
+ * Décision de l'auteur du 2026-09-29, n° 8 : pour un candidat interrogé, les items P vérifiés que
+ * leur contestation tient hors du tirage au gel (`couverture.ts:itemsPContestesAuGel`), triés.
+ * Vide quand il n'y en a aucun : l'absence est publiée, jamais déduite.
+ */
+export interface ContestesAuGel {
+  readonly candidat_id: string;
+  readonly item_ids: readonly string[];
+}
+
 export interface Tirage {
   readonly run_id: string;
   readonly date_gel: string;
@@ -289,6 +299,8 @@ export interface Tirage {
   readonly parametres: ParametresTirage;
   readonly entrees: readonly EntreeTirage[];
   readonly exclusions: readonly ExclusionTirage[];
+  /** Une entrée par candidat interrogé, triée par `candidat_id` (décision n° 8 du 2026-09-29). */
+  readonly contestes_au_gel: readonly ContestesAuGel[];
   readonly bilan_reprise: readonly BilanReprise[];
   readonly compensations: readonly CompensationTirage[];
 }

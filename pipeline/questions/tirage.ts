@@ -24,7 +24,9 @@
  *   item hors de sa fenêtre de validité, position « sans objet » sur un gabarit fermé, négatif ou
  *   orienté, liste d'attribution non définie — est exclue. Chaque exclusion est inscrite dans
  *   `tirage.exclusions` avec son motif. Ces règles sont évaluées avant tout usage de la graine :
- *   aucune graine ne fait échouer ni réussir le tirage pour ces motifs.
+ *   aucune graine ne fait échouer ni réussir le tirage pour ces motifs. Les items P vérifiés
+ *   qu'une contestation pendante tient hors du tirage sont publiés, par candidat interrogé, dans
+ *   `tirage.contestes_au_gel` (décision de l'auteur du 2026-09-29, n° 8 ; règle de `couverture.ts`).
  * - **La reprise** (§5, protocole 0.9). Une question est reprise si elle a le même identifiant et
  *   les mêmes empreintes de texte qu'au run précédent (`signature.ts`, seule définition, partagée
  *   avec la tendance du §8). Par candidat, et pour les questions d'attribution sur l'ensemble des
@@ -64,6 +66,7 @@ import {
   ReponseNonDefinieAuGel,
 } from "./reponse-attendue.ts";
 import type { CandidatDuPerimetre } from "./reponse-attendue.ts";
+import { itemsPContestesAuGel } from "./couverture.ts";
 import { signatureQuestion } from "./signature.ts";
 import { estCompare } from "./symetrie.ts";
 import type {
@@ -71,6 +74,7 @@ import type {
   CandidatAuGel,
   CodeGabarit,
   CompensationTirage,
+  ContestesAuGel,
   EntreeTirage,
   ExclusionTirage,
   GraineTirage,
@@ -906,6 +910,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
   const index = indexer(demande.items, demande.mesures);
   const interroges = demande.run.perimetre.candidats.filter((candidat) => candidat.interroge);
   const separation = separer(demande, index, new Set(interroges.map((candidat) => candidat.candidat_id)));
+  const contestes = contestesAuGel(demande, interroges);
   const groupes = grouperParCandidat(separation.tirables, interroges);
   const contexte: ContexteTirage = {
     demande,
@@ -927,6 +932,7 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
       parametres: quotasPublies(demande.parametres),
       entrees: resultats.flatMap((resultat) => resultat.entrees),
       exclusions: separation.exclusions,
+      contestes_au_gel: contestes,
       bilan_reprise: resultats.map((resultat) => resultat.bilan),
       compensations: resultats.flatMap((resultat) => resultat.compensations),
     },
@@ -938,6 +944,22 @@ export function tirer(demande: DemandeTirage): ResultatTirage {
         .map((candidat) => candidat.candidat_id),
     },
   };
+}
+
+/**
+ * Décision de l'auteur du 2026-09-29, n° 8 : par candidat interrogé, zéro compris, les items P
+ * vérifiés que leur contestation tient hors du tirage au gel. Compte par item, pas par question :
+ * une question qu'un item contesté n'a pas engendrée n'est pas inventée pour être comptée. La règle
+ * est celle de `couverture.ts`, lue sur les items et le référentiel au gel, sans la graine.
+ */
+function contestesAuGel(demande: DemandeTirage, interroges: readonly CandidatAuGel[]): readonly ContestesAuGel[] {
+  return interroges
+    .map((candidat) => candidat.candidat_id)
+    .sort(comparer)
+    .map((candidat_id) => ({
+      candidat_id,
+      item_ids: itemsPContestesAuGel(demande.items, candidat_id, demande.run.date_gel, demande.mesures),
+    }));
 }
 
 interface ContexteTirage {

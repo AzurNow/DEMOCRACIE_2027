@@ -70,7 +70,8 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
   8. §5 : le rapport du run publie, par candidat interrogé, les items P vérifiés mais contestés au
      gel, donc absents du tirage (compte par item, pas par question). Texte proposé : « Le rapport
      du run publie, pour chaque candidat interrogé, les items P vérifiés que leur contestation tient
-     hors du tirage à la date du gel. » *À coder.*
+     hors du tirage à la date du gel. » Précision du même jour : y figure tout item P vérifié,
+     contesté et en vigueur au gel, quelle que soit la version de sa mesure. *Codé (#54).*
 
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.

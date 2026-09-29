@@ -5,7 +5,7 @@
   "description": "Les questions effectivement tirées pour un run, avec ce qu'elles valaient AU GEL : versions d'items, statuts d'items, réponse attendue résolue à la date de gel. Fichier autonome, référencé par run.tirage avec son empreinte — il compte environ 400 entrées, et l'intégrer à l'objet run obligerait tout contrôle go/no-go à le charger entier. C'est ce gel qui rend le critère du §12 décidable après coup et l'analyse de robustesse §8(b) reproductible.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "date_gel", "graine_tirage", "parametres", "entrees", "exclusions", "bilan_reprise", "compensations"],
+  "required": ["run_id", "date_gel", "graine_tirage", "parametres", "entrees", "exclusions", "contestes_au_gel", "bilan_reprise", "compensations"],
 
   "properties": {
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
@@ -83,6 +83,25 @@
             "description": "hors_validite : la fenêtre de validité de l'item principal ne contient pas l'instant du gel. reponse_attendue_indecidable : la position en vigueur ne donne aucune réponse attendue (« sans_objet » sur Q-FER, Q-NEG ou Q-ORI ; liste d'attribution non définie). attribution_contestee : question d'attribution dont l'item vérifié d'un candidat interrogé au run sur la mesure est contesté au gel ; la liste attendue n'est pas établie (décision de l'auteur du 2026-09-29, conformité n° 3). mesure_version_depassee : un item vérifié définissant la question (principal ou attendu dans la liste) épingle une version de sa mesure qui n'est plus la version courante ; il a été jugé contre une version qui n'existe plus (décision de l'auteur du 2026-09-29, conformité n° 2)."
           },
           "detail": { "type": "string", "minLength": 1, "description": "Le message de résolution, tel quel." }
+        }
+      }
+    },
+
+    "contestes_au_gel": {
+      "type": "array",
+      "description": "Décision de l'auteur du 2026-09-29, n° 8 (texte à écrire au §5 en 0.14) : « Le rapport du run publie, pour chaque candidat interrogé, les items P vérifiés que leur contestation tient hors du tirage à la date du gel. » Compte par item, pas par question : aucune question n'est engendrée pour être comptée. Une entrée par candidat interrogé, y compris ceux dont la liste est vide, pour que l'absence soit publiée et non déduite ; triée par candidat_id. Un item y figure si sa place au gel est « contesté » (vérifié, contestation pendante : pipeline/questions/place-au-gel.ts) et s'il est en vigueur au gel (valide_du <= date_gel < valide_au), quelle que soit la version de sa mesure : l'item épinglé sur une version dépassée est celui que l'auteur conteste après une correction de thème (décision du même jour), et il est listé (pipeline/questions/couverture.ts:itemPContesteAuGel). Un item contesté hors de sa fenêtre de validité n'y figure pas : sa contestation n'est pas ce qui le tient hors du tirage. Un item arbitré sans réintégration est écarté, pas contesté : il n'y figure pas non plus. Évalué sans la graine.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidat_id", "item_ids"],
+        "properties": {
+          "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "item_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+            "description": "Identifiants des items, triés. Vide si aucun item P vérifié du candidat n'est contesté au gel."
+          }
         }
       }
     },

@@ -15,10 +15,15 @@
  * (`decisionPanelAuGel`, qui refuse une décision postérieure au gel). Le total est STOCKÉ dans
  * `run.perimetre.candidats[].items_p_verifies` ; `analysis/seuils.ts` lit `sous_seuil`, jamais ce
  * module, et le schéma du run lie les deux dans les deux sens.
+ *
+ * Même définition, autre usage (décision de l'auteur du 2026-09-29, n° 8) : les items P qu'une
+ * contestation pendante tient hors du tirage, en vigueur au gel, quelle que soit leur version de mesure
+ * (`itemsPContestesAuGel`), publiés dans `tirage.contestes_au_gel`.
  */
 
 import { decisionPanelAuGel } from "./contestation.ts";
-import { epingleLaVersionCourante, itemEngendreDesQuestions } from "./engendrement.ts";
+import { epingleLaVersionCourante, itemEngendreDesQuestions, mesureDe } from "./engendrement.ts";
+import { placeAuGel } from "./place-au-gel.ts";
 import { estEnVigueur } from "./reponse-attendue.ts";
 import type { Item, Mesure } from "./types.ts";
 
@@ -41,8 +46,18 @@ export function itemPCompteAuGel(
   if (!estItemPDuCandidat(item, candidat_id)) return false;
   if (item.statut_contestation === "arbitree") decisionPanelAuGel(item, date_gel);
   const tirable = itemEngendreDesQuestions(item);
+  const admis = admisAuGelHorsContestation(item, date_gel, referentiel);
+  return tirable && admis;
+}
+
+/**
+ * Ce que le seuil exige d'un item au gel, contestation mise à part : la version courante de sa
+ * mesure, et une fenêtre de validité qui contient le gel. Les deux sont évaluées : une mesure
+ * absente du référentiel lève `MesureIntrouvable` même hors de la fenêtre.
+ */
+function admisAuGelHorsContestation(item: Item, date_gel: string, referentiel: ReadonlyMap<string, Mesure>): boolean {
   const versionCourante = epingleLaVersionCourante(item, referentiel);
-  return tirable && versionCourante && estEnVigueur(item, date_gel);
+  return versionCourante && estEnVigueur(item, date_gel);
 }
 
 /** Le nombre d'items P de ce candidat qui comptent au gel. Tous les items sont évalués. */
@@ -54,4 +69,41 @@ export function itemsPComptesAuGel(
 ): number {
   const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
   return items.filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel)).length;
+}
+
+/**
+ * Décision 8 de l'auteur du 2026-09-29 (texte à écrire au §5 en 0.14) : « Le rapport du run publie,
+ * pour chaque candidat interrogé, les items P vérifiés que leur contestation tient hors du tirage à
+ * la date du gel. » Un item y figure si sa place au gel est `conteste` (`place-au-gel.ts`, vérifié
+ * et contestation pendante) et s'il est en vigueur au gel, quelle que soit la version de sa mesure
+ * (décision de l'auteur du même jour) : l'item épinglé sur une version dépassée est précisément
+ * celui que l'auteur conteste après une correction de thème (décision 5), et il bloque déjà la Q-ATT
+ * de sa mesure (`attribution_contestee`) ; le taire rendrait ce chemin invisible. Un item contesté
+ * hors de sa fenêtre de validité n'y figure pas : sa contestation n'est pas ce qui le tient hors du
+ * tirage. Une mesure absente du référentiel reste une erreur (`MesureIntrouvable`).
+ */
+export function itemPContesteAuGel(
+  item: Item,
+  candidat_id: string,
+  date_gel: string,
+  referentiel: ReadonlyMap<string, Mesure>,
+): boolean {
+  if (!estItemPDuCandidat(item, candidat_id)) return false;
+  if (placeAuGel(item) !== "conteste") return false;
+  mesureDe(referentiel, item);
+  return estEnVigueur(item, date_gel);
+}
+
+/** Les identifiants, triés, des items P de ce candidat que leur contestation tient hors du tirage. */
+export function itemsPContestesAuGel(
+  items: readonly Item[],
+  candidat_id: string,
+  date_gel: string,
+  mesures: readonly Mesure[],
+): readonly string[] {
+  const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
+  return items
+    .filter((item) => itemPContesteAuGel(item, candidat_id, date_gel, referentiel))
+    .map((item) => item.id)
+    .sort();
 }

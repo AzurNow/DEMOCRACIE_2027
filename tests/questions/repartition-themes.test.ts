@@ -78,6 +78,7 @@ function tirageEnRetard(jeu: readonly Item[], questions: readonly Question[]): T
     parametres: quotas(),
     entrees: entreesPour(choisies, jeu, MESURES, RUN),
     exclusions: [],
+    contestes_au_gel: [],
     bilan_reprise: [],
     compensations: [],
   };

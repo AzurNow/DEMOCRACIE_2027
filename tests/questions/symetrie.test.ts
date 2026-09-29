@@ -117,6 +117,7 @@ function tirageDe(questions: readonly Question[], items: readonly Item[] = ITEMS
     parametres: quotas(),
     entrees: entreesPour(questions, items, MESURES, RUN),
     exclusions: [],
+    contestes_au_gel: [],
     bilan_reprise: [],
     compensations: [],
   };
@@ -512,6 +513,7 @@ describe("noms de candidats dans les questions d'attribution", () => {
       parametres: quotas(),
       entrees: entreesPour([...SYMETRIQUES, attribution], items, [...MESURES, mesureAmbigue], nommes),
       exclusions: [],
+      contestes_au_gel: [],
       bilan_reprise: [],
       compensations: [],
     };
@@ -599,6 +601,7 @@ describe("entrées du tirage sans question correspondante", () => {
       parametres: quotas(),
       entrees: [orpheline],
       exclusions: [],
+      contestes_au_gel: [],
       bilan_reprise: [],
       compensations: [],
     };

@@ -104,6 +104,7 @@ function jeuNominal(): Jeu {
       parametres: quotas(),
       entrees: entreesPour(tirees, items, mesures, run as unknown as RunAuGel),
       exclusions: [],
+      contestes_au_gel: [],
       bilan_reprise: [],
       compensations: [],
     },
