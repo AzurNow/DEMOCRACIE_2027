@@ -11,7 +11,7 @@
       "objet": "item",
       "fichier": "item/valide-02-obsolete-deux-etats.json",
       "attendu": "valide",
-      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation. Modifié ouvertement (conformité n° 12) : transcription_verifiee_par de l'état postérieur T2 passe de \"a1\" aux deux annotateurs [\"a1\", \"a3\"], forme exigée depuis la décision de l'auteur du 2026-09-27 ; même changement dans invalide-10 et invalide-11, qui en sont des copies. Modifié ouvertement (protocole 0.13, §4 « Cycle de vie et dates ») : valide_du aligné sur la date de la source de l'état antérieur (2026-06-15 → 2026-09-01), et date_changement_motif ajouté, la date du changement (3 novembre) divergeant de celle de la source postérieure (12 octobre)."
+      "motif": "Item O portant ses DEUX états sourcés (§4) et une contestation arbitrée. Le statut de contestation est indépendant du statut de validation. Modifié ouvertement (conformité n° 12) : transcription_verifiee_par de l'état postérieur T2 passe de \"a1\" aux deux annotateurs [\"a1\", \"a3\"], forme exigée depuis la décision de l'auteur du 2026-09-27 ; même changement dans invalide-10 et invalide-11, qui en sont des copies. Modifié ouvertement (protocole 0.13, §4 « Cycle de vie et dates ») : valide_du aligné sur la date de la source de l'état antérieur (2026-06-15 → 2026-09-01), et date_changement_motif ajouté, la date du changement (3 novembre) divergeant de celle de la source postérieure (12 octobre). Modifié ouvertement (conformité 2026-09-29, n° 1) : la décision du panel porte statut_validation_anterieur (« verifie »), désormais obligatoire ; rien d'autre ne change."
     },
     {
       "objet": "item",
@@ -38,7 +38,7 @@
       "objet": "item",
       "fichier": "item/invalide-04-obsolete-sans-etat-posterieur.json",
       "attendu": "invalide",
-      "motif": "Item O qui ne porte que son état antérieur. §4 : « les deux états restent dans le jeu de données » ; sans l'état postérieur, la réponse attendue après la date de changement (« position modifiée ») n'a plus de référence.",
+      "motif": "Item O qui ne porte que son état antérieur. §4 : « les deux états restent dans le jeu de données » ; sans l'état postérieur, la réponse attendue après la date de changement (« position modifiée ») n'a plus de référence. Modifié ouvertement (conformité 2026-09-29, n° 1) : la décision du panel porte statut_validation_anterieur (« verifie »), désormais obligatoire ; rien d'autre ne change.",
       "regle_protocole": "§4, cycle de vie et dates"
     },
     {
@@ -80,14 +80,14 @@
       "objet": "item",
       "fichier": "item/invalide-10-decision-panel-hors-enumeration.json",
       "attendu": "invalide",
-      "motif": "Décision du panel « maintien_partiel », hors des quatre décisions de l'annexe E. La réintégration au tirage (annexe E, point 6) se décide d'après cette valeur : une décision inventée n'a pas de conséquence définie.",
+      "motif": "Décision du panel « maintien_partiel », hors des quatre décisions de l'annexe E. La réintégration au tirage (annexe E, point 6) se décide d'après cette valeur : une décision inventée n'a pas de conséquence définie. Modifié ouvertement (conformité 2026-09-29, n° 1) : la décision du panel porte statut_validation_anterieur (« verifie »), désormais obligatoire ; rien d'autre ne change.",
       "regle_protocole": "Annexe E, points 4 et 6"
     },
     {
       "objet": "item",
       "fichier": "item/invalide-11-decision-panel-sans-motivation.json",
       "attendu": "invalide",
-      "motif": "Décision du panel sans motivation. L'annexe E exige une décision motivée, publiée à côté de l'item.",
+      "motif": "Décision du panel sans motivation. L'annexe E exige une décision motivée, publiée à côté de l'item. Modifié ouvertement (conformité 2026-09-29, n° 1) : la décision du panel porte statut_validation_anterieur (« verifie »), désormais obligatoire ; rien d'autre ne change.",
       "regle_protocole": "Annexe E, points 4 et 5"
     },
     {
@@ -926,7 +926,7 @@
       "objet": "item",
       "fichier": "item/invalide-13-obsolete-verifie-etat-posterieur-t3.json",
       "attendu": "invalide",
-      "motif": "Item O vérifié dont l'état postérieur n'est sourcé que par un article de presse (T3). « Un item ne devient obsolète qu'avec une preuve T1 ou T2 du changement » : un item dont un état est T3 reste à confirmer (conformité n° 13). Erreurs : /statut_validation (const) et la racine (then).",
+      "motif": "Item O vérifié dont l'état postérieur n'est sourcé que par un article de presse (T3). « Un item ne devient obsolète qu'avec une preuve T1 ou T2 du changement » : un item dont un état est T3 reste à confirmer (conformité n° 13). Erreurs : /statut_validation (const) et la racine (then). Modifié ouvertement (conformité 2026-09-29, n° 1) : la décision du panel porte statut_validation_anterieur (« verifie »), désormais obligatoire ; rien d'autre ne change.",
       "regle_protocole": "§4, hiérarchie des sources ; cycle de vie et dates"
     },
     {
@@ -982,7 +982,14 @@
       "objet": "item",
       "fichier": "item/valide-05-retire-par-panel-attestation-conservee.json",
       "attendu": "valide",
-      "motif": "Item O vérifié puis retiré par le panel (contestation arbitrée, décision retrait) : l'attestation d'écoute de la source T2 est conservée. Protocole 0.13 (§4, grille de validation) : « elle est conservée si le panel retire ensuite l'item »."
+      "motif": "Item O vérifié puis retiré par le panel (contestation arbitrée, décision retrait) : l'attestation d'écoute de la source T2 est conservée. Protocole 0.13 (§4, grille de validation) : « elle est conservée si le panel retire ensuite l'item ». Modifié ouvertement (conformité 2026-09-29, n° 1) : la décision du panel porte statut_validation_anterieur (« verifie »), désormais obligatoire ; rien d'autre ne change."
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-21-decision-panel-sans-statut-anterieur.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-05 (item retiré par le panel) dont la décision du panel ne porte pas statut_validation_anterieur. §4 (droit de réponse) : un maintien décidé sur un item que le panel avait retiré lui rend le statut qu'il avait avant ce retrait ; annexe E, point 6 : réintégration si l'item est maintenu ou corrigé ; décision de l'auteur du 2026-09-29 : de même après une non-évaluabilité décidée par le panel. Sans ce champ, le statut rendu ne se lit nulle part et devrait être deviné (un item rejeté redeviendrait vérifié). Erreur : /contestations/0/decision_panel (required).",
+      "regle_protocole": "§4, droit de réponse ; annexe E, point 6"
     },
     {
       "objet": "decision-arbitrage",

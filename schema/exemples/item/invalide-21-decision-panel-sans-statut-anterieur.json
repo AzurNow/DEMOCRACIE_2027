@@ -116,7 +116,6 @@
       "decision_panel": {
         "date": "2026-11-20T17:00:00+01:00",
         "decision": "retrait",
-        "statut_validation_anterieur": "verifie",
         "motivation": "L'état postérieur ne dit pas que la position a changé : l'item est retiré du tirage.",
         "arbitre_seul": false
       }

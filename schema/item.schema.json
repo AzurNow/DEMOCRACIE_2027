@@ -275,12 +275,16 @@
           "decision_panel": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["date", "decision", "motivation"],
+            "required": ["date", "decision", "motivation", "statut_validation_anterieur"],
             "properties": {
               "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
               "decision": {
                 "type": "string",
                 "enum": ["maintien", "correction", "retrait", "non_evaluabilite"]
+              },
+              "statut_validation_anterieur": {
+                "$ref": "#/properties/statut_validation",
+                "description": "Le statut_validation de l'item juste avant l'application de cette décision. §4 (droit de réponse) : « un maintien décidé sur un item que le panel avait retiré lui rend le statut qu'il avait avant ce retrait » ; annexe E, point 6 : réintégration si l'item est maintenu ou corrigé ; décision de l'auteur du 2026-09-29 : même règle après une non-évaluabilité décidée par le panel. Publié avec la décision, c'est la trace auditable de ce que la réintégration rend : un item rejeté retiré puis maintenu redevient rejeté, jamais vérifié."
               },
               "motivation": { "type": "string", "minLength": 1 },
               "opinions_dissidentes": {

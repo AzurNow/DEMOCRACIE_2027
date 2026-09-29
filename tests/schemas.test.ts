@@ -91,12 +91,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 140 → 146 : six exemples invalides (conformité n° 59, 61, 62, 64 ×2, 66).
   // 146 → 152 : un exemple valide et cinq invalides de run (protocole 0.13, §7 et §12).
   // 152 → 158 : protocole 0.13, quatre invalides et un valide d'item (format, attestation), un invalide de fiche-source (tiers).
-  it("1. les 158 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 158 → 159 : conformité 2026-09-29, n° 1, un invalide d'item (décision du panel sans statut_validation_anterieur).
+  it("1. les 159 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(158);
+    expect(manifeste.exemples).toHaveLength(159);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -205,7 +206,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 140 → 146 : six exemples invalides (conformité n° 59, 61, 62, 64 ×2, 66).
   // 146 → 152 : un exemple valide et cinq invalides de run (protocole 0.13, §7 et §12).
   // 152 → 158 : protocole 0.13, quatre invalides et un valide d'item (format, attestation), un invalide de fiche-source (tiers).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 158 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(158);
+  // 158 → 159 : conformité 2026-09-29, n° 1, un invalide d'item (décision du panel sans statut_validation_anterieur).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 159 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(159);
   });
 });

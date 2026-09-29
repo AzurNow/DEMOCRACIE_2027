@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import { DecisionPanelPosterieureAuGel } from "../../pipeline/questions/contestation.ts";
 import { itemPCompteAuGel, itemsPComptesAuGel } from "../../pipeline/questions/couverture.ts";
 import type { Item } from "../../pipeline/questions/types.ts";
-import { arbitre, contestation, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
+import { arbitre, contestation, decidePar, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
 const GEL = "2026-11-20T10:00:00Z";
 const CANDIDAT = "demo-alpha";
@@ -51,6 +51,14 @@ describe("itemPCompteAuGel : un item, les cas limites du brief", () => {
       contestation("cv-retrait", "retrait", AVANT_GEL),
     ]);
     expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(false);
+  });
+
+  it("compte de nouveau un item P maintenu après un retrait du panel", () => {
+    const retire = decidePar(p("retrait-maintien"), [{ cle: "cv-rm-1", decision: "retrait", date: AVANT_GEL }]);
+    expect(itemPCompteAuGel(retire, CANDIDAT, GEL)).toBe(false);
+    const maintenu = decidePar(retire, [{ cle: "cv-rm-2", decision: "maintien", date: "2026-10-15T10:00:00+02:00" }]);
+    expect(maintenu.statut_validation).toBe("verifie");
+    expect(itemPCompteAuGel(maintenu, CANDIDAT, GEL)).toBe(true);
   });
 
   it("ne compte pas un item P dont la décision de retrait laisse le statut vérifié (la décision fait foi)", () => {

@@ -229,7 +229,12 @@ describe("contestation au calcul du kappa, par la route (§4, constat 9)", () =>
       contestations: [
         {
           ...contestation,
-          decision_panel: { date: "2026-10-01T09:00:00+02:00", decision: "maintien", motivation: "Motif fictif." },
+          decision_panel: {
+            date: "2026-10-01T09:00:00+02:00",
+            decision: "maintien",
+            motivation: "Motif fictif.",
+            statut_validation_anterieur: "verifie",
+          },
         },
       ],
     });

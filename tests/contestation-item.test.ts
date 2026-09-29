@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 import { contestationPermetLeTirage, DecisionsPanelSimultanees } from "../pipeline/questions/contestation.ts";
+import { itemEngendreDesQuestions } from "../pipeline/questions/engendrement.ts";
 import { verifierAjoutSeul } from "../validation/domaine/ajout-seul.ts";
 import {
   ajouterContestation,
@@ -18,6 +19,7 @@ import {
   ContestationInexistante,
   CorrectionsDuPanelRefusees,
   delaiDecisionJours,
+  StatutPanelIncoherent,
   TexteContestationRefuse,
   texteDeContestation,
   VersionJugeePerimee,
@@ -25,9 +27,11 @@ import {
   type DecisionDuPanel,
 } from "../validation/domaine/contestation-item.ts";
 import type { AccesTexte } from "../validation/domaine/corrections.ts";
+import { evaluerPromotion } from "../validation/domaine/promotion.ts";
 import type { Correction, Item } from "../validation/domaine/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { itemPromu } from "./aides/data.ts";
+import { decision as decisionAnnotateur, itemP, mesure, OPTIONS_PROMOTION } from "./aides/fabriques.ts";
 
 const TRACE = { date: "2026-10-01T10:00:00+02:00", commit: "c".repeat(40) };
 const TRACE_DECISION = { date: "2026-10-20T10:00:00+02:00", commit: "d".repeat(40) };
@@ -296,5 +300,140 @@ describe("décision « correction » du panel", () => {
     expect(() =>
       appliquerDecisionPanel(conteste(), decisionPanel({ corrections: [citation("Nous ramènerons la TVA sur l'énergie à 5,5 %.")] }), TRACE_DECISION, ACCES),
     ).toThrow(CorrectionsDuPanelRefusees);
+  });
+});
+
+/* ------------------------------------------- réintégration après une sortie */
+
+/**
+ * §4 (droit de réponse) : « un maintien décidé sur un item que le panel avait retiré lui rend le
+ * statut qu'il avait avant ce retrait » ; annexe E, point 6 : réintégration au tirage si l'item est
+ * maintenu **ou corrigé**. Décision de l'auteur du 2026-09-29 : même règle après une
+ * non-évaluabilité décidée par le panel. Le statut rendu est lu dans la décision publiée
+ * (`statut_validation_anterieur`), jamais deviné.
+ */
+describe("réintégration après un retrait ou une non-évaluabilité du panel (§4, annexe E point 6)", () => {
+  const JOURS = ["2026-10-20", "2026-10-22", "2026-10-24", "2026-10-26", "2026-10-28"];
+
+  /** Un item promu par la vraie règle de promotion, sur deux décisions d'annotateurs identiques. */
+  function promuPar(decisionAnnotateurs: "accepter" | "rejeter" | "non_evaluable"): Item {
+    const item = itemP({});
+    const issue = evaluerPromotion(
+      {
+        item,
+        mesure: mesure({ id: item.mesure_id, version: item.mesure_version }),
+        lot_id: "lot-001",
+        lot_nature: "reel",
+        decisions: ["a1", "a2"].map((annotateur_id) => decisionAnnotateur({ annotateur_id, item, decision: decisionAnnotateurs })),
+        registre_corrections_mesure: [],
+      },
+      OPTIONS_PROMOTION,
+    );
+    if (issue.sort !== "promouvoir") throw new Error("L'item de départ aurait dû être promu.");
+    return issue.item;
+  }
+
+  /** Contestation n° `rang`, reçue puis décidée le jour `JOURS[rang]`. */
+  function contesterPuisDecider(item: Item, rang: number, surcharges: Partial<DecisionDuPanel>): Item {
+    const id = `01JBANCESSA1C0NTESTAT10N${String(rang + 1).padStart(2, "0")}`;
+    const jour = JOURS[rang];
+    if (jour === undefined) throw new Error(`Aucun jour prévu pour la contestation de rang ${rang}.`);
+    const recue = ajouterContestation(
+      item,
+      contestation(id, { date_reception: `${jour}T09:00:00+02:00` }),
+      { ...TRACE, date: `${jour}T09:00:00+02:00` },
+    );
+    const date = `${jour}T15:00:00+02:00`;
+    const decision = decisionPanel({ contestation_id: id, version_jugee: recue.version, date, ...surcharges });
+    return appliquerDecisionPanel(recue, decision, { ...TRACE_DECISION, date }, ACCES).item;
+  }
+
+  function suite(item: Item, decisions: readonly Partial<DecisionDuPanel>[]): Item {
+    return decisions.reduce((courant, surcharges, rang) => contesterPuisDecider(courant, rang, surcharges), item);
+  }
+
+  const RETRAIT = { decision: "retrait" } as const;
+  const MAINTIEN = { decision: "maintien" } as const;
+  const NON_EVALUABILITE = { decision: "non_evaluabilite" } as const;
+  const CITATION_ACTUELLE = "Nous ramènerons la TVA sur l'énergie à 5,5 %.";
+
+  it("maintien après un retrait : l'item reprend le statut qu'il avait avant le retrait, et rentre au tirage", () => {
+    const retire = suite(itemPromu(), [RETRAIT]);
+    expect(retire.statut_validation).toBe("retire_par_panel");
+    const maintenu = contesterPuisDecider(retire, 1, MAINTIEN);
+    expect(maintenu.statut_validation).toBe("verifie");
+    expect(maintenu.statut_contestation).toBe("arbitree");
+    expect(contestationPermetLeTirage(maintenu)).toBe(true);
+    expect(itemEngendreDesQuestions(retire)).toBe(false);
+    expect(itemEngendreDesQuestions(maintenu)).toBe(true);
+    expect(() => valider("item", maintenu, "item maintenu après retrait")).not.toThrow();
+  });
+
+  it("correction après un retrait : l'item reprend son statut antérieur, version + 1", () => {
+    const retire = suite(itemPromu(), [RETRAIT]);
+    const correction: Correction = {
+      cible: "item",
+      chemin: "/assertion/citation_verbatim",
+      ancienne_valeur: CITATION_ACTUELLE,
+      nouvelle_valeur: `${CITATION_ACTUELLE} Et nous ferons plus encore.`,
+    };
+    const corrige = contesterPuisDecider(retire, 1, { decision: "correction", corrections: [correction] });
+    expect(corrige.statut_validation).toBe("verifie");
+    expect(corrige.version).toBe(retire.version + 1);
+    expect(contestationPermetLeTirage(corrige)).toBe(true);
+  });
+
+  it("maintien après un retrait d'un item rejeté : il redevient rejeté, pas vérifié", () => {
+    const rejete = promuPar("rejeter");
+    expect(rejete.statut_validation).toBe("rejete");
+    const maintenu = suite(rejete, [RETRAIT, MAINTIEN]);
+    expect(maintenu.statut_validation).toBe("rejete");
+  });
+
+  it("maintien après une non-évaluabilité décidée par le panel : l'item reprend son statut antérieur", () => {
+    const declare = suite(itemPromu(), [NON_EVALUABILITE]);
+    expect(declare.statut_validation).toBe("non_evaluable");
+    const maintenu = contesterPuisDecider(declare, 1, MAINTIEN);
+    expect(maintenu.statut_validation).toBe("verifie");
+    expect(contestationPermetLeTirage(maintenu)).toBe(true);
+  });
+
+  it("maintien sur un item non évaluable par la promotion, sans décision du panel : le statut ne change pas", () => {
+    const nonEvaluable = promuPar("non_evaluable");
+    expect(nonEvaluable.statut_validation).toBe("non_evaluable");
+    const maintenu = suite(nonEvaluable, [MAINTIEN]);
+    expect(maintenu.statut_validation).toBe("non_evaluable");
+  });
+
+  it("retrait, maintien, retrait, maintien : l'item reprend le statut d'origine", () => {
+    const rejete = promuPar("rejeter");
+    expect(suite(rejete, [RETRAIT, MAINTIEN, RETRAIT, MAINTIEN]).statut_validation).toBe("rejete");
+    expect(suite(itemPromu(), [RETRAIT, MAINTIEN, RETRAIT, MAINTIEN]).statut_validation).toBe("verifie");
+    // Deux sorties successives (retrait puis non-évaluabilité) : le maintien rend le statut
+    // d'avant la première, pas « retire_par_panel ».
+    expect(suite(itemPromu(), [RETRAIT, NON_EVALUABILITE, MAINTIEN]).statut_validation).toBe("verifie");
+  });
+
+  it("chaque décision publiée porte le statut de validation antérieur", () => {
+    const item = suite(promuPar("rejeter"), [RETRAIT, MAINTIEN, NON_EVALUABILITE]);
+    const anterieurs = (item.contestations ?? []).map(
+      (publiee) => (publiee as { decision_panel: { statut_validation_anterieur: string } }).decision_panel.statut_validation_anterieur,
+    );
+    expect(anterieurs).toEqual(["rejete", "retire_par_panel", "rejete"]);
+    expect(() => valider("item", item, "item aux trois décisions")).not.toThrow();
+  });
+
+  it("incohérence : « retire_par_panel » sans décision de retrait du panel est une erreur nommée", () => {
+    const incoherent = { ...conteste(), statut_validation: "retire_par_panel" };
+    const erreur = refus(() => appliquerDecisionPanel(incoherent, decisionPanel(), TRACE_DECISION, ACCES));
+    expect(erreur).toBeInstanceOf(StatutPanelIncoherent);
+    expect(erreur.message).toMatch(/retire_par_panel/);
+    // Un statut qui ne correspond pas à la dernière sortie décidée est tout aussi incohérent.
+    const retire = suite(itemPromu(), [RETRAIT]);
+    const recue = ajouterContestation({ ...retire, statut_validation: "verifie" }, contestation("01JBANCESSA1C0NTESTAT10N09"), TRACE_DECISION);
+    const date = "2026-10-30T15:00:00+01:00";
+    expect(() =>
+      appliquerDecisionPanel(recue, decisionPanel({ contestation_id: "01JBANCESSA1C0NTESTAT10N09", date }), { ...TRACE_DECISION, date }, ACCES),
+    ).toThrow(StatutPanelIncoherent);
   });
 });

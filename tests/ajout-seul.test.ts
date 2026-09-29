@@ -42,6 +42,7 @@ const DECISION_PANEL = {
   decision: "maintien",
   motivation: "La citation figure dans la source.",
   arbitre_seul: true,
+  statut_validation_anterieur: "verifie",
 };
 
 function contester(item: Item): Item {

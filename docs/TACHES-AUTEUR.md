@@ -39,6 +39,13 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
   3. Outillage : quand des items restent bloqués, la commande écrit ceux qu'elle peut renvoyer puis
      sort en code 1 ; une relance ne refait rien. *Codé (#50).*
 
+  Décision du 2026-09-29 (conformité 2026-09-29, n° 1), selon la recommandation :
+  4. §4 (droit de réponse) : un maintien ou une correction décidé après une non-évaluabilité
+     prononcée par le panel rend à l'item le statut qu'il avait avant, comme après un retrait.
+     Texte proposé : « un maintien ou une correction décidé sur un item que le panel avait retiré ou
+     déclaré non évaluable lui rend le statut qu'il avait avant cette décision ». *Codé (PR du
+     n° 1).*
+
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
