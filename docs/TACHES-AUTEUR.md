@@ -63,6 +63,15 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
      réintégration » écartée le même jour : un retrait bloquerait la question pour toujours.)
      *À coder.*
 
+  Décisions du 2026-09-29, suite du lot #54, selon la recommandation :
+  7. §5 : une mesure dont le seul porteur a son item contesté n'a pas de question d'attribution au
+     gel : elle n'est ni tirée ni comptée (application de « contesté, il n'engendre aucune
+     question »). Phrase à écrire en 0.14. *Codé (#54).*
+  8. §5 : le rapport du run publie, par candidat interrogé, les items P vérifiés mais contestés au
+     gel, donc absents du tirage (compte par item, pas par question). Texte proposé : « Le rapport
+     du run publie, pour chaque candidat interrogé, les items P vérifiés que leur contestation tient
+     hors du tirage à la date du gel. » *À coder.*
+
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
