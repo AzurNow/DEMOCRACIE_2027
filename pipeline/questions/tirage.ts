@@ -12,12 +12,19 @@
  *   publiés de `graine_tirage` et du `run_id` : un tiers qui a le fichier de tirage a tout ce
  *   qu'il faut pour rejouer, ce qu'exige le §9. Une graine qui déclare un autre générateur
  *   (`GENERATEUR_DU_TIRAGE`) est refusée avant tout tirage (constat n° 24).
- * - **Ce qui entre au tirage** (§5, protocole 0.9). Une question dont un item n'est pas vérifié,
- *   est contesté ou en attente n'est pas tirable. Une question dont la réponse attendue n'est pas
- *   définie au gel — item hors de sa fenêtre de validité, position « sans objet » sur un gabarit
- *   fermé, négatif ou orienté, liste d'attribution non définie — est exclue et inscrite dans
- *   `tirage.exclusions` avec son motif. Les deux règles sont évaluées avant tout usage de la
- *   graine : aucune graine ne fait échouer ni réussir le tirage pour ces motifs.
+ * - **Ce qui entre au tirage** (§5, protocole 0.9 ; décisions de l'auteur du 2026-09-29). Une
+ *   question n'est lue qu'avec les items que la vérité de référence contient au gel
+ *   (`place-au-gel.ts`) : elle n'existe au gel que si l'engendrement l'y aurait produite — item
+ *   principal (et tout item hors liste) retenu, ou, pour une Q-ATT sans principal, au moins un item
+ *   retenu qui admet le gabarit. Sinon elle est absente, comme elle le serait engendrée au gel. Dans
+ *   la liste d'une Q-ATT, un item écarté (en attente, retiré, non évaluable…) est ignoré ; un item
+ *   vérifié contesté d'un candidat interrogé exclut la question (`attribution_contestee`). Un item
+ *   définissant qui épingle une version dépassée de sa mesure l'exclut aussi
+ *   (`mesure_version_depassee`). Une question dont la réponse attendue n'est pas définie au gel —
+ *   item hors de sa fenêtre de validité, position « sans objet » sur un gabarit fermé, négatif ou
+ *   orienté, liste d'attribution non définie — est exclue. Chaque exclusion est inscrite dans
+ *   `tirage.exclusions` avec son motif. Ces règles sont évaluées avant tout usage de la graine :
+ *   aucune graine ne fait échouer ni réussir le tirage pour ces motifs.
  * - **La reprise** (§5, protocole 0.9). Une question est reprise si elle a le même identifiant et
  *   les mêmes empreintes de texte qu'au run précédent (`signature.ts`, seule définition, partagée
  *   avec la tendance du §8). Par candidat, et pour les questions d'attribution sur l'ensemble des
@@ -46,8 +53,9 @@
 
 import type { GenerateurAleatoire } from "../../validation/domaine/alea.ts";
 import { ALGORITHME_ALEA, generateur, graineDepuisTexte, melanger } from "../../validation/domaine/alea.ts";
-import { itemEngendreDesQuestions, mesureDe, themeDe } from "./engendrement.ts";
+import { epingleLaVersionCourante, gabaritsPourItem, mesureDe, themeDe } from "./engendrement.ts";
 import { decisionPanelAuGel } from "./contestation.ts";
+import { effetSurAttribution, placeAuGel } from "./place-au-gel.ts";
 import {
   ItemHorsValidite,
   ItemIntrouvable,
@@ -68,6 +76,7 @@ import type {
   GraineTirage,
   Item,
   ItemAuGel,
+  ItemDeQuestion,
   Mesure,
   MotifExclusion,
   ParametresTirage,
@@ -190,28 +199,128 @@ function themeDeQuestion(question: Question, index: Index): Theme {
 
 /* ------------------------------------------------------------ tirabilité */
 
+/** Un motif d'exclusion et son détail, tels qu'ils sont inscrits dans `tirage.exclusions`. */
+interface MotifEtDetail {
+  readonly motif: MotifExclusion;
+  readonly detail: string;
+}
+
+/** Ce que le gel fait d'une question avant la résolution de sa réponse attendue. */
+type LectureAuGel =
+  | { readonly sorte: "absente" }
+  | { readonly sorte: "exclue"; readonly exclusion: MotifEtDetail }
+  | { readonly sorte: "admise"; readonly items: readonly ItemDeQuestion[] };
+
+function interrogesDe(run: GelDuRun): ReadonlySet<string> {
+  return new Set(run.perimetre.candidats.filter((c) => c.interroge).map((c) => c.candidat_id));
+}
+
+function estDansLaListe(entree: ItemDeQuestion): boolean {
+  return entree.role === "attendu_dans_liste";
+}
+
+function porteLeGabarit(item: Item, gabarit: CodeGabarit): boolean {
+  return gabaritsPourItem(item).some((candidat) => candidat.code === gabarit);
+}
+
 /**
- * §5 : aucun item contesté ou en attente dans le tirage — sur tous les items de la question, une
- * Q-ATT comprise. La règle par item est celle de l'engendrement (`itemEngendreDesQuestions`), écrite
- * une seule fois. Tous les items sont évalués avant de conclure (`map` puis `every`, jamais `every`
- * seul) : une référence absente ou un arbitrage illisible se signale toujours.
+ * La question existe-t-elle au gel, c'est-à-dire l'engendrement l'aurait-il produite sur les items du
+ * gel ? §5 : aucun item contesté ou en attente dans le tirage — tout item hors de la liste
+ * (principal, distracteur, contexte) doit être retenu ; comportement d'avant ce lot, qui écarte sans
+ * la compter une question dont l'item principal est contesté ou en attente. Une Q-ATT sans principal
+ * existe si un item retenu de sa liste admet son gabarit (décision de l'auteur du 2026-09-29, n° 3 :
+ * le résultat ne dépend plus du moment où la Q-ATT a été engendrée). La place de chaque item est
+ * évaluée avant de conclure : une référence absente ou un arbitrage illisible se signale toujours.
  */
-function statutsAdmis(question: Question, items: ReadonlyMap<string, Item>): boolean {
-  const verdicts = question.items.map((entree) => itemEngendreDesQuestions(itemDe(entree.reference.item_id, items)));
-  return verdicts.every((tirable) => tirable);
+function existeAuGel(question: Question, items: ReadonlyMap<string, Item>): boolean {
+  const lus = question.items.map((entree) => {
+    const item = itemDe(entree.reference.item_id, items);
+    return { entree, item, retenu: placeAuGel(item) === "retenu" };
+  });
+  const horsListe = lus.filter((lu) => !estDansLaListe(lu.entree));
+  if (!horsListe.every((lu) => lu.retenu)) return false;
+  if (horsListe.some((lu) => lu.entree.role === "principal")) return true;
+  return lus.some((lu) => estDansLaListe(lu.entree) && lu.retenu && porteLeGabarit(lu.item, question.gabarit));
+}
+
+/**
+ * Les items de la question que le gel garde (`EFFET_SUR_ATTRIBUTION`, en données) : hors de la liste,
+ * tous ; dans la liste d'une Q-ATT, l'item qui y entre, et l'item contesté d'un candidat interrogé,
+ * gardé pour que l'exclusion le nomme (et, dans un tirage construit à la main, pour que la symétrie
+ * le voie). Un item écarté, ou contesté d'un candidat non interrogé, n'est ni dans la liste ni figé.
+ */
+function itemsGardesAuGel(
+  question: Pick<Question, "items">,
+  items: ReadonlyMap<string, Item>,
+  interroges: ReadonlySet<string>,
+): readonly ItemDeQuestion[] {
+  return question.items.filter((entree) => {
+    if (!estDansLaListe(entree)) return true;
+    const item = itemDe(entree.reference.item_id, items);
+    const effet = effetSurAttribution(item);
+    return effet === "entre" || (effet === "bloque" && interroges.has(item.candidat_id));
+  });
+}
+
+/** n° 3 : un item gardé de la liste qui bloque est celui d'un candidat interrogé, contesté au gel. */
+function contestationBloquante(
+  gardes: readonly ItemDeQuestion[],
+  items: ReadonlyMap<string, Item>,
+): MotifEtDetail | undefined {
+  const bloquant = gardes
+    .filter(estDansLaListe)
+    .map((entree) => itemDe(entree.reference.item_id, items))
+    .find((item) => effetSurAttribution(item) === "bloque");
+  if (bloquant === undefined) return undefined;
+  return {
+    motif: "attribution_contestee",
+    detail:
+      `Item ${bloquant.id} du candidat interrogé ${bloquant.candidat_id} contesté au gel : sa position fait ` +
+      `l'objet d'une contestation, la liste attendue de la question d'attribution n'est pas établie.`,
+  };
+}
+
+/**
+ * n° 2 : un item définissant (principal ou attendu dans la liste) qui épingle une version dépassée de
+ * sa mesure a été jugé contre une version qui n'existe plus. Tous sont évalués : une mesure absente
+ * du référentiel lève `MesureIntrouvable`, jamais une exclusion.
+ */
+function versionDepassee(gardes: readonly ItemDeQuestion[], index: Index): MotifEtDetail | undefined {
+  const perimes = gardes
+    .filter((entree) => entree.role === "principal" || estDansLaListe(entree))
+    .map((entree) => itemDe(entree.reference.item_id, index.items))
+    .filter((item) => !epingleLaVersionCourante(item, index.mesures));
+  const perime = perimes[0];
+  if (perime === undefined) return undefined;
+  return {
+    motif: "mesure_version_depassee",
+    detail:
+      `Item ${perime.id} vérifié sur la version ${perime.mesure_version} de la mesure ${perime.mesure_id}, dont la ` +
+      `version courante est ${mesureDe(index.mesures, perime).version} : jugé contre une version qui n'existe plus.`,
+  };
+}
+
+function lireAuGel(question: Question, index: Index, interroges: ReadonlySet<string>): LectureAuGel {
+  if (!existeAuGel(question, index.items)) return { sorte: "absente" };
+  const gardes = itemsGardesAuGel(question, index.items, interroges);
+  const contestee = contestationBloquante(gardes, index.items);
+  if (contestee !== undefined) return { sorte: "exclue", exclusion: contestee };
+  const perimee = versionDepassee(gardes, index);
+  if (perimee !== undefined) return { sorte: "exclue", exclusion: perimee };
+  return { sorte: "admise", items: gardes };
 }
 
 /**
  * §5 (protocole 0.9) : la réponse attendue est-elle définie au gel ? La règle est celle de
- * `reponseAttendue`, appelée telle quelle : seuls ses deux refus « non défini au gel » deviennent un
- * motif d'exclusion. Tout autre refus (question mal formée, positions contradictoires, référence
- * absente) remonte et arrête le tirage.
+ * `reponseAttendue`, appelée telle quelle sur les items gardés au gel : seuls ses deux refus « non
+ * défini au gel » deviennent un motif d'exclusion. Tout autre refus (question mal formée, positions
+ * contradictoires, référence absente) remonte et arrête le tirage.
  */
 function motifDExclusion(
-  question: Question,
+  question: Pick<Question, "gabarit" | "items">,
   items: readonly Item[],
   run: GelDuRun,
-): { readonly motif: MotifExclusion; readonly detail: string } | undefined {
+): MotifEtDetail | undefined {
   try {
     reponseAttendue(question, items, run.date_gel, run.perimetre.candidats);
     return undefined;
@@ -224,20 +333,31 @@ function motifDExclusion(
   }
 }
 
+/** Le verdict du gel sur une question : absente, exclue avec son motif, ou tirable. */
+type Verdict = { readonly sorte: "absente" | "tirable" } | { readonly sorte: "exclue"; readonly exclusion: MotifEtDetail };
+
+function juger(question: Question, index: Index, run: GelDuRun, interroges: ReadonlySet<string>): Verdict {
+  const lecture = lireAuGel(question, index, interroges);
+  if (lecture.sorte !== "admise") return lecture;
+  const exclusion = motifDExclusion({ gabarit: question.gabarit, items: lecture.items }, [...index.items.values()], run);
+  return exclusion === undefined ? { sorte: "tirable" } : { sorte: "exclue", exclusion };
+}
+
 /**
  * Utilitaire public : les questions que la règle de tirabilité admet au gel du run, dans leur ordre.
  * C'est le filtre que `tirer` applique avant tout usage de la graine ; un tirage construit à la main
- * (`entreesPour`) ne contient que des questions qui le passent.
+ * (`entreesPour`) ne contient que des questions qui le passent. `mesures` : le référentiel au gel,
+ * dont la version courante de chaque mesure (conformité n° 2).
  */
 export function questionsTirables(
   questions: readonly Question[],
   items: readonly Item[],
+  mesures: readonly Mesure[],
   run: GelDuRun,
 ): readonly Question[] {
-  const parId = new Map(items.map((item) => [item.id, item]));
-  return questions.filter(
-    (question) => statutsAdmis(question, parId) && motifDExclusion(question, items, run) === undefined,
-  );
+  const index = indexer(items, mesures);
+  const interroges = interrogesDe(run);
+  return questions.filter((question) => juger(question, index, run, interroges).sorte === "tirable");
 }
 
 /** Clé d'une strate candidat × thème × gabarit, partagée avec la symétrie (`symetrie.ts`). */
@@ -259,7 +379,7 @@ export function tirablesParStrate(
 ): ReadonlyMap<string, number> {
   const index = indexer(items, mesures);
   const comptes = new Map<string, number>();
-  for (const question of questionsTirables(questions, items, run)) {
+  for (const question of questionsTirables(questions, items, mesures, run)) {
     if (question.candidat_id === undefined) continue;
     const cle = cleStrateCandidat(question.candidat_id, themeDeQuestion(question, index), question.gabarit);
     const courant = comptes.get(cle);
@@ -274,18 +394,19 @@ interface Separation {
 }
 
 /**
- * Les questions concernées par le run — attribution, ou candidat interrogé — dont les items sont
- * admis, séparées en tirables et exclues. Les exclusions sont triées par identifiant : l'ordre des
+ * Les questions concernées par le run — attribution, ou candidat interrogé — qui existent au gel,
+ * séparées en tirables et exclues. Les exclusions sont triées par identifiant : l'ordre des
  * fichiers lus ne change pas le tirage publié.
  */
 function separer(demande: DemandeTirage, index: Index, interroges: ReadonlySet<string>): Separation {
   const tirables: Question[] = [];
   const exclusions: ExclusionTirage[] = [];
   for (const question of demande.questions) {
-    if (!concerneLeRun(question, interroges) || !statutsAdmis(question, index.items)) continue;
-    const exclusion = motifDExclusion(question, demande.items, demande.run);
-    if (exclusion !== undefined) {
-      exclusions.push(exclusionDe(question, index, exclusion));
+    if (!concerneLeRun(question, interroges)) continue;
+    const verdict = juger(question, index, demande.run, interroges);
+    if (verdict.sorte === "absente") continue;
+    if (verdict.sorte === "exclue") {
+      exclusions.push(exclusionDe(question, index, verdict.exclusion));
       continue;
     }
     // §5 (protocole 0.11) : une prémisse indécidable au gel est une question mal formée. Elle arrête
@@ -328,11 +449,7 @@ export function concerneLeRun(question: Pick<Question, "candidat_id">, interroge
   return question.candidat_id === undefined || interroges.has(question.candidat_id);
 }
 
-function exclusionDe(
-  question: Question,
-  index: Index,
-  exclusion: { readonly motif: MotifExclusion; readonly detail: string },
-): ExclusionTirage {
+function exclusionDe(question: Question, index: Index, exclusion: MotifEtDetail): ExclusionTirage {
   const socle = {
     question_id: question.id,
     theme: themeDeQuestion(question, index),
@@ -390,13 +507,15 @@ function entreeDe(
   precedent: TiragePrecedent | undefined,
 ): EntreeTirage {
   const items = [...index.items.values()];
+  // Les items que le gel garde (`itemsGardesAuGel`) : ceux-là seuls sont figés et définissent la liste.
+  const gardes = itemsGardesAuGel(question, index.items, interrogesDe(run));
   const socle = {
     question_id: question.id,
     theme: themeDeQuestion(question, index),
     gabarit: question.gabarit,
     grappe_id: question.grappe_id,
-    items_au_gel: question.items.map((entree) => itemAuGel(entree, index, run.date_gel)),
-    reponse_attendue: reponseAttendue(question, items, run.date_gel, run.perimetre.candidats),
+    items_au_gel: gardes.map((entree) => itemAuGel(entree, index, run.date_gel)),
+    reponse_attendue: reponseAttendue({ gabarit: question.gabarit, items: gardes }, items, run.date_gel, run.perimetre.candidats),
     premisse_fausse: premisseFausseAuGel(question, items, run.date_gel),
     ...(question.candidat_id === undefined ? {} : { candidat_id: question.candidat_id }),
   };

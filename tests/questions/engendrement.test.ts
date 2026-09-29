@@ -241,7 +241,13 @@ describe("question d'attribution", () => {
     expect(seule.items.filter((entree) => entree.role === "attendu_dans_liste")).toHaveLength(3);
   });
 
-  it("n'inclut pas dans la liste attendue l'item contesté d'un autre candidat", () => {
+  /*
+   * Modifié ouvertement (décision de l'auteur du 2026-09-29, conformité n° 3) : l'item vérifié contesté
+   * d'un autre candidat reste dans les items de la Q-ATT, pour que le tirage exclue la question en la
+   * comptant si son candidat est interrogé. Avant : il en était retiré, et la liste attendue omettait
+   * son candidat sans signal. Il n'engendre toujours aucune question qui le nomme.
+   */
+  it("garde dans la Q-ATT l'item vérifié contesté d'un autre candidat, sans lui faire engendrer de question", () => {
     const conteste = itemP({
       cle: "att-c",
       candidat_id: "demo-gamma",
@@ -250,7 +256,17 @@ describe("question d'attribution", () => {
     });
     const questions = engendrer([alpha, beta, conteste], [MESURE], PERIMETRE);
     const attribution = questions.find((question) => question.gabarit === "Q-ATT");
-    expect(attribution?.items).toHaveLength(2);
+    expect(attribution?.items.map((entree) => entree.reference.item_id)).toEqual([alpha.id, beta.id, conteste.id]);
+    expect(attribution?.items.every((entree) => entree.role === "attendu_dans_liste")).toBe(true);
+    expect(questions.filter((question) => question.candidat_id === "demo-gamma")).toEqual([]);
+  });
+
+  it("n'inscrit pas dans la Q-ATT un item en attente, retiré ou non évaluable d'un autre candidat", () => {
+    for (const statut_validation of ["en_attente", "retire_par_panel", "non_evaluable"] as const) {
+      const hors = itemP({ cle: "att-c", candidat_id: "demo-gamma", mesure: MESURE, statut_validation });
+      const attribution = engendrer([alpha, beta, hors], [MESURE], PERIMETRE).find((q) => q.gabarit === "Q-ATT");
+      expect(attribution?.items.map((entree) => entree.reference.item_id)).toEqual([alpha.id, beta.id]);
+    }
   });
 
   it("ne nomme aucun candidat dans son texte, même quand le libellé de la mesure en contient un morceau", () => {

@@ -178,7 +178,7 @@ describe("n° 36 : la graine ne décide plus du succès du tirage", () => {
   });
 
   it("questionsTirables applique la même règle, avant toute graine", () => {
-    const tirables = questionsTirables(QUESTIONS, ITEMS, RUN).map((question) => question.id);
+    const tirables = questionsTirables(QUESTIONS, ITEMS, MESURES, RUN).map((question) => question.id);
     expect(tirables).not.toContain(questionDe(FIN_AU_GEL, "Q-DIR").id);
     expect(tirables).not.toContain(questionDe(SANS_OBJET, "Q-FER").id);
     expect(tirables).toContain(questionDe(SANS_OBJET, "Q-DIR").id);

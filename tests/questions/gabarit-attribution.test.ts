@@ -123,7 +123,7 @@ function symetrieDe(questions: readonly Question[]): Symetrie {
     graine_tirage: graine(),
     // Conformité n° 59 : un tirage porte ses quotas.
     parametres: quotas(),
-    entrees: entreesPour(questionsTirables(questions, ITEMS, RUN), ITEMS, MESURES, RUN),
+    entrees: entreesPour(questionsTirables(questions, ITEMS, MESURES, RUN), ITEMS, MESURES, RUN),
     exclusions: [],
     bilan_reprise: [],
     compensations: [],
