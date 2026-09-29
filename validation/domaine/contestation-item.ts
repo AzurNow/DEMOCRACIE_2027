@@ -8,7 +8,10 @@
  *   L'item est « arbitree » seulement quand toutes ses contestations sont décidées ; un retrait le
  *   rend « retire_par_panel », une non-évaluabilité « non_evaluable » ; une correction passe par la
  *   liste blanche des corrections et **rejoue le test verbatim** sur le texte canonique, incrémente
- *   la version et recalcule l'empreinte.
+ *   la version et recalcule l'empreinte. Un maintien ou une correction sur un item que le panel
+ *   avait sorti (retrait ou non-évaluabilité) lui rend le statut qu'il avait avant cette sortie
+ *   (§4, annexe E point 6, décision de l'auteur du 2026-09-29) : chaque décision publiée porte
+ *   `statut_validation_anterieur`, et c'est lui qui est rendu, jamais un statut deviné.
  *
  * Décisions du protocole 0.10 tenues ici : un texte de plus de 1 000 caractères (points de code
  * après NFC) est **refusé**, jamais tronqué ni résumé ; un texte vide est refusé ; une décision
@@ -17,6 +20,7 @@
  */
 
 import { DecisionsPanelSimultanees } from "../../pipeline/questions/contestation.ts";
+import { instantDe } from "../../pipeline/questions/reponse-attendue.ts";
 import { ancienneteEnJours } from "./corrections-mesure.ts";
 import { validerCorrections, type AccesTexte, type RefusCorrection } from "./corrections.ts";
 import { canoniser, empreinteContenuNotant } from "./empreinte.ts";
@@ -47,6 +51,8 @@ interface DecisionPanelPubliee {
   readonly motivation: string;
   readonly opinions_dissidentes: readonly string[];
   readonly arbitre_seul: boolean;
+  /** Le `statut_validation` de l'item juste avant cette décision : ce qu'une réintégration rend. */
+  readonly statut_validation_anterieur: string;
 }
 
 interface ContestationPubliee extends Contestation {
@@ -112,6 +118,17 @@ export class CorrectionsDuPanelRefusees extends Error {
   constructor(item_id: string, motifs: readonly string[]) {
     super(`Item ${item_id} : corrections du panel refusées :\n${motifs.map((motif) => `  ${motif}`).join("\n")}`);
     this.name = "CorrectionsDuPanelRefusees";
+  }
+}
+
+/**
+ * L'item porte un statut de sortie (« retire_par_panel », « non_evaluable ») que ses décisions du
+ * panel publiées n'expliquent pas : aucun statut n'est deviné pour le réintégrer.
+ */
+export class StatutPanelIncoherent extends Error {
+  constructor(item_id: string, detail: string) {
+    super(`Item ${item_id} : statut de validation incohérent avec les décisions du panel publiées : ${detail}.`);
+    this.name = "StatutPanelIncoherent";
   }
 }
 
@@ -226,19 +243,105 @@ function contenuDecide(item: Item, decision: DecisionDuPanel): Item {
   return { ...corrige, version: item.version + 1, empreinte: empreinteContenuNotant(corrige) };
 }
 
-function statutValidation(item: Item, decision: DecisionPanel): string {
-  const statut = STATUT_VALIDATION_PAR_DECISION.get(decision);
+/**
+ * Le statut que pose une décision de sortie ; `null` pour une décision qui réintègre (maintien,
+ * correction). Une décision hors énumération est un refus.
+ */
+function statutDeSortie(decision: string): string | null {
+  const statut = STATUT_VALIDATION_PAR_DECISION.get(decision as DecisionPanel);
   if (statut === undefined) throw new Error(`Décision du panel hors énumération : ${decision}`);
-  return statut === null ? item.statut_validation : statut;
+  return statut;
 }
 
-function publier(decision: DecisionDuPanel): DecisionPanelPubliee {
+interface DecisionAnterieure {
+  readonly decision: string;
+  readonly date: string;
+  readonly statut_validation_anterieur: string;
+  readonly instant: number;
+}
+
+/**
+ * Frontière d'entrée : `Item.contestations` est lu du disque. Une décision publiée sans
+ * `statut_validation_anterieur` ne permet pas de savoir ce qu'une réintégration rendrait.
+ */
+function decisionAnterieure(item: Item, publiee: DecisionPanelPubliee): DecisionAnterieure {
+  const anterieur: unknown = publiee.statut_validation_anterieur;
+  if (typeof anterieur !== "string") {
+    throw new StatutPanelIncoherent(item.id, `décision « ${publiee.decision} » du ${publiee.date} sans statut_validation_anterieur`);
+  }
+  return { decision: publiee.decision, date: publiee.date, statut_validation_anterieur: anterieur, instant: instantDe(publiee.date) };
+}
+
+/**
+ * Les décisions déjà publiées, de la plus récente à la plus ancienne. « Récente » s'entend sur
+ * `decision_panel.date`, comme pour le tirage ; à instant égal, l'ordre du tableau départage.
+ */
+function decisionsAnterieures(item: Item): readonly DecisionAnterieure[] {
+  return contestationsDe(item)
+    .flatMap((contestation) => (contestation.decision_panel === undefined ? [] : [decisionAnterieure(item, contestation.decision_panel)]))
+    .map((decision, rang) => ({ decision, rang }))
+    .sort((a, b) => b.decision.instant - a.decision.instant || b.rang - a.rang)
+    .map(({ decision }) => decision);
+}
+
+/**
+ * Le statut d'avant la sortie `sortie`, `plusAnciennes` étant les décisions qui la précèdent, de
+ * la plus récente à la plus ancienne. Des sorties consécutives (retrait puis non-évaluabilité) se
+ * remontent : le statut antérieur de la seconde est celui que la première a posé, et c'est le
+ * statut d'avant la première qui est rendu.
+ */
+function statutAvantLaSortie(sortie: DecisionAnterieure, plusAnciennes: readonly DecisionAnterieure[]): string {
+  const [precedente, ...reste] = plusAnciennes;
+  if (precedente === undefined) return sortie.statut_validation_anterieur;
+  if (statutDeSortie(precedente.decision) !== sortie.statut_validation_anterieur) return sortie.statut_validation_anterieur;
+  return statutAvantLaSortie(precedente, reste);
+}
+
+/**
+ * Un statut que seule une décision du panel pose : le trouver sans décision de sortie qui l'explique
+ * est une incohérence. « non_evaluable » n'en est pas : la promotion le pose aussi.
+ */
+const STATUTS_POSES_PAR_LE_SEUL_PANEL: ReadonlySet<string> = new Set(["retire_par_panel"]);
+
+function statutHorsSortieDuPanel(item: Item): string {
+  if (STATUTS_POSES_PAR_LE_SEUL_PANEL.has(item.statut_validation)) {
+    throw new StatutPanelIncoherent(item.id, `« ${item.statut_validation} » sans décision de sortie du panel qui le pose`);
+  }
+  return item.statut_validation;
+}
+
+/**
+ * Maintien ou correction : si le statut courant vient d'une sortie décidée par le panel (la
+ * dernière décision publiée en est une), il est rendu tel qu'avant cette sortie ; sinon il reste.
+ * Un « non_evaluable » posé par la promotion, sans sortie du panel, ne bouge donc pas.
+ */
+function statutReintegre(item: Item): string {
+  const [derniere, ...plusAnciennes] = decisionsAnterieures(item);
+  if (derniere === undefined) return statutHorsSortieDuPanel(item);
+  const pose = statutDeSortie(derniere.decision);
+  if (pose === null) return statutHorsSortieDuPanel(item);
+  if (pose !== item.statut_validation) {
+    throw new StatutPanelIncoherent(
+      item.id,
+      `« ${item.statut_validation} » alors que la dernière décision du panel (${derniere.decision}, ${derniere.date}) pose « ${pose} »`,
+    );
+  }
+  return statutAvantLaSortie(derniere, plusAnciennes);
+}
+
+function statutValidation(item: Item, decision: DecisionPanel): string {
+  const sortie = statutDeSortie(decision);
+  return sortie === null ? statutReintegre(item) : sortie;
+}
+
+function publier(decision: DecisionDuPanel, item: Item): DecisionPanelPubliee {
   return {
     date: decision.date,
     decision: decision.decision,
     motivation: decision.motivation,
     opinions_dissidentes: decision.opinions_dissidentes,
     arbitre_seul: decision.arbitre_seul,
+    statut_validation_anterieur: item.statut_validation,
   };
 }
 
@@ -261,7 +364,7 @@ export function appliquerDecisionPanel(
 
   const contenu = contenuDecide(item, decision);
   const contestations = contestationsDe(item).map((contestation) =>
-    contestation.id === cible.id ? { ...contestation, decision_panel: publier(decision) } : contestation,
+    contestation.id === cible.id ? { ...contestation, decision_panel: publier(decision, item) } : contestation,
   );
   const toutesDecidees = contestations.every((contestation) => contestation.decision_panel !== undefined);
   return {

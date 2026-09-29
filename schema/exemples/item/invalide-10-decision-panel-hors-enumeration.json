@@ -112,6 +112,7 @@
       "decision_panel": {
         "date": "2026-11-20T17:00:00+01:00",
         "decision": "maintien_partiel",
+        "statut_validation_anterieur": "verifie",
         "motivation": "Les deux états sont sourcés en T1 et T2 ; la citation du 3 novembre modifie explicitement l'âge légal.",
         "opinions_dissidentes": [
           "Un membre estime la formulation initiale déjà conditionnelle."

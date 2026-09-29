@@ -57,7 +57,7 @@ function arbitrer(item: Item, issue: string): Item {
         contestataire_type: "campagne",
         // Protocole 0.10, §4 : le masquage des coordonnées est publié, booléen exigé par le schéma.
         caviardage: false,
-        decision_panel: { date: "2026-10-01T09:00:00+02:00", decision: issue, motivation: "Motif fictif." },
+        decision_panel: { date: "2026-10-01T09:00:00+02:00", decision: issue, motivation: "Motif fictif.", statut_validation_anterieur: "verifie" },
       },
     ],
   };

@@ -112,6 +112,7 @@
       "decision_panel": {
         "date": "2026-11-20T17:00:00+01:00",
         "decision": "maintien",
+        "statut_validation_anterieur": "verifie",
         "opinions_dissidentes": [
           "Un membre estime la formulation initiale déjà conditionnelle."
         ],

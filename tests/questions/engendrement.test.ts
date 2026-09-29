@@ -11,7 +11,7 @@ import { engendrer, MesureIntrouvable, ThemeHorsPerimetre } from "../../pipeline
 import { contientLibelle } from "../../pipeline/questions/libelles.ts";
 import { ArbitrageSansDecision } from "../../pipeline/questions/tirage.ts";
 import type { Item, QuestionEngendree } from "../../pipeline/questions/types.ts";
-import { arbitre, contestation, itemA, itemF, itemO, itemP, mesure, nomme, perimetre } from "./fabriques.ts";
+import { arbitre, contestation, decidePar, itemA, itemF, itemO, itemP, mesure, nomme, perimetre } from "./fabriques.ts";
 
 const MESURE = mesure({ cle: "tva", libelle: "TVA réduite sur l'énergie" });
 const MESURE_FICTIVE = mesure({ cle: "fictive", libelle: "prime aux marcheurs", fictive: true });
@@ -195,10 +195,13 @@ describe("item sorti de l'arbitrage du panel", () => {
   });
 
   it("seule la dernière décision compte : retrait puis maintien engendre", () => {
-    const item = arbitre(base, [
-      contestation("eg2", "maintien", "2026-10-20T10:00:00+02:00"),
-      contestation("eg1", "retrait", DATE),
-    ]);
+    // L'item est produit par la vraie règle (conformité 2026-09-29, n° 1) : le retrait le rend
+    // « retire_par_panel », le maintien lui rend son statut d'avant, et il engendre de nouveau.
+    const retire = decidePar(base, [{ cle: "eg1", decision: "retrait", date: DATE }]);
+    expect(retire.statut_validation).toBe("retire_par_panel");
+    expect(engendrer([retire], [MESURE], PERIMETRE)).toEqual([]);
+    const item = decidePar(retire, [{ cle: "eg2", decision: "maintien", date: "2026-10-20T10:00:00+02:00" }]);
+    expect(item.statut_validation).toBe("verifie");
     expect(codes(engendrer([item], [MESURE], PERIMETRE))).toEqual(P_TOUS);
   });
 

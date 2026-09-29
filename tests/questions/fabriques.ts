@@ -13,6 +13,8 @@
 import { createHash } from "node:crypto";
 import { empreinteContenuNotant, sha256 } from "../../validation/domaine/empreinte.ts";
 import type { Item, Mesure, Source } from "../../validation/domaine/types.ts";
+import { ajouterContestation, appliquerDecisionPanel } from "../../validation/domaine/contestation-item.ts";
+import type { AccesTexte } from "../../validation/domaine/corrections.ts";
 import type {
   CandidatAuGel,
   CandidatNomme,
@@ -165,11 +167,16 @@ export function itemF(options: OptionsItem): Item {
 
 export type DecisionPanel = "maintien" | "correction" | "retrait" | "non_evaluabilite";
 
-/** Une contestation arbitrée, au format de `item.schema.json` (contestations[].decision_panel). */
+/**
+ * Une contestation arbitrée, au format de `item.schema.json` (contestations[].decision_panel).
+ * `statut_validation_anterieur` : le statut de l'item juste avant la décision (conformité
+ * 2026-09-29, n° 1) ; le tirage ne le lit pas.
+ */
 export function contestation(
   cle: string,
   decision: DecisionPanel,
   date: string,
+  statut_validation_anterieur = "verifie",
 ): Record<string, unknown> {
   return {
     id: identifiant(`contestation:${cle}`),
@@ -178,13 +185,58 @@ export function contestation(
     contestataire_type: "campagne",
     // Protocole 0.10, §4 : le masquage des coordonnées est publié, booléen exigé par le schéma.
     caviardage: false,
-    decision_panel: { date, decision, motivation: "Motivation fictive du panel." },
+    decision_panel: { date, decision, motivation: "Motivation fictive du panel.", statut_validation_anterieur },
   };
 }
 
 /** L'item, passé en « arbitree » avec ces contestations. L'empreinte ne couvre pas les statuts. */
 export function arbitre(item: Item, contestations: readonly unknown[]): Item {
   return { ...item, statut_contestation: "arbitree", contestations };
+}
+
+/** Une décision du panel à poser par la vraie règle : clé de la contestation, décision, date. */
+export interface EtapePanel {
+  readonly cle: string;
+  readonly decision: Exclude<DecisionPanel, "correction">;
+  readonly date: string;
+}
+
+/** Aucune correction n'est demandée ici : un accès au texte n'a pas lieu d'être. */
+const SANS_TEXTE: AccesTexte = {
+  texteSource: () => {
+    throw new Error("Aucune correction : le texte source ne devrait pas être lu.");
+  },
+  offsetsActuels: () => {
+    throw new Error("Aucune correction : les offsets ne devraient pas être lus.");
+  },
+};
+
+/**
+ * L'item après une suite de contestations, chacune reçue puis décidée par le panel, par
+ * `ajouterContestation` et `appliquerDecisionPanel` : les statuts sont ceux que la vraie règle
+ * produit (retrait, réintégration), jamais posés à la main.
+ */
+export function decidePar(item: Item, etapes: readonly EtapePanel[]): Item {
+  return etapes.reduce((courant, etape) => {
+    const id = identifiant(`contestation:${etape.cle}`);
+    const trace = { date: etape.date, commit: "d".repeat(40) };
+    const recue = ajouterContestation(
+      courant,
+      { id, date_reception: "2026-09-25T09:00:00+02:00", texte: "Texte de contestation fictif.", contestataire_type: "campagne", caviardage: false },
+      trace,
+    );
+    const decision = {
+      contestation_id: id,
+      decision: etape.decision,
+      version_jugee: recue.version,
+      motivation: "Motivation fictive du panel.",
+      opinions_dissidentes: [],
+      arbitre_seul: true,
+      corrections: [],
+      date: etape.date,
+    };
+    return appliquerDecisionPanel(recue, decision, trace, SANS_TEXTE).item;
+  }, item);
 }
 
 /* --------------------------------------------------------------- questions */
