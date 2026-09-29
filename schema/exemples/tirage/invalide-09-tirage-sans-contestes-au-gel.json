@@ -79,18 +79,6 @@
     }
   ],
   "exclusions": [],
-  "contestes_au_gel": [
-    {
-      "candidat_id": "cand-a",
-      "item_ids": []
-    },
-    {
-      "candidat_id": "cand-b",
-      "item_ids": [
-        "01JCQ7N5T3AXGE1CANDB0000B8"
-      ]
-    }
-  ],
   "bilan_reprise": [],
   "compensations": []
 }

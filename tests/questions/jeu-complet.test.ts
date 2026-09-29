@@ -93,6 +93,7 @@ function tirageDe(questions: readonly Question[], surcharge: Partial<Tirage> = {
     parametres: quotas(),
     entrees: entreesPour(questions, ITEMS, MESURES, RUN),
     exclusions: [],
+    contestes_au_gel: [],
     bilan_reprise: [],
     compensations: [],
     ...surcharge,

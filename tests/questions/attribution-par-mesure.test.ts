@@ -169,7 +169,12 @@ describe("n° 39 : tirage des Q-ATT", () => {
     expect(entrees[0]?.items_au_gel.every((item) => item.role === "attendu_dans_liste")).toBe(true);
   });
 
-  it("une Q-ATT dont un seul des items est contesté n'est pas tirable", () => {
+  /*
+   * Modifié ouvertement (décision de l'auteur du 2026-09-29, conformité n° 3) : la Q-ATT dont l'item
+   * d'un candidat interrogé est contesté au gel n'est plus écartée en silence ; elle est exclue et
+   * comptée, motif `attribution_contestee`.
+   */
+  it("une Q-ATT dont un seul des items est contesté n'est pas tirable : exclue et comptée", () => {
     const conteste = { ...BETA, statut_contestation: "contestee" as const };
     const questions = engendrer([ALPHA, BETA, GAMMA], [REELLE], PERIMETRE).map(completerSur([ALPHA, BETA, GAMMA]));
     const resultat = tirer({
@@ -181,9 +186,18 @@ describe("n° 39 : tirage des Q-ATT", () => {
       parametres: PARAMETRES,
     });
     expect(resultat.tirage.entrees.filter((entree) => entree.candidat_id === undefined)).toHaveLength(0);
+    const exclusions = resultat.tirage.exclusions.filter((exclusion) => exclusion.gabarit === "Q-ATT");
+    expect(exclusions).toHaveLength(1);
+    expect(exclusions[0]).toMatchObject({ motif: "attribution_contestee", theme: "sante" });
+    expect(exclusions[0]?.detail).toContain(BETA.id);
   });
 
-  it("une Q-ATT dont un seul des items est en attente n'est pas tirable", () => {
+  /*
+   * Modifié ouvertement (décision de l'auteur du 2026-09-29, conformité n° 3) : « Un item en attente de
+   * validation […] n'appartient pas à la vérité de référence : il n'entre pas dans la liste et ne la rend
+   * pas indéfinie. » Avant : la Q-ATT entière était écartée en silence.
+   */
+  it("une Q-ATT dont un seul des items est en attente est tirée sans lui", () => {
     const attente = { ...GAMMA, statut_validation: "en_attente" as const };
     const questions = engendrer([ALPHA, BETA, GAMMA], [REELLE], PERIMETRE).map(completerSur([ALPHA, BETA, GAMMA]));
     const resultat = tirer({
@@ -194,7 +208,11 @@ describe("n° 39 : tirage des Q-ATT", () => {
       graine: graine(),
       parametres: PARAMETRES,
     });
-    expect(resultat.tirage.entrees.filter((entree) => entree.candidat_id === undefined)).toHaveLength(0);
+    const entrees = resultat.tirage.entrees.filter((entree) => entree.candidat_id === undefined);
+    expect(entrees).toHaveLength(1);
+    expect(entrees[0]?.items_au_gel.map((item) => item.reference.item_id).sort()).toEqual([ALPHA.id, BETA.id].sort());
+    expect(entrees[0]?.reponse_attendue.candidats_attendus).toEqual(["demo-alpha"]);
+    expect(resultat.tirage.exclusions.filter((exclusion) => exclusion.gabarit === "Q-ATT")).toEqual([]);
   });
 
   it("la symétrie se vérifie sur un tirage portant des Q-ATT sans principal", () => {

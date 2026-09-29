@@ -19,7 +19,7 @@
  */
 
 import { sha256 } from "../../validation/domaine/empreinte.ts";
-import { contestationPermetLeTirage } from "./contestation.ts";
+import { figureDansAttribution, placeAuGel } from "./place-au-gel.ts";
 import { gabaritsPourType, remplirTexteNeutre, VERSION_GABARITS } from "./gabarits.ts";
 import type { Gabarit } from "./gabarits.ts";
 import type {
@@ -67,10 +67,22 @@ export class ThemeHorsPerimetre extends Error {
  * la règle est celle du tirage (`contestationPermetLeTirage`) : non contesté, ou arbitré avec une
  * dernière décision de maintien ou de correction (§5, protocole 0.3 ; annexe E, point 6). Elle est
  * évaluée même quand la validation exclut déjà l'item : un arbitrage illisible se signale toujours.
+ * C'est la place `retenu` de `place-au-gel.ts`, seule définition.
  */
 export function itemEngendreDesQuestions(item: Item): boolean {
-  const contestationAdmise = contestationPermetLeTirage(item);
-  return item.statut_validation === "verifie" && contestationAdmise;
+  return placeAuGel(item) === "retenu";
+}
+
+/**
+ * Un item vérifié dont `mesure_version` n'est pas la version courante de sa mesure a été jugé contre
+ * une version qui n'existe plus (décision de l'auteur du 2026-09-29, conformité n° 2 ; texte à écrire
+ * au §4 en 0.14) : le tirage le refuse et le compte, et il ne compte pas au seuil de couverture. Une
+ * mesure absente du référentiel est un référentiel incomplet : `MesureIntrouvable`, jamais un faux.
+ */
+export function epingleLaVersionCourante(item: Item, referentiel: ReadonlyMap<string, Mesure>): boolean {
+  const mesure = referentiel.get(item.mesure_id);
+  if (mesure === undefined) throw new MesureIntrouvable(item.id, item.mesure_id);
+  return item.mesure_version === mesure.version;
 }
 
 export function referenceDe(item: Item): ReferenceItem {
@@ -131,7 +143,9 @@ export function engendrer(
   const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
   const libelles = new Map(candidats.map((candidat) => [candidat.candidat_id, candidat.libelle]));
   const eligibles = items.filter(itemEngendreDesQuestions);
-  const positionsParMesure = grouperPositionsParMesure(eligibles);
+  // Décision de l'auteur du 2026-09-29 (n° 3) : la liste d'une Q-ATT garde aussi l'item vérifié
+  // contesté, qui n'engendre rien lui-même, pour que le tirage l'exclue en la comptant.
+  const positionsParMesure = grouperPositionsParMesure(items.filter(figureDansAttribution));
 
   const questions: QuestionEngendree[] = [];
   const attributions = new Map<string, Attribution>();
@@ -290,9 +304,11 @@ function texteDe(item: Item, gabarit: Gabarit, contexte: ContexteItem): string {
  * Elle attend « la liste exacte des candidats du périmètre interrogés au run dont la position en
  * vigueur à la date du run est « pour » » (annexe B). L'engendrement ne connaît pas cette date : il
  * inscrit en `attendu_dans_liste` TOUS les items vérifiés qui portent une position sur la mesure
- * (P et O, de tout candidat), et la liste se résout au gel sur leurs positions en vigueur
- * (`reponse-attendue.ts:listeAttendueAuGel`). Qu'un item y figure ne dit donc pas que son candidat
- * est attendu. Aucun de ces items n'est principal : la question ne porte sur aucun d'eux en
+ * (P et O, de tout candidat), contestés compris (`figureDansAttribution`), et la liste se résout au
+ * gel sur leurs positions en vigueur (`reponse-attendue.ts:listeAttendueAuGel`), après que le tirage
+ * a appliqué la place de chaque item au gel (`place-au-gel.ts`). Qu'un item y figure ne dit donc pas
+ * que son candidat est attendu. La question elle-même n'existe que si un item retenu la porte : un
+ * item contesté n'engendre aucune question (§4). Aucun de ces items n'est principal : la question ne porte sur aucun d'eux en
  * particulier (décision de l'auteur du 2026-09-25).
  *
  * Un item qui admet le gabarit sans porter de position — l'item F d'une mesure fictive, lu aux blocs

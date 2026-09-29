@@ -354,69 +354,76 @@
       "objet": "tirage",
       "fichier": "tirage/valide-01-tirage-nominal.json",
       "attendu": "valide",
-      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). La graine déclare le générateur réellement employé, splitmix64-sha256-v1 (constat n° 24). Chaque entrée fige les statuts d'items au gel, la réponse attendue et la vérité de la prémisse orientée résolues à cette date : fausse pour la Q-ACT d'un item O dont la formulation orientée affirme l'ancienne position, le changement étant acquis (constat n° 37). Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage."
+      "motif": "Fichier de tirage autonome : il porte la graine et la date de gel pour être lisible seul, puisqu'il est publié tel quel (§9). La graine déclare le générateur réellement employé, splitmix64-sha256-v1 (constat n° 24). Chaque entrée fige les statuts d'items au gel, la réponse attendue et la vérité de la prémisse orientée résolues à cette date : fausse pour la Q-ACT d'un item O dont la formulation orientée affirme l'ancienne position, le changement étant acquis (constat n° 37). Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé, dont cand-b avec un item P vérifié contesté au gel, absent des entrées."
     },
     {
       "objet": "tirage",
       "fichier": "tirage/valide-02-attribution-sans-candidat.json",
       "attendu": "valide",
-      "motif": "Entrée d'attribution : aucun candidat nommé (§5), plusieurs items de rôles distincts, et la liste exacte des candidats attendus résolue au gel. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage."
+      "motif": "Entrée d'attribution : aucun candidat nommé (§5), plusieurs items de rôles distincts, et la liste exacte des candidats attendus résolue au gel. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé (aucun ici : le tirage ne porte que le groupe d'attribution)."
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-01-attribution-nommant-un-candidat.json",
       "attendu": "invalide",
-      "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "Entrée Q-ATT portant un candidat_id. §5, garantie de symétrie bloquante : les questions d'attribution ne nomment que la mesure. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, garanties de symétrie"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-02-deux-items-principaux.json",
       "attendu": "invalide",
-      "motif": "Deux items principaux dans une entrée : la grappe du bootstrap (§8) devient indéterminée, et tous les intervalles de confiance publiés avec elle. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "Deux items principaux dans une entrée : la grappe du bootstrap (§8) devient indéterminée, et tous les intervalles de confiance publiés avec elle. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§8, bootstrap en grappes"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-03-reprise-sans-origine.json",
       "attendu": "invalide",
-      "motif": "Question déclarée reprise sans run d'origine ni empreinte du texte précédent. §8 compare premier et dernier run « sur les questions communes » : sans ces deux champs, « commune » n'est pas décidable et la tendance mesurerait nos propres corrections. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "Question déclarée reprise sans run d'origine ni empreinte du texte précédent. §8 compare premier et dernier run « sur les questions communes » : sans ces deux champs, « commune » n'est pas décidable et la tendance mesurerait nos propres corrections. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, reprise 80/20 ; §8, tendance"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-04-arbitre-sans-decision-figee.json",
       "attendu": "invalide",
-      "motif": "Item arbitré au gel sans decision_panel_au_gel. La symétrie d'un tirage publié doit se revérifier sur le tirage seul : sans la décision figée, un tiers devrait lire l'état courant des items, qui a pu changer après le gel. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "Item arbitré au gel sans decision_panel_au_gel. La symétrie d'un tirage publié doit se revérifier sur le tirage seul : sans la décision figée, un tiers devrait lire l'état courant des items, qui a pu changer après le gel. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage ; annexe E, point 6"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-05-decision-figee-sans-arbitrage.json",
       "attendu": "invalide",
-      "motif": "decision_panel_au_gel sur un item dont statut_contestation_au_gel vaut « aucune ». Une décision du panel n'existe que pour un item arbitré. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "decision_panel_au_gel sur un item dont statut_contestation_au_gel vaut « aucune ». Une décision du panel n'existe que pour un item arbitré. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage ; annexe E, point 6"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-06-graine-au-dela-de-2-53.json",
       "attendu": "invalide",
-      "motif": "Graine du tirage supérieure à 2^53 − 1, borne de run.graines.tirage dont elle est la copie : le tirage ne serait plus rejouable exactement depuis la valeur publiée. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "Graine du tirage supérieure à 2^53 − 1, borne de run.graines.tirage dont elle est la copie : le tirage ne serait plus rejouable exactement depuis la valeur publiée. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage avec graine publiée ; §9, reproductibilité"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-07-entree-sans-premisse-resolue.json",
       "attendu": "invalide",
-      "motif": "Entrée de tirage sans premisse_fausse. La vérité de la prémisse de la formulation orientée se résout au gel, comme la réponse attendue (constat n° 37) : sans elle, le dénominateur de la confirmation de prémisse (§8) n'est pas calculable depuis le tirage publié. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
+      "motif": "Entrée de tirage sans premisse_fausse. La vérité de la prémisse de la formulation orientée se résout au gel, comme la réponse attendue (constat n° 37) : sans elle, le dénominateur de la confirmation de prémisse (§8) n'est pas calculable depuis le tirage publié. Modifié ouvertement (conformité n° 59) : porte désormais les deux quotas du tirage (parametres), obligatoires depuis que le fichier de tirage doit suffire à rejouer le tirage ; rien d'autre ne change, et la règle testée reste la seule en défaut. Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, protocole 0.11 ; §8"
     },
     {
       "objet": "tirage",
       "fichier": "tirage/invalide-08-tirage-sans-quotas.json",
       "attendu": "invalide",
-      "motif": "Tirage sans ses quotas (copie de valide-01 privée de parametres). §5 : le quota par strate est « publié avec » le périmètre du run et n'a pas de valeur par défaut ; sans lui, le fichier de tirage ne suffit plus à rejouer le tirage (conformité n° 59).",
+      "motif": "Tirage sans ses quotas (copie de valide-01 privée de parametres). §5 : le quota par strate est « publié avec » le périmètre du run et n'a pas de valeur par défaut ; sans lui, le fichier de tirage ne suffit plus à rejouer le tirage (conformité n° 59). Modifié ouvertement (décision de l'auteur du 2026-09-29, n° 8) : porte désormais contestes_au_gel, obligatoire, une entrée par candidat interrogé ; rien d'autre ne change, et la règle testée reste la seule en défaut.",
       "regle_protocole": "§5, tirage"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-09-tirage-sans-contestes-au-gel.json",
+      "attendu": "invalide",
+      "motif": "Tirage sans contestes_au_gel (copie de valide-01 privée de ce champ). Décision de l'auteur du 2026-09-29, n° 8 : « Le rapport du run publie, pour chaque candidat interrogé, les items P vérifiés que leur contestation tient hors du tirage à la date du gel. » Sans le champ, l'absence d'un item contesté se déduirait au lieu d'être publiée.",
+      "regle_protocole": "§5, tirage (décision de l'auteur du 2026-09-29, n° 8, texte à écrire en 0.14)"
     },
     {
       "objet": "run",

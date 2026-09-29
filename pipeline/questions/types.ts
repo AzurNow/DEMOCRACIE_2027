@@ -223,9 +223,18 @@ export interface GraineTirage {
  * §5 (protocole 0.9) : pourquoi une question n'entre pas au tirage alors que ses items sont
  * vérifiés. `hors_validite` : la fenêtre de validité d'un item ne contient pas l'instant du gel ;
  * `reponse_attendue_indecidable` : la réponse attendue n'est pas définie au gel (« sans objet » sur
- * un gabarit fermé, négatif ou orienté ; liste d'attribution non définie).
+ * un gabarit fermé, négatif ou orienté ; liste d'attribution non définie). Décisions de l'auteur du
+ * 2026-09-29 (conformité n° 2 et 3) : `attribution_contestee` : l'item vérifié d'un candidat
+ * interrogé sur la mesure d'une question d'attribution est contesté au gel ;
+ * `mesure_version_depassee` : un item définissant de la question épingle une version de sa mesure qui
+ * n'est plus la version courante.
  */
-export const MOTIFS_EXCLUSION = ["hors_validite", "reponse_attendue_indecidable"] as const;
+export const MOTIFS_EXCLUSION = [
+  "hors_validite",
+  "reponse_attendue_indecidable",
+  "attribution_contestee",
+  "mesure_version_depassee",
+] as const;
 export type MotifExclusion = (typeof MOTIFS_EXCLUSION)[number];
 
 /** Une question écartée avant le tirage, « comptée à part dans le rapport du run » (§5). */
@@ -273,6 +282,16 @@ export interface ParametresTirage {
   readonly questions_attribution_par_theme: number;
 }
 
+/**
+ * Décision de l'auteur du 2026-09-29, n° 8 : pour un candidat interrogé, les items P vérifiés que
+ * leur contestation tient hors du tirage au gel (`couverture.ts:itemsPContestesAuGel`), triés.
+ * Vide quand il n'y en a aucun : l'absence est publiée, jamais déduite.
+ */
+export interface ContestesAuGel {
+  readonly candidat_id: string;
+  readonly item_ids: readonly string[];
+}
+
 export interface Tirage {
   readonly run_id: string;
   readonly date_gel: string;
@@ -280,6 +299,8 @@ export interface Tirage {
   readonly parametres: ParametresTirage;
   readonly entrees: readonly EntreeTirage[];
   readonly exclusions: readonly ExclusionTirage[];
+  /** Une entrée par candidat interrogé, triée par `candidat_id` (décision n° 8 du 2026-09-29). */
+  readonly contestes_au_gel: readonly ContestesAuGel[];
   readonly bilan_reprise: readonly BilanReprise[];
   readonly compensations: readonly CompensationTirage[];
 }
