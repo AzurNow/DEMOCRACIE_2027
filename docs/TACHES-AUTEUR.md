@@ -55,12 +55,13 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
      version courante de sa mesure, et le compte dans les exclusions. *À coder.*
   6. §5 (n° 3) : texte à insérer après la phrase sur la position conditionnelle ou sans objet :
      « Pour la même raison, une question d'attribution n'est pas tirée lorsque l'item d'un candidat
-     interrogé au run sur la mesure est contesté à la date du gel, ou arbitré sans que sa dernière
-     décision le réintègre : sa position fait l'objet d'une contestation, et la liste attendue n'est
-     pas établie. La question est exclue et comptée à part dans le rapport du run, comme une
-     question dont la réponse attendue n'est pas définie. Un item en attente de validation
-     n'appartient pas encore à la vérité de référence : il n'entre pas dans la liste et ne la rend
-     pas indéfinie. » *À coder.*
+     interrogé au run sur la mesure est contesté à la date du gel : sa position fait l'objet d'une
+     contestation, et la liste attendue n'est pas établie. La question est exclue et comptée à part
+     dans le rapport du run, comme une question dont la réponse attendue n'est pas définie. Un item
+     en attente de validation, retiré ou déclaré non évaluable n'appartient pas à la vérité de
+     référence : il n'entre pas dans la liste et ne la rend pas indéfinie. » (Branche « arbitré sans
+     réintégration » écartée le même jour : un retrait bloquerait la question pour toujours.)
+     *À coder.*
 
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
