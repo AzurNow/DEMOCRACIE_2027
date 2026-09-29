@@ -2272,17 +2272,20 @@
       "section": "4",
       "citation": "un maintien décidé sur un item que le panel avait retiré lui rend le statut qu'il avait avant ce retrait",
       "nature": "code",
-      "statut": "contredite",
+      "statut": "testee",
       "code": [
         "validation/domaine/contestation-item.ts:statutValidation",
-        "validation/domaine/contestation-item.ts:STATUT_VALIDATION_PAR_DECISION"
+        "validation/domaine/contestation-item.ts:STATUT_VALIDATION_PAR_DECISION",
+        "validation/domaine/contestation-item.ts:statutReintegre"
       ],
       "tests": [
-        "tests/questions/engendrement.test.ts « seule la dernière décision compte : retrait puis maintien engendre »"
+        "tests/questions/engendrement.test.ts « seule la dernière décision compte : retrait puis maintien engendre »",
+        "tests/contestation-item.test.ts « maintien après un retrait : l'item reprend le statut qu'il avait avant le retrait, et rentre au tirage »",
+        "tests/contestation-item.test.ts « correction après un retrait : l'item reprend son statut antérieur, version + 1 »"
       ],
       "lot": null,
       "constat": 1,
-      "note": "Le maintien laisse statut_validation = retire_par_panel : l'item reste hors du tirage et du seuil de couverture. Le test cité part d'un item resté « verifie », état que pnpm panel ne produit jamais."
+      "note": "Corrigé dans #53 : la décision publiée porte statut_validation_anterieur, rendu au maintien ou à la correction."
     },
     {
       "id": "§4.101",
@@ -6913,16 +6916,19 @@
       "code": [
         "pipeline/questions/contestation.ts:contestationPermetLeTirage",
         "pipeline/questions/contestation.ts:decisionReintegre",
-        "outils/panel.ts"
+        "outils/panel.ts",
+        "validation/domaine/contestation-item.ts:statutReintegre"
       ],
       "tests": [
         "tests/questions/engendrement.test.ts « (a) un item arbitré maintenu engendre ses questions »",
         "tests/questions/engendrement.test.ts « (b) un item arbitré corrigé engendre ses questions »",
-        "tests/questions/engendrement.test.ts « (c) un item arbitré avec retrait n'engendre rien »"
+        "tests/questions/engendrement.test.ts « (c) un item arbitré avec retrait n'engendre rien »",
+        "tests/contestation-item.test.ts « maintien après un retrait : l'item reprend le statut qu'il avait avant le retrait, et rentre au tirage »",
+        "tests/contestation-item.test.ts « correction après un retrait : l'item reprend son statut antérieur, version + 1 »"
       ],
       "lot": null,
       "constat": 1,
-      "note": "La correction a désormais son outil (pnpm panel). Maintien ou correction décidés après un retrait ne réintègrent pas l'item (§4.100)."
+      "note": "La correction a son outil (pnpm panel). Depuis #53, maintien ou correction décidés après un retrait réintègrent l'item (§4.100)."
     },
     {
       "id": "F.01",
