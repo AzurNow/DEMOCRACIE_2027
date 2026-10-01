@@ -29,9 +29,13 @@ Mis à jour le 2026-10-01. Sources relues : `docs/feuille-de-route.json`, `docs/
       renvoi après correction de thème, tiers de la fiche).
 - [x] **Faire refaire la passe de conformité** sur la 0.13 : faite le 2026-09-29
       (`docs/conformite/2026-09-29.md`). Constats n° 1 à 4, 7 à 9, 14, 24, 31 et 33 traités
-      (#53 à #57). n° 15, 27 et 29 traités dans #61. Restent ouverts du côté code : n° 5, 10 à 12, 22, 23,
-      25, 30, 32 et 35.
+      (#53 à #57). n° 15, 27 et 29 traités dans #61, n° 10, 12 et 30 dans #62. Restent ouverts du côté
+      code : n° 5, 11, 22, 23, 25, 32 et 35.
 - [ ] **Faire écrire dans la prochaine révision** les décisions du 2026-09-28 ci-dessous.
+
+  Accord du 2026-10-01 (conformité 2026-09-29, n° 12, trou signalé), selon la recommandation :
+  §8, tendance : « un couple outil × mode marqué run incomplet au premier ou au dernier run sort de
+  la comparaison de tendance, et est rapporté avec le run où il est incomplet ». *Codé (#62).*
 
   Décisions du 2026-09-28 sur le renvoi après correction de thème (PR #50), selon la
   recommandation. La 1 précise le texte du §4 (« retournent en attente ») : à écrire dans la
