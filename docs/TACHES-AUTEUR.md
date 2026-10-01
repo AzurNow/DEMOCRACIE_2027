@@ -11,8 +11,8 @@ Mis à jour le 2026-10-01. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ## 0. Fusions en attente
 
-- [ ] **Fusionner #57** (barrière de symétrie, conformité n° 8, 9 et 24), puis la PR de clôture du
-      2026-10-01. Toutes deux partent de `main` : aucun ordre imposé.
+- [ ] **Fusionner #59** (condition de quota, `donnees_commit` obligatoire), puis la PR de la
+      révision 0.14 du protocole. #59 part de `main`.
 - [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #56, dont
       `lots/panel-maintien-apres-retrait` et `lots/tirage-contestations-mesure`), et leurs worktrees
       sous `.claude/worktrees/`. Ne plus fusionner une PR dont la base est la branche d'une autre
@@ -90,13 +90,13 @@ Mis à jour le 2026-10-01. Sources relues : `docs/feuille-de-route.json`, `docs/
      compensation inscrite répond au déficit d'une strate, que ses propres questions tirables ne
      pouvaient combler. » *Codé (#57).*
   10. §5 (n° 9) : les items reçus par la barrière sont recoupés avec ceux du commit
-     `versions.donnees_commit`, que le run inscrit dès le gel. *Codé (#57).* À décider : exiger ce
-     champ dans `schema/run.schema.json` pour tout run qui a un tirage (`docs/DETTE.md`, 2026-10-01,
-     point 3).
-  11. **À trancher** : ajouter une condition de symétrie « aucune strate au-delà du quota » ? Le §5
-     fixe le quota, mais aucune condition ne le contrôle ; avec la lecture du point 9, un tirage qui
-     déplace une question d'une strate à l'autre au sein d'un thème reste vert (`docs/DETTE.md`,
-     2026-10-01, point 1, *haute*).
+     `versions.donnees_commit`, que le run inscrit dès le gel. *Codé (#57).* Tranché le 2026-10-01 :
+     le schéma l'exige de tout run. *Codé (#59).*
+  11. Tranché le 2026-10-01 : septième condition bloquante de la symétrie, « aucune strate
+     candidat × thème × gabarit ne reçoit plus de questions propres que le quota du tirage ».
+     Texte proposé, à la suite de la liste des garanties du §5 : « aucune strate ne reçoit plus de
+     questions que le quota publié avec le tirage, les questions reçues par compensation ne
+     comptant pas dans leur strate d'origine ». *Codé (#59).*
 
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
