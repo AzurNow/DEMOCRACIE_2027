@@ -103,6 +103,13 @@ des candidats pour une question d'attribution » n'utilisait que des items « po
 alors que la liste attendue contenait aussi les candidats « contre » (conformité n° 2, 2026-09-24).
 Pour une règle qui filtre, construire au moins un cas que le filtre doit écarter.
 
+**Rejouer toute la suite avant de choisir entre deux lectures du protocole.** Le 2026-10-01, la
+lecture stricte du §5 (« strate par strate », constat n° 8) corrigeait le cas de la sonde. Mais deux
+tests de `symetrie.test.ts` rougissaient : un candidat qui reçoit une Q-NEG au lieu d'une Q-DIR sur
+le même item, cas que la répartition des gabarits tolère à une question près. Codée sans relancer
+la suite, la lecture stricte aurait bloqué des tirages légitimes. Le conflit, porté à l'auteur, a
+donné la lecture « totaux propres par thème ».
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -148,6 +155,14 @@ de l'agent a transformé `́` en accent combinant brut, et un `\n` dans une cha�
 vrai saut de ligne (erreur de compilation). Le test restait juste mais illisible : rien ne distingue
 à l'œil `été` composé de `été` décomposé. Pour U+0301, U+00A0, U+00AD, U+FB01 : échappement dans le
 code, `String.fromCodePoint` en TypeScript, et un `grep` sur les octets après écriture.
+
+**Hors CI, un substitut de vitest exécute les hooks et les tests en série, ou il écrit dans le dépôt.**
+Le 2026-10-01, la session cloud n'avait pas accès au registre npm, et les tests ont tourné sous un
+substitut minimal de vitest. Sans `beforeEach`, `tests/data-items.test.ts` n'a pas créé son
+répertoire temporaire et a écrit un item à la racine du dépôt. Lancés en parallèle, les tests CLI se
+partageaient le même bac et échouaient à tort. Un substitut ne sert qu'aux fichiers qu'on touche :
+il exécute `beforeEach`/`afterEach`, il lance les tests l'un après l'autre, et `git status` se
+vérifie après chaque passe.
 
 ## Méthode
 
@@ -331,3 +346,10 @@ rapport.** Le lot de réannotation changeait la signature de `Dossier`, donc `te
 Un `git diff` filtré sur les seules lignes contenant `expect` a montré en une commande qu'aucune
 attente n'avait bougé, seulement les appels. C'est deux secondes, et c'est la seule preuve que
 l'anti-pattern « un test rendu vert en affaiblissant son assertion » n'a pas eu lieu.
+
+**Ne pas fusionner une PR dont la base est la branche d'une autre PR.** Le 2026-09-29, #54 avait
+pour base la branche de #53. #53 a été fusionnée dans `main`, puis #54 onze secondes plus tard dans
+la branche de #53, que plus rien ne suivait. Ses sept commits (Q-ATT contestée, version de mesure
+dépassée, `contestes_au_gel`) n'ont jamais atteint `main`, et la passe suivante aurait repris un
+état sans eux. Il a fallu une PR de rattrapage (#55). Une PR empilée se rebase sur `main` avant sa
+fusion. À la reprise d'une session, comparer `main` aux branches des dernières PR fusionnées.

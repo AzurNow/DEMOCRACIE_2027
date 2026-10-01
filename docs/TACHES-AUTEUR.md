@@ -4,15 +4,19 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.13, `docs/conformite/2026-09-24.md`, `schema/README.md`, PR #28 à #50.
+Mis à jour le 2026-10-01. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+`docs/PROTOCOLE.md` 0.13, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #57.
 
 ---
 
 ## 0. Fusions en attente
 
-- [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #50), et
-      leurs worktrees sous `.claude/worktrees/`.
+- [ ] **Fusionner #57** (barrière de symétrie, conformité n° 8, 9 et 24), puis la PR de clôture du
+      2026-10-01. Toutes deux partent de `main` : aucun ordre imposé.
+- [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #56, dont
+      `lots/panel-maintien-apres-retrait` et `lots/tirage-contestations-mesure`), et leurs worktrees
+      sous `.claude/worktrees/`. Ne plus fusionner une PR dont la base est la branche d'une autre
+      PR : c'est ainsi que #54 a manqué `main` (rattrapée par #55, `LESSONS.md`).
 
 ---
 
@@ -23,8 +27,9 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [x] **0.13 écrite** (#48) : les seize décisions du 2026-09-27 sont dans le protocole, et le code
       est aligné sur toutes (#49 : symétrie, run, générateurs ; #50 : format, dates, attestation,
       renvoi après correction de thème, tiers de la fiche).
-- [ ] **Faire refaire la passe de conformité** (compétence `conformite-protocole`) sur la 0.13 :
-      la matrice `docs/conformite/exigences.json` est restée à la 0.8. Avant le gel du 15 octobre.
+- [x] **Faire refaire la passe de conformité** sur la 0.13 : faite le 2026-09-29
+      (`docs/conformite/2026-09-29.md`). Constats n° 1 à 4, 7 à 9, 14, 24, 31 et 33 traités
+      (#53 à #57). Restent ouverts du côté code : n° 5, 10 à 12, 15, 22, 23, 25, 27, 29, 30, 32 et 35.
 - [ ] **Faire écrire dans la prochaine révision** les décisions du 2026-09-28 ci-dessous.
 
   Décisions du 2026-09-28 sur le renvoi après correction de thème (PR #50), selon la
@@ -52,7 +57,8 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
      L'auteur le conteste dès que la correction est acceptée ; contesté, il n'engendre aucune
      question jusqu'à la décision du panel, qui le juge sur la nouvelle version de la mesure. »
      Garde-fou retenu en plus : le tirage refuse un item vérifié dont `mesure_version` n'est pas la
-     version courante de sa mesure, et le compte dans les exclusions. *À coder.*
+     version courante de sa mesure, et le compte dans les exclusions. *Codé (#54, arrivé sur `main`
+     par #55).*
   6. §5 (n° 3) : texte à insérer après la phrase sur la position conditionnelle ou sans objet :
      « Pour la même raison, une question d'attribution n'est pas tirée lorsque l'item d'un candidat
      interrogé au run sur la mesure est contesté à la date du gel : sa position fait l'objet d'une
@@ -61,7 +67,7 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
      en attente de validation, retiré ou déclaré non évaluable n'appartient pas à la vérité de
      référence : il n'entre pas dans la liste et ne la rend pas indéfinie. » (Branche « arbitré sans
      réintégration » écartée le même jour : un retrait bloquerait la question pour toujours.)
-     *À coder.*
+     *Codé (#54, arrivé sur `main` par #55).*
 
   Décisions du 2026-09-29, suite du lot #54, selon la recommandation :
   7. §5 : une mesure dont le seul porteur a son item contesté n'a pas de question d'attribution au
@@ -72,6 +78,25 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
      du run publie, pour chaque candidat interrogé, les items P vérifiés que leur contestation tient
      hors du tirage à la date du gel. » Précision du même jour : y figure tout item P vérifié,
      contesté et en vigueur au gel, quelle que soit la version de sa mesure. *Codé (#54).*
+
+  Décisions du 2026-10-01 (conformité 2026-09-29, n° 8 et 9) :
+  9. §5 (n° 8) : la répartition par thème lit le retard sur les questions **propres** de chaque
+     candidat, quel que soit l'écart des totaux, puis juge strate par strate le thème en retard ;
+     une compensation inscrite répond à un déficit réel de sa strate. Lecture retenue contre la
+     lecture stricte, qui faisait rougir un échange de gabarit sur un même item. Texte proposé, à la
+     suite de « sans compter dans leur thème d'origine les questions reçues par compensation » :
+     « un candidat est en retard sur un thème s'il y a reçu moins de questions propres que le mieux
+     servi des candidats comparés ; ses strates de ce thème sont alors jugées une à une. Une
+     compensation inscrite répond au déficit d'une strate, que ses propres questions tirables ne
+     pouvaient combler. » *Codé (#57).*
+  10. §5 (n° 9) : les items reçus par la barrière sont recoupés avec ceux du commit
+     `versions.donnees_commit`, que le run inscrit dès le gel. *Codé (#57).* À décider : exiger ce
+     champ dans `schema/run.schema.json` pour tout run qui a un tirage (`docs/DETTE.md`, 2026-10-01,
+     point 3).
+  11. **À trancher** : ajouter une condition de symétrie « aucune strate au-delà du quota » ? Le §5
+     fixe le quota, mais aucune condition ne le contrôle ; avec la lecture du point 9, un tirage qui
+     déplace une question d'une strate à l'autre au sein d'un thème reste vert (`docs/DETTE.md`,
+     2026-10-01, point 1, *haute*).
 
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
