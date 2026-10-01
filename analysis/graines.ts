@@ -55,6 +55,15 @@ export function graineDerivee(graineDuRun: number, cle: readonly string[]): bigi
   return graineDepuisTexte(String(graineDuRun), ...cle);
 }
 
+/**
+ * La graine telle qu'elle est publiée avec un résultat : l'amorce de SplitMix64 en hexadécimal
+ * minuscule sur seize chiffres (le §8 l'écrit `0xd8bcfbd164a58f33`, sans le préfixe ici). `cle`
+ * est la clé complète, famille en tête, exactement celle publiée à côté.
+ */
+export function graineHexadecimale(graineDuRun: number, cle: readonly string[]): string {
+  return graineDerivee(graineDuRun, cle).toString(16).padStart(16, "0");
+}
+
 function verifierEntierDuRun(graineDuRun: number): void {
   if (!Number.isInteger(graineDuRun) || graineDuRun < 0) {
     throw new Error(`Graine du run invalide : ${graineDuRun} (entier positif ou nul attendu, schema/run.schema.json).`);

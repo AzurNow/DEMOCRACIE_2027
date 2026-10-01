@@ -14,6 +14,7 @@ import {
   exactitudeParFormulation,
   exactitudeParGabarit,
   exactitudeParTheme,
+  metriquesApplication,
   metriquesComparateur,
   metriquesPrimaires,
   parOutilEtMode,
@@ -26,7 +27,7 @@ import {
 } from "../../analysis/metriques.ts";
 import { VerdictEnDouble } from "../../analysis/filtre.ts";
 import type { CategorieRetenue, Taux } from "../../analysis/types.ts";
-import { lectureComparateur, ulid, unite, unites, verdict } from "./fabriques.ts";
+import { lectureComparateur, tousCompares, ulid, unite, unites, verdict } from "./fabriques.ts";
 
 /** Un taux absent n'a pas de champ `valeur` : ni null, ni 0, ni NaN. */
 function attendreAbsent(t: Taux, denominateur: number): void {
@@ -198,7 +199,7 @@ describe("regroupement par outil et par mode", () => {
       ...unites(1, { outil_id: "outil-beta", mode: "web_activee", categorie: "exacte" }),
     ];
 
-    const groupes = parOutilEtMode(jeu);
+    const groupes = parOutilEtMode(jeu, tousCompares(jeu)).compares;
 
     expect(groupes.map((g) => [g.outil_id, g.mode])).toEqual([
       ["outil-alpha", "web_activee"],
@@ -223,6 +224,77 @@ describe("regroupement par outil et par mode", () => {
     attendreAbsent(m.fabrication, 0);
     attendreAbsent(m.obsolescence, 0);
     attendreAbsent(m.confirmation_premisse, 0);
+  });
+});
+
+describe("canal application : exploratoire, jamais primaire (conformité 2026-09-29, n° 10)", () => {
+  // §8 : « Métriques primaires, par outil et par mode » ; « tout autre chiffre porte l'étiquette
+  // « exploratoire » ». §6 : « Applications grand public (QR8, exploratoire) », sans mode.
+  const api = unites(2, { outil_id: "outil-alpha", mode: "web_activee", categorie: "exacte" });
+  const application = [
+    ...unites(3, { outil_id: "outil-beta", canal: "application", mode: null, categorie: "inexacte" }),
+    ...unites(1, { outil_id: "outil-alpha", canal: "application", mode: null, categorie: "exacte" }),
+  ];
+
+  it("ne publie aucune métrique primaire pour le canal application : une unité de ce canal lève", () => {
+    // Avant ce correctif, une troisième ligne `mode: null` sortait à côté des deux modes.
+    expect(() => parOutilEtMode([...api, ...application], tousCompares(api))).toThrow(/canal application.*exploratoire/);
+  });
+
+  it("rend les métriques du canal application à part, une ligne par outil, marquée exploratoire", () => {
+    const lignes = metriquesApplication(application);
+
+    expect(lignes.map((l) => [l.outil_id, l.canal, l.exploratoire, l.reponses_obtenues])).toEqual([
+      ["outil-alpha", "application", true, 1],
+      ["outil-beta", "application", true, 3],
+    ]);
+    expect(lignes[1]?.exactitude).toEqual({ numerateur: 0, denominateur: 3, valeur: 0 });
+    // Ni mode ni place parmi les primaires : la ligne ne peut pas s'y confondre.
+    expect(Object.hasOwn(lignes[0] as object, "mode")).toBe(false);
+  });
+
+  it("refuse une unité du canal API parmi les métriques exploratoires", () => {
+    expect(() => metriquesApplication([...application, ...api])).toThrow(/canal api parmi les métriques exploratoires/);
+  });
+
+  it("refuse une unité du canal API sans mode plutôt que de lui faire une ligne `mode: null`", () => {
+    const sansMode = unites(1, { outil_id: "outil-alpha", mode: null });
+    expect(() => parOutilEtMode(sansMode, tousCompares(api))).toThrow(/canal api sans mode/);
+  });
+});
+
+describe("couple outil × mode marqué run incomplet (conformité 2026-09-29, n° 12)", () => {
+  // §8 : « Aucune statistique pour un outil dans un mode si plus de 20 % des réponses du canal API
+  // de ce run sont manquantes pour ce couple : il est alors marqué « run incomplet » et exclu des
+  // comparaisons de ce run, l'autre mode de l'outil restant publié s'il passe le seuil. »
+  const ACTIVEE = { outil_id: "outil-alpha", mode: "web_activee" } as const;
+  const DESACTIVEE = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
+  const BETA = { outil_id: "outil-beta", mode: "web_activee" } as const;
+  const jeu = [
+    ...unites(4, { ...ACTIVEE, categorie: "inexacte" }),
+    ...unites(3, { ...DESACTIVEE, categorie: "exacte" }),
+  ];
+
+  it("ne calcule aucune métrique pour un couple marqué run incomplet, et le rapporte à part", () => {
+    const resultat = parOutilEtMode(jeu, { compares: [DESACTIVEE], incomplets: [ACTIVEE] });
+
+    expect(resultat.compares.map((m) => [m.outil_id, m.mode])).toEqual([["outil-alpha", "web_desactivee"]]);
+    expect(resultat.compares[0]?.exactitude).toEqual({ numerateur: 3, denominateur: 3, valeur: 1 });
+    expect(resultat.couples_incomplets).toEqual([ACTIVEE]);
+  });
+
+  it("rapporte aussi un couple incomplet qui n'a aucune réponse obtenue dans le run", () => {
+    // Un couple dont toutes les réponses manquent n'a pas une unité : il reste « run incomplet ».
+    const resultat = parOutilEtMode(jeu, { compares: [ACTIVEE, DESACTIVEE], incomplets: [BETA] });
+
+    expect(resultat.compares).toHaveLength(2);
+    expect(resultat.couples_incomplets).toEqual([BETA]);
+  });
+
+  it("refuse une unité d'un couple absent du partage : son seuil n'a pas été décidé", () => {
+    expect(() => parOutilEtMode(jeu, { compares: [DESACTIVEE], incomplets: [] })).toThrow(
+      /outil-alpha\/web_activee absent du partage/,
+    );
   });
 });
 

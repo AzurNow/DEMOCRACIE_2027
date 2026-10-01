@@ -10,7 +10,7 @@ import { tendanceDuRun } from "../../analysis/tendance.ts";
 import { exactitude } from "../../analysis/metriques.ts";
 import { questionsAuTexteChange } from "../../pipeline/questions/signature.ts";
 import type { Question } from "../../analysis/types.ts";
-import { empreinte, idQuestion, question, ulid, unite } from "./fabriques.ts";
+import { empreinte, idQuestion, question, tousCompares, ulid, unite } from "./fabriques.ts";
 
 const OPTIONS = { reechantillonnages: 50, graine_du_run: 20261201, cle: ["test", "tendance-textes"] };
 
@@ -54,8 +54,8 @@ describe("questions sorties de la tendance parce qu'un texte a changé", () => {
     const unites = (questions: readonly Question[]) =>
       questions.map((q) => unite({ question_id: q.id, grappe_id: q.grappe_id, reponse_id: ulid(`r-${q.id}`) }));
     const resultat = tendanceDuRun(
-      { questions: PREMIER, unites: unites(PREMIER) },
-      { questions: DERNIER, unites: unites(DERNIER) },
+      { questions: PREMIER, unites: unites(PREMIER), couples: tousCompares(unites(PREMIER)) },
+      { questions: DERNIER, unites: unites(DERNIER), couples: tousCompares(unites(DERNIER)) },
       exactitude,
       OPTIONS,
     );

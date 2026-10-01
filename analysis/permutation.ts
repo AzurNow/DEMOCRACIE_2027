@@ -51,7 +51,7 @@ import {
   type StatistiqueNumerique,
 } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
-import { graineDerivee } from "./graines.ts";
+import { graineDerivee, graineHexadecimale } from "./graines.ts";
 import { corrigerHolm, type ValeurP, type ValeurPCorrigee } from "./holm.ts";
 import { exactitude, exactitudeParCandidat } from "./metriques.ts";
 import { cleCouple, repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
@@ -94,6 +94,13 @@ export interface ExactitudeCandidat {
 }
 
 export interface ResultatPermutation {
+  /**
+   * §8, « Graines de l'analyse » (conformité 2026-09-29, n° 30) : la clé complète du test, famille
+   * `permutation` en tête, et l'amorce en hexadécimal, de quoi rejouer la valeur p depuis
+   * `run.graines.permutation.valeur`.
+   */
+  readonly cle: readonly string[];
+  readonly graine: string;
   readonly statistique_observee: number;
   readonly valeur_p: number;
   readonly permutations: number;
@@ -203,7 +210,10 @@ export function testHomogeneiteCandidats(
   if (candidats.size < 2) return null;
   const observee = ecartMaximal(grappes);
   const parCandidat = exactitudeParCandidat(unites, partage);
+  const cle = [FAMILLE_PERMUTATION, ...options.cle];
   return {
+    cle,
+    graine: graineHexadecimale(options.graine_du_run, cle),
     statistique_observee: observee,
     valeur_p: valeurPDe(grappes, observee, options),
     permutations: options.permutations,

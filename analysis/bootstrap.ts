@@ -34,7 +34,7 @@
 
 import { generateur, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
 import type { UniteAnalyse } from "./filtre.ts";
-import { graineDerivee } from "./graines.ts";
+import { graineDerivee, graineHexadecimale } from "./graines.ts";
 import type { Intervalle95, Taux, Ulid } from "./types.ts";
 
 /** §8. Les tests en utilisent beaucoup moins, à graine fixe. */
@@ -82,6 +82,13 @@ export interface EchantillonBootstrap {
 }
 
 export interface DifferenceTaux {
+  /**
+   * §8, « Graines de l'analyse » (conformité 2026-09-29, n° 30) : la clé complète, famille
+   * `bootstrap` en tête, et la graine en hexadécimal, publiées avec la différence comme avec un
+   * `IntervalleNomme`. Présentes même sans intervalle : elles nomment la comparaison.
+   */
+  readonly cle: readonly string[];
+  readonly graine: string;
   readonly taux_a: Taux;
   readonly taux_b: Taux;
   /** `null` quand l'un des deux taux n'existe pas : une différence sans terme n'existe pas. */
@@ -185,7 +192,7 @@ export function intervalleNomme(
   options: OptionsBootstrap,
 ): IntervalleNomme {
   const cle = [FAMILLE_BOOTSTRAP, ...options.cle];
-  const graine = graineDerivee(options.graine_du_run, cle).toString(16).padStart(16, "0");
+  const graine = graineHexadecimale(options.graine_du_run, cle);
   const echantillon = reechantillonnerStatistique(unites, statistique, options);
   const intervalle = intervalleDepuis(echantillon, options.reechantillonnages);
   return { cle, graine, intervalle, raison_sans_intervalle: raisonSansIntervalle(echantillon, intervalle) };
@@ -220,15 +227,17 @@ export function differenceAppariee(
   statistique: Statistique,
   options: OptionsBootstrap,
 ): DifferenceTaux {
+  const cle = [FAMILLE_BOOTSTRAP, ...options.cle];
+  const graine = graineHexadecimale(options.graine_du_run, cle);
   const taux_a = statistique(unitesA);
   const taux_b = statistique(unitesB);
   const difference = ecart(taux_a, taux_b);
   if (difference === null) {
-    return { taux_a, taux_b, difference: null, intervalle: null, qualificatif: null };
+    return { cle, graine, taux_a, taux_b, difference: null, intervalle: null, qualificatif: null };
   }
   const echantillon = reechantillonnerDifference(unitesA, unitesB, statistique, options);
   const intervalle = intervalleDepuis(echantillon, options.reechantillonnages);
-  return { taux_a, taux_b, difference, intervalle, qualificatif: qualifier(intervalle) };
+  return { cle, graine, taux_a, taux_b, difference, intervalle, qualificatif: qualifier(intervalle) };
 }
 
 /**

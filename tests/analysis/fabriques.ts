@@ -21,6 +21,8 @@ import type {
   Verdict,
 } from "../../analysis/types.ts";
 import type { UniteAnalyse } from "../../analysis/filtre.ts";
+import type { PartageCouples } from "../../analysis/seuils.ts";
+import type { CoupleOutilMode } from "../../analysis/types.ts";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
@@ -219,4 +221,18 @@ export function notation(partiel: Partiel<Notation> = {}): Notation {
     sourcage: { cite: false, liens: [] },
     motif_notation: "echantillon_aleatoire_10",
   }, partiel);
+}
+
+/**
+ * Partage où chaque couple outil × mode du canal API présent dans les unités est comparable : pour
+ * les tests dont le seuil de 20 % du §8 n'est pas le sujet. Une unité API sans mode n'y entre pas,
+ * pour que le code mesuré, et non la fabrique, la refuse.
+ */
+export function tousCompares(...jeux: readonly (readonly UniteAnalyse[])[]): PartageCouples {
+  const vus = new Map<string, CoupleOutilMode>();
+  for (const unite of jeux.flat()) {
+    if (unite.canal !== "api" || unite.mode === null) continue;
+    vus.set(`${unite.outil_id}/${unite.mode}`, { outil_id: unite.outil_id, mode: unite.mode });
+  }
+  return { compares: [...vus.values()], incomplets: [] };
 }

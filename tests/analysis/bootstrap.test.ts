@@ -294,6 +294,32 @@ describe("statistique numérique (conformité n° 29)", () => {
     expect(intervalleStatistique(jeu, avecInexacte, options)?.reechantillonnages_indefinis).toBe(indefinis);
   });
 
+  it("publie avec chaque différence sa clé complète et sa graine, même sans intervalle (conformité n° 30)", () => {
+    // §8, « Graines de l'analyse » : chaque intervalle a sa graine, « dérivée […] d'une clé lisible
+    // publiée avec le résultat ». Vecteur du §8 : clé bootstrap / outil-alpha / web_desactivee /
+    // exactitude / global, graine du run 20261201, amorce 0xd8bcfbd164a58f33.
+    const options = {
+      reechantillonnages: 50,
+      graine_du_run: 20261201,
+      cle: ["outil-alpha", "web_desactivee", "exactitude", "global"],
+    };
+    const exacte = ["g1", "g2"].flatMap((g) => grappe(g, 1, { categorie: "exacte" }));
+    const inexacte = ["g1", "g2"].flatMap((g) => grappe(g, 1, { categorie: "inexacte" }));
+    const nonClassee = ["g1", "g2"].flatMap((g) => grappe(g, 1, { categorie: "non_reponse" }));
+
+    const definie = differenceAppariee(exacte, inexacte, exactitude, options);
+    const sansTerme = differenceAppariee(exacte, nonClassee, exactitude, options);
+
+    for (const resultat of [definie, sansTerme]) {
+      expect(resultat.cle).toEqual(["bootstrap", "outil-alpha", "web_desactivee", "exactitude", "global"]);
+      expect(resultat.graine).toBe("d8bcfbd164a58f33");
+    }
+    expect(definie.intervalle).not.toBeNull();
+    expect(sansTerme.intervalle).toBeNull();
+    // La graine publiée est bien celle qui a amorcé le rééchantillonnage, pas une étiquette.
+    expect(definie.graine).toBe(graineDerivee(20261201, definie.cle).toString(16).padStart(16, "0"));
+  });
+
   it("rend un intervalle nommé : clé complète, graine publiée, raison quand il est absent", () => {
     const options = {
       reechantillonnages: 50,
