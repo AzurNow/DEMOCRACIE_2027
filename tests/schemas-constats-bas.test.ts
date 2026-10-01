@@ -203,7 +203,7 @@ describe("conformité n° 66 : la version des données figure dans tout run, pub
   });
 
   it("un run publié provisoire sans donnees_commit est invalide", () => {
-    const objet = { ...runSansDonnees("publie_provisoire"), motif_provisoire: "kappa de la paire sous 0,75" };
+    const objet: Objet = { ...runSansDonnees("publie_provisoire"), motif_provisoire: "kappa de la paire sous 0,75" };
     // Modifié ouvertement (conformité 2026-09-29, n° 15) : la décision du go/no-go suit le statut,
     // pour que la seule erreur reste l'absence de donnees_commit.
     (objet["go_no_go"] as Objet)["decision"] = "publie_provisoire";
