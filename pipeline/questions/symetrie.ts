@@ -92,6 +92,7 @@ export function verifierSymetrie(
     aucunItemContesteOuEnAttente(contexte),
     aucunNomCandidatDansQAtt(contexte),
     partItemsAFMinimale(contexte),
+    quotaParStrateRespecte(contexte),
   ];
   return { statut_global: agreger(conditions), conditions };
 }
@@ -566,6 +567,43 @@ function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {
  * (conformité n° 60). La condition est rouge, sans mesure, et le refus ne dépend plus du seul
  * `tirage.schema.json`, que `verifierSymetrie` ne lit pas.
  */
+/**
+ * §5 : « Tirage stratifié par candidat × thème × gabarit », le quota par strate étant publié avec le
+ * tirage (`parametres.questions_par_strate`). Décision de l'auteur du 2026-10-01 : aucune strate ne
+ * reçoit plus de questions propres que ce quota. Sans ce contrôle, un tirage qui déplace une question
+ * d'une strate à l'autre au sein d'un thème garde des totaux égaux par thème, par gabarit et par
+ * candidat, et passe `repartition_themes` (`docs/DETTE.md`, 2026-10-01, point 1). Les questions
+ * compensatrices sont hors de leur strate d'origine : elles ont été prises sur son surplus, et
+ * `repartition_themes` vérifie qu'elles répondent à un déficit. Tous les candidats du tirage sont
+ * comptés, comparés ou non : le quota vaut pour chacun. Les questions d'attribution, sans candidat,
+ * ont leur propre quota par thème et ne sont pas jugées ici.
+ */
+function quotaParStrateRespecte(contexte: Contexte): ConditionSymetrie {
+  const comptes = new Map<string, number>();
+  for (const entree of contexte.entrees) {
+    if (entree.candidat_id === undefined) continue;
+    if (contexte.compensatrices.has(`${entree.candidat_id}|${entree.question_id}`)) continue;
+    incrementer(comptes, cleStrateCandidat(entree.candidat_id, entree.theme, entree.gabarit));
+  }
+  const depassements = [...comptes]
+    .filter(([, nombre]) => nombre > contexte.quota)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([cle, nombre]) => {
+      const [candidat, theme, gabarit] = cle.split("|");
+      return `${String(candidat)}, ${String(theme)} × ${String(gabarit)} : ${nombre} question(s) propre(s)`;
+    });
+  const mesure = Math.max(0, ...comptes.values());
+  const socle = { code: "quota_par_strate_respecte" as const, mesure, seuil: contexte.quota };
+  if (depassements.length === 0) return { ...socle, statut: "vert" };
+  return {
+    ...socle,
+    statut: "rouge",
+    commentaire:
+      `Strate(s) au-delà du quota de ${contexte.quota} question(s) par candidat × thème × gabarit ` +
+      `(§5, décision de l'auteur du 2026-10-01) : ${depassements.join(" ; ")}.`,
+  };
+}
+
 function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   const total = contexte.entrees.length;
   if (total === 0) {

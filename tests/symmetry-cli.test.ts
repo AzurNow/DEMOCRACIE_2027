@@ -331,12 +331,15 @@ describe("7 bis. pnpm symmetry : items et tirage du gel (conformité n° 9)", ()
     expect(resultat.erreur).toContain(`${ITEM_F.id}.json absent des items reçus`);
   });
 
-  it("un run planifié sans versions.donnees_commit : code 1, le commit manquant est nommé", () => {
-    // Le schéma n'exige ce commit que d'un run publié ; la barrière, elle, l'exige dès le gel.
+  it("un run planifié sans versions.donnees_commit : refusé par son schéma, code 1", () => {
+    // Modifié ouvertement (décision de l'auteur du 2026-10-01) : le schéma exige désormais ce commit
+    // de tout run, planifié compris ; le refus vient de la lecture du run, avant la barrière.
     const jeu = jeuNominal();
     const resultat = symmetry(poser({ ...jeu, run: { ...jeu.run, statut: "planifie" } }, () => undefined));
     expect(resultat.status).toBe(1);
-    expect(resultat.erreur).toContain("versions.donnees_commit");
+    expect(resultat.erreur).toContain("« run »");
+    expect(resultat.erreur).toContain("donnees_commit");
+    expect(resultat.sortie).not.toContain("Contrôles verts");
   });
 
   it("un commit du gel introuvable dans le dépôt : code 1", () => {

@@ -113,8 +113,11 @@ function tirageDe(questions: readonly Question[], items: readonly Item[] = ITEMS
     run_id: RUN.id,
     date_gel: GEL,
     graine_tirage: graine(),
-    // Conformité n° 59 : un tirage porte ses quotas.
-    parametres: quotas(),
+    // Conformité n° 59 : un tirage porte ses quotas. Modifié ouvertement (décision de l'auteur du
+    // 2026-10-01, condition quota_par_strate_respecte) : ces tirages écrits à la main mettent jusqu'à
+    // deux Q-DIR fiscalité par candidat (items P1 et A) ; leur quota le dit, au lieu de celui d'une
+    // question par strate des fabriques, qu'ils n'ont jamais respecté.
+    parametres: { ...quotas(), questions_par_strate: 2 },
     entrees: entreesPour(questions, items, MESURES, RUN),
     exclusions: [],
     contestes_au_gel: [],
@@ -140,9 +143,9 @@ function verifier(questions: readonly Question[], items: readonly Item[] = ITEMS
 }
 
 describe("tirage parfaitement symétrique", () => {
-  it("rend les six conditions vertes et un statut global vert", () => {
+  it("rend les sept conditions vertes et un statut global vert", () => {
     const symetrie = verifier(SYMETRIQUES);
-    expect(symetrie.conditions).toHaveLength(6);
+    expect(symetrie.conditions).toHaveLength(7);
     for (const condition of symetrie.conditions) expect(condition.statut).toBe("vert");
     expect(symetrie.statut_global).toBe("vert");
   });

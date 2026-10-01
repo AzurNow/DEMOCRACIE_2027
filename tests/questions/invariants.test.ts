@@ -339,8 +339,9 @@ describe("exemples de schema/exemples/", () => {
   // 159 → 160 : décision de l'auteur du 2026-09-29, n° 8, un invalide de tirage (sans contestes_au_gel).
   // 160 → 164 : conformité 2026-09-29, n° 31 et 33, quatre invalides d'item (thème porté, sans mesure_version, quantification hors dimensions, adresse du contestataire).
   // 164 → 166 : conformité 2026-09-29, n° 24, deux invalides de tirage (entrée sans thème, entrée sans grappe).
-  it("charge les 166 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(166);
+  // 166 → 168 : décisions de l'auteur du 2026-10-01, deux invalides de run (planifié sans donnees_commit, symétrie sans condition de quota).
+  it("charge les 168 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(168);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

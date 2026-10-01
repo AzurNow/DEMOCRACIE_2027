@@ -348,7 +348,7 @@
       "objet": "run",
       "fichier": "run/valide-01-mensuel-publie.json",
       "attendu": "valide",
-      "motif": "Run publié : cinq graines avec leur algorithme, périmètre gelé dans le régime avant la liste officielle avec déclaration et deux preuves de sondage par candidat non retiré, candidat retiré non interrogé, candidat sous seuil, symétrie avec un écart thématique toléré et imprimé, tirage référencé par empreinte, volume déposé sur Zenodo avec DOI, contestation postérieure au gel conservée pour la robustesse §8(b). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64."
+      "motif": "Run publié : cinq graines avec leur algorithme, périmètre gelé dans le régime avant la liste officielle avec déclaration et deux preuves de sondage par candidat non retiré, candidat retiré non interrogé, candidat sous seuil, symétrie avec un écart thématique toléré et imprimé, tirage référencé par empreinte, volume déposé sur Zenodo avec DOI, contestation postérieure au gel conservée pour la robustesse §8(b). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change."
     },
     {
       "objet": "tirage",
@@ -443,166 +443,180 @@
       "objet": "run",
       "fichier": "run/valide-02-provisoire-juge-retire.json",
       "attendu": "valide",
-      "motif": "Run publié « provisoire » : un critère go/no-go rouge (erreurs graves pas toutes revues), un juge retiré pour biais contrefactuel et échantillon humain porté à 25 % — un événement qui change la composition du run et qui est donc une donnée, pas une décision non tracée. Sa symétrie est verte : depuis le protocole 0.11, une symétrie rouge rend le run invalide, jamais provisoire (conformité n° 21). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64."
+      "motif": "Run publié « provisoire » : un critère go/no-go rouge (erreurs graves pas toutes revues), un juge retiré pour biais contrefactuel et échantillon humain porté à 25 % — un événement qui change la composition du run et qui est donc une donnée, pas une décision non tracée. Sa symétrie est verte : depuis le protocole 0.11, une symétrie rouge rend le run invalide, jamais provisoire (conformité n° 21). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change."
     },
     {
       "objet": "run",
       "fichier": "run/invalide-01-graine-sans-algorithme.json",
       "attendu": "invalide",
-      "motif": "Graine de bootstrap sans algorithme nommé. Le pipeline est en Python et le site en TypeScript : deux générateurs différents donnent deux résultats pour la même graine, et « reproductible » (§9) serait faux. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Graine de bootstrap sans algorithme nommé. Le pipeline est en Python et le site en TypeScript : deux générateurs différents donnent deux résultats pour la même graine, et « reproductible » (§9) serait faux. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§8, incertitude ; §9, reproductibilité"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-02-symetrie-rouge-publiee-sans-mention.json",
       "attendu": "invalide",
-      "motif": "Symétrie rouge et statut « publié ». §5 rend les tests de symétrie bloquants et §12 (protocole 0.11) marque un tel run invalide avec la raison, publié tel quel et réexécuté : il n'est jamais publié, même provisoire (conformité n° 21) ; la règle 4 de CLAUDE.md interdit de contourner ces tests. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Protocole 0.13 : la symétrie rouge n'impose plus go_no_go.decision = publie_provisoire ; l'exemple n'échoue plus que sur le statut.",
+      "motif": "Symétrie rouge et statut « publié ». §5 rend les tests de symétrie bloquants et §12 (protocole 0.11) marque un tel run invalide avec la raison, publié tel quel et réexécuté : il n'est jamais publié, même provisoire (conformité n° 21) ; la règle 4 de CLAUDE.md interdit de contourner ces tests. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Protocole 0.13 : la symétrie rouge n'impose plus go_no_go.decision = publie_provisoire ; l'exemple n'échoue plus que sur le statut. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§5, garanties de symétrie ; §12, go/no-go"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-03-sous-seuil-incoherent.json",
       "attendu": "invalide",
-      "motif": "Candidat à 8 items P vérifiés déclaré au-dessus du seuil. §4 et §8 : aucune statistique par candidat sous 10 items P, sous peine de présenter une mesure bruitée comme un résultat. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Candidat à 8 items P vérifiés déclaré au-dessus du seuil. §4 et §8 : aucune statistique par candidat sous 10 items P, sous peine de présenter une mesure bruitée comme un résultat. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§4, couverture minimale ; §8, seuils de non-publication"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-04-candidat-sans-libelle.json",
       "attendu": "invalide",
-      "motif": "Candidat du périmètre sans libellé. Le libellé remplit [candidat] dans les gabarits qui nomment un candidat, et la barrière des questions d'attribution le cherche : sans lui, une question nominative ne s'engendre pas et une Q-ATT qui nomme le candidat passe la barrière. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Candidat du périmètre sans libellé. Le libellé remplit [candidat] dans les gabarits qui nomment un candidat, et la barrière des questions d'attribution le cherche : sans lui, une question nominative ne s'engendre pas et une Q-ATT qui nomme le candidat passe la barrière. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§5, garanties de symétrie ; annexe B"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-05-candidat-sans-nom.json",
       "attendu": "invalide",
-      "motif": "Candidat du périmètre sans nom de famille seul. §5 (protocole 0.6) : la barrière vise « prénom et nom, ou nom seul » ; sans le nom saisi, une Q-ATT qui ne cite que le nom de famille passerait la barrière, et le dériver du libellé serait une hypothèse (particules, noms composés). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Candidat du périmètre sans nom de famille seul. §5 (protocole 0.6) : la barrière vise « prénom et nom, ou nom seul » ; sans le nom saisi, une Q-ATT qui ne cite que le nom de famille passerait la barrière, et le dériver du libellé serait une hypothèse (particules, noms composés). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§5, garanties de symétrie"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-06-graine-au-dela-de-2-53.json",
       "attendu": "invalide",
-      "motif": "Graine de bootstrap supérieure à 2^53 − 1. Sa valeur n'a plus d'écriture décimale exacte depuis un nombre JavaScript : deux graines publiées différentes pourraient amorcer le même tirage, et l'intervalle ne serait plus rejouable depuis la valeur publiée. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Graine de bootstrap supérieure à 2^53 − 1. Sa valeur n'a plus d'écriture décimale exacte depuis un nombre JavaScript : deux graines publiées différentes pourraient amorcer le même tirage, et l'intervalle ne serait plus rejouable depuis la valeur publiée. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§8, graine publiée ; §9, reproductibilité"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-07-publie-sans-depot.json",
       "attendu": "invalide",
-      "motif": "Run publié sans dépôt à DOI. §9 : chaque publication reçoit un DOI Zenodo, et les réponses brutes et notations, hors Git, ne sont publiées que par ce dépôt (règle 8 de CLAUDE.md : publication intégrale ou rien). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Run publié sans dépôt à DOI. §9 : chaque publication reçoit un DOI Zenodo, et les réponses brutes et notations, hors Git, ne sont publiées que par ce dépôt (règle 8 de CLAUDE.md : publication intégrale ou rien). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§9, reproductibilité et publication"
     },
     {
       "objet": "run",
       "fichier": "run/valide-03-kappa-juge-humain-indefini.json",
       "attendu": "valide",
-      "motif": "Run publié dont le kappa juge-humain d'un juge est indéfini (accord attendu maximal) : publié absent avec son motif, jamais comme une valeur (§7, protocole 0.11). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64."
+      "motif": "Run publié dont le kappa juge-humain d'un juge est indéfini (accord attendu maximal) : publié absent avec son motif, jamais comme une valeur (§7, protocole 0.11). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change."
     },
     {
       "objet": "run",
       "fichier": "run/invalide-08-juge-sans-kappa-ni-motif.json",
       "attendu": "invalide",
-      "motif": "Run publié dont un juge ne déclare ni kappa juge-humain ni motif d'indéfinition. §7 publie l'accord juge-humain pour chaque juge ; un kappa indéfini est publié absent AVEC son motif, et l'absence sans motif serait un kappa passé sous silence. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Run publié dont un juge ne déclare ni kappa juge-humain ni motif d'indéfinition. §7 publie l'accord juge-humain pour chaque juge ; un kappa indéfini est publié absent AVEC son motif, et l'absence sans motif serait un kappa passé sous silence. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§7, calibration et fiabilité publiée (protocole 0.11)"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-09-kappa-paire-avec-motif.json",
       "attendu": "invalide",
-      "motif": "Kappa de la paire de juges publié à la fois comme valeur et comme indéfini. §7 : un kappa indéfini est publié absent avec son motif ; un kappa défini n'en porte pas, sinon le lecteur ne sait pas lequel croire. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Kappa de la paire de juges publié à la fois comme valeur et comme indéfini. §7 : un kappa indéfini est publié absent avec son motif ; un kappa défini n'en porte pas, sinon le lecteur ne sait pas lequel croire. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§7, calibration et fiabilité publiée (protocole 0.11)"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-10-mode-incomplet-declare-comparable.json",
       "attendu": "invalide",
-      "motif": "Mode web activée d'un outil à 30 % de réponses manquantes déclaré comparable. §8 : au-delà de 20 % des réponses du canal API pour ce couple outil × mode, il est marqué « run incomplet » et exclu des comparaisons du run. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Mode web activée d'un outil à 30 % de réponses manquantes déclaré comparable. §8 : au-delà de 20 % des réponses du canal API pour ce couple outil × mode, il est marqué « run incomplet » et exclu des comparaisons du run. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§8, seuils de non-publication ; §12, go/no-go (protocole 0.11)"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-11-symetrie-rouge-run-en-cours.json",
       "attendu": "invalide",
-      "motif": "Run en cours alors que sa symétrie est rouge. §5 : le pipeline refuse de lancer un run si l'une des conditions de symétrie échoue ; un tel run reste planifié, ou, si le rouge est constaté après coup, il est marqué invalide avec la raison (§12). Conformité n° 21. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Run en cours alors que sa symétrie est rouge. §5 : le pipeline refuse de lancer un run si l'une des conditions de symétrie échoue ; un tel run reste planifié, ou, si le rouge est constaté après coup, il est marqué invalide avec la raison (§12). Conformité n° 21. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§5, garanties de symétrie ; §12, go/no-go (protocole 0.11)"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-12-couverture-suffisante-declaree-sous-seuil.json",
       "attendu": "invalide",
-      "motif": "Candidat à 25 items P vérifiés déclaré sous le seuil. §4 : seul un candidat comptant moins de 10 items P est rapporté à part ; en déclarer un plus couvert sous le seuil le sortirait des comparaisons inter-candidats sans motif. Conformité n° 19. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Candidat à 25 items P vérifiés déclaré sous le seuil. §4 : seul un candidat comptant moins de 10 items P est rapporté à part ; en déclarer un plus couvert sous le seuil le sortirait des comparaisons inter-candidats sans motif. Conformité n° 19. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§4, couverture minimale"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-13-candidat-actif-une-seule-preuve.json",
       "attendu": "invalide",
-      "motif": "Candidat actif, dans le régime avant la liste officielle, avec une seule preuve de sondage. §3 exige la présence dans au moins deux sondages publiés dans les 60 jours précédant le gel ; sans la seconde référence, un tiers ne peut pas refaire la liste. Conformité n° 10. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Candidat actif, dans le régime avant la liste officielle, avec une seule preuve de sondage. §3 exige la présence dans au moins deux sondages publiés dans les 60 jours précédant le gel ; sans la seconde référence, un tiers ne peut pas refaire la liste. Conformité n° 10. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§3, candidats"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-14-candidat-actif-sans-declaration.json",
       "attendu": "invalide",
-      "motif": "Candidat actif, dans le régime avant la liste officielle, sans déclaration de candidature. §3 : la candidature déclarée publiquement par l'intéressé ou par son parti est la première des deux conditions d'inclusion. Conformité n° 10. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Candidat actif, dans le régime avant la liste officielle, sans déclaration de candidature. §3 : la candidature déclarée publiquement par l'intéressé ou par son parti est la première des deux conditions d'inclusion. Conformité n° 10. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§3, candidats"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-15-assistant-publie-sans-par-mode.json",
       "attendu": "invalide",
-      "motif": "Assistant inclus d'un run publié sans part de réponses manquantes par mode. §8 et §12 (protocole 0.11) décident le seuil de 20 % par couple outil × mode : sans par_mode, un mode au-delà du seuil serait comparé sans que le run le dise. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Assistant inclus d'un run publié sans part de réponses manquantes par mode. §8 et §12 (protocole 0.11) décident le seuil de 20 % par couple outil × mode : sans par_mode, un mode au-delà du seuil serait comparé sans que le run le dise. Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§8, seuils de non-publication ; §12, go/no-go (protocole 0.11)"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-16-publie-sans-version-des-donnees.json",
       "attendu": "invalide",
-      "motif": "Run publié dont versions n'a pas donnees_commit (copie de valide-01 privée de cette seule clé). §9 : la version des données utilisée est inscrite en tête de chaque rapport ; elle est obligatoire dès que le run est publié, même provisoire ou invalidé (conformité n° 66). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64.",
+      "motif": "Run publié dont versions n'a pas donnees_commit (copie de valide-01 privée de cette seule clé). §9 : la version des données utilisée est inscrite en tête de chaque rapport ; elle est obligatoire dès que le run est publié, même provisoire ou invalidé (conformité n° 66). Modifié ouvertement (protocole 0.13, §7) : les graines echantillon_humain et contrefactuel déclarent le générateur du tirage (splitmix64-sha256-v1), et non plus PCG64. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§9, reproductibilité"
     },
     {
       "objet": "run",
       "fichier": "run/valide-04-invalide-symetrie-rouge-sans-go-no-go.json",
       "attendu": "valide",
-      "motif": "Protocole 0.13, §12 : run marqué invalide parce que sa symétrie est rouge, avec la raison, publié tel quel et réexécuté. « Un run invalide ne porte aucune décision de publication, mais déclare sa publication et son dépôt comme tout run publié » : pas de go_no_go, publication et depot présents. Copie de valide-01 dont seuls changent le statut, l'invalidation, la symétrie (répartition des gabarits rouge) et le go/no-go retiré."
+      "motif": "Protocole 0.13, §12 : run marqué invalide parce que sa symétrie est rouge, avec la raison, publié tel quel et réexécuté. « Un run invalide ne porte aucune décision de publication, mais déclare sa publication et son dépôt comme tout run publié » : pas de go_no_go, publication et depot présents. Copie de valide-01 dont seuls changent le statut, l'invalidation, la symétrie (répartition des gabarits rouge) et le go/no-go retiré. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change."
     },
     {
       "objet": "run",
       "fichier": "run/invalide-17-run-invalide-avec-go-no-go.json",
       "attendu": "invalide",
-      "motif": "Protocole 0.13, §12 : run invalide qui porte un go/no-go. Un run invalide ne porte aucune décision de publication ; y en inscrire une laisserait croire qu'il a été jugé publiable. Copie de valide-04 à laquelle on rend le go_no_go de valide-01.",
+      "motif": "Protocole 0.13, §12 : run invalide qui porte un go/no-go. Un run invalide ne porte aucune décision de publication ; y en inscrire une laisserait croire qu'il a été jugé publiable. Copie de valide-04 à laquelle on rend le go_no_go de valide-01. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§12, go/no-go (protocole 0.13)"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-18-run-invalide-sans-publication.json",
       "attendu": "invalide",
-      "motif": "Protocole 0.13, §12 : run invalide sans bloc publication. Un run invalide est « publié tel quel » et déclare sa publication comme tout run publié. Copie de valide-04 privée de publication.",
+      "motif": "Protocole 0.13, §12 : run invalide sans bloc publication. Un run invalide est « publié tel quel » et déclare sa publication comme tout run publié. Copie de valide-04 privée de publication. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§12, go/no-go (protocole 0.13) ; §6, incident technique"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-19-run-invalide-sans-depot.json",
       "attendu": "invalide",
-      "motif": "Protocole 0.13, §12 : run invalide sans dépôt à DOI. Ses réponses brutes et notations, hors Git, ne sont publiées que par ce dépôt (§9 ; règle 8 de CLAUDE.md). Copie de valide-04 privée de depot.",
+      "motif": "Protocole 0.13, §12 : run invalide sans dépôt à DOI. Ses réponses brutes et notations, hors Git, ne sont publiées que par ce dépôt (§9 ; règle 8 de CLAUDE.md). Copie de valide-04 privée de depot. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§12, go/no-go (protocole 0.13) ; §9, publication"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-20-graine-echantillon-humain-pcg64.json",
       "attendu": "invalide",
-      "motif": "Protocole 0.13, §7 : graine de l'échantillon humain déclarée en PCG64 (numpy). L'échantillon est tiré avec le générateur du tirage, splitmix64-sha256-v1 ; une graine qui en déclare un autre promet un échantillon qu'un tiers ne pourrait pas rejouer. Copie de valide-01 dont seule cette graine change.",
+      "motif": "Protocole 0.13, §7 : graine de l'échantillon humain déclarée en PCG64 (numpy). L'échantillon est tiré avec le générateur du tirage, splitmix64-sha256-v1 ; une graine qui en déclare un autre promet un échantillon qu'un tiers ne pourrait pas rejouer. Copie de valide-01 dont seule cette graine change. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§7, règle de décision (protocole 0.13) ; §9, reproductibilité"
     },
     {
       "objet": "run",
       "fichier": "run/invalide-21-graine-contrefactuel-pcg64.json",
       "attendu": "invalide",
-      "motif": "Protocole 0.13, §7 : graine du test contrefactuel déclarée en PCG64 (numpy). Le sous-ensemble renoté est tiré avec le générateur du tirage, splitmix64-sha256-v1. Copie de valide-01 dont seule cette graine change.",
+      "motif": "Protocole 0.13, §7 : graine du test contrefactuel déclarée en PCG64 (numpy). Le sous-ensemble renoté est tiré avec le générateur du tirage, splitmix64-sha256-v1. Copie de valide-01 dont seule cette graine change. Modifié ouvertement (décision de l'auteur du 2026-10-01) : la symétrie porte la septième condition, quota_par_strate_respecte (verte) ; rien d'autre ne change.",
       "regle_protocole": "§7, test contrefactuel (protocole 0.13) ; §9, reproductibilité"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-22-planifie-sans-version-des-donnees.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 en statut planifié, sans versions.donnees_commit. Décision de l'auteur du 2026-10-01 (conformité 2026-09-29, n° 9) : tout run porte son tirage, et pnpm symmetry recoupe les items reçus avec ce commit dès le gel ; un run planifié sans lui ne pourrait pas passer la barrière. Erreur : /versions (required, donnees_commit).",
+      "regle_protocole": "§5, symétrie de traitement ; §9, versions inscrites"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-23-symetrie-sans-condition-de-quota.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la symétrie ne porte que six conditions, sans quota_par_strate_respecte. Décision de l'auteur du 2026-10-01 : aucune strate candidat × thème × gabarit ne reçoit plus de questions propres que le quota du tirage ; sans cette condition, un tirage qui déplace une question d'une strate à l'autre d'un même thème passerait la barrière. Erreur : /symetrie/conditions (minItems).",
+      "regle_protocole": "§5, symétrie de traitement"
     },
     {
       "objet": "lecture-comparateur",

@@ -342,6 +342,7 @@ export const CODES_CONDITION = [
   "aucun_item_conteste_ou_en_attente",
   "aucun_nom_candidat_dans_q_att",
   "part_items_a_f_minimale",
+  "quota_par_strate_respecte",
 ] as const;
 
 export type CodeCondition = (typeof CODES_CONDITION)[number];

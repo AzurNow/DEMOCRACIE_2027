@@ -59,10 +59,15 @@ import {
  * - symétrie verte et rouge : la mesure conditionnelle n'a plus qu'une Q-ATT non tirable, le
  *   tirage compte 23 entrées (24 avec la Q-ATT qui nomme) ; `part_items_a_f_minimale.mesure` passe
  *   de 8/24 à 8/23 (vert) et de 8/25 à 8/24 (rouge) ; statuts et autres conditions inchangés.
+ *
+ * Relevées à nouveau le 2026-10-01 (décision de l'auteur : condition `quota_par_strate_respecte`) :
+ * la symétrie verte et la rouge gagnent une septième condition, verte, `mesure` 1, `seuil` 1, en
+ * dernière position. Privées de cette condition, elles rendent exactement les empreintes d'avant
+ * (34df74ba… et 61b020d1…) ; statuts globaux inchangés.
  */
 const EMPREINTE_ENGENDREMENT = "e733879188b6426ea13df7df3119ae7ea10e15a8722ea7bd118f130ee67c6c36";
-const EMPREINTE_SYMETRIE_VERTE = "34df74bac3b4b30b5dae943b0a49ad60b94ac120f6a2bbe3c62abfa18b2a31e4";
-const EMPREINTE_SYMETRIE_ROUGE = "61b020d18bc989e79cea8c51f21026eed23c3456c8189c7a5988c53d8294604a";
+const EMPREINTE_SYMETRIE_VERTE = "f2763161262552332bea27b51eab87e4c93ccc041cd35c30226b199c7d68098c";
+const EMPREINTE_SYMETRIE_ROUGE = "bb0874ddd4a9542d6874ba18cc4ae22a2c855442c8bc2655aea74ff258a85767";
 
 const GEL = "2026-12-01T06:00:00+01:00";
 const CANDIDATS = ["demo-alpha", "demo-beta"];
