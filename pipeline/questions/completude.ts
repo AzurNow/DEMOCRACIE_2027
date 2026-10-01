@@ -45,6 +45,32 @@ export class JeuDeQuestionsIncomplet extends Error {
   }
 }
 
+/**
+ * Le tirage reçu n'est pas celui du run reçu (conformité du 2026-09-29, n° 9). La barrière juge les
+ * décisions du panel à la date du tirage, la tirabilité et la complétude à celle du run : deux dates
+ * différentes feraient juger un même item contre deux instants. `tirage.date_gel` est « recopié depuis
+ * le run » et « doit lui être identique » (`schema/tirage.schema.json`) : la comparaison porte sur la
+ * chaîne, pas sur l'instant.
+ */
+export class TirageDUnAutreRun extends Error {
+  constructor(ecarts: readonly string[]) {
+    super(
+      `Le tirage reçu n'est pas celui du run reçu : ${ecarts.join(" ; ")}. La symétrie ne se juge que ` +
+        `sur le tirage du run, gelé à sa date (§5).`,
+    );
+    this.name = "TirageDUnAutreRun";
+  }
+}
+
+/** Lève `TirageDUnAutreRun` si `run_id` ou `date_gel` du tirage diffère du run. */
+export function exigerTirageDuRun(tirage: Pick<Tirage, "run_id" | "date_gel">, run: Pick<RunAuGel, "id" | "date_gel">): void {
+  const ecarts = [
+    ...(tirage.run_id === run.id ? [] : [`run_id ${tirage.run_id} contre ${run.id}`]),
+    ...(tirage.date_gel === run.date_gel ? [] : [`date_gel ${tirage.date_gel} contre ${run.date_gel}`]),
+  ];
+  if (ecarts.length > 0) throw new TirageDUnAutreRun(ecarts);
+}
+
 /** Les identifiants que le jeu doit contenir, triés. */
 export function questionsExigees(tirage: Tirage, items: readonly Item[], run: RunAuGel): readonly string[] {
   const interroges = new Set(
