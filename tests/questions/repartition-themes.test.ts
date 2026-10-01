@@ -216,3 +216,119 @@ describe("n° 23 : interaction avec une strate compensée (§5, protocole 0.9)",
     expect(condition?.commentaire).toContain("demo-alpha");
   });
 });
+
+/**
+ * Constat n° 8 de la conformité du 2026-09-29 (§5, protocole 0.13) : « La condition se juge strate
+ * par strate (thème × gabarit), sans compter dans leur thème d'origine les questions reçues par
+ * compensation. » La barrière ne jugeait les strates que si les totaux par thème différaient : deux
+ * compensations croisées, inscrites à la main, rendaient les totaux égaux et la condition verte.
+ */
+describe("n° 8 : une compensation inscrite ne masque pas une strate propre évitablement vide", () => {
+  // Quatre items par candidat, un par mesure : chaque strate thème × gabarit a deux questions tirables.
+  const jeu = ["alpha", "beta"].flatMap((nom) =>
+    MESURES.map((m, rang) => itemP({ cle: `rt8-${nom}-${rang}`, candidat_id: `demo-${nom}`, mesure: m })),
+  );
+  const questions = questionsDe(jeu);
+  const qd = (cle: string, gabarit: CodeGabarit) => q(questions, jeu, cle, gabarit);
+
+  /**
+   * beta : une question propre par strate. alpha : rien en fiscalité × Q-DIR ni en retraites × Q-FER,
+   * deux questions en retraites × Q-DIR et en fiscalité × Q-FER, la seconde de chacune déclarée
+   * compensation de la strate vide. Totaux par thème, par gabarit et par candidat : tous égaux.
+   */
+  function tirageCroise(compensations: Tirage["compensations"]): Tirage {
+    const choisies = [
+      qd("rt8-alpha-2", "Q-DIR"),
+      qd("rt8-alpha-3", "Q-DIR"),
+      qd("rt8-alpha-0", "Q-FER"),
+      qd("rt8-alpha-1", "Q-FER"),
+      qd("rt8-beta-0", "Q-DIR"),
+      qd("rt8-beta-0", "Q-FER"),
+      qd("rt8-beta-2", "Q-DIR"),
+      qd("rt8-beta-2", "Q-FER"),
+    ];
+    return {
+      ...tirageEnRetard(items(), questionsDe(items())),
+      entrees: entreesPour(choisies, jeu, MESURES, RUN),
+      compensations,
+    };
+  }
+
+  const CROISEES: Tirage["compensations"] = [
+    { candidat_id: "demo-alpha", gabarit: "Q-DIR", theme_deficitaire: FISC, question_id: qd("rt8-alpha-3", "Q-DIR").id, theme_origine: RETR },
+    { candidat_id: "demo-alpha", gabarit: "Q-FER", theme_deficitaire: RETR, question_id: qd("rt8-alpha-1", "Q-FER").id, theme_origine: FISC },
+  ];
+
+  it("totaux égaux par thème, mais strate propre évitablement vide : rouge", () => {
+    const condition = repartition(jeu, tirageCroise(CROISEES));
+    expect(condition.statut).toBe("rouge");
+    expect(condition.mesure).toBe(0);
+    expect(condition.commentaire).toContain(`demo-alpha, ${FISC} × Q-DIR : 0 question(s) reçue(s) contre 1, 2 tirable(s)`);
+    expect(condition.commentaire).toContain(`demo-alpha, ${RETR} × Q-FER : 0 question(s) reçue(s) contre 1, 2 tirable(s)`);
+  });
+
+  it("une compensation inscrite sans déficit réel est nommée", () => {
+    // alpha avait deux questions tirables en fiscalité × Q-DIR : sa cible (1) était atteignable seule.
+    const condition = repartition(jeu, tirageCroise(CROISEES));
+    expect(condition.commentaire).toContain(
+      `compensation de demo-alpha en ${FISC} × Q-DIR (${qd("rt8-alpha-3", "Q-DIR").id}) sans déficit`,
+    );
+  });
+
+  it("sans compensation déclarée, les totaux propres sont égaux : la condition ne le juge pas", () => {
+    // Décision de l'auteur du 2026-10-01 : le retard se lit sur les totaux propres par thème, puis
+    // strate par strate dans le thème en retard. Sans compensation, alpha a deux questions propres
+    // par thème comme beta : rien n'est en retard. Ce tirage dépasse le quota d'une question par
+    // strate, ce qu'aucune condition de symétrie ne contrôle aujourd'hui (signalé avec le n° 8).
+    expect(repartition(jeu, tirageCroise([])).statut).toBe("vert");
+  });
+});
+
+describe("n° 8 : une compensation inscrite doit répondre à un déficit réel (§5, protocole 0.9)", () => {
+  // Le jeu de la compensation réelle : beta n'a aucun item sur les retraites.
+  const alpha = [FISC_0, FISC_1, RETR_0].map((m, rang) => itemP({ cle: `rt8c-alpha-${rang}`, candidat_id: "demo-alpha", mesure: m }));
+  const beta = [FISC_0, FISC_1].map((m, rang) => itemP({ cle: `rt8c-beta-${rang}`, candidat_id: "demo-beta", mesure: m }));
+  const jeu = [...alpha, ...beta];
+  const questions = questionsDe(jeu);
+  const { tirage } = tirer({
+    questions,
+    items: jeu,
+    mesures: MESURES,
+    run: RUN,
+    graine: graine(),
+    parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
+  });
+  const condition = (t: Tirage) =>
+    conditionDeSymetrie(verifierSymetrie(t, questions, jeu, MESURES, RUN), "repartition_themes");
+
+  it("les compensations du tirage réel répondent toutes à un déficit : pas de rouge", () => {
+    expect(tirage.compensations.length).toBeGreaterThan(0);
+    expect(condition(tirage)?.statut).toBe("ecart_tolere");
+  });
+
+  it("une compensation dont le thème d'origine est le thème déficitaire est refusée", () => {
+    const [premiere, ...autres] = tirage.compensations;
+    if (premiere === undefined) throw new Error("Aucune compensation dans le tirage réel.");
+    const meme = { ...premiere, theme_origine: premiere.theme_deficitaire };
+    const verdict = condition({ ...tirage, compensations: [meme, ...autres] });
+    expect(verdict?.statut).toBe("rouge");
+    expect(verdict?.commentaire).toContain("thème d'origine égal au thème déficitaire");
+  });
+
+  it("une compensation qui ne désigne aucune entrée de son candidat est refusée", () => {
+    const [premiere, ...autres] = tirage.compensations;
+    if (premiere === undefined) throw new Error("Aucune compensation dans le tirage réel.");
+    const fantome = { ...premiere, candidat_id: "demo-alpha" };
+    const verdict = condition({ ...tirage, compensations: [fantome, ...autres] });
+    expect(verdict?.statut).toBe("rouge");
+    expect(verdict?.commentaire).toContain("aucune entrée");
+  });
+
+  it("des compensations en surnombre sur une strate sont refusées", () => {
+    const [premiere] = tirage.compensations;
+    if (premiere === undefined) throw new Error("Aucune compensation dans le tirage réel.");
+    const verdict = condition({ ...tirage, compensations: [...tirage.compensations, premiere] });
+    expect(verdict?.statut).toBe("rouge");
+    expect(verdict?.commentaire).toContain("au-delà du déficit");
+  });
+});

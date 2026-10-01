@@ -426,6 +426,20 @@
       "regle_protocole": "§5, tirage (décision de l'auteur du 2026-09-29, n° 8, texte à écrire en 0.14)"
     },
     {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-10-entree-sans-theme.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la première entrée ne porte pas son thème. §5 : la barrière de symétrie juge la répartition strate par strate (thème × gabarit) sur entree.theme ; sans thème, l'entrée tomberait dans une strate indéfinie et la répartition se jugerait à faux (conformité 2026-09-29, n° 24). Erreur : /entrees/0 (required, theme).",
+      "regle_protocole": "§5, symétrie de traitement"
+    },
+    {
+      "objet": "tirage",
+      "fichier": "tirage/invalide-11-entree-sans-grappe.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la première entrée ne porte pas sa grappe. §8 : le bootstrap rééchantillonne par grappe (l'item principal, ou la mesure pour une question d'attribution) ; recalculée par l'analyse, elle pourrait diverger de celle du gel (conformité 2026-09-29, n° 24). Erreur : /entrees/0 (required, grappe_id).",
+      "regle_protocole": "§5, symétrie de traitement ; §8, incertitude"
+    },
+    {
       "objet": "run",
       "fichier": "run/valide-02-provisoire-juge-retire.json",
       "attendu": "valide",

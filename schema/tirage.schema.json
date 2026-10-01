@@ -145,7 +145,7 @@
     "entree_tirage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["question_id", "gabarit", "items_au_gel", "reponse_attendue", "premisse_fausse", "reprise"],
+      "required": ["question_id", "gabarit", "theme", "grappe_id", "items_au_gel", "reponse_attendue", "premisse_fausse", "reprise"],
       "properties": {
         "question_id": { "type": "string", "pattern": "^q_[0-9a-f]{32}$" },
         "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
