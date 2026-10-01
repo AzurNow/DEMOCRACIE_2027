@@ -999,6 +999,34 @@
       "regle_protocole": "§4, droit de réponse ; annexe E, point 6"
     },
     {
+      "objet": "item",
+      "fichier": "item/invalide-22-item-portant-son-theme.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 qui porte un champ theme. Annexe A : « le thème appartient à la mesure » ; un thème recopié sur l'item pourrait diverger de celui de la mesure après une correction de thème (§4), et le tirage ne saurait plus dans quelle strate le ranger (conformité 2026-09-29, n° 33). Erreur : racine (additionalProperties, theme).",
+      "regle_protocole": "Annexe A, format d'un item"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-23-sans-mesure-version.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 sans mesure_version. Annexe A : le candidat et la mesure sont des références, et l'item épingle la version de la mesure contre laquelle il a été jugé ; sans elle, un item jugé contre un ancien thème ne se reconnaît plus (§4, renvoi après correction de thème ; conformité 2026-09-29, n° 33). Erreur : racine (required, mesure_version).",
+      "regle_protocole": "Annexe A, format d'un item ; §4, correction de thème"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-24-quantification-hors-dimensions.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la quantification porte taux, unité, opérateur et périmètre à plat, hors de dimensions[]. Annexe A : la quantification est une liste de dimensions typées ; le drapeau « déformation » (§7) se décide en les comparant une à une, jamais sur une forme libre (conformité 2026-09-29, n° 33). Erreurs : /assertion/quantification (required, dimensions ; additionalProperties).",
+      "regle_protocole": "Annexe A, format d'un item ; §7, déformation"
+    },
+    {
+      "objet": "item",
+      "fichier": "item/invalide-25-contestation-avec-adresse.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-05 dont la contestation porte l'adresse du contestataire. §10 : le contestataire reçoit sa réponse depuis la boîte dédiée, son adresse n'entre dans aucun fichier du projet ; seul contestataire_type est enregistré (conformité 2026-09-29, n° 31). Erreur : /contestations/0 (additionalProperties, contestataire_adresse).",
+      "regle_protocole": "§10, données personnelles ; §4, droit de réponse"
+    },
+    {
       "objet": "decision-arbitrage",
       "fichier": "decision-arbitrage/valide-01-auteur-contenu-original.json",
       "attendu": "valide",

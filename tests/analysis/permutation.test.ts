@@ -492,3 +492,34 @@ describe("permutation des étiquettes", () => {
     expect(ecartMaximal(grappes)).toBe(0);
   });
 });
+
+/**
+ * Constat n° 14 de la conformité du 2026-09-29 (§8) : k compte les permutations dont la statistique
+ * est supérieure ou égale à l'observée, « à 10⁻¹² près ». Les autres jeux de ce fichier donnent des
+ * statistiques exactement représentables ; celui-ci donne deux écarts égaux en rationnels que le
+ * flottant calcule par deux chemins d'arrondi différents.
+ */
+describe("tolérance de 10⁻¹² sur la statistique permutée (conformité n° 14, §8)", () => {
+  // Candidat A : 1 exacte sur 3 ; candidat B : 4 exactes sur 7 ; exactitude globale 5/10.
+  // Observé : |1/3 − 1/2| = 1/6 (B est à 1/14). Toute permutation donne à A 0, 1, 2 ou 3 exactes,
+  // soit un écart de 1/2, 1/6, 1/6 ou 1/2 : aucune n'est moins extrême, la valeur p vaut 1.
+  const jeu = [
+    ...items("candidat-a", 1, true, "a-exactes"),
+    ...items("candidat-a", 2, false, "a-inexactes"),
+    ...items("candidat-b", 4, true, "b-exactes"),
+    ...items("candidat-b", 3, false, "b-inexactes"),
+  ];
+
+  it("le jeu porte bien un écart égal à l'observé en rationnels, mais calculé un arrondi plus bas", () => {
+    // A à 2 exactes sur 3 : |2/3 − 1/2| = 1/6 en rationnels.
+    const observee = ecartMaximal(grappesEtiquetees(jeu));
+    const permutee = Math.abs(2 / 3 - 5 / 10);
+    expect(permutee).toBeLessThan(observee);
+    expect(observee - permutee).toBeLessThan(1e-12);
+  });
+
+  it("compte comme au moins aussi extrême une permutation dont la statistique ne diffère de l'observée que d'un arrondi flottant", () => {
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, OPTIONS, BOOTSTRAP);
+    expect(resultat?.valeur_p).toBe(1);
+  });
+});
