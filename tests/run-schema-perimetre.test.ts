@@ -243,6 +243,9 @@ describe("par_mode obligatoire pour un assistant inclus d'un run publié", () =>
   it("refuse un run publié provisoire dont l'assistant inclus n'a pas de par_mode", () => {
     const run = sansParMode("publie_provisoire");
     run["motif_provisoire"] = "Erreurs graves pas toutes revues.";
+    // Modifié ouvertement (conformité 2026-09-29, n° 15) : la décision du go/no-go suit le statut,
+    // pour que la seule erreur reste l'absence de par_mode.
+    run["go_no_go"] = { ...(runValide()["go_no_go"] as Objet), decision: "publie_provisoire" };
     expect(chemins(run)).toSatisfy(toutesSous("/perimetre/outils/0"));
   });
 

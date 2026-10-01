@@ -80,9 +80,15 @@ describe("protocole 0.13, §12 : un run invalide ne porte pas de go/no-go", () =
     expect(erreur?.message).toContain(`must have required property '${bloc}'`);
   });
 
+  // Conformité 2026-09-29, n° 15 : le schéma impose de nouveau `decision: publie_provisoire`, mais
+  // sur un critère go/no-go rouge, plus sur une symétrie rouge. Le test lisait tout le texte du
+  // schéma ; il ne lit plus que les règles conditionnées par la symétrie, qui sont son sujet.
   it("n'impose plus de décision « publié provisoire » à un run dont la symétrie est rouge", () => {
-    const texte = readFileSync(SCHEMA, "utf8");
-    expect(texte).not.toMatch(/"decision":\s*\{\s*"const":\s*"publie_provisoire"/);
+    type Regle = { if?: { properties?: Record<string, unknown> }; then?: unknown };
+    const schema = JSON.parse(readFileSync(SCHEMA, "utf8")) as { allOf: Regle[] };
+    const regles = schema.allOf.filter((regle) => regle.if?.properties?.["symetrie"] !== undefined);
+    expect(regles).toHaveLength(1);
+    expect(JSON.stringify(regles.map((regle) => regle.then))).not.toContain("go_no_go");
   });
 });
 

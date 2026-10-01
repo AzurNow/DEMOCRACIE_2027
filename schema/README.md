@@ -135,7 +135,7 @@ exactement un `principal` — au plus un pour une question d'attribution, aucun 
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 168 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 176 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -161,7 +161,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | diagnostic-lot | kappa indéfini remplacé par 0 à côté de son motif · diagnostic sans `supersede_par` · lot de réannotation sans date de calibration |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 168/168 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 176/176 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

@@ -161,13 +161,19 @@
 
     "tentatives": {
       "type": "array",
-      "description": "§6 : trois tentatives avec délai croissant avant de déclarer la réponse manquante.",
+      "description": "§6 : trois tentatives avec délai croissant avant de déclarer la réponse manquante. « Une requête est tentée au plus trois fois au total » (conformité 2026-09-29, n° 27) : trois éléments au plus, numérotés 1, 2, 3 dans l'ordre, sans trou ni doublon.",
+      "maxItems": 3,
+      "prefixItems": [
+        { "properties": { "numero": { "const": 1 } } },
+        { "properties": { "numero": { "const": 2 } } },
+        { "properties": { "numero": { "const": 3 } } }
+      ],
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["numero", "horodatage", "erreur"],
         "properties": {
-          "numero": { "type": "integer", "minimum": 1 },
+          "numero": { "type": "integer", "minimum": 1, "maximum": 3 },
           "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
           "erreur": {
             "type": "object",
@@ -232,10 +238,11 @@
 
   "allOf": [
     {
-      "$comment": "Une réponse obtenue porte son brut, son empreinte, sa projection et ses métadonnées ; elle n'a pas de tentatives en échec.",
+      "$comment": "Une réponse obtenue porte son brut, son empreinte, sa projection et ses métadonnées ; elle n'a pas de tentatives en échec. Conformité 2026-09-29, n° 27 : si elle en garde, deux au plus, puisque la tentative réussie est l'une des trois du §6.",
       "if": { "properties": { "statut_reponse": { "const": "obtenue" } }, "required": ["statut_reponse"] },
       "then": {
-        "required": ["brut", "brut_sha256", "normalise", "normalisation", "metadonnees"]
+        "required": ["brut", "brut_sha256", "normalise", "normalisation", "metadonnees"],
+        "properties": { "tentatives": { "maxItems": 2 } }
       }
     },
     {
