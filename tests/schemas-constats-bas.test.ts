@@ -190,7 +190,7 @@ describe("conformité n° 64 : un lien mort ne soutient rien", () => {
 
 /* ------------------------------------------------------------------ n° 66 */
 
-describe("conformité n° 66 : la version des données figure dans tout run publié", () => {
+describe("conformité n° 66 : la version des données figure dans tout run, publié ou non", () => {
   function runSansDonnees(statut: string): Objet {
     const objet = lire("run/valide-01-mensuel-publie.json");
     delete (objet["versions"] as Objet)["donnees_commit"];
@@ -215,7 +215,9 @@ describe("conformité n° 66 : la version des données figure dans tout run publ
     expect(chemins("run", objet)).toSatisfy(toutesSous("/versions"));
   });
 
-  it("un run planifié, non publié, peut encore l'omettre", () => {
-    expect(chemins("run", runSansDonnees("planifie"))).toEqual([]);
+  it("un run planifié l'exige aussi : la barrière recoupe les items avec ce commit dès le gel", () => {
+    // Modifié ouvertement (décision de l'auteur du 2026-10-01, conformité 2026-09-29, n° 9) : avant,
+    // un run planifié pouvait omettre donnees_commit ; `pnpm symmetry` le refusait pourtant au gel.
+    expect(chemins("run", runSansDonnees("planifie"))).toSatisfy(toutesSous("/versions"));
   });
 });

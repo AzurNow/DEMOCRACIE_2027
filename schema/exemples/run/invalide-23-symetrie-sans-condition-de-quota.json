@@ -1,5 +1,5 @@
 {
-  "id": "D6F8H0K2N4Q6S8V0X2Z4C6E8G0",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -130,7 +130,17 @@
         "mode_de_tete": "web_activee",
         "alias_aveugle": "O07",
         "cgu_relues_le": "2026-11-10",
-        "clause_restrictive_signalee": false
+        "clause_restrictive_signalee": false,
+        "par_mode": {
+          "web_activee": {
+            "reponses_manquantes_part": 0.04,
+            "run_incomplet": false
+          },
+          "web_desactivee": {
+            "reponses_manquantes_part": 0.02,
+            "run_incomplet": false
+          }
+        }
       },
       {
         "outil_id": "comparateur-gamma",
@@ -206,12 +216,6 @@
         "statut": "vert",
         "mesure": 0.23,
         "seuil": 0.2
-      },
-      {
-        "code": "quota_par_strate_respecte",
-        "statut": "vert",
-        "mesure": 1,
-        "seuil": 1
       }
     ]
   },

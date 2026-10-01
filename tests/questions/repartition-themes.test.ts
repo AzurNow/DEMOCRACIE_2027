@@ -279,8 +279,55 @@ describe("n° 8 : une compensation inscrite ne masque pas une strate propre évi
     // Décision de l'auteur du 2026-10-01 : le retard se lit sur les totaux propres par thème, puis
     // strate par strate dans le thème en retard. Sans compensation, alpha a deux questions propres
     // par thème comme beta : rien n'est en retard. Ce tirage dépasse le quota d'une question par
-    // strate, ce qu'aucune condition de symétrie ne contrôle aujourd'hui (signalé avec le n° 8).
+    // strate : c'est la condition quota_par_strate_respecte qui l'arrête (ci-dessous).
     expect(repartition(jeu, tirageCroise([])).statut).toBe("vert");
+  });
+
+  /** La condition de quota, décision de l'auteur du 2026-10-01 (`docs/DETTE.md`, 2026-10-01, point 1). */
+  function quota(tirage: Tirage) {
+    const condition = conditionDeSymetrie(verifierSymetrie(tirage, questions, jeu, MESURES, RUN), "quota_par_strate_respecte");
+    if (condition === undefined) throw new Error("Condition quota_par_strate_respecte absente.");
+    return condition;
+  }
+
+  it("quota : deux questions propres dans une strate au quota d'une, rouge, strates nommées", () => {
+    const condition = quota(tirageCroise([]));
+    expect(condition.statut).toBe("rouge");
+    expect(condition.mesure).toBe(2);
+    expect(condition.seuil).toBe(1);
+    expect(condition.commentaire).toContain(`demo-alpha, ${FISC} × Q-FER : 2 question(s) propre(s)`);
+    expect(condition.commentaire).toContain(`demo-alpha, ${RETR} × Q-DIR : 2 question(s) propre(s)`);
+    expect(condition.commentaire).not.toContain("demo-beta");
+  });
+
+  it("quota : une question compensatrice ne compte pas dans sa strate d'origine", () => {
+    // Avec les deux compensations déclarées, chaque strate d'alpha n'a plus qu'une question propre :
+    // le quota est respecté, et c'est repartition_themes qui juge les compensations (rouge, plus haut).
+    const condition = quota(tirageCroise(CROISEES));
+    expect(condition.statut).toBe("vert");
+    expect(condition.mesure).toBe(1);
+  });
+});
+
+describe("quota_par_strate_respecte sur le tirage réel (décision de l'auteur du 2026-10-01)", () => {
+  it("le tirage de tirage.ts, compensations comprises, respecte le quota", () => {
+    const alpha = [FISC_0, FISC_1, RETR_0].map((m, rang) => itemP({ cle: `rtq-alpha-${rang}`, candidat_id: "demo-alpha", mesure: m }));
+    const beta = [FISC_0, FISC_1].map((m, rang) => itemP({ cle: `rtq-beta-${rang}`, candidat_id: "demo-beta", mesure: m }));
+    const jeu = [...alpha, ...beta];
+    const questions = questionsDe(jeu);
+    const { tirage } = tirer({
+      questions,
+      items: jeu,
+      mesures: MESURES,
+      run: RUN,
+      graine: graine(),
+      parametres: { questions_par_strate: 1, questions_attribution_par_theme: 1 },
+    });
+    expect(tirage.compensations.length).toBeGreaterThan(0);
+    const condition = conditionDeSymetrie(verifierSymetrie(tirage, questions, jeu, MESURES, RUN), "quota_par_strate_respecte");
+    expect(condition?.statut).toBe("vert");
+    expect(condition?.mesure).toBe(1);
+    expect(condition?.seuil).toBe(1);
   });
 });
 

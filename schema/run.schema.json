@@ -93,7 +93,8 @@
       "additionalProperties": false,
       "required": [
         "protocole",
-        "code_commit"
+        "code_commit",
+        "donnees_commit"
       ],
       "description": "§9 : la version du protocole, du code et des données utilisée est inscrite en tête de chaque rapport.",
       "properties": {
@@ -109,7 +110,7 @@
         },
         "donnees_commit": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git",
-          "description": "Commit de data/ lu au gel. Obligatoire dès que le run est publié (publie, publie_provisoire, et invalide, que le §6 publie aussi) : conformité n° 66, voir allOf."
+          "description": "Commit de data/ lu au gel. Obligatoire pour tout run (décision de l'auteur du 2026-10-01) : un run porte toujours son tirage, et pnpm symmetry recoupe les items reçus avec ce commit dès le gel (outils/items-au-gel.ts). Avant cette décision, seuls les runs publiés le portaient (conformité n° 66)."
         },
         "amendements_appliques": {
           "type": "array",
@@ -711,7 +712,7 @@
         "conditions",
         "statut_global"
       ],
-      "description": "§5 : cinq conditions bloquantes, dont une non binaire (répartition par thème : \"sinon l'écart est imprimé dans le rapport du run\"). Un écart imprimé dans un rapport mais absent des données serait un chiffre du site sans fichier source.",
+      "description": "§5 : sept conditions bloquantes, dont une non binaire (répartition par thème : \"sinon l'écart est imprimé dans le rapport du run\"). Un écart imprimé dans un rapport mais absent des données serait un chiffre du site sans fichier source.",
       "properties": {
         "statut_global": {
           "type": "string",
@@ -723,7 +724,7 @@
         },
         "conditions": {
           "type": "array",
-          "minItems": 6,
+          "minItems": 7,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -740,7 +741,8 @@
                   "repartition_themes",
                   "aucun_item_conteste_ou_en_attente",
                   "aucun_nom_candidat_dans_q_att",
-                  "part_items_a_f_minimale"
+                  "part_items_a_f_minimale",
+                  "quota_par_strate_respecte"
                 ]
               },
               "statut": {
@@ -1121,16 +1123,6 @@
           "publication",
           "depot"
         ]
-      }
-    },
-    {
-      "$comment": "Conformité n° 66, §9 : « la version du protocole, du code et des données utilisée est inscrite en tête de chaque rapport ». Tout run publié la porte : publié, publié provisoire (§12), et invalide, que le §6 publie aussi (« les deux runs sont publiés, le premier marqué invalide avec la raison »). Un run planifié ou en cours n'a pas encore de rapport.",
-      "if": {
-        "properties": { "statut": { "enum": ["publie", "publie_provisoire", "invalide"] } },
-        "required": ["statut"]
-      },
-      "then": {
-        "properties": { "versions": { "required": ["donnees_commit"] } }
       }
     },
     {

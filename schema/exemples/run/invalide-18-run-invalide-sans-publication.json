@@ -219,6 +219,12 @@
         "statut": "vert",
         "mesure": 0.23,
         "seuil": 0.2
+      },
+      {
+        "code": "quota_par_strate_respecte",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
       }
     ]
   },

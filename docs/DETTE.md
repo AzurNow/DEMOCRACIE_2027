@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-10-01 — Rattrapage de #54, tests manquants, barrière de symétrie (PR #55, #56, #57 : `pipeline/questions/symetrie.ts`, `pipeline/questions/completude.ts`, `outils/symmetry.ts`, `outils/items-au-gel.ts`, `schema/tirage.schema.json`, `tests/`)
 
-### 1. Aucune condition de symétrie ne voit une strate remplie au-delà du quota — *haute*
+### ~~1. Aucune condition de symétrie ne voit une strate remplie au-delà du quota~~ — réglé le 2026-10-01 par #59 (condition bloquante `quota_par_strate_respecte`, décision de l'auteur)
 
 Depuis #57, `repartition_themes` lit le retard sur les totaux **propres** par thème, puis juge les
 strates du thème en retard (décision de l'auteur du 2026-10-01). Un candidat qui reçoit deux
@@ -46,7 +46,7 @@ C'est voulu : la barrière doit attraper un tirage fautif d'où qu'il vienne.
 le test « les compensations du tirage réel répondent toutes à un déficit » le rappelle. Le citer
 dans l'amendement.
 
-### 3. `pnpm symmetry` exige `versions.donnees_commit` dès le gel, le schéma du run seulement à la publication — *moyenne*
+### ~~3. `pnpm symmetry` exige `versions.donnees_commit` dès le gel, le schéma du run seulement à la publication~~ — réglé le 2026-10-01 par #59 pour le schéma (obligatoire pour tout run) ; reste le clone complet, à exiger du futur `pnpm run:live`
 
 Depuis #57, `outils/items-au-gel.ts` recoupe `--items` avec le commit `run.versions.donnees_commit`,
 et refuse un run qui ne le porte pas. `schema/run.schema.json` ne l'exige que des statuts publiés.
