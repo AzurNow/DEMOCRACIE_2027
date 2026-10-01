@@ -19,6 +19,7 @@ import { entreesPour } from "../pipeline/questions/tirage.ts";
 import type { CandidatNomme, Item, Mesure, Question, RunAuGel, Tirage } from "../pipeline/questions/types.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { GRILLE_TOUT_VRAI } from "./aides/fabriques.ts";
+import { commiterTout, head, initialiserDepot } from "./aides/depot.ts";
 import { completer, graine, identifiant, itemF, itemP, mesure, quotas } from "./questions/fabriques.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
@@ -133,15 +134,25 @@ function ecrireJson(chemin: string, valeur: unknown): void {
 
 type Options = Readonly<Record<"tirage" | "questions" | "items" | "mesures" | "run", string>>;
 
-/** Écrit le jeu sur disque, un fichier par item dans `items/`, et rend les cinq options. */
-function poser(jeu: Jeu): Options {
+/**
+ * Écrit le jeu sur disque, un fichier par item dans `items/`, et rend les cinq options. Conformité
+ * n° 9 : le bac est un dépôt Git, les items y sont commités, et le run inscrit ce commit comme
+ * `versions.donnees_commit`, le commit des données lu au gel. `gel` remplace ce commit.
+ */
+function poser(jeu: Jeu, gel?: (commit: string) => string | undefined): Options {
   const repertoireItems = join(racine, "items");
   mkdirSync(repertoireItems, { recursive: true });
   for (const item of jeu.items) ecrireJson(join(repertoireItems, `${item.id}.json`), item);
+  initialiserDepot(racine);
+  const commit = head(racine);
+  const donnees_commit = gel === undefined ? commit : gel(commit);
+  const versions = { ...(jeu.run["versions"] as Record<string, unknown>) };
+  if (donnees_commit === undefined) delete versions["donnees_commit"];
+  else versions["donnees_commit"] = donnees_commit;
   ecrireJson(join(racine, "tirage.json"), jeu.tirage);
   ecrireJson(join(racine, "questions.json"), jeu.questions);
   ecrireJson(join(racine, "mesures.json"), jeu.mesures);
-  ecrireJson(join(racine, "run.json"), jeu.run);
+  ecrireJson(join(racine, "run.json"), { ...jeu.run, versions });
   return {
     tirage: join(racine, "tirage.json"),
     questions: join(racine, "questions.json"),
@@ -274,5 +285,73 @@ describe("7. pnpm symmetry", () => {
     expect(resultat.status).toBe(1);
     expect(resultat.erreur).toContain(join(repertoire, "00-fautif.json"));
     expect(resultat.erreur).not.toContain("zz-fautif.json");
+  });
+});
+
+/**
+ * Conformité du 2026-09-29, n° 9 (`docs/DETTE.md`, 2026-09-28, point 2) : la référence des questions
+ * engendrées au gel se recalcule sur les items reçus. Décision de l'auteur du 2026-10-01 : `--items`
+ * est recoupé avec lui-même au commit `versions.donnees_commit` du run.
+ */
+describe("7 bis. pnpm symmetry : items et tirage du gel (conformité n° 9)", () => {
+  it("--items réduit à un sous-ensemble des items du gel : code 1, refus nommé", () => {
+    const options = poser(jeuNominal());
+    rmSync(join(options.items, `${ITEM_F.id}.json`));
+    const resultat = symmetry(options);
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain("ItemsHorsDuGel");
+    expect(resultat.erreur).toContain(`${ITEM_F.id}.json absent des items reçus`);
+    expect(resultat.sortie).not.toContain("Contrôles verts");
+    expect(resultat.sortie).not.toContain("statut global");
+  });
+
+  it("un item ajouté après le gel : code 1, nommé", () => {
+    const options = poser(jeuNominal());
+    const tardif = conforme(itemP({ cle: "cli-tardif", candidat_id: CANDIDAT, mesure: MESURE_P }));
+    ecrireJson(join(options.items, `${tardif.id}.json`), tardif);
+    const resultat = symmetry(options);
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(`${tardif.id}.json absent du gel`);
+  });
+
+  it("un item modifié depuis le gel, même conforme à son schéma : code 1, nommé", () => {
+    const options = poser(jeuNominal());
+    ecrireJson(join(options.items, `${ITEM_P.id}.json`), { ...ITEM_P, libelle_lisible: "retouché après le gel" });
+    const resultat = symmetry(options);
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(`${ITEM_P.id}.json modifié depuis le gel`);
+  });
+
+  it("des items commités après le gel ne passent pas pour ceux du gel", () => {
+    const options = poser(jeuNominal());
+    rmSync(join(options.items, `${ITEM_F.id}.json`));
+    commiterTout(racine, "retrait après le gel");
+    const resultat = symmetry(options);
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(`${ITEM_F.id}.json absent des items reçus`);
+  });
+
+  it("un run planifié sans versions.donnees_commit : code 1, le commit manquant est nommé", () => {
+    // Le schéma n'exige ce commit que d'un run publié ; la barrière, elle, l'exige dès le gel.
+    const jeu = jeuNominal();
+    const resultat = symmetry(poser({ ...jeu, run: { ...jeu.run, statut: "planifie" } }, () => undefined));
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain("versions.donnees_commit");
+  });
+
+  it("un commit du gel introuvable dans le dépôt : code 1", () => {
+    const inconnu = "0".repeat(40);
+    const resultat = symmetry(poser(jeuNominal(), () => inconnu));
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(`le commit ${inconnu} inscrit au gel est introuvable`);
+  });
+
+  it("un tirage d'un autre run : code 1, refus nommé", () => {
+    const jeu = jeuNominal();
+    const autre = identifiant("run:autre");
+    const resultat = symmetry(poser({ ...jeu, tirage: { ...jeu.tirage, run_id: autre } }));
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain("TirageDUnAutreRun");
+    expect(resultat.erreur).toContain(`run_id ${autre}`);
   });
 });

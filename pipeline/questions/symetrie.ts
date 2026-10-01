@@ -16,13 +16,14 @@
  * d'attribuer une question d'attribution à un candidat (`schema/README.md`, point ouvert 2).
  */
 
-import { exigerJeuComplet } from "./completude.ts";
+import { exigerJeuComplet, exigerTirageDuRun } from "./completude.ts";
 import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import { libelleSansMot, trouverLibelle } from "./libelles.ts";
 import type {
   CandidatAuGel,
   CodeCondition,
+  CompensationTirage,
   ConditionSymetrie,
   DetailCandidat,
   EntreeTirage,
@@ -54,13 +55,15 @@ interface Contexte {
   /** Candidats comparés : interrogés et au-dessus du seuil de couverture (§4). */
   readonly compares: readonly string[];
   readonly libelles: readonly string[];
-  /** Nombre de compensations inscrites dans le tirage (§5, protocole 0.9). */
-  readonly compensations: number;
+  /** Les compensations inscrites dans le tirage (§5, protocole 0.9), jugées par `repartition_themes`. */
+  readonly compensations: readonly CompensationTirage[];
   /** Les questions compensatrices, clé `candidat|question` : elles ne comptent pas dans leur strate d'origine. */
   readonly compensatrices: ReadonlySet<string>;
+  /** Quota de questions par strate candidat × thème × gabarit, publié avec le tirage. */
+  readonly quota: number;
   /**
    * Questions tirables au gel par strate candidat × thème × gabarit (constat n° 23), calculées à la
-   * demande : seul un écart de thème les lit.
+   * demande : seule `repartition_themes` les lit.
    */
   readonly tirables: () => ReadonlyMap<string, number>;
 }
@@ -68,7 +71,8 @@ interface Contexte {
 /**
  * `questions` : le jeu complet des questions engendrées au gel, pas seulement les tirées — la
  * répartition par thème juge le tirage contre ce que les items permettaient (constat n° 23). Un jeu
- * incomplet lève `JeuDeQuestionsIncomplet` avant tout verdict (§5, protocole 0.13 ; `completude.ts`).
+ * incomplet lève `JeuDeQuestionsIncomplet` avant tout verdict (§5, protocole 0.13 ; `completude.ts`), et un
+ * tirage d'un autre run, ou d'une autre date de gel, `TirageDUnAutreRun` (conformité n° 9).
  * `items` : les items au gel. `mesures` : le référentiel, qui porte le thème d'une question non tirée.
  */
 export function verifierSymetrie(
@@ -78,6 +82,7 @@ export function verifierSymetrie(
   mesures: readonly Mesure[],
   run: RunAuGel,
 ): Symetrie {
+  exigerTirageDuRun(tirage, run);
   const contexte = construireContexte(tirage, { questions, items, mesures }, run);
   exigerJeuComplet(tirage, questions, items, run);
   const conditions: readonly ConditionSymetrie[] = [
@@ -115,9 +120,19 @@ function construireContexte(tirage: Tirage, corpus: Corpus, run: RunAuGel): Cont
       .filter((candidat) => estCompare(candidat))
       .map((candidat) => candidat.candidat_id),
     libelles: libellesDuPerimetre(perimetre),
-    compensations: tirage.compensations.length,
+    compensations: tirage.compensations,
     compensatrices: new Set(tirage.compensations.map((c) => `${c.candidat_id}|${c.question_id}`)),
-    tirables: () => tirablesParStrate(questions, items, corpus.mesures, run),
+    quota: tirage.parametres.questions_par_strate,
+    tirables: memoriser(() => tirablesParStrate(questions, items, corpus.mesures, run)),
+  };
+}
+
+/** Calcule une fois, à la première demande : sur un tirage sans retard ni compensation, jamais. */
+function memoriser<T>(calcul: () => T): () => T {
+  let valeur: { readonly resultat: T } | undefined;
+  return () => {
+    valeur ??= { resultat: calcul() };
+    return valeur.resultat;
   };
 }
 
@@ -262,36 +277,51 @@ function clesGabaritRegistre(contexte: Contexte, entree: EntreeTirage): readonly
   ).map((registre) => `${entree.gabarit}|${registre}`);
 }
 
+/**
+ * §5 (protocole 0.13) : « La condition se juge strate par strate (thème × gabarit), sans compter dans
+ * leur thème d'origine les questions reçues par compensation. » Le jugement des retards, sur les
+ * questions propres, et le contrôle des compensations inscrites ont lieu quel que soit l'écart des
+ * totaux par thème : deux compensations croisées rendent ces totaux égaux sans rien réparer
+ * (conformité 2026-09-29, n° 8). L'écart imprimé (`mesure`, `detail_par_candidat`) reste celui des
+ * totaux par thème du tirage.
+ */
 function repartitionThemes(contexte: Contexte): ConditionSymetrie {
   const table = compterPar(entreesComparees(contexte), contexte.compares, (entree) => [entree.theme]);
   const ecart = ecartMaximal(table, contexte.compares);
-  if (ecart === 0) {
-    return { code: "repartition_themes", statut: "vert", mesure: 0, seuil: 0 };
-  }
   const socle = {
     code: "repartition_themes" as const,
     mesure: ecart,
     seuil: 0,
     detail_par_candidat: detailParTheme(table, contexte.compares),
   };
-  const fautes = retardsEvitables(contexte, table);
-  if (fautes.length > 0) {
-    return {
-      ...socle,
-      statut: "rouge",
-      commentaire:
-        "Répartition par thème non identique alors que les items le permettaient (§5, constat " +
-        `n° 23) : ${fautes.join(" ; ")}.`,
-    };
-  }
+  const fautes = fautesDeRepartition(contexte);
+  if (fautes.length > 0) return { ...socle, statut: "rouge", commentaire: fautes.join(" ") };
+  if (ecart === 0) return { code: "repartition_themes", statut: "vert", mesure: 0, seuil: 0 };
   return {
     ...socle,
     statut: "ecart_tolere",
     commentaire:
       "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une " +
-      `répartition identique (§5). ${contexte.compensations} compensation(s) inscrite(s) dans ` +
+      `répartition identique (§5). ${contexte.compensations.length} compensation(s) inscrite(s) dans ` +
       "le tirage (même gabarit, autre thème, §5, protocole 0.9).",
   };
+}
+
+/** Les deux motifs de rouge de la condition, chacun en une phrase ; vide si aucun. */
+function fautesDeRepartition(contexte: Contexte): readonly string[] {
+  const retards = retardsEvitables(contexte);
+  const compensations = compensationsInjustifiees(contexte);
+  return [
+    ...(retards.length === 0
+      ? []
+      : [
+          "Répartition par thème non identique alors que les items le permettaient (§5, constats " +
+            `n° 23 et 8) : ${retards.join(" ; ")}.`,
+        ]),
+    ...(compensations.length === 0
+      ? []
+      : [`Compensation(s) inscrite(s) sans déficit qui les justifie (§5, protocole 0.9) : ${compensations.join(" ; ")}.`]),
+  ];
 }
 
 /**
@@ -301,24 +331,39 @@ function repartitionThemes(contexte: Contexte): ConditionSymetrie {
  * comptent dans leur thème d'origine sans y avoir été tirées pour lui) : un candidat en retard sur
  * un thème est fautif si, dans une strate de ce thème, il a reçu moins de questions propres que le
  * mieux servi des candidats comparés alors que ses questions tirables de cette strate auraient suffi
- * à l'égaler. Un retard que seules des questions non tirables (contestées, hors validité…) auraient
+ * à l'égaler. Le retard sur un thème se lit lui aussi sur les questions propres (décision de
+ * l'auteur du 2026-10-01, conformité n° 8) : deux compensations croisées ne le masquent plus, et un
+ * échange de gabarit sur un même item, que la répartition des gabarits tolère à une question près,
+ * ne le crée pas. Un retard que seules des questions non tirables (contestées, hors validité…) auraient
  * comblé, ou qu'impose la compensation d'un autre candidat, reste toléré.
  */
-function retardsEvitables(
-  contexte: Contexte,
-  parTheme: ReadonlyMap<string, ReadonlyMap<string, number>>,
-): readonly string[] {
-  const propres = compterPar(entreesPropres(contexte), contexte.compares, (entree) => [
-    `${entree.theme}|${entree.gabarit}`,
-  ]);
-  const tirables = contexte.tirables();
-  return clesObservees(propres).flatMap((cle) => {
+function retardsEvitables(contexte: Contexte): readonly string[] {
+  const entrees = entreesPropres(contexte);
+  const parTheme = compterPar(entrees, contexte.compares, (entree) => [entree.theme]);
+  const enRetard = (candidat: string, theme: Theme) => estEnRetard(parTheme, contexte.compares, candidat, theme);
+  const propres = compterPar(entrees, contexte.compares, (entree) => [`${entree.theme}|${entree.gabarit}`]);
+  const strates = clesObservees(propres).map((cle) => {
     const [theme, gabarit] = cle.split("|") as [Theme, CodeGabarit];
     const strate: StrateJugee = { theme, gabarit, plafond: plafondDe(propres, contexte.compares, cle) };
-    return contexte.compares
-      .filter((candidat) => estEnRetard(parTheme, contexte.compares, candidat, theme))
-      .flatMap((candidat) => retardDansStrate(strate, effectif(propres, candidat, cle), tirablesDe(tirables, candidat, strate), candidat));
+    return { cle, strate, candidats: contexte.compares.filter((candidat) => enRetard(candidat, theme)) };
   });
+  if (strates.every(({ candidats }) => candidats.length === 0)) return [];
+  const tirables = contexte.tirables();
+  return strates.flatMap(({ cle, strate, candidats }) =>
+    candidats.flatMap((candidat) =>
+      retardDansStrate(strate, effectif(propres, candidat, cle), tirablesDe(tirables, candidat, strate), candidat),
+    ),
+  );
+}
+
+/** En retard sur un thème : moins de questions PROPRES que le mieux servi des candidats comparés. */
+function estEnRetard(
+  parTheme: ReadonlyMap<string, ReadonlyMap<string, number>>,
+  compares: readonly string[],
+  candidat: string,
+  theme: Theme,
+): boolean {
+  return effectif(parTheme, candidat, theme) < plafondDe(parTheme, compares, theme);
 }
 
 interface StrateJugee {
@@ -347,18 +392,89 @@ function plafondDe(table: ReadonlyMap<string, ReadonlyMap<string, number>>, comp
   return Math.max(...compares.map((candidat) => effectif(table, candidat, cle)));
 }
 
-function estEnRetard(
-  parTheme: ReadonlyMap<string, ReadonlyMap<string, number>>,
-  compares: readonly string[],
-  candidat: string,
-  theme: Theme,
-): boolean {
-  return effectif(parTheme, candidat, theme) < plafondDe(parTheme, compares, theme);
-}
-
 function tirablesDe(tirables: ReadonlyMap<string, number>, candidat: string, strate: StrateJugee): number {
   const nombre = tirables.get(cleStrateCandidat(candidat, strate.theme, strate.gabarit));
   return nombre === undefined ? 0 : nombre;
+}
+
+/* ------------------------------------------------- compensations inscrites */
+
+/**
+ * §5 (protocole 0.9) : « Une strate vide ou incomplète chez un candidat comparé, au regard de ce que
+ * les autres candidats comparés y reçoivent, est compensée par des questions du même gabarit sur
+ * d'autres thèmes de ce candidat. » Une compensation inscrite est donc refusée si elle ne désigne pas
+ * une entrée du candidat, du même gabarit, venue d'un autre thème, ou si la strate qu'elle compense
+ * n'avait pas de déficit à combler — ou moins qu'elle n'en reçoit. Le déficit se recalcule ici depuis
+ * les questions tirables, sans lire `tirage.ts` : la barrière doit attraper un tirage fautif d'où
+ * qu'il vienne (conformité 2026-09-29, n° 8).
+ */
+function compensationsInjustifiees(contexte: Contexte): readonly string[] {
+  if (contexte.compensations.length === 0) return [];
+  const tirables = contexte.tirables();
+  const parStrate = new Map<string, CompensationTirage[]>();
+  for (const compensation of contexte.compensations) {
+    const cle = cleStrateCandidat(compensation.candidat_id, compensation.theme_deficitaire, compensation.gabarit);
+    const groupe = parStrate.get(cle);
+    if (groupe === undefined) parStrate.set(cle, [compensation]);
+    else groupe.push(compensation);
+  }
+  return [
+    ...contexte.compensations.flatMap((compensation) => defautDeCompensation(contexte, compensation)),
+    ...[...parStrate.values()].flatMap((groupe) => excesDeCompensation(contexte, tirables, groupe)),
+  ];
+}
+
+function nommer(compensation: CompensationTirage): string {
+  return (
+    `compensation de ${compensation.candidat_id} en ${compensation.theme_deficitaire} × ${compensation.gabarit} ` +
+    `(${compensation.question_id})`
+  );
+}
+
+/** Ce qu'une compensation affirme de son entrée, confronté au tirage. */
+function defautDeCompensation(contexte: Contexte, compensation: CompensationTirage): readonly string[] {
+  if (!contexte.compares.includes(compensation.candidat_id)) return [`${nommer(compensation)} : candidat non comparé`];
+  if (compensation.theme_origine === compensation.theme_deficitaire) {
+    return [`${nommer(compensation)} : thème d'origine égal au thème déficitaire`];
+  }
+  const entree = contexte.entrees.find(
+    (candidate) => candidate.question_id === compensation.question_id && candidate.candidat_id === compensation.candidat_id,
+  );
+  if (entree === undefined) return [`${nommer(compensation)} : aucune entrée de ce candidat pour cette question`];
+  if (entree.gabarit !== compensation.gabarit || entree.theme !== compensation.theme_origine) {
+    return [
+      `${nommer(compensation)} : l'entrée est ${entree.theme} × ${entree.gabarit}, ` +
+        `pas ${compensation.theme_origine} × ${compensation.gabarit}`,
+    ];
+  }
+  return [];
+}
+
+/**
+ * Le déficit d'une strate du candidat : sa cible, `min(quota, max des tirables parmi les comparés)`,
+ * moins ce que ses propres tirables lui donnaient, `min(quota, tirables)`. Les compensations d'une
+ * strate sans déficit sont nommées une à une ; celles qui dépassent un déficit, comptées.
+ */
+function excesDeCompensation(
+  contexte: Contexte,
+  tirables: ReadonlyMap<string, number>,
+  groupe: readonly CompensationTirage[],
+): readonly string[] {
+  const [premiere] = groupe;
+  if (premiere === undefined) return [];
+  const strate: StrateJugee = { theme: premiere.theme_deficitaire, gabarit: premiere.gabarit, plafond: 0 };
+  const disponibles = contexte.compares.map((candidat) => tirablesDe(tirables, candidat, strate));
+  const cible = Math.min(contexte.quota, Math.max(0, ...disponibles));
+  const siennes = tirablesDe(tirables, premiere.candidat_id, strate);
+  const deficit = Math.max(0, cible - Math.min(contexte.quota, siennes));
+  if (deficit === 0) {
+    return groupe.map((compensation) => `${nommer(compensation)} sans déficit : cible ${cible}, ${siennes} tirable(s)`);
+  }
+  if (groupe.length <= deficit) return [];
+  return [
+    `${groupe.length} compensations de ${premiere.candidat_id} en ${strate.theme} × ${strate.gabarit}, ` +
+      `au-delà du déficit (${deficit})`,
+  ];
 }
 
 /** Par candidat, son plus grand excédent sur le candidat le moins fourni d'un même thème. */

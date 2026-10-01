@@ -2880,16 +2880,18 @@
         "pipeline/questions/symetrie.ts:repartitionThemes",
         "pipeline/questions/symetrie.ts:retardsEvitables",
         "pipeline/questions/tirage.ts:tirablesParStrate",
-        "outils/symmetry.ts:imprimerSymetrie"
+        "outils/symmetry.ts:imprimerSymetrie",
+        "schema/tirage.schema.json:$defs.entree_tirage.required (theme, grappe_id)"
       ],
       "tests": [
         "tests/questions/repartition-themes.test.ts « passe au rouge quand les items tirables du candidat en retard auraient comblé l'écart »",
         "tests/questions/repartition-themes.test.ts « tolère et imprime l'écart dû à un manque d'items tirables »",
-        "tests/questions/symetrie.test.ts « passe au rouge quand les items du candidat en retard permettaient l'égalité, et imprime l'écart »"
+        "tests/questions/symetrie.test.ts « passe au rouge quand les items du candidat en retard permettaient l'égalité, et imprime l'écart »",
+        "tests/tirage-entree-schema.test.ts « une entrée sans thème est refusée »"
       ],
       "lot": null,
       "constat": null,
-      "note": "Constat n° 23 corrigé dans #41 ; le jugement par strate est écrit en 0.13 (§5.38), où vit l'écart résiduel."
+      "note": "Constat n° 23 corrigé dans #41 ; le jugement par strate est écrit en 0.13 (§5.38), où vit l'écart résiduel. Conformité 2026-09-29, n° 24, corrigé dans #57 : theme et grappe_id obligatoires dans une entrée de tirage."
     },
     {
       "id": "§5.24",
@@ -3162,20 +3164,24 @@
       "section": "5",
       "citation": "La condition se juge strate par strate (thème × gabarit), sans compter dans leur thème d'origine les questions reçues par compensation",
       "nature": "code",
-      "statut": "partielle",
+      "statut": "testee",
       "code": [
         "pipeline/questions/symetrie.ts:repartitionThemes",
         "pipeline/questions/symetrie.ts:retardsEvitables",
         "pipeline/questions/symetrie.ts:entreesPropres",
-        "pipeline/questions/symetrie.ts:estEnRetard"
+        "pipeline/questions/symetrie.ts:estEnRetard",
+        "pipeline/questions/symetrie.ts:compensationsInjustifiees"
       ],
       "tests": [
         "tests/questions/repartition-themes.test.ts « une compensation n'excuse pas une strate propre incomplète »",
-        "tests/questions/repartition-themes.test.ts « le tirage réel compense, et l'écart de thème qui en résulte est toléré, pas rouge »"
+        "tests/questions/repartition-themes.test.ts « le tirage réel compense, et l'écart de thème qui en résulte est toléré, pas rouge »",
+        "tests/questions/repartition-themes.test.ts « totaux égaux par thème, mais strate propre évitablement vide : rouge »",
+        "tests/questions/repartition-themes.test.ts « une compensation inscrite sans déficit réel est nommée »",
+        "tests/questions/repartition-themes.test.ts « des compensations en surnombre sur une strate sont refusées »"
       ],
       "lot": null,
       "constat": 8,
-      "note": "Le jugement par strate exclut les compensatrices, mais le pré-filtre (écart de thème nul ⇒ vert ; candidat « en retard » sur le thème) les compte dans leur thème d'origine."
+      "note": "Corrigé dans #57 : le retard se lit sur les questions propres quel que soit l'écart des totaux (décision de l'auteur du 2026-10-01), et chaque compensation inscrite doit répondre à un déficit réel. Le dépassement du quota par strate n'est contrôlé par aucune condition."
     },
     {
       "id": "§5.39",
@@ -3187,16 +3193,20 @@
         "pipeline/questions/completude.ts:exigerJeuComplet",
         "pipeline/questions/completude.ts:questionsExigees",
         "pipeline/questions/engendrement.ts:identitesEngendrees",
-        "outils/symmetry.ts:evaluerSymetrie"
+        "outils/symmetry.ts:evaluerSymetrie",
+        "outils/items-au-gel.ts:exigerItemsDuGel",
+        "pipeline/questions/completude.ts:exigerTirageDuRun"
       ],
       "tests": [
         "tests/questions/jeu-complet.test.ts « refuse, par une erreur nommée, le jeu réduit aux questions tirées (le cas de la dette) »",
         "tests/questions/jeu-complet.test.ts « refuse un jeu auquel manque la question d'attribution d'une mesure »",
-        "tests/symmetry-cli.test.ts « protocole 0.13, §5 : --questions réduit aux questions tirées : code 1, refus nommé »"
+        "tests/symmetry-cli.test.ts « protocole 0.13, §5 : --questions réduit aux questions tirées : code 1, refus nommé »",
+        "tests/symmetry-cli.test.ts « --items réduit à un sous-ensemble des items du gel : code 1, refus nommé »",
+        "tests/questions/jeu-complet.test.ts « refuse un tirage dont la date de gel diffère de celle du run »"
       ],
       "lot": null,
       "constat": 9,
-      "note": "La référence est recalculée sur les items que l'appelant fournit, sans les comparer aux items du gel (DETTE 2026-09-28, point 2) ; la publication avec le run attend le lot interrogation."
+      "note": "Corrigé dans #57 : --items est recoupé avec le commit run.versions.donnees_commit, et le tirage doit porter le run_id et la date_gel du run. Reste partielle : la publication du jeu complet avec le run attend le lot interrogation."
     },
     {
       "id": "§5.40",

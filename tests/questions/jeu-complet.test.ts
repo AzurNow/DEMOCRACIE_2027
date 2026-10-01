@@ -19,7 +19,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { JeuDeQuestionsIncomplet, questionsExigees } from "../../pipeline/questions/completude.ts";
+import { JeuDeQuestionsIncomplet, questionsExigees, TirageDUnAutreRun } from "../../pipeline/questions/completude.ts";
 import { engendrer, identitesEngendrees } from "../../pipeline/questions/engendrement.ts";
 import { conditionDeSymetrie, verifierSymetrie } from "../../pipeline/questions/symetrie.ts";
 import { entreesPour, tirer } from "../../pipeline/questions/tirage.ts";
@@ -250,5 +250,32 @@ describe("identitesEngendrees : la même règle que engendrer, sans le texte", (
     expect([...identitesEngendrees(varies)].sort((a, b) => cle(a).localeCompare(cle(b)))).toEqual(
       [...parEngendrer].sort((a, b) => cle(a).localeCompare(cle(b))),
     );
+  });
+});
+
+/**
+ * Conformité du 2026-09-29, n° 9 : la barrière juge les décisions du panel à la date du tirage, la
+ * tirabilité et la complétude à celle du run. Un tirage d'un autre run, ou recopié avec une autre date
+ * de gel, est refusé avant tout verdict.
+ */
+describe("n° 9 : le tirage doit être celui du run", () => {
+  it("refuse un tirage dont la date de gel diffère de celle du run", () => {
+    // Le même instant écrit autrement est déjà une autre date : le tirage recopie celle du run.
+    const tirage = tirageDe(TIREES, { date_gel: "2026-12-01T05:00:00Z" });
+    expect(() => verifierSymetrie(tirage, QUESTIONS, ITEMS, MESURES, RUN)).toThrow(TirageDUnAutreRun);
+    expect(() => verifierSymetrie(tirage, QUESTIONS, ITEMS, MESURES, RUN)).toThrow(
+      `date_gel 2026-12-01T05:00:00Z contre ${GEL}`,
+    );
+  });
+
+  it("refuse un tirage d'un autre run, en nommant les deux identifiants", () => {
+    const autre = identifiant("run:autre");
+    const tirage = tirageDe(TIREES, { run_id: autre });
+    expect(() => verifierSymetrie(tirage, QUESTIONS, ITEMS, MESURES, RUN)).toThrow(`run_id ${autre} contre ${RUN.id}`);
+  });
+
+  it("refuse avant de juger la complétude : un jeu incomplet d'un autre run est refusé comme tirage étranger", () => {
+    const tirage = tirageDe(TIREES, { run_id: identifiant("run:autre") });
+    expect(() => verifierSymetrie(tirage, TIREES, ITEMS, MESURES, RUN)).toThrow(TirageDUnAutreRun);
   });
 });

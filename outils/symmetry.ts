@@ -19,7 +19,11 @@
  * interdit qu'un contrôle de la barrière se saute.
  *
  * `--questions` est le jeu complet des questions engendrées au gel, publié avec le run, et non les
- * seules questions tirées ; `--items`, les items au gel (`versions.donnees_commit` du run). §5
+ * seules questions tirées ; `--items`, les items au gel. Ce répertoire est recoupé, fichier par
+ * fichier, avec lui-même au commit `versions.donnees_commit` du run (conformité n° 9, décision de
+ * l'auteur du 2026-10-01) : un run sans ce commit, un item en plus, en moins ou modifié depuis le gel
+ * arrête la commande avec le code 1 (`outils/items-au-gel.ts`). Le tirage doit aussi être celui du
+ * run, même `run_id`, même `date_gel` (`TirageDUnAutreRun`). §5
  * (protocole 0.13) : « un jeu incomplet est refusé ». S'il manque au jeu une question citée par le
  * tirage (entrées ou exclusions) ou engendrée sur ces items pour une mesure ou un candidat interrogé,
  * la symétrie n'est pas évaluée : `JeuDeQuestionsIncomplet` est imprimé avec les questions manquantes
@@ -41,7 +45,8 @@ import {
   unSeulItemFictifParMesure,
 } from "../pipeline/questions/invariants.ts";
 import type { PorteurDeGrappe, Violation } from "../pipeline/questions/invariants.ts";
-import { JeuDeQuestionsIncomplet } from "../pipeline/questions/completude.ts";
+import { JeuDeQuestionsIncomplet, TirageDUnAutreRun } from "../pipeline/questions/completude.ts";
+import { exigerItemsDuGel, ItemsHorsDuGel } from "./items-au-gel.ts";
 import { verifierSymetrie } from "../pipeline/questions/symetrie.ts";
 import type {
   ConditionSymetrie,
@@ -53,12 +58,18 @@ import type {
   Tirage,
 } from "../pipeline/questions/types.ts";
 
+/** Ce que la commande lit du run, en plus de ce que la symétrie en lit. */
+interface RunLu extends RunAuGel {
+  readonly versions: { readonly donnees_commit?: string };
+}
+
 interface Entrees {
+  readonly repertoire_items: string;
   readonly tirage: Tirage;
   readonly questions: readonly Question[];
   readonly items: readonly Item[];
   readonly mesures: readonly Mesure[];
-  readonly run: RunAuGel;
+  readonly run: RunLu;
 }
 
 function lireJson(chemin: string): unknown {
@@ -105,11 +116,12 @@ function lireEntrees(): Entrees {
     run: obligatoire(table, "run", "le périmètre et la date de gel du run"),
   };
   return {
+    repertoire_items: chemins.items,
     tirage: lireObjet<Tirage>("tirage", chemins.tirage),
     questions: lireTableau<Question>("question", chemins.questions),
     items: lireRepertoireItems(chemins.items),
     mesures: lireTableau<Mesure>("mesure", chemins.mesures),
-    run: lireObjet<RunAuGel>("run", chemins.run),
+    run: lireObjet<RunLu>("run", chemins.run),
   };
 }
 
@@ -164,20 +176,29 @@ function imprimerInvariants(liste: readonly Violation[]): void {
   process.stderr.write("\n");
 }
 
+type Refus = JeuDeQuestionsIncomplet | TirageDUnAutreRun | ItemsHorsDuGel;
+
+function estUnRefus(erreur: unknown): erreur is Refus {
+  return erreur instanceof JeuDeQuestionsIncomplet || erreur instanceof TirageDUnAutreRun || erreur instanceof ItemsHorsDuGel;
+}
+
 /**
- * La symétrie, ou le refus nommé d'un jeu incomplet (§5, protocole 0.13). Seul ce refus-là est
- * rattrapé, pour que les invariants inter-fichiers soient encore imprimés ; toute autre erreur remonte.
+ * La symétrie, ou le refus nommé d'un jeu qui ne permet pas de la juger : items qui ne sont pas ceux
+ * du gel, tirage d'un autre run, jeu de questions incomplet (§5, protocole 0.13 ; conformité n° 9).
+ * Seuls ces refus-là sont rattrapés, pour que les invariants inter-fichiers soient encore imprimés ;
+ * toute autre erreur remonte.
  */
-function evaluerSymetrie(entrees: Entrees): Symetrie | JeuDeQuestionsIncomplet {
+function evaluerSymetrie(entrees: Entrees): Symetrie | Refus {
   try {
+    exigerItemsDuGel(entrees.repertoire_items, entrees.run.versions.donnees_commit);
     return verifierSymetrie(entrees.tirage, entrees.questions, entrees.items, entrees.mesures, entrees.run);
   } catch (erreur) {
-    if (erreur instanceof JeuDeQuestionsIncomplet) return erreur;
+    if (estUnRefus(erreur)) return erreur;
     throw erreur;
   }
 }
 
-function imprimerRefus(refus: JeuDeQuestionsIncomplet): void {
+function imprimerRefus(refus: Refus): void {
   process.stderr.write(`Symétrie (§5) non évaluée — ${refus.name} :\n  ${refus.message}\n\n`);
 }
 
@@ -186,11 +207,11 @@ function principal(): void {
   const symetrie = evaluerSymetrie(entrees);
   const liste = violations(entrees);
 
-  if (symetrie instanceof JeuDeQuestionsIncomplet) imprimerRefus(symetrie);
+  if (estUnRefus(symetrie)) imprimerRefus(symetrie);
   else imprimerSymetrie(symetrie);
   imprimerInvariants(liste);
 
-  if (symetrie instanceof JeuDeQuestionsIncomplet || symetrie.statut_global === "rouge" || liste.length > 0) {
+  if (estUnRefus(symetrie) || symetrie.statut_global === "rouge" || liste.length > 0) {
     process.stderr.write("Le run ne peut pas être lancé : voir ci-dessus (§5).\n");
     process.exitCode = 1;
     return;
