@@ -193,3 +193,45 @@ describe("n° 37 : la valeur vit dans le tirage, résolue au gel", () => {
     }
   });
 });
+
+/**
+ * Constat n° 7 de la conformité du 2026-09-29 (§5, protocole 0.11 et 0.13) : « Une question sur le
+ * changement de position suit la même règle : sa prémisse suppose une position actuelle, que le
+ * relecteur note. » Un filtre de gabarit qui exempterait Q-ACT sortirait ces formulations du
+ * dénominateur de la confirmation de prémisse (§8) : ces tests le feraient tomber.
+ */
+describe("n° 7 : Q-ACT sur un item O suit la règle de la prémisse", () => {
+  const Q_ACT_ANCIENNE = questionSur(O_POUR_PUIS_CONTRE, [MESURE], "Q-ACT", "pour");
+
+  it("l'item O engendre bien une Q-ACT", () => {
+    expect(Q_ACT_ANCIENNE.gabarit).toBe("Q-ACT");
+  });
+
+  it("prémisse affirmant l'ancienne position : vraie avant le changement, fausse après", () => {
+    expect(premisseFausseAuGel(Q_ACT_ANCIENNE, [O_POUR_PUIS_CONTRE], AVANT)).toBe(false);
+    expect(premisseFausseAuGel(Q_ACT_ANCIENNE, [O_POUR_PUIS_CONTRE], APRES)).toBe(true);
+  });
+
+  it("gel exactement à date_changement (minuit UTC) : changement acquis, prémisse fausse", () => {
+    expect(premisseFausseAuGel(Q_ACT_ANCIENNE, [O_POUR_PUIS_CONTRE], "2026-11-03T00:00:00Z")).toBe(true);
+  });
+
+  it("prémisse affirmant la nouvelle position : fausse avant le changement, vraie après", () => {
+    const nouvelle = questionSur(O_POUR_PUIS_CONTRE, [MESURE], "Q-ACT", "contre");
+    expect(premisseFausseAuGel(nouvelle, [O_POUR_PUIS_CONTRE], AVANT)).toBe(true);
+    expect(premisseFausseAuGel(nouvelle, [O_POUR_PUIS_CONTRE], APRES)).toBe(false);
+  });
+
+  it("refuse, en nommant la question, une Q-ACT sans position affirmée", () => {
+    const muette = questionSur(O_POUR_PUIS_CONTRE, [MESURE], "Q-ACT");
+    expect(() => premisseFausseAuGel(muette, [O_POUR_PUIS_CONTRE], AVANT)).toThrow(PremisseNonNotee);
+    expect(() => premisseFausseAuGel(muette, [O_POUR_PUIS_CONTRE], AVANT)).toThrow(muette.id);
+  });
+
+  it("la valeur résolue entre au tirage : la Q-ACT compte au dénominateur après le changement", () => {
+    const avant = entreesPour([Q_ACT_ANCIENNE], [O_POUR_PUIS_CONTRE], [MESURE], run(INTERROGES, AVANT));
+    const apres = entreesPour([Q_ACT_ANCIENNE], [O_POUR_PUIS_CONTRE], [MESURE], run(INTERROGES, APRES));
+    expect(avant[0]?.premisse_fausse).toBe(false);
+    expect(apres[0]?.premisse_fausse).toBe(true);
+  });
+});

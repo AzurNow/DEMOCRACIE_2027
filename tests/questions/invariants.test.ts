@@ -337,8 +337,9 @@ describe("exemples de schema/exemples/", () => {
   // 152 → 158 : protocole 0.13, quatre invalides et un valide d'item (format, attestation), un invalide de fiche-source (tiers).
   // 158 → 159 : conformité 2026-09-29, n° 1, un invalide d'item (décision du panel sans statut_validation_anterieur).
   // 159 → 160 : décision de l'auteur du 2026-09-29, n° 8, un invalide de tirage (sans contestes_au_gel).
-  it("charge les 160 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(160);
+  // 160 → 164 : conformité 2026-09-29, n° 31 et 33, quatre invalides d'item (thème porté, sans mesure_version, quantification hors dimensions, adresse du contestataire).
+  it("charge les 164 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(164);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

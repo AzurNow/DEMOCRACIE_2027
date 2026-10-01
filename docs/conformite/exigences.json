@@ -710,7 +710,7 @@
       "section": "4",
       "citation": "le test verbatim vérifie sans IA que la citation figure caractère pour caractère dans la source, après une normalisation fixée et versionnée : toute suite d'espaces devient une espace, les espaces de début et de fin sont retirées, et les guillemets, apostrophes, primes et tirets typographiques sont ramenés à leur forme ASCII",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "validation/domaine/verbatim.ts:testerVerbatim",
         "validation/domaine/normalisation.ts:projeter",
@@ -719,11 +719,15 @@
       ],
       "tests": [
         "tests/verbatim.test.ts « ramène guillemets et apostrophes typographiques à leur forme ASCII »",
-        "tests/verbatim.test.ts « réduit toute suite d'espaces, y compris une coupure de ligne de PDF »"
+        "tests/verbatim.test.ts « réduit toute suite d'espaces, y compris une coupure de ligne de PDF »",
+        "tests/normalisation-table.test.ts « ramène les six tirets typographiques à « - » »",
+        "tests/normalisation-table.test.ts « ramène primes et accent aigu isolé à leur forme ASCII »",
+        "tests/normalisation-table.test.ts « retire les espaces de début et de fin de la citation comme de la source »",
+        "tests/normalisation-table.test.ts « une citation entourée d'espaces passe le test verbatim sur une source tirée d'un PDF »"
       ],
       "lot": null,
       "constat": 4,
-      "note": "Protocole révisé en 0.9 (constat n° 14). Guillemets, apostrophes et espaces internes testés ; les six tirets, les deux primes, l'accent aigu isolé et le rognage de tête et de fin n'ont aucun test."
+      "note": "Corrigé dans #56 : tirets, primes, accent aigu isolé et rognage ont chacun leur test."
     },
     {
       "id": "§4.12",
@@ -1932,15 +1936,17 @@
       "section": "4",
       "citation": "la table exacte est publiée avec le code",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "validation/domaine/normalisation.ts:EQUIVALENCES",
         "validation/domaine/normalisation.ts:VERSION_NORMALISATION"
       ],
-      "tests": [],
+      "tests": [
+        "tests/normalisation-table.test.ts « la table de normalisation-v1 est exactement celle-ci »"
+      ],
       "lot": null,
       "constat": 4,
-      "note": "La table vit dans le code publié ; aucun test ne fige son contenu ni ne lie un changement de table à un changement de VERSION_NORMALISATION."
+      "note": "Corrigé dans #56 : la table est figée sur tout le plan de base et liée à VERSION_NORMALISATION."
     },
     {
       "id": "§4.83",
@@ -3117,15 +3123,19 @@
       "section": "5",
       "citation": "Une question sur le changement de position suit la même règle : sa prémisse suppose une position actuelle, que le relecteur note.",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "pipeline/questions/reponse-attendue.ts:premisseFausseAuGel",
         "pipeline/questions/reponse-attendue.ts:verdictDePremisse"
       ],
-      "tests": [],
+      "tests": [
+        "tests/questions/premisse-au-gel.test.ts « prémisse affirmant l'ancienne position : vraie avant le changement, fausse après »",
+        "tests/questions/premisse-au-gel.test.ts « refuse, en nommant la question, une Q-ACT sans position affirmée »",
+        "tests/questions/premisse-au-gel.test.ts « la valeur résolue entre au tirage : la Q-ACT compte au dénominateur après le changement »"
+      ],
       "lot": null,
       "constat": 7,
-      "note": "La règle ne branche pas sur le gabarit, mais aucun test ne pose une Q-ACT : un code qui l'exempterait ne ferait tomber aucun test."
+      "note": "Corrigé dans #56 : une Q-ACT sur un item O est résolue comme toute formulation orientée ; l'exempter ferait tomber cinq tests."
     },
     {
       "id": "§5.37",
@@ -5216,15 +5226,17 @@
       "section": "8",
       "citation": "à 10⁻¹² près",
       "nature": "code",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "analysis/permutation.ts:TOLERANCE",
         "analysis/permutation.ts:valeurPDe"
       ],
-      "tests": [],
+      "tests": [
+        "tests/analysis/permutation.test.ts « compte comme au moins aussi extrême une permutation dont la statistique ne diffère de l'observée que d'un arrondi flottant »"
+      ],
       "lot": null,
       "constat": 14,
-      "note": "Aucun test ne fait tomber une statistique permutée à un arrondi flottant près de l'observée ; le test de rejeu recopie la tolérance au lieu de l'éprouver."
+      "note": "Corrigé dans #56 : jeu 3/7 dont un écart égal à l'observé en rationnels est calculé un arrondi plus bas ; sans la tolérance, la valeur p n'est plus 1."
     },
     {
       "id": "§8.57",
@@ -5821,15 +5833,18 @@
       "section": "10",
       "citation": "Le contestataire reçoit sa réponse depuis la boîte dédiée : son adresse n'entre dans aucun fichier du projet.",
       "nature": "processus",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "outils/contester.ts",
         "schema/item.schema.json:contestations.items.additionalProperties"
       ],
-      "tests": [],
+      "tests": [
+        "schema/exemples/item/invalide-25-contestation-avec-adresse.json",
+        "tests/item-annexe-a-contestataire.test.ts « une contestation qui porte l'adresse du contestataire est refusée »"
+      ],
       "lot": null,
       "constat": 31,
-      "note": "pnpm contester n'a aucun paramètre d'adresse et le schéma de contestation n'a aucun champ pour elle ; aucun exemple invalide ni test ne le garde."
+      "note": "Corrigé dans #56 : un exemple invalide garde que le schéma refuse une adresse de contestataire."
     },
     {
       "id": "§10.18",
@@ -6242,31 +6257,37 @@
       "section": "A",
       "citation": "le thème appartient à la mesure",
       "nature": "donnee",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "schema/mesure.schema.json:theme",
         "schema/item.schema.json:additionalProperties false"
       ],
-      "tests": [],
+      "tests": [
+        "schema/exemples/item/invalide-22-item-portant-son-theme.json",
+        "tests/item-annexe-a-contestataire.test.ts « A.04 : un item qui porte son thème est refusé, le thème appartient à la mesure »"
+      ],
       "lot": null,
       "constat": 33,
-      "note": "Aucun exemple invalide d'item portant un champ theme."
+      "note": "Corrigé dans #56 : exemple invalide d'item portant un champ theme."
     },
     {
       "id": "A.05",
       "section": "A",
       "citation": "le candidat et la mesure sont des références",
       "nature": "donnee",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "schema/item.schema.json:mesure_id",
         "schema/item.schema.json:mesure_version",
         "schema/item.schema.json:candidat_id"
       ],
-      "tests": [],
+      "tests": [
+        "schema/exemples/item/invalide-23-sans-mesure-version.json",
+        "tests/item-annexe-a-contestataire.test.ts « A.05 : un item sans mesure_version est refusé »"
+      ],
       "lot": null,
       "constat": 33,
-      "note": "Aucun exemple invalide d'item sans mesure_version ou à mesure_id lisible."
+      "note": "Corrigé dans #56 : exemple invalide d'item sans mesure_version. Le mesure_id lisible reste gardé par le motif ulid de commun."
     },
     {
       "id": "A.06",
@@ -6305,14 +6326,17 @@
       "section": "A",
       "citation": "\"quantification\": {",
       "nature": "donnee",
-      "statut": "sans-test",
+      "statut": "testee",
       "code": [
         "schema/commun.schema.json:$defs.quantification"
       ],
-      "tests": [],
+      "tests": [
+        "schema/exemples/item/invalide-24-quantification-hors-dimensions.json",
+        "tests/item-annexe-a-contestataire.test.ts « A.08 : une quantification hors de dimensions[] est refusée »"
+      ],
       "lot": null,
       "constat": 33,
-      "note": "Forme en dimensions[] typées, avec opérateur ; aucun exemple invalide."
+      "note": "Corrigé dans #56 : exemple invalide d'une quantification à plat, hors de dimensions[]."
     },
     {
       "id": "A.09",
