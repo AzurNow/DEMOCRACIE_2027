@@ -17,6 +17,7 @@ const GEL = "2026-11-20T10:00:00Z";
 const CANDIDAT = "demo-alpha";
 const AUTRE = "demo-beta";
 const MESURE = mesure({ cle: "couverture", theme: "sante" });
+const REFERENTIEL = new Map([[MESURE.id, MESURE]]);
 const AVANT_GEL = "2026-10-01T10:00:00+02:00";
 
 function p(cle: string, options: Partial<Parameters<typeof itemP>[0]> = {}): Item {
@@ -29,94 +30,94 @@ function nItems(n: number, prefixe: string): readonly Item[] {
 
 describe("itemPCompteAuGel : un item, les cas limites du brief", () => {
   it("compte un item P vérifié, en vigueur, non contesté", () => {
-    expect(itemPCompteAuGel(p("nominal"), CANDIDAT, GEL)).toBe(true);
+    expect(itemPCompteAuGel(p("nominal"), CANDIDAT, GEL, REFERENTIEL)).toBe(true);
   });
 
   it("ne compte pas un item P contesté en attente de décision", () => {
-    expect(itemPCompteAuGel(p("conteste", { statut_contestation: "contestee" }), CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(p("conteste", { statut_contestation: "contestee" }), CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("compte un item P arbitré par un maintien", () => {
     const item = arbitre(p("maintien"), [contestation("cv-maintien", "maintien", AVANT_GEL)]);
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(true);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(true);
   });
 
   it("compte un item P arbitré par une correction", () => {
     const item = arbitre(p("correction"), [contestation("cv-correction", "correction", AVANT_GEL)]);
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(true);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(true);
   });
 
   it("ne compte pas un item P retiré par le panel", () => {
     const item = arbitre(p("retrait", { statut_validation: "retire_par_panel" }), [
       contestation("cv-retrait", "retrait", AVANT_GEL),
     ]);
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("compte de nouveau un item P maintenu après un retrait du panel", () => {
     const retire = decidePar(p("retrait-maintien"), [{ cle: "cv-rm-1", decision: "retrait", date: AVANT_GEL }]);
-    expect(itemPCompteAuGel(retire, CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(retire, CANDIDAT, GEL, REFERENTIEL)).toBe(false);
     const maintenu = decidePar(retire, [{ cle: "cv-rm-2", decision: "maintien", date: "2026-10-15T10:00:00+02:00" }]);
     expect(maintenu.statut_validation).toBe("verifie");
-    expect(itemPCompteAuGel(maintenu, CANDIDAT, GEL)).toBe(true);
+    expect(itemPCompteAuGel(maintenu, CANDIDAT, GEL, REFERENTIEL)).toBe(true);
   });
 
   it("ne compte pas un item P dont la décision de retrait laisse le statut vérifié (la décision fait foi)", () => {
     const item = arbitre(p("retrait-verifie"), [contestation("cv-retrait-v", "retrait", AVANT_GEL)]);
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("ne compte pas un item P dont valide_au tombe exactement sur l'instant de gel (semi-ouvert)", () => {
     const gelMinuit = "2026-11-20T00:00:00Z";
     const item = p("valide-au-gel", { valide_du: "2026-09-01", valide_au: "2026-11-20" });
-    expect(itemPCompteAuGel(item, CANDIDAT, gelMinuit)).toBe(false);
+    expect(itemPCompteAuGel(item, CANDIDAT, gelMinuit, REFERENTIEL)).toBe(false);
   });
 
   it("ne compte pas un item P dont valide_au est le jour du gel, gel à 10 h UTC", () => {
     const item = p("valide-au-jour-gel", { valide_du: "2026-09-01", valide_au: "2026-11-20" });
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("compte un item P dont valide_du tombe exactement sur l'instant de gel", () => {
     const gelMinuit = "2026-11-20T00:00:00Z";
     const item = p("valide-du-gel", { valide_du: "2026-11-20" });
-    expect(itemPCompteAuGel(item, CANDIDAT, gelMinuit)).toBe(true);
+    expect(itemPCompteAuGel(item, CANDIDAT, gelMinuit, REFERENTIEL)).toBe(true);
   });
 
   it("ne compte pas un item P dont valide_du est le lendemain du gel", () => {
     const item = p("valide-du-lendemain", { valide_du: "2026-11-21" });
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("ne compte pas un item P non vérifié", () => {
-    expect(itemPCompteAuGel(p("en-attente", { statut_validation: "en_attente" }), CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(p("en-attente", { statut_validation: "en_attente" }), CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("ne compte ni un item O, ni un item A, ni un item F, même vérifiés et en vigueur", () => {
     const options = { candidat_id: CANDIDAT, mesure: MESURE };
-    expect(itemPCompteAuGel(itemO({ cle: "cv-o", ...options }), CANDIDAT, GEL)).toBe(false);
-    expect(itemPCompteAuGel(itemA({ cle: "cv-a", ...options }), CANDIDAT, GEL)).toBe(false);
-    expect(itemPCompteAuGel(itemF({ cle: "cv-f", ...options }), CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(itemO({ cle: "cv-o", ...options }), CANDIDAT, GEL, REFERENTIEL)).toBe(false);
+    expect(itemPCompteAuGel(itemA({ cle: "cv-a", ...options }), CANDIDAT, GEL, REFERENTIEL)).toBe(false);
+    expect(itemPCompteAuGel(itemF({ cle: "cv-f", ...options }), CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("ne compte pas l'item P d'un autre candidat", () => {
     const item = itemP({ cle: "cv-autre", candidat_id: AUTRE, mesure: MESURE });
-    expect(itemPCompteAuGel(item, CANDIDAT, GEL)).toBe(false);
+    expect(itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toBe(false);
   });
 
   it("refuse, comme le tirage, une dernière décision du panel datée après le gel", () => {
     const item = arbitre(p("apres-gel"), [contestation("cv-apres", "maintien", "2026-11-21T10:00:00+01:00")]);
-    expect(() => itemPCompteAuGel(item, CANDIDAT, GEL)).toThrow(DecisionPanelPosterieureAuGel);
+    expect(() => itemPCompteAuGel(item, CANDIDAT, GEL, REFERENTIEL)).toThrow(DecisionPanelPosterieureAuGel);
   });
 });
 
 describe("itemsPComptesAuGel : le total d'un candidat", () => {
   it("compte exactement 9 items", () => {
-    expect(itemsPComptesAuGel(nItems(9, "neuf"), CANDIDAT, GEL)).toBe(9);
+    expect(itemsPComptesAuGel(nItems(9, "neuf"), CANDIDAT, GEL, [MESURE])).toBe(9);
   });
 
   it("compte exactement 10 items", () => {
-    expect(itemsPComptesAuGel(nItems(10, "dix"), CANDIDAT, GEL)).toBe(10);
+    expect(itemsPComptesAuGel(nItems(10, "dix"), CANDIDAT, GEL, [MESURE])).toBe(10);
   });
 
   it("n'ajoute au total ni les items exclus ni ceux des autres candidats", () => {
@@ -131,15 +132,21 @@ describe("itemsPComptesAuGel : le total d'un candidat", () => {
       itemP({ cle: "m-autre", candidat_id: AUTRE, mesure: MESURE }),
       arbitre(p("m-maintien"), [contestation("m-maintien", "maintien", AVANT_GEL)]),
     ];
-    expect(itemsPComptesAuGel(items, CANDIDAT, GEL)).toBe(11);
+    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE])).toBe(11);
+  });
+
+  it("n'ajoute pas au total un item P qui épingle une version dépassée de sa mesure (conformité n° 2)", () => {
+    const courante = { ...MESURE, version: 2 };
+    const items = [...nItems(9, "version"), itemP({ cle: "version-a-jour", candidat_id: CANDIDAT, mesure: courante })];
+    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [courante])).toBe(1);
   });
 
   it("rend 0 pour un candidat sans item, jamais une absence", () => {
-    expect(itemsPComptesAuGel([], CANDIDAT, GEL)).toBe(0);
+    expect(itemsPComptesAuGel([], CANDIDAT, GEL, [MESURE])).toBe(0);
   });
 
   it("signale un arbitrage illisible d'un item du candidat au lieu de l'ignorer", () => {
     const illisible = { ...p("illisible"), statut_contestation: "arbitree" as const, contestations: [{}] };
-    expect(() => itemsPComptesAuGel([illisible], CANDIDAT, GEL)).toThrow();
+    expect(() => itemsPComptesAuGel([illisible], CANDIDAT, GEL, [MESURE])).toThrow();
   });
 });

@@ -259,7 +259,7 @@ describe("cas 4 : Q-ATT non tirable quand un candidat est « conditionnel » ou 
       // Protocole 0.9 (§5, constat n° 39) : une seule Q-ATT par mesure ; il y en avait deux, une
       // par item P de la mesure.
       expect(bloquees).toHaveLength(1);
-      const tirables = questionsTirables(questions, items, RUN).map((question) => question.id);
+      const tirables = questionsTirables(questions, items, [MESURE, autreMesure], RUN).map((question) => question.id);
       expect(tirables).toEqual([admise?.id]);
     });
 

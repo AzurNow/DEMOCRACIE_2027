@@ -46,6 +46,33 @@ Mis à jour le 2026-09-28. Sources relues : `docs/feuille-de-route.json`, `docs/
      déclaré non évaluable lui rend le statut qu'il avait avant cette décision ». *Codé (PR du
      n° 1).*
 
+  Décisions du 2026-09-29 (conformité 2026-09-29, n° 2 et 3), selon la recommandation :
+  5. §4 (n° 2) : texte à écrire à la suite de « Correction de thème » : « Un item déjà publié ne
+     retourne pas en attente : un item publié ne change que par la contestation et le panel.
+     L'auteur le conteste dès que la correction est acceptée ; contesté, il n'engendre aucune
+     question jusqu'à la décision du panel, qui le juge sur la nouvelle version de la mesure. »
+     Garde-fou retenu en plus : le tirage refuse un item vérifié dont `mesure_version` n'est pas la
+     version courante de sa mesure, et le compte dans les exclusions. *À coder.*
+  6. §5 (n° 3) : texte à insérer après la phrase sur la position conditionnelle ou sans objet :
+     « Pour la même raison, une question d'attribution n'est pas tirée lorsque l'item d'un candidat
+     interrogé au run sur la mesure est contesté à la date du gel : sa position fait l'objet d'une
+     contestation, et la liste attendue n'est pas établie. La question est exclue et comptée à part
+     dans le rapport du run, comme une question dont la réponse attendue n'est pas définie. Un item
+     en attente de validation, retiré ou déclaré non évaluable n'appartient pas à la vérité de
+     référence : il n'entre pas dans la liste et ne la rend pas indéfinie. » (Branche « arbitré sans
+     réintégration » écartée le même jour : un retrait bloquerait la question pour toujours.)
+     *À coder.*
+
+  Décisions du 2026-09-29, suite du lot #54, selon la recommandation :
+  7. §5 : une mesure dont le seul porteur a son item contesté n'a pas de question d'attribution au
+     gel : elle n'est ni tirée ni comptée (application de « contesté, il n'engendre aucune
+     question »). Phrase à écrire en 0.14. *Codé (#54).*
+  8. §5 : le rapport du run publie, par candidat interrogé, les items P vérifiés mais contestés au
+     gel, donc absents du tirage (compte par item, pas par question). Texte proposé : « Le rapport
+     du run publie, pour chaque candidat interrogé, les items P vérifiés que leur contestation tient
+     hors du tirage à la date du gel. » Précision du même jour : y figure tout item P vérifié,
+     contesté et en vigueur au gel, quelle que soit la version de sa mesure. *Codé (#54).*
+
   Le constat n° 81 est déjà réglé par le §8 depuis la 0.8 (les questions d'attribution sortent
   du test et de l'exactitude par candidat) : rien à faire.
 - [ ] **Signer le protocole.** L'en-tête porte encore « @Someone » (ligne 5).
