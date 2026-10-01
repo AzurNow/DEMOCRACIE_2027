@@ -13,6 +13,54 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-01 — Rattrapage de #54, tests manquants, barrière de symétrie (PR #55, #56, #57 : `pipeline/questions/symetrie.ts`, `pipeline/questions/completude.ts`, `outils/symmetry.ts`, `outils/items-au-gel.ts`, `schema/tirage.schema.json`, `tests/`)
+
+### 1. Aucune condition de symétrie ne voit une strate remplie au-delà du quota — *haute*
+
+Depuis #57, `repartition_themes` lit le retard sur les totaux **propres** par thème, puis juge les
+strates du thème en retard (décision de l'auteur du 2026-10-01). Un candidat qui reçoit deux
+questions dans une strate et zéro dans une autre du même thème, sans compensation déclarée, a le
+même total propre que les autres : rien n'est jugé. Le test `repartition-themes.test.ts « sans
+compensation déclarée, les totaux propres sont égaux »` fige ce comportement.
+
+**Pourquoi ça casse.** Une régression de `tirage.ts`, ou un tirage retouché à la main, qui déplace
+une question d'une strate à l'autre au sein d'un thème garde des totaux égaux par thème, par gabarit
+à une question près et par candidat. La barrière sort verte, et la répartition thème × gabarit
+publiée diffère entre candidats sans que rien ne l'ait signalé.
+
+**Ce qu'il faut faire.** Une condition ou un invariant « aucune strate candidat × thème × gabarit
+au-delà de `tirage.parametres.questions_par_strate`, compensations comprises dans leur strate
+d'origine ». C'est le quota que le §5 écrit déjà, mais une condition de plus dans `CODES_CONDITION` et `run.schema.json`
+se décide avec l'auteur.
+
+### 2. La règle du déficit d'une strate vit à deux endroits — *moyenne*
+
+`symetrie.ts:excesDeCompensation` recalcule le déficit d'une strate, `min(quota, max des tirables
+des comparés) − min(quota, ses tirables)`, sans lire `tirage.ts:ciblesDesCompares` et `planifier`.
+C'est voulu : la barrière doit attraper un tirage fautif d'où qu'il vienne.
+
+**Pourquoi ça casse.** Un amendement du §5 qui change la cible d'une strate, appliqué dans
+`tirage.ts` seul, fait rougir chaque tirage réel qui compense. C'est visible, mais un jour de gel.
+
+**Ce qu'il faut faire.** Tout changement de la règle de compensation touche les deux fonctions, et
+le test « les compensations du tirage réel répondent toutes à un déficit » le rappelle. Le citer
+dans l'amendement.
+
+### 3. `pnpm symmetry` exige `versions.donnees_commit` dès le gel, le schéma du run seulement à la publication — *moyenne*
+
+Depuis #57, `outils/items-au-gel.ts` recoupe `--items` avec le commit `run.versions.donnees_commit`,
+et refuse un run qui ne le porte pas. `schema/run.schema.json` ne l'exige que des statuts publiés.
+La commande lit aussi l'historique Git local jusqu'à ce commit.
+
+**Pourquoi ça casse.** Un run planifié, conforme à son schéma, est refusé par la barrière le jour du
+gel. Un clone superficiel qui ne remonte pas au commit du gel est refusé de même (« commit
+introuvable »). Les deux sont visibles, mais ils bloquent le départ d'un run.
+
+**Ce qu'il faut faire.** Exiger `donnees_commit` dans le schéma pour tout run qui a un tirage, avec
+un exemple invalide. Le futur `pnpm run:live` doit lancer la barrière depuis un clone complet.
+
+---
+
 ## 2026-09-28 — Protocole 0.12 et 0.13, intervalles de l'asymétrie, symétrie et run 0.13, items et sources 0.13 (PR #44 à #50 : `docs/PROTOCOLE.md`, `analysis/`, `pipeline/questions/`, `outils/symmetry.ts`, `schema/`, `pipeline/collecte/source.py`, `validation/`, `outils/mesures.ts`, `outils/lots.ts`, `outils/promote.ts`)
 
 ### 1. Un item renvoyé redevient jugé par son ancien lot si le libellé de son entrée d'historique change — *haute*
@@ -32,7 +80,7 @@ La répartition par thème du tirage part de ces items, et aucun test ne tombe.
 littérale, ou un champ typé dans l'entrée d'historique (`renvoi_depuis_version`) au lieu d'un
 préfixe de texte, avec une migration si des items renvoyés existent déjà.
 
-### 2. `pnpm symmetry` ne vérifie pas que les items reçus sont ceux du gel — *haute*
+### ~~2. `pnpm symmetry` ne vérifie pas que les items reçus sont ceux du gel~~ — réglé le 2026-10-01 par #57 (`outils/items-au-gel.ts` : `--items` recoupé avec le commit `versions.donnees_commit` du run)
 
 Depuis #49, la barrière refuse un jeu de questions incomplet, mais la référence « questions
 engendrées » est recalculée sur les items que l'appelant lui passe. Rien ne compare ces items au
