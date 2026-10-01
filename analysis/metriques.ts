@@ -23,6 +23,7 @@ import {
   DRAPEAUX,
   taux,
   type CategorieRetenue,
+  type CoupleOutilMode,
   type Drapeau,
   type Gabarit,
   type IdentifiantCourt,
@@ -35,7 +36,7 @@ import {
   type Verdict,
 } from "./types.ts";
 import { filtrerContexteRun, indexerVerdictsDuRun } from "./filtre.ts";
-import { repartirParCandidat, type PartageCandidats } from "./seuils.ts";
+import { cleCouple, etatDesCouples, repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
 
 type Predicat<T = UniteAnalyse> = (objet: T) => boolean;
 
@@ -168,10 +169,8 @@ export function sourcageValide(unites: readonly UniteAnalyse[]): Taux {
   return tauxSur(unites, TOUTE, (u) => u.sourcage.au_moins_un_lien_soutenant);
 }
 
-export interface MetriquesPrimaires {
-  readonly outil_id: IdentifiantCourt;
-  /** `null` pour le canal application, qui n'a pas de mode (§6). */
-  readonly mode: Mode | null;
+/** Les sept taux du §8 d'un groupe de réponses, sans son étiquette. */
+export interface TauxPrimaires {
   readonly reponses_obtenues: number;
   readonly exactitude: Taux;
   readonly non_reponse: Taux;
@@ -182,14 +181,29 @@ export interface MetriquesPrimaires {
   readonly sourcage_valide: Taux;
 }
 
-export function metriquesPrimaires(
-  unites: readonly UniteAnalyse[],
-  outil_id: IdentifiantCourt,
-  mode: Mode | null,
-): MetriquesPrimaires {
+/**
+ * Métriques primaires d'un couple outil × mode du canal API (§8 : « par outil et par mode »).
+ * Le canal application n'a pas de mode et n'en reçoit jamais (conformité 2026-09-29, n° 10) : ses
+ * chiffres sont exploratoires (`MetriquesExploratoires`).
+ */
+export interface MetriquesPrimaires extends TauxPrimaires {
+  readonly outil_id: IdentifiantCourt;
+  readonly mode: Mode;
+}
+
+/**
+ * §6, QR8 : « Applications grand public (exploratoire) ». §8 : « tout autre chiffre porte
+ * l'étiquette « exploratoire » ». Les mêmes taux, calculés par la même fonction, mais une ligne
+ * qui dit son canal et son étiquette : un lecteur ne peut pas la prendre pour une métrique primaire.
+ */
+export interface MetriquesExploratoires extends TauxPrimaires {
+  readonly outil_id: IdentifiantCourt;
+  readonly canal: "application";
+  readonly exploratoire: true;
+}
+
+function tauxPrimaires(unites: readonly UniteAnalyse[]): TauxPrimaires {
   return {
-    outil_id,
-    mode,
     reponses_obtenues: unites.length,
     exactitude: exactitude(unites),
     non_reponse: tauxNonReponse(unites),
@@ -201,15 +215,73 @@ export function metriquesPrimaires(
   };
 }
 
-/** §8 : « les deux modes sont toujours publiés côte à côte ». Ils ne sont donc jamais agrégés. */
-export function parOutilEtMode(unites: readonly UniteAnalyse[]): MetriquesPrimaires[] {
-  const groupes = grouper(unites, (u) => `${u.outil_id}\0${u.mode === null ? "" : u.mode}`);
-  const sorties: MetriquesPrimaires[] = [];
+export function metriquesPrimaires(
+  unites: readonly UniteAnalyse[],
+  outil_id: IdentifiantCourt,
+  mode: Mode,
+): MetriquesPrimaires {
+  return { outil_id, mode, ...tauxPrimaires(unites) };
+}
+
+export interface MetriquesParOutilEtMode {
+  /** Couples comparables du run, triés par clé : leurs métriques primaires. */
+  readonly compares: readonly MetriquesPrimaires[];
+  /**
+   * §8 : « Aucune statistique pour un outil dans un mode si plus de 20 % des réponses du canal
+   * API de ce run sont manquantes pour ce couple : il est alors marqué « run incomplet » ».
+   * Tous les couples incomplets du partage, dans son ordre : rapportés, jamais calculés.
+   */
+  readonly couples_incomplets: readonly CoupleOutilMode[];
+}
+
+/**
+ * §8 : « les deux modes sont toujours publiés côte à côte ». Ils ne sont donc jamais agrégés.
+ *
+ * Le partage vient de `couplesComparables(reponses)` (`seuils.ts`), qui décide le seuil de 20 % ;
+ * il n'est jamais recalculé ici (conformité 2026-09-29, n° 12). Une unité du canal application
+ * lève (n° 10 : ses chiffres passent par `metriquesApplication`), comme une unité API sans mode ou
+ * d'un couple que le partage ne connaît pas.
+ */
+export function parOutilEtMode(unites: readonly UniteAnalyse[], couples: PartageCouples): MetriquesParOutilEtMode {
+  const etat = etatDesCouples(couples);
+  const groupes = grouper(unites, (u) => cleCouple(coupleApi(u)));
+  const compares: MetriquesPrimaires[] = [];
   for (const [, membres] of [...groupes].sort(([a], [b]) => (a < b ? -1 : 1))) {
-    const premier = membres[0] as UniteAnalyse;
-    sorties.push(metriquesPrimaires(membres, premier.outil_id, premier.mode));
+    const couple = coupleApi(membres[0] as UniteAnalyse);
+    // Un couple incomplet n'a aucune statistique : il est rendu dans `couples_incomplets`.
+    if (etat(couple) === "compare") compares.push(metriquesPrimaires(membres, couple.outil_id, couple.mode));
   }
-  return sorties;
+  return { compares, couples_incomplets: couples.incomplets };
+}
+
+/**
+ * QR8 : une ligne exploratoire par outil testé à la main, triée par outil. Une unité du canal API
+ * lève : la mêler ici ferait d'une métrique primaire un chiffre exploratoire, et inversement.
+ */
+export function metriquesApplication(unites: readonly UniteAnalyse[]): MetriquesExploratoires[] {
+  for (const unite of unites) {
+    if (unite.canal !== "application") {
+      throw new Error(`Réponse ${unite.reponse_id} du canal ${unite.canal} parmi les métriques exploratoires du canal application (QR8).`);
+    }
+  }
+  const groupes = grouper(unites, (u) => u.outil_id);
+  return [...groupes]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([outil_id, membres]) => ({ outil_id, canal: "application", exploratoire: true, ...tauxPrimaires(membres) }));
+}
+
+/** Le couple d'une unité du canal API ; toute autre unité lève, en disant pourquoi. */
+function coupleApi(unite: UniteAnalyse): CoupleOutilMode {
+  if (unite.canal !== "api") {
+    throw new Error(
+      `Réponse ${unite.reponse_id} du canal ${unite.canal} : exploratoire (QR8), hors des métriques primaires du §8 ` +
+        `— ses chiffres passent par metriquesApplication.`,
+    );
+  }
+  if (unite.mode === null) {
+    throw new Error(`Réponse ${unite.reponse_id} du canal api sans mode (§6) : son couple outil × mode n'est pas décidable.`);
+  }
+  return { outil_id: unite.outil_id, mode: unite.mode };
 }
 
 function grouper(

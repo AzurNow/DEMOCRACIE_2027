@@ -11,10 +11,32 @@
 import { describe, expect, it } from "vitest";
 import { differenceAppariee, reechantillonnerDifference } from "../../analysis/bootstrap.ts";
 import { questionsCommunes, tendanceParOutilEtMode } from "../../analysis/tendance.ts";
+import type { UniteAnalyse } from "../../analysis/filtre.ts";
+import type { PartageCouples } from "../../analysis/seuils.ts";
+import type { Question } from "../../analysis/types.ts";
 import { exactitude } from "../../analysis/metriques.ts";
-import { empreinte, idQuestion, question, ulid, unite } from "./fabriques.ts";
+import { empreinte, idQuestion, question, tousCompares, ulid, unite } from "./fabriques.ts";
 
 const OPTIONS = { reechantillonnages: 100, graine_du_run: 20261201, cle: ["test", "tendance"] };
+
+interface Jeu {
+  readonly questions: readonly Question[];
+  readonly unites: readonly UniteAnalyse[];
+}
+
+/**
+ * Les lignes de la tendance quand le seuil de 20 % n'est pas le sujet : chaque couple présent dans
+ * un run y est comparable (`tousCompares`). Les couples incomplets ont leurs propres tests.
+ */
+function tendance(premier: Jeu, dernier: Jeu, ...reste: [typeof exactitude, typeof OPTIONS]) {
+  const resultat = tendanceParOutilEtMode(
+    { ...premier, couples: tousCompares(premier.unites) },
+    { ...dernier, couples: tousCompares(dernier.unites) },
+    ...reste,
+  );
+  expect(resultat.couples_exclus).toEqual([]);
+  return resultat.par_outil_et_mode;
+}
 
 function questionAvecTexte(cle: string, texte: string) {
   return question({
@@ -71,19 +93,19 @@ describe("tendance par outil", () => {
       unites: [reponseA("q1", false), reponseA("q2", false), reponseA("q3", false)],
     };
 
-    const [tendance] = tendanceParOutilEtMode(premier, dernier, exactitude, OPTIONS);
+    const [ligne] = tendance(premier, dernier, exactitude, OPTIONS);
 
-    expect(tendance?.outil_id).toBe("outil-alpha");
-    expect(tendance?.questions_communes).toBe(1);
-    expect(tendance?.difference.taux_a).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
-    expect(tendance?.difference.taux_b).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
-    expect(tendance?.difference.difference).toBe(-1);
+    expect(ligne?.outil_id).toBe("outil-alpha");
+    expect(ligne?.questions_communes).toBe(1);
+    expect(ligne?.difference.taux_a).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+    expect(ligne?.difference.taux_b).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+    expect(ligne?.difference.difference).toBe(-1);
     // Une seule question commune, donc une seule grappe. Jusqu'à la 0.8, ce test figeait ici
     // « etablie » (constat n° 44). §8 (0.9) : « Un intervalle calculé sur une seule grappe est
     // dégénéré : la différence correspondante n'est qualifiée ni d'« établie » ni de « non
     // établie », elle est publiée avec la mention « une seule grappe ». »
-    expect(tendance?.difference.intervalle?.degenere).toBe("grappe_unique");
-    expect(tendance?.difference.qualificatif).toBeNull();
+    expect(ligne?.difference.intervalle?.degenere).toBe("grappe_unique");
+    expect(ligne?.difference.qualificatif).toBeNull();
   });
 
   it("ne qualifie rien pour un outil absent de l'un des deux runs", () => {
@@ -94,7 +116,7 @@ describe("tendance par outil", () => {
       unites: [{ ...reponseA("q1", false), outil_id: "outil-beta" }],
     };
 
-    const tendances = tendanceParOutilEtMode(premier, dernier, exactitude, OPTIONS);
+    const tendances = tendance(premier, dernier, exactitude, OPTIONS);
 
     expect(tendances.map((t) => t.outil_id).sort()).toEqual(["outil-alpha", "outil-beta"]);
     for (const tendance of tendances) {
@@ -125,7 +147,7 @@ describe("tendance par outil et par mode, sur le seul canal API (constat n° 46)
       unites: [...enMode("web_desactivee", [false, false, false]), ...enMode("web_activee", [true, true, true])],
     };
 
-    const tendances = tendanceParOutilEtMode(premier, dernier, exactitude, OPTIONS);
+    const tendances = tendance(premier, dernier, exactitude, OPTIONS);
     const parMode = new Map(tendances.map((t) => [t.mode, t]));
 
     expect(tendances).toHaveLength(2);
@@ -148,8 +170,8 @@ describe("tendance par outil et par mode, sur le seul canal API (constat n° 46)
     }));
     const autreOutilApplication = application.map((u) => ({ ...u, outil_id: "outil-gamma" }));
 
-    const sans = tendanceParOutilEtMode(premier, dernier, exactitude, OPTIONS);
-    const avec = tendanceParOutilEtMode(
+    const sans = tendance(premier, dernier, exactitude, OPTIONS);
+    const avec = tendance(
       { questions, unites: [...premier.unites, ...application] },
       { questions, unites: [...dernier.unites, ...application, ...autreOutilApplication] },
       exactitude,
@@ -169,7 +191,7 @@ describe("tendance par outil et par mode, sur le seul canal API (constat n° 46)
       unites: [...enMode("web_desactivee", [true, true, true]), ...enMode("web_activee", [false, false, false])],
     };
 
-    const tendances = tendanceParOutilEtMode(premier, dernier, exactitude, OPTIONS);
+    const tendances = tendance(premier, dernier, exactitude, OPTIONS);
     const seule = tendances.find((t) => t.mode === "web_activee");
 
     expect(tendances).toHaveLength(2);
@@ -185,7 +207,7 @@ describe("tendance par outil et par mode, sur le seul canal API (constat n° 46)
     const premier = { questions, unites: [{ ...reponseA("q1", true), mode: null }] };
     const dernier = { questions, unites: enMode("web_desactivee", [true, true, true]) };
 
-    expect(() => tendanceParOutilEtMode(premier, dernier, exactitude, OPTIONS)).toThrow(/canal api sans mode/);
+    expect(() => tendance(premier, dernier, exactitude, OPTIONS)).toThrow(/canal api sans mode/);
   });
 });
 
@@ -197,10 +219,10 @@ describe("graine de chaque tendance (constats n° 6 et 46)", () => {
     const apres = cles.map((c, i) => reponseA(c, i % 3 === 0));
     const cleAttendue = [...OPTIONS.cle, "outil-alpha", "web_desactivee"];
 
-    const [tendance] = tendanceParOutilEtMode({ questions, unites: avant }, { questions, unites: apres }, exactitude, OPTIONS);
+    const [ligne] = tendance({ questions, unites: avant }, { questions, unites: apres }, exactitude, OPTIONS);
     const attendue = differenceAppariee(apres, avant, exactitude, { ...OPTIONS, cle: cleAttendue });
 
-    expect(tendance?.difference).toEqual(attendue);
+    expect(ligne?.difference).toEqual(attendue);
     // L'outil fait partie de la clé : le flux diffère de celui de la seule clé de l'appelant.
     expect(reechantillonnerDifference(apres, avant, exactitude, { ...OPTIONS, cle: cleAttendue }).valeurs).not.toEqual(
       reechantillonnerDifference(apres, avant, exactitude, OPTIONS).valeurs,
@@ -216,7 +238,7 @@ describe("graine de chaque tendance (constats n° 6 et 46)", () => {
     const dans = (mode: "web_activee" | "web_desactivee", unites: typeof avant) =>
       unites.map((u) => ({ ...u, mode }));
 
-    const tendances = tendanceParOutilEtMode(
+    const tendances = tendance(
       { questions, unites: [...dans("web_desactivee", avant), ...dans("web_activee", avant)] },
       { questions, unites: [...dans("web_desactivee", apres), ...dans("web_activee", apres)] },
       exactitude,
@@ -232,5 +254,66 @@ describe("graine de chaque tendance (constats n° 6 et 46)", () => {
       }),
     );
     expect(parMode.get("web_activee")?.intervalle).not.toEqual(parMode.get("web_desactivee")?.intervalle);
+  });
+});
+
+describe("couple marqué run incomplet à l'un des deux runs (conformité 2026-09-29, n° 12)", () => {
+  // §8 : un couple au-delà de 20 % de manquantes est « exclu des comparaisons de ce run ». Le
+  // protocole ne dit pas lequel des deux runs compte pour la tendance : un couple incomplet à l'un
+  // ou à l'autre sort, et les deux drapeaux disent où (recommandation de la conformité, à écrire).
+  const cles = ["q1", "q2", "q3"];
+  const questions = cles.map((c) => questionAvecTexte(c, "v1"));
+  const ACTIVEE = { outil_id: "outil-alpha", mode: "web_activee" } as const;
+  const DESACTIVEE = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
+  const dans = (mode: "web_activee" | "web_desactivee", exacte: boolean) =>
+    cles.map((c) => ({ ...reponseA(c, exacte), mode }));
+  const unitesPremier = [...dans("web_activee", true), ...dans("web_desactivee", true)];
+  const unitesDernier = [...dans("web_activee", false), ...dans("web_desactivee", false)];
+
+  const cas: readonly (readonly [string, PartageCouples, PartageCouples, boolean, boolean])[] = [
+    ["au dernier run", { compares: [ACTIVEE, DESACTIVEE], incomplets: [] }, { compares: [DESACTIVEE], incomplets: [ACTIVEE] }, false, true],
+    ["au premier run", { compares: [DESACTIVEE], incomplets: [ACTIVEE] }, { compares: [ACTIVEE, DESACTIVEE], incomplets: [] }, true, false],
+  ];
+  for (const [quand, avant, apres, auPremier, auDernier] of cas) {
+    it(`sort de la tendance un couple incomplet ${quand}, l'autre mode restant comparé`, () => {
+      const resultat = tendanceParOutilEtMode(
+        { questions, unites: unitesPremier, couples: avant },
+        { questions, unites: unitesDernier, couples: apres },
+        exactitude,
+        OPTIONS,
+      );
+
+      expect(resultat.par_outil_et_mode.map((l) => l.mode)).toEqual(["web_desactivee"]);
+      expect(resultat.par_outil_et_mode[0]?.difference.difference).toBe(-1);
+      expect(resultat.couples_exclus).toEqual([
+        { outil_id: "outil-alpha", mode: "web_activee", incomplet_au_premier: auPremier, incomplet_au_dernier: auDernier },
+      ]);
+    });
+  }
+
+  it("sort un couple incomplet au dernier run même quand il n'y a obtenu aucune réponse", () => {
+    // Toutes les réponses manquent au dernier run : aucune unité, mais le couple est au partage.
+    const resultat = tendanceParOutilEtMode(
+      { questions, unites: unitesPremier, couples: { compares: [ACTIVEE, DESACTIVEE], incomplets: [] } },
+      { questions, unites: dans("web_desactivee", false), couples: { compares: [DESACTIVEE], incomplets: [ACTIVEE] } },
+      exactitude,
+      OPTIONS,
+    );
+
+    expect(resultat.par_outil_et_mode.map((l) => l.mode)).toEqual(["web_desactivee"]);
+    expect(resultat.couples_exclus).toEqual([
+      { outil_id: "outil-alpha", mode: "web_activee", incomplet_au_premier: false, incomplet_au_dernier: true },
+    ]);
+  });
+
+  it("refuse une unité API d'un couple absent du partage de son run", () => {
+    expect(() =>
+      tendanceParOutilEtMode(
+        { questions, unites: unitesPremier, couples: { compares: [DESACTIVEE], incomplets: [] } },
+        { questions, unites: unitesDernier, couples: { compares: [ACTIVEE, DESACTIVEE], incomplets: [] } },
+        exactitude,
+        OPTIONS,
+      ),
+    ).toThrow(/outil-alpha\/web_activee absent du partage/);
   });
 });

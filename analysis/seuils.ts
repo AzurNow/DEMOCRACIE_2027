@@ -108,6 +108,25 @@ export interface PartageCouples {
   readonly incomplets: readonly CoupleOutilMode[];
 }
 
+/** Le sort d'un couple au seuil de 20 % du §8, lu dans le partage du run. */
+export type EtatCouple = "compare" | "incomplet";
+
+/**
+ * Seule porte des statistiques par couple outil × mode vers le seuil de réponses manquantes
+ * (conformité 2026-09-29, n° 12), comme `repartirParCandidat` l'est pour le seuil de couverture.
+ * Un couple inconnu du partage lève : le ranger d'un côté serait décider de son seuil ici.
+ */
+export function etatDesCouples(couples: PartageCouples): (couple: CoupleOutilMode) => EtatCouple {
+  const compares = new Set(couples.compares.map(cleCouple));
+  const incomplets = new Set(couples.incomplets.map(cleCouple));
+  return (couple) => {
+    const cle = cleCouple(couple);
+    if (compares.has(cle)) return "compare";
+    if (incomplets.has(cle)) return "incomplet";
+    throw new Error(`Couple ${cle} absent du partage des couples du run (§8) : seuil de 20 % non décidé, non classable.`);
+  };
+}
+
 /** Couples présents parmi les réponses API du run, dans l'ordre de première apparition. */
 export function couplesComparables(reponses: readonly Reponse[]): PartageCouples {
   const compares: CoupleOutilMode[] = [];

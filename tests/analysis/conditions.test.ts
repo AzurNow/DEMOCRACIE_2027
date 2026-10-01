@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { differenceAppariee, reechantillonnerDifference } from "../../analysis/bootstrap.ts";
 import { comparerConditions, pairesParFormulation, pairesParMode } from "../../analysis/conditions.ts";
 import { exactitude } from "../../analysis/metriques.ts";
-import { grappe, ulid, unite } from "./fabriques.ts";
+import { grappe, tousCompares, ulid, unite } from "./fabriques.ts";
 
 const OPTIONS = { reechantillonnages: 100, graine_du_run: 20261201, cle: ["test", "conditions"] };
 
@@ -67,7 +67,7 @@ describe("aucune valeur p dans les effets de condition (§8 0.3)", () => {
       ...grappe("i2", 1, { mode: "web_desactivee", categorie: "inexacte" }),
     ];
 
-    const comparaisons = comparerConditions(pairesParMode(jeu), exactitude, OPTIONS);
+    const comparaisons = comparerConditions(pairesParMode(jeu, tousCompares(jeu)).paires, exactitude, OPTIONS);
 
     expect(comparaisons).toHaveLength(1);
     expect(Object.keys(comparaisons[0] as object).sort()).toEqual(CLES_COMPARAISON);
@@ -79,7 +79,7 @@ describe("aucune valeur p dans les effets de condition (§8 0.3)", () => {
       ...grappe("i1", 1, { registre: "familier", categorie: "inexacte" }),
     ];
 
-    const comparaisons = comparerConditions(pairesParFormulation(jeu), exactitude, OPTIONS);
+    const comparaisons = comparerConditions(pairesParFormulation(jeu, tousCompares(jeu)).paires, exactitude, OPTIONS);
 
     expect(comparaisons).toHaveLength(1);
     expect(Object.keys(comparaisons[0] as object).sort()).toEqual(CLES_COMPARAISON);
@@ -143,12 +143,12 @@ describe("familles de comparaisons", () => {
       ...grappe("i3", 1, { outil_id: "outil-alpha", mode: null, canal: "application" }),
     ];
 
-    const modes = pairesParMode(jeu);
+    const modes = pairesParMode(jeu, tousCompares(jeu)).paires;
     expect(modes.map((p) => p.cle)).toEqual(["outil-alpha:web_activee-web_desactivee"]);
     expect(modes[0]?.a).toHaveLength(2);
     expect(modes[0]?.b).toHaveLength(1);
 
-    const formulations = pairesParFormulation(jeu);
+    const formulations = pairesParFormulation(jeu, tousCompares(jeu)).paires;
     expect(formulations.map((p) => p.cle)).toEqual(["outil-alpha:web_activee:neutre-familier"]);
   });
 
@@ -164,7 +164,7 @@ describe("familles de comparaisons", () => {
       ),
     );
 
-    const paires = pairesParFormulation(jeu);
+    const paires = pairesParFormulation(jeu, tousCompares(jeu)).paires;
 
     const attendues = outils.flatMap((outil_id) =>
       modes.flatMap((mode) =>
@@ -180,5 +180,48 @@ describe("familles de comparaisons", () => {
       expect(paire.a.every((u) => u.registre === premier)).toBe(true);
       expect(paire.b.every((u) => u.registre === second)).toBe(true);
     }
+  });
+});
+
+describe("couples marqués run incomplet (conformité 2026-09-29, n° 12)", () => {
+  // §8 : un couple outil × mode au-delà de 20 % de réponses manquantes est « exclu des
+  // comparaisons de ce run, l'autre mode de l'outil restant publié s'il passe le seuil ».
+  const ALPHA_ACT = { outil_id: "outil-alpha", mode: "web_activee" } as const;
+  const ALPHA_DES = { outil_id: "outil-alpha", mode: "web_desactivee" } as const;
+  const BETA_ACT = { outil_id: "outil-beta", mode: "web_activee" } as const;
+  const BETA_DES = { outil_id: "outil-beta", mode: "web_desactivee" } as const;
+  const registres = ["neutre", "familier", "oriente"] as const;
+  const jeu = [ALPHA_ACT, ALPHA_DES, BETA_ACT, BETA_DES].flatMap((couple) =>
+    registres.flatMap((registre) => grappe("i1", 1, { ...couple, registre })),
+  );
+  const partage = { compares: [ALPHA_DES, BETA_ACT, BETA_DES], incomplets: [ALPHA_ACT] };
+
+  it("ne compare pas les deux modes d'un outil dont un mode est incomplet, et nomme la paire exclue", () => {
+    const { paires, paires_exclues } = pairesParMode(jeu, partage);
+
+    expect(paires.map((p) => p.cle)).toEqual(["outil-beta:web_activee-web_desactivee"]);
+    expect(paires_exclues).toEqual([
+      { cle: "outil-alpha:web_activee-web_desactivee", couples_incomplets: ["outil-alpha/web_activee"] },
+    ]);
+  });
+
+  it("exclut les trois paires de formulation du couple incomplet, garde celles de l'autre mode", () => {
+    const { paires, paires_exclues } = pairesParFormulation(jeu, partage);
+
+    expect(paires_exclues.map((p) => p.cle)).toEqual([
+      "outil-alpha:web_activee:neutre-familier",
+      "outil-alpha:web_activee:neutre-oriente",
+      "outil-alpha:web_activee:familier-oriente",
+    ]);
+    expect(paires_exclues.every((p) => p.couples_incomplets.join() === "outil-alpha/web_activee")).toBe(true);
+    expect(paires).toHaveLength(9);
+    expect(paires.some((p) => p.cle.startsWith("outil-alpha:web_activee:"))).toBe(false);
+  });
+
+  it("refuse une unité d'un couple absent du partage, même si elle ne serait comparée à rien", () => {
+    // Gamma n'a qu'un mode ici : aucune paire ne se forme, l'unité est quand même lue.
+    const seul = grappe("i9", 1, { outil_id: "outil-gamma", mode: "web_activee" });
+    expect(() => pairesParMode([...jeu, ...seul], partage)).toThrow(/outil-gamma\/web_activee absent du partage/);
+    expect(() => pairesParFormulation([...jeu, ...seul], partage)).toThrow(/outil-gamma\/web_activee absent du partage/);
   });
 });

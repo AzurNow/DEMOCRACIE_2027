@@ -306,6 +306,8 @@ describe("famille de Holm du test d'asymétrie (conformité n° 82, protocole 0.
    */
   function resultat(valeur_p: number) {
     return {
+      cle: ["permutation", "outil-alpha", "web_activee"],
+      graine: "0000000000000000",
       statistique_observee: 0.1,
       valeur_p,
       permutations: 200,
@@ -442,6 +444,20 @@ describe("contrat de rejeu depuis run.graines.permutation (constat n° 6)", () =
     }
 
     expect(testHomogeneiteCandidats(jeu, TOUS_COMPARES, options, BOOTSTRAP)?.valeur_p).toBe((1 + extremes) / 41);
+  });
+
+  it("publie avec la valeur p la clé complète et la graine qui la rejouent (conformité n° 30)", () => {
+    // §8 : chaque test de permutation a sa graine, « dérivée […] d'une clé lisible publiée avec le
+    // résultat ». Sans elles, un tiers ne sait pas de quel flux la valeur p est sortie.
+    const jeu = [...items("candidat-a", 3, true), ...items("candidat-b", 3, false)];
+    const options = { permutations: 40, graine_du_run: 5, cle: ["outil-alpha", "web_activee"] };
+
+    const resultat = testHomogeneiteCandidats(jeu, TOUS_COMPARES, options, BOOTSTRAP);
+
+    expect(resultat?.cle).toEqual(["permutation", "outil-alpha", "web_activee"]);
+    expect(resultat?.graine).toBe(
+      graineDerivee(5, ["permutation", "outil-alpha", "web_activee"]).toString(16).padStart(16, "0"),
+    );
   });
 });
 

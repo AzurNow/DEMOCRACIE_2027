@@ -20,7 +20,8 @@
 
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
-import type { Mode, Registre, Ulid } from "./types.ts";
+import { cleCouple, etatDesCouples, type EtatCouple, type PartageCouples } from "./seuils.ts";
+import type { CoupleOutilMode, Mode, Registre, Ulid } from "./types.ts";
 
 export interface PaireCondition {
   readonly cle: string;
@@ -95,35 +96,90 @@ function apparier(a: readonly UniteAnalyse[], b: readonly UniteAnalyse[]): Appar
   };
 }
 
+/** Une paire que le §8 aurait formée, retirée parce qu'un de ses couples est « run incomplet ». */
+export interface PaireExclue {
+  readonly cle: string;
+  /** Clés `cleCouple` des couples incomplets de la paire. */
+  readonly couples_incomplets: readonly string[];
+}
+
+export interface PairesDeCondition {
+  readonly paires: readonly PaireCondition[];
+  /**
+   * §8 : un couple marqué « run incomplet » est « exclu des comparaisons de ce run »
+   * (conformité 2026-09-29, n° 12). Nommées, jamais comparées.
+   */
+  readonly paires_exclues: readonly PaireExclue[];
+}
+
 /**
  * Famille des modes : une comparaison par outil, sur toutes ses formulations. Les réponses sans
- * mode (canal application, §6) n'y figurent pas — elles n'ont pas de mode à comparer.
+ * mode (canal application, §6) n'y figurent pas — elles n'ont pas de mode à comparer. Un outil
+ * dont l'un des deux modes est incomplet n'a pas de comparaison de modes ; l'autre mode reste
+ * publié dans les métriques primaires (§8).
  */
-export function pairesParMode(unites: readonly UniteAnalyse[]): PaireCondition[] {
-  const paires: PaireCondition[] = [];
+export function pairesParMode(unites: readonly UniteAnalyse[], couples: PartageCouples): PairesDeCondition {
+  const etat = etatDesUnites(unites, couples);
+  const formees: PaireFormee[] = [];
   const [premier, second] = MODES as readonly [Mode, Mode];
   for (const [outil_id, membres] of grouperPar(avecMode(unites), (u) => u.outil_id)) {
     const a = membres.filter((u) => u.mode === premier);
     const b = membres.filter((u) => u.mode === second);
-    if (a.length > 0 && b.length > 0) paires.push({ cle: `${outil_id}:${premier}-${second}`, a, b });
+    if (a.length === 0 || b.length === 0) continue;
+    const incomplets = [premier, second]
+      .filter((mode) => etat({ outil_id, mode }) === "incomplet")
+      .map((mode) => cleCouple({ outil_id, mode }));
+    formees.push({ paire: { cle: `${outil_id}:${premier}-${second}`, a, b }, incomplets });
   }
-  return paires;
+  return repartirPaires(formees);
 }
 
 /**
  * Famille des formulations : les trois paires de registres, à outil ET mode constants — comparer
- * deux registres à travers deux modes mélangerait les deux effets que le §8 sépare.
+ * deux registres à travers deux modes mélangerait les deux effets que le §8 sépare. Les trois
+ * paires d'un couple incomplet sont exclues.
  */
-export function pairesParFormulation(unites: readonly UniteAnalyse[]): PaireCondition[] {
-  const paires: PaireCondition[] = [];
-  for (const [cle, membres] of grouperPar(avecMode(unites), (u) => `${u.outil_id}:${u.mode as Mode}`)) {
-    for (const [premier, second] of PAIRES_REGISTRES) {
-      const a = membres.filter((u) => u.registre === premier);
-      const b = membres.filter((u) => u.registre === second);
-      if (a.length > 0 && b.length > 0) paires.push({ cle: `${cle}:${premier}-${second}`, a, b });
+export function pairesParFormulation(unites: readonly UniteAnalyse[], couples: PartageCouples): PairesDeCondition {
+  const etat = etatDesUnites(unites, couples);
+  const formees: PaireFormee[] = [];
+  for (const membres of grouperPar(avecMode(unites), (u) => `${u.outil_id}:${u.mode as Mode}`).values()) {
+    const premiere = membres[0] as UniteAnalyse;
+    const couple = { outil_id: premiere.outil_id, mode: premiere.mode as Mode };
+    const incomplets = etat(couple) === "incomplet" ? [cleCouple(couple)] : [];
+    for (const [r1, r2] of PAIRES_REGISTRES) {
+      const a = membres.filter((u) => u.registre === r1);
+      const b = membres.filter((u) => u.registre === r2);
+      if (a.length > 0 && b.length > 0) {
+        formees.push({ paire: { cle: `${couple.outil_id}:${couple.mode}:${r1}-${r2}`, a, b }, incomplets });
+      }
     }
   }
-  return paires;
+  return repartirPaires(formees);
+}
+
+interface PaireFormee {
+  readonly paire: PaireCondition;
+  readonly incomplets: readonly string[];
+}
+
+function repartirPaires(formees: readonly PaireFormee[]): PairesDeCondition {
+  const paires: PaireCondition[] = [];
+  const paires_exclues: PaireExclue[] = [];
+  for (const { paire, incomplets } of formees) {
+    if (incomplets.length === 0) paires.push(paire);
+    else paires_exclues.push({ cle: paire.cle, couples_incomplets: incomplets });
+  }
+  return { paires, paires_exclues };
+}
+
+/**
+ * Le partage lu pour toutes les unités à mode, pas seulement celles d'une paire formée : une unité
+ * d'un couple inconnu du partage lève, même si elle ne serait comparée à rien.
+ */
+function etatDesUnites(unites: readonly UniteAnalyse[], couples: PartageCouples): (couple: CoupleOutilMode) => EtatCouple {
+  const etat = etatDesCouples(couples);
+  for (const unite of avecMode(unites)) etat({ outil_id: unite.outil_id, mode: unite.mode as Mode });
+  return etat;
 }
 
 function avecMode(unites: readonly UniteAnalyse[]): UniteAnalyse[] {
