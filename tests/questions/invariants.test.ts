@@ -340,8 +340,9 @@ describe("exemples de schema/exemples/", () => {
   // 160 → 164 : conformité 2026-09-29, n° 31 et 33, quatre invalides d'item (thème porté, sans mesure_version, quantification hors dimensions, adresse du contestataire).
   // 164 → 166 : conformité 2026-09-29, n° 24, deux invalides de tirage (entrée sans thème, entrée sans grappe).
   // 166 → 168 : décisions de l'auteur du 2026-10-01, deux invalides de run (planifié sans donnees_commit, symétrie sans condition de quota).
-  it("charge les 168 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(168);
+  // 168 → 176 : conformité 2026-09-29, n° 15 (trois invalides de run), n° 27 (trois invalides de réponse), n° 29 (un valide et un invalide de notation).
+  it("charge les 176 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(176);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -373,7 +374,9 @@ describe("exemples de schema/exemples/", () => {
     }));
     // 16 → 18 : une notation et un verdict invalides ajoutés (conformité n° 64), copies d'exemples
     // valides dont seul le sourçage change ; leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(18);
+    // 18 → 20 : une notation valide et une invalide ajoutées (conformité 2026-09-29, n° 29), copies
+    // de valide-01 dont seul le sourçage change ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(20);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

@@ -225,6 +225,27 @@
       "regle_protocole": "§6, conditions d'interrogation, ligne « Enregistré »"
     },
     {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-06-manquante-quatre-tentatives.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 à laquelle on ajoute une quatrième tentative. §6 (0.11) : une requête est tentée au plus trois fois au total ; une quatrième relance pour un outil seulement donnerait à cet outil plus de chances d'obtenir une réponse, et fausserait le taux de manquantes comparé entre outils (§8, §12). Conformité 2026-09-29, n° 27.",
+      "regle_protocole": "§6, « au plus trois fois au total »"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-07-tentatives-numerotees-avec-doublon.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 dont les tentatives sont numérotées 1, 3, 3. Trois éléments, mais le journal ne dit plus quelle tentative a eu lieu ni dans quel ordre : le délai croissant du §6 n'est plus vérifiable. Conformité 2026-09-29, n° 27.",
+      "regle_protocole": "§6, « au plus trois fois au total »"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-08-obtenue-apres-trois-echecs.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 (réponse obtenue) qui garde les trois tentatives en échec de valide-02. La tentative réussie serait une quatrième : §6 déclare la réponse manquante après trois échecs. Conformité 2026-09-29, n° 27.",
+      "regle_protocole": "§6, « au plus trois fois au total »"
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-01-juge-exacte.json",
       "attendu": "valide",
@@ -282,6 +303,19 @@
       "fichier": "notation/invalide-06-lien-mort-soutenant.json",
       "attendu": "invalide",
       "motif": "Lien cité dont le test HTTP dit « mort » et que la notation déclare « soutient » (copie de valide-01 dont seul le sourçage change). Une page qui n'existe plus ne contient pas l'affirmation : un lien mort ne soutient rien (conformité n° 64).",
+      "regle_protocole": "§7, sourçage"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/valide-04-lien-inaccessible-soutenant-copie-archivee.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 dont seul le sourçage change : un lien inaccessible au test HTTP (403), noté « soutient » d'après sa copie archivée, qui porte son lien d'archive et l'empreinte de son contenu. §7 : cas permis, que la règle du n° 29 ne doit pas rejeter. Il ne fait pas pour autant un sourçage valide, réservé au lien existant et soutenant."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-07-lien-inaccessible-soutenant-sans-copie.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-04 privée de archive_url et de sha256_contenu. §7 : un lien inaccessible ou non testable peut être noté soutenant « d'après une copie archivée » ; sans copie conservée, le soutien n'a été jugé sur rien de vérifiable, et l'audit humain n'a rien à relire. Conformité 2026-09-29, n° 29.",
       "regle_protocole": "§7, sourçage"
     },
     {
@@ -617,6 +651,27 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 dont la symétrie ne porte que six conditions, sans quota_par_strate_respecte. Décision de l'auteur du 2026-10-01 : aucune strate candidat × thème × gabarit ne reçoit plus de questions propres que le quota du tirage ; sans cette condition, un tirage qui déplace une question d'une strate à l'autre d'un même thème passerait la barrière. Erreur : /symetrie/conditions (minItems).",
       "regle_protocole": "§5, symétrie de traitement"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-24-critere-rouge-publie-sans-mention.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 (erreurs graves revues à 94 %, critère rouge) dont seuls le statut et la décision passent à « publie ». §12 : un run qui rate un critère est publié en intégralité avec la mention « provisoire » et la raison ; sans cette règle, le lecteur lirait comme définitifs des chiffres que le go/no-go a refusés. Conformité 2026-09-29, n° 15. Remplace la garde que portait invalide-02 jusqu'à la 0.13.",
+      "regle_protocole": "§12, critères go/no-go"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-25-go-no-go-sans-kappa.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont le critère kappa_juges_humains est remplacé par un second tests_symetrie : sept critères, mais pas les sept. §12 énumère sept critères ; minItems seul laissait publier un run dont le kappa juges-humains n'a jamais été contrôlé. Conformité 2026-09-29, n° 15.",
+      "regle_protocole": "§12, critères go/no-go"
+    },
+    {
+      "objet": "run",
+      "fichier": "run/invalide-26-decision-differente-du-statut.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont seule la décision du go/no-go passe à « publie_provisoire » alors que le run reste « publie ». §12 : la décision du go/no-go est la mention de publication ; deux valeurs différentes laissent le site et le rapport afficher deux statuts. Conformité 2026-09-29, n° 15.",
+      "regle_protocole": "§12, critères go/no-go"
     },
     {
       "objet": "lecture-comparateur",

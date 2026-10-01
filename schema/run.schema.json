@@ -859,6 +859,108 @@
         "criteres": {
           "type": "array",
           "minItems": 7,
+          "maxItems": 7,
+          "$comment": "§12 (conformité 2026-09-29, n° 15) : les sept critères, chacun une fois. minItems seul laissait passer sept fois le même code.",
+          "allOf": [
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "kappa_juges_humains"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "test_contrefactuel"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "aucun_item_conteste_dans_le_tirage"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "tests_symetrie"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "reponses_manquantes"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "erreurs_graves_revues"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "code": {
+                    "const": "analyses_preenregistrees_executees"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          ],
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -1123,6 +1225,101 @@
           "publication",
           "depot"
         ]
+      }
+    },
+    {
+      "$comment": "§12 (conformité 2026-09-29, n° 15) : la décision du go/no-go est le statut de publication du run ; l'une ne peut pas dire publié quand l'autre dit provisoire.",
+      "if": {
+        "properties": {
+          "statut": {
+            "const": "publie"
+          }
+        },
+        "required": [
+          "statut",
+          "go_no_go"
+        ]
+      },
+      "then": {
+        "properties": {
+          "go_no_go": {
+            "properties": {
+              "decision": {
+                "const": "publie"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§12 (conformité 2026-09-29, n° 15) : la décision du go/no-go est le statut de publication du run ; l'une ne peut pas dire publié quand l'autre dit provisoire.",
+      "if": {
+        "properties": {
+          "statut": {
+            "const": "publie_provisoire"
+          }
+        },
+        "required": [
+          "statut",
+          "go_no_go"
+        ]
+      },
+      "then": {
+        "properties": {
+          "go_no_go": {
+            "properties": {
+              "decision": {
+                "const": "publie_provisoire"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§12 (conformité 2026-09-29, n° 15) : « Sinon, le run est publié en intégralité avec la mention « provisoire » et la raison ». Un critère rouge interdit la décision et le statut « publié » ; avec la règle précédente, un run publié qui rate un critère est publié provisoire, donc porte motif_provisoire.",
+      "if": {
+        "properties": {
+          "go_no_go": {
+            "properties": {
+              "criteres": {
+                "contains": {
+                  "properties": {
+                    "statut": {
+                      "const": "rouge"
+                    }
+                  },
+                  "required": [
+                    "statut"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "criteres"
+            ]
+          }
+        },
+        "required": [
+          "go_no_go"
+        ]
+      },
+      "then": {
+        "properties": {
+          "statut": {
+            "not": {
+              "const": "publie"
+            }
+          },
+          "go_no_go": {
+            "properties": {
+              "decision": {
+                "const": "publie_provisoire"
+              }
+            }
+          }
+        }
       }
     },
     {
