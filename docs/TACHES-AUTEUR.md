@@ -29,7 +29,8 @@ Mis à jour le 2026-10-01. Sources relues : `docs/feuille-de-route.json`, `docs/
       renvoi après correction de thème, tiers de la fiche).
 - [x] **Faire refaire la passe de conformité** sur la 0.13 : faite le 2026-09-29
       (`docs/conformite/2026-09-29.md`). Constats n° 1 à 4, 7 à 9, 14, 24, 31 et 33 traités
-      (#53 à #57). Restent ouverts du côté code : n° 5, 10 à 12, 15, 22, 23, 25, 27, 29, 30, 32 et 35.
+      (#53 à #57). n° 15, 27 et 29 traités dans #61. Restent ouverts du côté code : n° 5, 10 à 12, 22, 23,
+      25, 30, 32 et 35.
 - [ ] **Faire écrire dans la prochaine révision** les décisions du 2026-09-28 ci-dessous.
 
   Décisions du 2026-09-28 sur le renvoi après correction de thème (PR #50), selon la
