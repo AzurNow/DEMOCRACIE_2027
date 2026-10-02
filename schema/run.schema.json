@@ -292,7 +292,7 @@
               },
               "interroge": {
                 "type": "boolean",
-                "description": "false pour un candidat retiré : décision prise sur §3, dont la seconde moitié de phrase (\"ses items d'obsolescence servent à mesurer si les outils l'ont remarqué\") reste à amender, puisqu'un retrait de candidature est un fait biographique, hors périmètre v1.0."
+                "description": "false pour un candidat retiré. §3 : « Un candidat qui se retire reste dans le jeu de données (statut « retiré ») et sort des runs suivants : aucune question ne le nomme plus. »"
               }
             },
             "allOf": [

@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-01.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-02.
 
 ## Décisions en attente
 
@@ -84,17 +84,23 @@ flowchart LR
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
     lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
+    lot_go_no_go["go-no-go<br/>Critères go/no-go du §12 et contreseing de la checklist de l'annexe F<br/>T0"]:::T0
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
+  lot_analyse --> lot_go_no_go
+  lot_interrogation --> lot_go_no_go
+  lot_notation --> lot_go_no_go
+  lot_validation_interface -.-> lot_go_no_go
   lot_protocole --> lot_hors_code
   lot_perimetre_prompts --> lot_interrogation
   lot_questions_tirage_symetrie --> lot_interrogation
   lot_interrogation -.-> lot_notation
   lot_perimetre_prompts --> lot_notation
   lot_analyse --> lot_site
+  lot_go_no_go --> lot_site
   classDef T0 fill:#78716c,color:#ffffff,stroke:#44403c
   classDef T1 fill:#b45309,color:#ffffff,stroke:#78350f
   classDef T2 fill:#0369a1,color:#ffffff,stroke:#0c4a6e
@@ -124,7 +130,8 @@ flowchart LR
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T0 | bloqué par perimetre-prompts, questions-tirage-symetrie | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T0 | bloqué par perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
-| site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse | sonnet | M | 2 | analyse |
+| go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T0 | bloqué par analyse, interrogation, notation | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
+| site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse, go-no-go | sonnet | M | 2 | analyse, go-no-go |
 
 ## Jalons
 
@@ -167,6 +174,7 @@ flowchart LR
 ### J5
 
 - analyse (T2)
+- go-no-go (T0)
 - site (T0)
 
 ## Échelle de preuve

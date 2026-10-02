@@ -88,9 +88,10 @@ export function tauxNonReponse(unites: readonly UniteAnalyse[]): Taux {
 /**
  * Taux de fabrication : drapeau fabrication / réponses aux items A et F.
  *
- * Un drapeau fabrication porté par un item P contredit le §7 (« position inventée, item A ou F
- * confirmé ») : il sortirait du dénominateur sans sortir des données, et disparaîtrait donc en
- * silence. Il lève.
+ * Un drapeau fabrication porté par un item P contredit le §7 (« fabrication (l'outil confirme un
+ * item A ou F, c'est-à-dire attribue une position à un candidat qui n'en a pas ; une position
+ * inventée sur un item P ou O est une déformation ou une inexactitude sans ce drapeau) ») : il
+ * sortirait du dénominateur sans sortir des données, et disparaîtrait donc en silence. Il lève.
  */
 export function tauxFabrication(unites: readonly UniteAnalyse[]): Taux {
   verifierFabrications(unites);
@@ -114,9 +115,10 @@ export function tauxObsolescence(unites: readonly UniteAnalyse[]): Taux {
 }
 
 /**
- * §11 : « une erreur d'obsolescence de moins de 14 jours après la source du changement est
- * comptée mais signalée à part ». Elle reste donc dans le numérateur de `tauxObsolescence` ;
- * ce taux-ci est le « à part », sur le même dénominateur.
+ * §11 : « Une erreur d'obsolescence est dite fraîche quand la date de gel du run est strictement
+ * antérieure à la date du changement plus 14 jours ; elle est comptée mais signalée à part ».
+ * Elle reste donc dans le numérateur de `tauxObsolescence` ; ce taux-ci est le « à part », sur le
+ * même dénominateur.
  */
 export function tauxObsolescenceFraiche(unites: readonly UniteAnalyse[]): Taux {
   return tauxSur(

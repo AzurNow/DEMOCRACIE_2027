@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-01",
+  "date_maj": "2026-10-02",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -442,6 +442,35 @@
       "note": "Plan du 2026-09-25, décisions de l'auteur écrites en 0.10. Cinq sous-lots : V1 seul module d'écriture dans data/items, en ajout seul, test structurel de la règle 3 ; V2 pnpm arbitrer (registre en ajout seul, schéma d'item : bloc arbitrage, vérifié par arbitrage) ; V3 lecture de l'état effectif (data/ sinon staging/), pnpm contester et pnpm panel ; V4 file des notifications dues et journal des envois publiés, item.notifications[] retiré ; V5 pnpm notifier en Python stdlib (smtplib), simulation par défaut, identifiants en variables d'environnement, jamais lancé par un agent. L'auteur déclare contact_notification dans config/perimetre.yaml et nomme le fournisseur SMTP au §10. Livré le 2026-09-25 (#35) : 1039 tests TS, 307 tests Python, aucun envoi réel, jamais exercé sur un vrai item. Reste pour l'auteur : contact_notification dans config/perimetre.yaml, gabarit validation/notifications/gabarits/courriel.txt, fournisseur SMTP au §10."
     },
     {
+      "id": "go-no-go",
+      "titre": "Critères go/no-go du §12 et contreseing de la checklist de l'annexe F",
+      "jalon": "J5",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "M",
+      "temps_auteur_h": 1,
+      "depend_de": [
+        {
+          "lot": "analyse",
+          "type": "bloque"
+        },
+        {
+          "lot": "notation",
+          "type": "bloque"
+        },
+        {
+          "lot": "interrogation",
+          "type": "bloque"
+        },
+        {
+          "lot": "validation-interface",
+          "type": "informe"
+        }
+      ],
+      "decisions": [],
+      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas."
+    },
+    {
       "id": "site",
       "titre": "Site statique généré depuis runs/",
       "jalon": "J5",
@@ -452,6 +481,10 @@
       "depend_de": [
         {
           "lot": "analyse",
+          "type": "bloque"
+        },
+        {
+          "lot": "go-no-go",
           "type": "bloque"
         }
       ],

@@ -12,9 +12,14 @@
  *   la projection inversible.
  *
  * Une coquille de la source reste une coquille : rien ici ne corrige l'orthographe, ne
- * supprime la ponctuation ni ne met en minuscules. Seuls les espaces et les guillemets, que
- * les outils de conversion PDF et les éditeurs de texte modifient sans prévenir, sont ramenés
- * à une forme unique.
+ * supprime la ponctuation ni ne met en minuscules. Ce que fait la normalisation, d'après le §4 :
+ * « toute suite d'espaces devient une espace, les espaces de début et de fin sont retirées, et
+ * les guillemets, apostrophes, primes et tirets typographiques sont ramenés à leur forme ASCII ».
+ * Concrètement, la table `EQUIVALENCES` ramène cinq guillemets (« » “ ” „) et la double prime ″
+ * à `"`, trois apostrophes (‘ ’ ‚), la prime ′ et l'accent aigu isolé ´ à `'`, et six tirets
+ * (‐ ‑ ‒ – — −) à `-` ; `projeter` réduit chaque suite d'espaces blancs à une espace et
+ * `rogner` retire celles de tête et de fin. Ces formes sont ramenées parce que les outils de
+ * conversion PDF et les éditeurs de texte les modifient sans prévenir.
  */
 
 export const VERSION_NORMALISATION = "normalisation-v1";

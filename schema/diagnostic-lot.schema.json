@@ -11,6 +11,7 @@
     "date_calcul",
     "accord_observe",
     "n",
+    "kappa_par_question",
     "exclus_contestation",
     "taille_lot",
     "taille_attendue",
@@ -19,6 +20,42 @@
     "date_calibration",
     "supersede_par"
   ],
+
+  "$defs": {
+    "kappa_question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accord_observe", "n"],
+      "properties": {
+        "kappa": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1,
+          "description": "Kappa de Cohen non pondéré sur deux catégories (oui, non). Absent quand il n'est pas défini, jamais remplacé par 0 ou par 1 : c'est alors `motif_indefini` qui est présent."
+        },
+        "motif_indefini": {
+          "type": "string",
+          "enum": ["aucun_item_commun", "accord_attendu_maximal"],
+          "description": "Pourquoi le kappa de la question n'est pas défini (§4). Présent si et seulement si `kappa` est absent."
+        },
+        "accord_observe": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Publié dans tous les cas. `null` seulement quand aucun item n'a de réponse des deux annotateurs à cette question."
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Items où les deux réponses sont renseignées."
+        }
+      },
+      "oneOf": [
+        { "required": ["kappa"], "not": { "required": ["motif_indefini"] } },
+        { "required": ["motif_indefini"], "not": { "required": ["kappa"] } }
+      ]
+    }
+  },
 
   "properties": {
     "lot_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
@@ -58,6 +95,20 @@
       "type": "integer",
       "minimum": 0,
       "description": "Effectif publié avec le kappa : paires de décisions comparées, contestations déduites (§4)."
+    },
+
+    "kappa_par_question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["citation_fidele", "paraphrase_exacte", "position_univoque", "theme_correct", "quantification_correcte"],
+      "properties": {
+        "citation_fidele": { "$ref": "#/$defs/kappa_question" },
+        "paraphrase_exacte": { "$ref": "#/$defs/kappa_question" },
+        "position_univoque": { "$ref": "#/$defs/kappa_question" },
+        "theme_correct": { "$ref": "#/$defs/kappa_question" },
+        "quantification_correcte": { "$ref": "#/$defs/kappa_question" }
+      },
+      "description": "§4 : « Un kappa par question de la grille est publié comme diagnostic secondaire ». Une clé par question de la grille, toujours les cinq. La réponse à `position_univoque` est un diagnostic : elle est publiée ici et n'entre pas dans le sort de l'item (§4). Calculé sur les items où les deux réponses sont renseignées ; un kappa indéfini est publié absent, avec son motif."
     },
 
     "exclus_contestation": {

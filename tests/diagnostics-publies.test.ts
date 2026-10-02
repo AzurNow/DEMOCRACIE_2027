@@ -19,18 +19,28 @@ import {
   DiagnosticPerime,
   kappasRetenusSection12,
   type DiagnosticPublie,
+  type KappaPublie,
 } from "../validation/domaine/diagnostic-publie.ts";
-import type { Decision, Item, Lot } from "../validation/domaine/types.ts";
+import type { CleGrille, Decision, Item, Lot } from "../validation/domaine/types.ts";
 import { ajouterDiagnostic, DiagnosticDejaEcrit, lireDiagnostics } from "../validation/io/diagnostics-fichier.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { creerBac, lotDe, mesurePour, type Bac } from "./aides/bac.ts";
-import { decision, itemP } from "./aides/fabriques.ts";
+import { decision, GRILLE_TOUT_VRAI, itemP } from "./aides/fabriques.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const T1 = "2026-10-12T18:00:00+02:00";
 const T2 = "2026-10-20T11:30:00+02:00";
 const T3 = "2026-10-21T09:00:00+02:00";
+
+const KAPPA_QUESTION: KappaPublie = { kappa: 0.8, accord_observe: 0.9, n: 50 };
+const KAPPA_PAR_QUESTION: DiagnosticPublie["kappa_par_question"] = {
+  citation_fidele: KAPPA_QUESTION,
+  paraphrase_exacte: KAPPA_QUESTION,
+  position_univoque: KAPPA_QUESTION,
+  theme_correct: KAPPA_QUESTION,
+  quantification_correcte: KAPPA_QUESTION,
+};
 
 let bac: Bac;
 let chemins: Chemins;
@@ -176,6 +186,7 @@ describe("sélection du kappa du §12", () => {
       kappa: 0.9,
       accord_observe: 0.95,
       n: 50,
+      kappa_par_question: KAPPA_PAR_QUESTION,
       exclus_contestation: 0,
       taille_lot: 50,
       taille_attendue: 50,
@@ -214,6 +225,56 @@ describe("contenu publié", () => {
     expect(publie["motif_indefini"]).toBe("accord_attendu_maximal");
     expect(publie["accord_observe"]).toBe(1);
     expect(publie["n"]).toBe(50);
+  });
+
+  it("le diagnostic publié porte le kappa par question, un kappa indéfini publié absent avec son motif", () => {
+    const liste = items("4", 10);
+    ecrireItems(liste);
+    const lot = lotDe("lot-008", liste, "reel");
+    bac.ecrireLot(lot);
+    // Seule `position_univoque` diffère entre les deux annotateurs ; les quatre autres questions
+    // sont toutes « oui » chez les deux : accord attendu maximal, kappa indéfini.
+    const univoque = [true, true, false, false, true, true, false, false, true, false];
+    const univoqueAutre = [true, false, false, true, true, false, false, true, true, false];
+    liste.forEach((item, rang) => {
+      for (const [annotateur_id, reponses] of [["a1", univoque], ["a2", univoqueAutre]] as const) {
+        const reponses_grille = { ...GRILLE_TOUT_VRAI, position_univoque: reponses[rang] as boolean };
+        bac.journal(annotateur_id).ajouter(
+          lot.lot_id,
+          decision({ annotateur_id, item, decision: "accepter", lot_id: lot.lot_id, reponses_grille }),
+        );
+      }
+    });
+
+    publierDiagnostics(chemins, T1);
+    const [nom] = fichiers("lot-008");
+    const publie = brut("lot-008", nom as string);
+    const parQuestion = publie["kappa_par_question"] as Record<string, Record<string, unknown>>;
+
+    const cles: readonly CleGrille[] = [
+      "citation_fidele",
+      "paraphrase_exacte",
+      "position_univoque",
+      "theme_correct",
+      "quantification_correcte",
+    ];
+    expect(Object.keys(parQuestion).sort()).toEqual([...cles].sort());
+
+    // Défini : 6 accords sur 10, cinq « oui » chez chacun, accord attendu 0,5 : kappa (0,6 - 0,5) / 0,5 = 0,2.
+    const defini = parQuestion["position_univoque"] as Record<string, unknown>;
+    expect(defini["kappa"]).toBeCloseTo(0.2, 10);
+    expect("motif_indefini" in defini).toBe(false);
+    expect(defini["accord_observe"]).toBeCloseTo(0.6, 10);
+    expect(defini["n"]).toBe(10);
+
+    // Indéfini : absent, jamais 0, avec son motif et l'accord observé.
+    for (const cle of cles.filter((autre) => autre !== "position_univoque")) {
+      const indefini = parQuestion[cle] as Record<string, unknown>;
+      expect("kappa" in indefini, cle).toBe(false);
+      expect(indefini["motif_indefini"], cle).toBe("accord_attendu_maximal");
+      expect(indefini["accord_observe"], cle).toBe(1);
+      expect(indefini["n"], cle).toBe(10);
+    }
   });
 
   it("un lot sous l'effectif attendu est publié avec taille_conforme à faux, et ne compte pas pour le §12 (0.10)", () => {
@@ -318,6 +379,7 @@ describe("ajout seul : deux calculs successifs du même lot", () => {
       motif_indefini: "accord_attendu_maximal",
       accord_observe: 1,
       n: 50,
+      kappa_par_question: KAPPA_PAR_QUESTION,
       exclus_contestation: 0,
       taille_lot: 50,
       taille_attendue: 50,
