@@ -185,6 +185,7 @@
               "nom",
               "statut_au_gel",
               "items_p_verifies",
+              "items_p_au_gel",
               "sous_seuil",
               "interroge"
             ],
@@ -276,6 +277,14 @@
                 "type": "integer",
                 "minimum": 0,
                 "description": "Compté au gel et STOCKÉ. §4 et §8 en dépendent tous les deux ; le recalculer à la génération du site ferait vivre le seuil à deux endroits. Compte un item P qui pourrait entrer au tirage à l'instant de gel (décision de l'auteur du 2026-09-27, conformité n° 19) : pipeline/questions/couverture.ts:itemsPComptesAuGel."
+              },
+              "items_p_au_gel": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid"
+                },
+                "description": "Identifiants, triés, des items P comptés au gel (pipeline/questions/couverture.ts:itemsPAuGel) : items_p_verifies en est la longueur. Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) : pour un candidat interrogé, ce sont les « items P de référence » de la couverture des comparateurs, et chaque comparateur inclus porte une lecture par item. Le JSON Schema ne sait ni comparer la longueur à items_p_verifies ni exiger le tri : analysis/reference-comparateurs.ts:itemsPDeReference le contrôle et lève."
               },
               "sous_seuil": {
                 "type": "boolean",

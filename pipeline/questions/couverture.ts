@@ -14,7 +14,8 @@
  * (`estEnVigueur`), et la décision du panel est lue telle que le tirage la fige
  * (`decisionPanelAuGel`, qui refuse une décision postérieure au gel). Le total est STOCKÉ dans
  * `run.perimetre.candidats[].items_p_verifies` ; `analysis/seuils.ts` lit `sous_seuil`, jamais ce
- * module, et le schéma du run lie les deux dans les deux sens.
+ * module, et le schéma du run lie les deux dans les deux sens. La liste dont ce total est la
+ * longueur est stockée à côté, dans `items_p_au_gel` (`itemsPAuGel`, conformité n° 11).
  *
  * Même définition, autre usage (décision de l'auteur du 2026-09-29, n° 8) : les items P qu'une
  * contestation pendante tient hors du tirage, en vigueur au gel, quelle que soit leur version de mesure
@@ -60,15 +61,39 @@ function admisAuGelHorsContestation(item: Item, date_gel: string, referentiel: R
   return versionCourante && estEnVigueur(item, date_gel);
 }
 
-/** Le nombre d'items P de ce candidat qui comptent au gel. Tous les items sont évalués. */
+/**
+ * Les identifiants, triés, des items P de ce candidat qui comptent au gel. Tous les items sont
+ * évalués. Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) :
+ * cette liste est aussi celle des « items P de référence » des comparateurs, figée dans
+ * `run.perimetre.candidats[].items_p_au_gel`. Deux items comptés de même identifiant lèvent : la
+ * liste ne se dédoublonne pas en silence.
+ */
+export function itemsPAuGel(
+  items: readonly Item[],
+  candidat_id: string,
+  date_gel: string,
+  mesures: readonly Mesure[],
+): readonly string[] {
+  const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
+  const ids = items
+    .filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel))
+    .map((item) => item.id)
+    .sort();
+  const doublon = ids.find((id, rang) => ids[rang + 1] === id);
+  if (doublon !== undefined) {
+    throw new Error(`Item ${doublon} compté deux fois au gel pour ${candidat_id} : identifiant en double dans les items lus.`);
+  }
+  return ids;
+}
+
+/** Le nombre d'items P de ce candidat qui comptent au gel : la longueur de `itemsPAuGel`, seule définition. */
 export function itemsPComptesAuGel(
   items: readonly Item[],
   candidat_id: string,
   date_gel: string,
   mesures: readonly Mesure[],
 ): number {
-  const referentiel = new Map(mesures.map((mesure) => [mesure.id, mesure]));
-  return items.filter((item) => itemPCompteAuGel(item, candidat_id, date_gel, referentiel)).length;
+  return itemsPAuGel(items, candidat_id, date_gel, mesures).length;
 }
 
 /**
