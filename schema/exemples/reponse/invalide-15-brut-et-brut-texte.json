@@ -54,17 +54,19 @@
   },
   "metadonnees": {
     "modele_demande": "modele-grand-public",
+    "modele_renvoye": "modele-grand-public-2026-11",
     "horodatage_requete": "2026-12-01T06:04:12+01:00",
     "horodatage_reponse": "2026-12-01T06:04:15+01:00",
     "latence_ms": 3120,
     "stop_reason": "end_turn",
     "parametres_effectifs": {
-      "temperature": 1.0,
+      "temperature": 1,
       "max_tokens": 2048
     },
     "tokens": {
       "entree": 42,
       "sortie": 61
     }
-  }
+  },
+  "brut_texte": "{\"id\":\"msg_01ABC\",\"content\":[{\"type\":\"text\",\"text\":\"Ce candidat propose de ramener la TVA sur les produits énergétiques à 5,5 %.\"}],\"stop_reason\":\"end_turn\",\"model\":\"modele-grand-public-2026-11\"}"
 }

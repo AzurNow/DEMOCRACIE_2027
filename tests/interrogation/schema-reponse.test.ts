@@ -25,6 +25,7 @@ describe("cas 12 : les nouveaux exemples valides passent", () => {
     "valide-03-api-obtenue-refus-api.json",
     "valide-04-api-manquante-hors-fenetre-une-tentative.json",
     "valide-05-api-manquante-hors-fenetre-jamais-partie.json",
+    "valide-06-api-obtenue-refus-brut-texte.json",
   ])("%s", (nom) => {
     expect(erreurDeSchema("reponse", exemple(nom), nom)).toBeNull();
   });
@@ -38,6 +39,9 @@ describe("cas 12 : les nouveaux exemples invalides échouent, sur la règle vis�
     ["invalide-12-refus-api-avec-texte.json", "/normalise/texte"],
     ["invalide-13-tentative-refus-api.json", "/tentatives/2/erreur/type"],
     ["invalide-14-echecs-deux-tentatives.json", "/tentatives"],
+    ["invalide-15-brut-et-brut-texte.json", ""],
+    ["invalide-16-obtenue-sans-brut-octets-sha256.json", ""],
+    ["invalide-17-requete-sans-entetes.json", "/requete"],
   ])("%s (chemin %s)", (nom, chemin) => {
     const erreur = erreurDeSchema("reponse", exemple(nom), nom);
     expect(erreur).not.toBeNull();

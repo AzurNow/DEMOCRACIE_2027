@@ -5,10 +5,10 @@
 
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
-import { RefusNonObjet } from "../../pipeline/interrogation/editeur.ts";
-import { LATENCE_SIMULEE_MS } from "../../pipeline/interrogation/editeur-simule.ts";
+import { CorpsNonUtf8 } from "../../pipeline/interrogation/editeur.ts";
+import { CORPS_REFUS_LISTE, LATENCE_SIMULEE_MS } from "../../pipeline/interrogation/editeur-simule.ts";
 import { RunHorsFenetre } from "../../pipeline/interrogation/executer.ts";
-import { MESSAGE_TIMEOUT } from "../../pipeline/interrogation/tentatives.ts";
+import { empreinteOctets, MESSAGE_TIMEOUT } from "../../pipeline/interrogation/tentatives.ts";
 import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { canoniser, empreinteDe } from "../../validation/domaine/empreinte.ts";
 import {
@@ -132,9 +132,11 @@ describe("cas 4 : refus de modération de l'API", () => {
     expect(reponse.tentatives).toBeUndefined();
     expect(transportDe(b).interne.recues).toHaveLength(1);
     const recu = seule(transportDe(b).rendues);
+    const texteRecu = new TextDecoder().decode(recu.corps);
     expect(recu.statut).toBe(400);
-    expect(canoniser(reponse.brut)).toBe(canoniser(JSON.parse(recu.corps)));
-    expect(reponse.brut_sha256).toBe(empreinteDe(JSON.parse(recu.corps)));
+    expect(canoniser(reponse.brut)).toBe(canoniser(JSON.parse(texteRecu)));
+    expect(reponse.brut_sha256).toBe(empreinteDe(JSON.parse(texteRecu)));
+    expect(reponse.brut_octets_sha256).toBe(empreinteOctets(recu.corps));
   });
 
   it("n'est pas retenté, même s'il reste deux tentatives", async () => {
@@ -144,11 +146,63 @@ describe("cas 4 : refus de modération de l'API", () => {
     expect(transportDe(b).interne.recues).toHaveLength(1);
   });
 
-  it("un refus dont le corps n'est pas un objet JSON lève une erreur explicite et n'écrit rien", async () => {
+});
+
+describe("corps qui ne sont pas des objets JSON (décisions de l'auteur du 2026-10-02)", () => {
+  it("refus texte stocké en brut_texte et non retenté, y compris après relance", async () => {
     const b = nouveauBanc();
-    b.editeur("outil-alpha", () => ({ genre: "refus_non_objet" }));
-    await expect(b.executer(plan(requete()))).rejects.toThrow(RefusNonObjet);
+    b.editeur("outil-alpha", scenarioScripte(["refus_texte", "reponse"]));
+    await b.executer(plan(requete()));
+    const reponse = obtenue(b);
+    expect(reponse.brut_texte).toBe(CORPS_REFUS_LISTE);
+    expect(Object.keys(reponse)).not.toContain("brut");
+    expect(Object.keys(reponse)).not.toContain("brut_sha256");
+    expect(reponse.brut_octets_sha256).toBe(empreinteOctets(new TextEncoder().encode(CORPS_REFUS_LISTE)));
+    expect(reponse.normalise).toEqual({ texte: "", liens: [], troncature: false, refus_api: true });
+    expect(reponse.tentatives).toBeUndefined();
+    expect(transportDe(b).interne.recues).toHaveLength(1);
+
+    // Relance sur le même répertoire : la réponse est écrite, rien n'est renvoyé.
+    const suite = banc(undefined, b.racine);
+    courant = suite;
+    suite.editeur("outil-alpha", scenarioScripte([]));
+    expect(await suite.executer(plan(requete()))).toEqual({ ecrites: 0, deja_ecrites: 1 });
+    expect(transportDe(suite).interne.recues).toHaveLength(0);
+  });
+
+  it("2xx texte : réponse obtenue, brut_texte tel que reçu, normalisée par l'adaptateur", async () => {
+    const b = nouveauBanc();
+    const corps = "Réponse en texte brut, sans JSON.\n";
+    b.editeur("outil-alpha", () => ({ genre: "corps", statut: 200, corps }));
+    await b.executer(plan(requete()));
+    const reponse = obtenue(b);
+    expect(reponse.brut_texte).toBe(corps);
+    expect(reponse.normalise).toEqual({ texte: corps, liens: [], troncature: false, refus_api: false });
+    expect(reponse.metadonnees.modele_renvoye).toBeNull();
+    expect(reponse.metadonnees.stop_reason).toBeNull();
+  });
+
+  it("corps non UTF-8 : erreur explicite, rien n'est écrit", async () => {
+    const b = nouveauBanc();
+    b.editeur("outil-alpha", () => ({ genre: "corps", statut: 200, corps: new Uint8Array([0x7b, 0xff, 0xfe, 0x7d]) }));
+    await expect(b.executer(plan(requete()))).rejects.toThrow(CorpsNonUtf8);
     expect(b.lues()).toHaveLength(0);
+  });
+
+  it("brut_octets_sha256 diffère de brut_sha256 sur un corps à gros entier et clés réordonnées, et égale le SHA-256 des octets envoyés", async () => {
+    const b = nouveauBanc();
+    const corps =
+      '{"stop_reason":"end_turn","id":12345678901234567890,' +
+      '"content":[{"type":"text","text":"Simulé."}], "model":"modele-simule-2026-12"}';
+    b.editeur("outil-alpha", () => ({ genre: "corps", statut: 200, corps }));
+    await b.executer(plan(requete()));
+    const reponse = obtenue(b);
+    const octetsEnvoyes = seule(transportDe(b).rendues).corps;
+    expect(reponse.brut_octets_sha256).toBe(empreinteOctets(octetsEnvoyes));
+    expect(reponse.brut_octets_sha256).toBe(empreinteOctets(new TextEncoder().encode(corps)));
+    expect(reponse.brut_octets_sha256).not.toBe(reponse.brut_sha256);
+    // La lecture JSON a perdu l'entier exact : c'est ce que l'empreinte des octets rend visible.
+    expect(String(reponse.brut?.["id"])).not.toBe("12345678901234567890");
   });
 });
 
@@ -247,11 +301,12 @@ describe("cas 9 : requête enregistrée", () => {
     const b = nouveauBanc();
     await uneRequete(b, ["reponse"]);
     const envoyee = seule(transportDe(b).interne.recues).requete;
-    expect(envoyee.entetes_authentification).toEqual({ authorization: `Bearer ${CLE_API}` });
+    expect(envoyee.entetes["authorization"]).toBe(`Bearer ${CLE_API}`);
     const reponse = obtenue(b);
     expect(reponse.requete.corps).toEqual(envoyee.corps);
     expect(reponse.requete.sha256).toBe(empreinteDe(envoyee.corps));
-    expect(Object.keys(reponse.requete).sort()).toEqual(["corps", "endpoint", "horodatage", "sha256"]);
+    expect(reponse.requete.entetes).toEqual({ "content-type": "application/json", "x-version-api-simulee": "2026-12-01" });
+    expect(Object.keys(reponse.requete).sort()).toEqual(["corps", "endpoint", "entetes", "horodatage", "sha256"]);
     const fichier = readFileSync(`${b.reponses}/${reponse.id}.json`, "utf8");
     expect(fichier).not.toContain(CLE_API);
     expect(fichier.toLowerCase()).not.toContain("authorization");

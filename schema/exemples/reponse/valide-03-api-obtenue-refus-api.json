@@ -20,6 +20,10 @@
       ],
       "max_tokens": 2048
     },
+    "entetes": {
+      "content-type": "application/json",
+      "x-version-api": "2026-11-01"
+    },
     "sha256": "45140136753ce9cc58a111f91dbf55017a4a9184359f1f99f758f3d8d1dba863",
     "endpoint": "https://api.exemple-editeur.fr/v1/messages",
     "horodatage": "2026-12-01T06:04:12+01:00"
@@ -33,6 +37,7 @@
     }
   },
   "brut_sha256": "365062b50e9fd6a3d13aa7a78f25e9236607093b290a29bf78562f355b91448a",
+  "brut_octets_sha256": "a861e8709ba2234c75ae6668e65e3cdc2a7dc419853225004286fbbf6d7bf9fb",
   "normalise": {
     "texte": "",
     "liens": [],

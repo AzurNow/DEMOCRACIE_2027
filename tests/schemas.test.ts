@@ -100,12 +100,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 176 → 178 : conformité 2026-09-29, n° 5, deux invalides de diagnostic de lot (sans kappa_par_question, kappa de question avec motif).
   // 178 → 179 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
   // 179 → 188 : décisions de l'auteur du 2026-10-02 (lot interrogation), trois valides et six invalides de réponse (refus_api, motif_manquante).
-  it("1. les 188 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 188 → 192 : décisions de l'auteur du 2026-10-02 (suite du lot interrogation), un valide et trois invalides de réponse (brut_texte, brut_octets_sha256, requete.entetes).
+  it("1. les 192 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(188);
+    expect(manifeste.exemples).toHaveLength(192);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -224,7 +225,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 176 → 178 : conformité 2026-09-29, n° 5, deux invalides de diagnostic de lot (sans kappa_par_question, kappa de question avec motif).
   // 178 → 179 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
   // 179 → 188 : décisions de l'auteur du 2026-10-02 (lot interrogation), trois valides et six invalides de réponse (refus_api, motif_manquante).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 188 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(188);
+  // 188 → 192 : décisions de l'auteur du 2026-10-02 (suite du lot interrogation), un valide et trois invalides de réponse (brut_texte, brut_octets_sha256, requete.entetes).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 192 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(192);
   });
 });

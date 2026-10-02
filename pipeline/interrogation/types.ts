@@ -79,6 +79,8 @@ export interface MetadonneesReponse {
 
 export interface RequeteEnregistree {
   readonly corps: ObjetJson;
+  /** Les en-têtes envoyés, moins ceux d'authentification. */
+  readonly entetes: Readonly<Record<string, string>>;
   readonly sha256: string;
   readonly endpoint: string;
   readonly horodatage: string;
@@ -98,15 +100,33 @@ interface ReponseCommune {
   readonly requete: RequeteEnregistree;
 }
 
-export interface ReponseObtenue extends ReponseCommune {
-  readonly statut_reponse: "obtenue";
+/** Un corps objet JSON : `brut` et l'empreinte de sa forme canonique. */
+interface BrutObjet {
   readonly brut: ObjetJson;
   readonly brut_sha256: string;
+  readonly brut_texte?: never;
+}
+
+/** Tout autre corps UTF-8, tel que reçu (décision de l'auteur du 2026-10-02). */
+interface BrutTexte {
+  readonly brut_texte: string;
+  readonly brut?: never;
+  readonly brut_sha256?: never;
+}
+
+export type BrutStocke = BrutObjet | BrutTexte;
+
+interface ObtenueCommune extends ReponseCommune {
+  readonly statut_reponse: "obtenue";
+  /** SHA-256 des octets exacts du corps HTTP reçu. */
+  readonly brut_octets_sha256: string;
   readonly normalise: ProjectionNormalisee;
   readonly normalisation: { readonly fonction: string; readonly version: string };
   readonly metadonnees: MetadonneesReponse;
   readonly tentatives?: readonly Tentative[];
 }
+
+export type ReponseObtenue = ObtenueCommune & BrutStocke;
 
 export interface ReponseManquante extends ReponseCommune {
   readonly statut_reponse: "manquante";

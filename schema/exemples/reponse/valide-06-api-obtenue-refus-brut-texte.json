@@ -1,5 +1,5 @@
 {
-  "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F",
+  "id": "3V7K9M2QX8B1NHD6RZ4TJ0PWEA",
   "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "contexte": "run",
   "canal": "api",
@@ -28,25 +28,13 @@
     "endpoint": "https://api.exemple-editeur.fr/v1/messages",
     "horodatage": "2026-12-01T06:04:12+01:00"
   },
-  "brut": {
-    "id": "msg_01ABC",
-    "content": [
-      {
-        "type": "text",
-        "text": "Ce candidat propose de ramener la TVA sur les produits énergétiques à 5,5 %."
-      }
-    ],
-    "stop_reason": "end_turn",
-    "model": "modele-grand-public-2026-11"
-  },
-  "brut_sha256": "855025dbc34b665799e59a3d0e46ad67a225950d42997dcded40b8b7a9dc5ede",
-  "brut_octets_sha256": "f00759d411d3f8746b3d8f50857c9ec5d9340cd2609c7df4bcbd1f3db353acb2",
+  "brut_texte": "[{\"error\":{\"code\":\"contenu_refuse\",\"message\":\"Refus.\"}}]",
+  "brut_octets_sha256": "d9a57ea1e9646f1bffbf978d61b2ac358722d9ad81a50392e9a09e4e232675e7",
   "normalise": {
-    "texte": "Ce candidat propose de ramener la TVA sur les produits énergétiques à 5,5 %.",
+    "texte": "",
     "liens": [],
-    "citations": [],
     "troncature": false,
-    "refus_api": false
+    "refus_api": true
   },
   "normalisation": {
     "fonction": "normaliser_reponse",
@@ -54,17 +42,14 @@
   },
   "metadonnees": {
     "modele_demande": "modele-grand-public",
+    "modele_renvoye": null,
     "horodatage_requete": "2026-12-01T06:04:12+01:00",
-    "horodatage_reponse": "2026-12-01T06:04:15+01:00",
-    "latence_ms": 3120,
-    "stop_reason": "end_turn",
+    "horodatage_reponse": "2026-12-01T06:04:12.412+01:00",
+    "latence_ms": 412,
+    "stop_reason": null,
     "parametres_effectifs": {
-      "temperature": 1.0,
+      "temperature": 1,
       "max_tokens": 2048
-    },
-    "tokens": {
-      "entree": 42,
-      "sortie": 61
     }
   }
 }

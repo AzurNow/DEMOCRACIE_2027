@@ -19,6 +19,10 @@
       ],
       "max_tokens": 2048
     },
+    "entetes": {
+      "content-type": "application/json",
+      "x-version-api": "2026-11-01"
+    },
     "sha256": "45140136753ce9cc58a111f91dbf55017a4a9184359f1f99f758f3d8d1dba863",
     "endpoint": "https://api.exemple-editeur.fr/v1/messages",
     "horodatage": "2026-12-01T06:04:12+01:00"
@@ -35,6 +39,7 @@
     "model": "modele-grand-public-2026-11"
   },
   "brut_sha256": "855025dbc34b665799e59a3d0e46ad67a225950d42997dcded40b8b7a9dc5ede",
+  "brut_octets_sha256": "f00759d411d3f8746b3d8f50857c9ec5d9340cd2609c7df4bcbd1f3db353acb2",
   "normalise": {
     "texte": "Ce candidat propose de ramener la TVA sur les produits énergétiques à 5,5 %.",
     "liens": [],

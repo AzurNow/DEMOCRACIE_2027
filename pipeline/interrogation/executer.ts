@@ -7,8 +7,8 @@
  * journalisées comptent (`journal.ts`), et l'exécution reprend à la suivante, après l'attente qui
  * la précède. Relancer un run complet ne fait donc rien.
  *
- * Une erreur qui n'est pas un échec de tentative (corps de refus illisible, réponse malformée,
- * réponse non conforme au schéma) arrête la file de son outil ; les autres files vont au bout, puis
+ * Une erreur qui n'est pas un échec de tentative (corps qui n'est pas de l'UTF-8 valide, réponse
+ * malformée, réponse non conforme au schéma) arrête la file de son outil ; les autres files vont au bout, puis
  * l'erreur remonte. Sa tentative reste journalisée sans résultat.
  */
 
@@ -16,7 +16,7 @@ import { mkdirSync } from "node:fs";
 import { empreinteDe } from "../../validation/domaine/empreinte.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
 import { attenteAvantTentative, TENTATIVES_MAX } from "./conditions.ts";
-import type { Adaptateur, Editeur, RequeteHttp } from "./editeur.ts";
+import { entetesEnregistrables, type Adaptateur, type Contenu, type Editeur, type RequeteHttp } from "./editeur.ts";
 import { tentativePeutDemarrer, type Fenetre } from "./fenetre.ts";
 import { instantParis } from "./heure-paris.ts";
 import type { Horloge } from "./horloge.ts";
@@ -26,8 +26,8 @@ import type { DepotReponses } from "./stockage.ts";
 import { conclure, envoyerSousDelai } from "./tentatives.ts";
 import {
   cleDe,
+  type BrutStocke,
   type MotifManquante,
-  type ObjetJson,
   type ProjectionNormalisee,
   type ReponseEcrite,
   type ReponseManquante,
@@ -72,15 +72,23 @@ type Aboutissement =
   | {
       readonly genre: "obtenue";
       readonly tentatives: readonly Tentative[];
-      readonly brut: ObjetJson;
+      readonly contenu: Contenu;
       readonly refus_api: boolean;
+      readonly brut_octets_sha256: string;
       readonly debut_ms: number;
       readonly fin_ms: number;
     }
   | { readonly genre: "manquante"; readonly motif: MotifManquante; readonly tentatives: readonly Tentative[] };
 
 type Essai =
-  | { readonly genre: "obtenue"; readonly brut: ObjetJson; readonly refus_api: boolean; readonly debut_ms: number; readonly fin_ms: number }
+  | {
+      readonly genre: "obtenue";
+      readonly contenu: Contenu;
+      readonly refus_api: boolean;
+      readonly brut_octets_sha256: string;
+      readonly debut_ms: number;
+      readonly fin_ms: number;
+    }
   | { readonly genre: "echec"; readonly tentative: Tentative };
 
 /* ----------------------------------------------------------------- tentatives */
@@ -124,13 +132,29 @@ async function poursuivre(course: Course, passees: readonly Tentative[]): Promis
 /** Décision de l'auteur du 2026-10-02 : la projection d'un refus de l'API est fixée. */
 const PROJECTION_REFUS: ProjectionNormalisee = { texte: "", liens: [], troncature: false, refus_api: true };
 
-function projection(adaptateur: Adaptateur, brut: ObjetJson, refus_api: boolean): ProjectionNormalisee {
-  return refus_api ? PROJECTION_REFUS : { ...adaptateur.normaliser(brut), refus_api: false };
+function projection(adaptateur: Adaptateur, contenu: Contenu, refus_api: boolean): ProjectionNormalisee {
+  return refus_api ? PROJECTION_REFUS : { ...adaptateur.normaliser(contenu), refus_api: false };
 }
 
-/** La requête telle qu'enregistrée : son corps, sans aucun en-tête (seul retrait autorisé). */
-function requeteEnregistree(http: RequeteHttp, horodatage: string): ReponseEcrite["requete"] {
-  return { corps: http.corps, sha256: empreinteDe(http.corps), endpoint: http.endpoint, horodatage };
+/** `brut` et son empreinte canonique pour un objet JSON ; `brut_texte` seul sinon. */
+function brutStocke(contenu: Contenu): BrutStocke {
+  if (contenu.forme === "objet") return { brut: contenu.brut, brut_sha256: empreinteDe(contenu.brut) };
+  return { brut_texte: contenu.brut_texte };
+}
+
+/**
+ * La requête telle qu'enregistrée : son corps, et ses en-têtes moins ceux d'authentification (seul
+ * retrait autorisé). `sha256` couvre la forme canonique du corps seul.
+ */
+function requeteEnregistree(course: Course, horodatage: string): ReponseEcrite["requete"] {
+  const { http, editeur } = course;
+  return {
+    corps: http.corps,
+    entetes: entetesEnregistrables(http.entetes, editeur.adaptateur.entetes_authentification),
+    sha256: empreinteDe(http.corps),
+    endpoint: http.endpoint,
+    horodatage,
+  };
 }
 
 function commun(course: Course, horodatage_requete: string) {
@@ -146,22 +170,22 @@ function commun(course: Course, horodatage_requete: string) {
     question_id: requete.question_id,
     formulation_id: requete.formulation_id,
     echantillon: requete.echantillon,
-    requete: requeteEnregistree(course.http, horodatage_requete),
+    requete: requeteEnregistree(course, horodatage_requete),
   } as const;
 }
 
 function reponseObtenue(course: Course, fin: Extract<Aboutissement, { genre: "obtenue" }>): ReponseObtenue {
   const { adaptateur } = course.editeur;
-  const renvoyees = adaptateur.metadonnees(fin.brut);
+  const renvoyees = adaptateur.metadonnees(fin.contenu);
   const tokens = renvoyees.tokens === undefined ? {} : { tokens: renvoyees.tokens };
   const tentatives = fin.tentatives.length === 0 ? {} : { tentatives: fin.tentatives };
   const premiere = fin.tentatives[0];
   return {
     ...commun(course, premiere === undefined ? instantParis(fin.debut_ms) : premiere.horodatage),
     statut_reponse: "obtenue",
-    brut: fin.brut,
-    brut_sha256: empreinteDe(fin.brut),
-    normalise: projection(adaptateur, fin.brut, fin.refus_api),
+    ...brutStocke(fin.contenu),
+    brut_octets_sha256: fin.brut_octets_sha256,
+    normalise: projection(adaptateur, fin.contenu, fin.refus_api),
     normalisation: adaptateur.normalisation,
     metadonnees: {
       modele_demande: course.requete.modele_demande,

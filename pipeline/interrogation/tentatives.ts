@@ -7,10 +7,11 @@
  * retentée) ou échec « http » / « quota ».
  */
 
+import { createHash } from "node:crypto";
 import { DELAI_TENTATIVE_MS } from "./conditions.ts";
-import { ErreurReseau, type Adaptateur, type Editeur, type ReponseHttp, type RequeteHttp } from "./editeur.ts";
+import { ErreurReseau, type Adaptateur, type Contenu, type Editeur, type ReponseHttp, type RequeteHttp } from "./editeur.ts";
 import type { Horloge } from "./horloge.ts";
-import type { ErreurTentative, ObjetJson } from "./types.ts";
+import type { ErreurTentative } from "./types.ts";
 
 type Envoi =
   | { readonly genre: "http"; readonly reponse: ReponseHttp }
@@ -19,7 +20,13 @@ type Envoi =
   | { readonly genre: "abandonne" };
 
 export type Conclusion =
-  | { readonly genre: "obtenue"; readonly brut: ObjetJson; readonly refus_api: boolean }
+  | {
+      readonly genre: "obtenue";
+      readonly contenu: Contenu;
+      readonly refus_api: boolean;
+      /** SHA-256 des octets exacts du corps reçu, pris avant toute lecture. */
+      readonly brut_octets_sha256: string;
+    }
   | { readonly genre: "echec"; readonly erreur: ErreurTentative };
 
 export const MESSAGE_TIMEOUT = `Aucune réponse au bout de ${DELAI_TENTATIVE_MS / 1000} s : tentative abandonnée.`;
@@ -54,13 +61,19 @@ export async function envoyerSousDelai(editeur: Editeur, requete: RequeteHttp, h
   }
 }
 
+/** Décision de l'auteur du 2026-10-02 : l'empreinte des octets reçus, avant toute lecture. */
+export function empreinteOctets(octets: Uint8Array): string {
+  return createHash("sha256").update(octets).digest("hex");
+}
+
 function conclureHttp(reponse: ReponseHttp, adaptateur: Adaptateur): Conclusion {
+  const brut_octets_sha256 = empreinteOctets(reponse.corps);
   const classement = adaptateur.classer(reponse);
   switch (classement.issue) {
     case "reponse":
-      return { genre: "obtenue", brut: classement.brut, refus_api: false };
+      return { genre: "obtenue", contenu: classement.contenu, refus_api: false, brut_octets_sha256 };
     case "refus_api":
-      return { genre: "obtenue", brut: classement.brut, refus_api: true };
+      return { genre: "obtenue", contenu: classement.contenu, refus_api: true, brut_octets_sha256 };
     case "echec":
       return { genre: "echec", erreur: classement.erreur };
   }

@@ -12,15 +12,15 @@
 import { canoniser, sha256 } from "../../validation/domaine/empreinte.ts";
 import { TOKENS_SORTIE_MAX } from "./conditions.ts";
 import {
-  CorpsNonObjet,
   ErreurReseau,
   estObjetJson,
+  lireContenu,
   lireJson,
-  RefusNonObjet,
+  texteIndicatif,
   type Adaptateur,
   type Classement,
+  type Contenu,
   type EntreeRequete,
-  type LectureJson,
   type MetadonneesRenvoyees,
   type Projection,
   type ReponseHttp,
@@ -35,11 +35,20 @@ import type { Mode, ObjetJson } from "./types.ts";
 /** Les particularités de l'éditeur simulé, en données. */
 export const REGLES_SIMULE = {
   endpoint: "simule://editeur-simule.invalid/v1/messages",
+  /** En-tête d'authentification propre à cet éditeur, retiré comme `authorization`. */
+  entetes_authentification: ["x-jeton-simule"] as readonly string[],
+  /** En-têtes ordinaires, envoyés et enregistrés. */
+  entetes_fixes: { "content-type": "application/json", "x-version-api-simulee": "2026-12-01" },
   /** Refus de modération identifiable : ce statut ET ce code d'erreur, rien d'autre. */
   refus: { statut: 400, code: "contenu_refuse" },
   statuts_quota: [429] as readonly number[],
   /** stop_reason qui disent une réponse coupée par la limite de longueur. */
   stop_troncature: ["max_tokens"] as readonly string[],
+  /**
+   * L'API simulée ne renvoie un corps texte (non JSON) qu'entier : c'est une règle de cet éditeur,
+   * pas une supposition. Un adaptateur réel dira la sienne, ou lèvera.
+   */
+  troncature_corps_texte: false,
   /** Ce que chaque mode ajoute au corps de la requête. */
   champs_mode: {
     web_activee: { outils: [{ type: "recherche_web" }] },
@@ -59,8 +68,9 @@ function texteOuNull(valeur: unknown): string | null {
   return typeof valeur === "string" ? valeur : null;
 }
 
-/** Le code d'erreur d'un corps lu : `error.code` d'un objet, ou du premier élément d'une liste. */
-function codeErreur(lecture: LectureJson): string | null {
+/** Le code d'erreur d'un corps : `error.code` d'un objet, ou du premier élément d'une liste. */
+function codeErreur(reponse: ReponseHttp): string | null {
+  const lecture = lireJson(texteIndicatif(reponse));
   if (!lecture.lisible) return null;
   const porteur = Array.isArray(lecture.valeur) ? (lecture.valeur as readonly unknown[])[0] : lecture.valeur;
   return texteOuNull(champ(champ(porteur, "error"), "code"));
@@ -89,7 +99,7 @@ function urlDe(citation: ObjetJson): readonly string[] {
 function construireRequete(cle_api: string, entree: EntreeRequete): RequeteHttp {
   return {
     endpoint: REGLES_SIMULE.endpoint,
-    entetes_authentification: { authorization: `Bearer ${cle_api}` },
+    entetes: { ...REGLES_SIMULE.entetes_fixes, authorization: `Bearer ${cle_api}`, "X-Jeton-Simule": cle_api },
     corps: {
       model: entree.modele_demande,
       max_tokens: TOKENS_SORTIE_MAX,
@@ -99,33 +109,21 @@ function construireRequete(cle_api: string, entree: EntreeRequete): RequeteHttp 
   };
 }
 
-function estRefus(statut: number, lecture: LectureJson): boolean {
-  return statut === REGLES_SIMULE.refus.statut && codeErreur(lecture) === REGLES_SIMULE.refus.code;
+function estRefus(reponse: ReponseHttp): boolean {
+  return reponse.statut === REGLES_SIMULE.refus.statut && codeErreur(reponse) === REGLES_SIMULE.refus.code;
 }
 
-function classerReussite(reponse: ReponseHttp): Classement {
-  const lecture = lireJson(reponse.corps);
-  if (!lecture.lisible || !estObjetJson(lecture.valeur)) throw new CorpsNonObjet(reponse.statut, reponse.corps);
-  return { issue: "reponse", brut: lecture.valeur };
-}
-
-function classerRefus(reponse: ReponseHttp, lecture: LectureJson): Classement {
-  if (!lecture.lisible || !estObjetJson(lecture.valeur)) throw new RefusNonObjet(reponse.statut, reponse.corps);
-  return { issue: "refus_api", brut: lecture.valeur };
-}
-
-function classerEchec(statut: number, lecture: LectureJson): Classement {
-  const code = codeErreur(lecture);
-  const type = REGLES_SIMULE.statuts_quota.includes(statut) ? "quota" : "http";
-  const message = code === null ? `HTTP ${statut}` : `HTTP ${statut} (${code})`;
-  return { issue: "echec", erreur: { type, message, code_http: statut } };
+function classerEchec(reponse: ReponseHttp): Classement {
+  const code = codeErreur(reponse);
+  const type = REGLES_SIMULE.statuts_quota.includes(reponse.statut) ? "quota" : "http";
+  const message = code === null ? `HTTP ${reponse.statut}` : `HTTP ${reponse.statut} (${code})`;
+  return { issue: "echec", erreur: { type, message, code_http: reponse.statut } };
 }
 
 function classer(reponse: ReponseHttp): Classement {
-  if (reponse.statut >= 200 && reponse.statut < 300) return classerReussite(reponse);
-  const lecture = lireJson(reponse.corps);
-  if (estRefus(reponse.statut, lecture)) return classerRefus(reponse, lecture);
-  return classerEchec(reponse.statut, lecture);
+  if (reponse.statut >= 200 && reponse.statut < 300) return { issue: "reponse", contenu: lireContenu(reponse) };
+  if (estRefus(reponse)) return { issue: "refus_api", contenu: lireContenu(reponse) };
+  return classerEchec(reponse);
 }
 
 /** troncature dérivée du stop_reason ; un stop_reason absent n'autorise aucune supposition. */
@@ -137,7 +135,7 @@ function troncatureDe(brut: ObjetJson): boolean {
   return REGLES_SIMULE.stop_troncature.includes(stop);
 }
 
-function normaliser(brut: ObjetJson): Projection {
+function normaliserObjet(brut: ObjetJson): Projection {
   const contenu = blocs(brut);
   const textes = contenu.filter((bloc) => bloc["type"] === "text");
   const citations = textes.flatMap(citationsDe);
@@ -147,6 +145,11 @@ function normaliser(brut: ObjetJson): Projection {
     citations,
     troncature: troncatureDe(brut),
   };
+}
+
+function normaliser(contenu: Contenu): Projection {
+  if (contenu.forme === "objet") return normaliserObjet(contenu.brut);
+  return { texte: contenu.brut_texte, liens: [], troncature: REGLES_SIMULE.troncature_corps_texte };
 }
 
 function entierOuAbsent(valeur: unknown): number | undefined {
@@ -160,7 +163,10 @@ function tokensDe(brut: ObjetJson): MetadonneesRenvoyees["tokens"] {
   return { entree, sortie };
 }
 
-function metadonnees(brut: ObjetJson): MetadonneesRenvoyees {
+/** Un corps texte ne dit ni son modèle ni son stop_reason : ils restent absents, à null. */
+function metadonnees(contenu: Contenu): MetadonneesRenvoyees {
+  if (contenu.forme === "texte") return { modele_renvoye: null, stop_reason: null };
+  const { brut } = contenu;
   const tokens = tokensDe(brut);
   const base = { modele_renvoye: texteOuNull(brut["model"]), stop_reason: texteOuNull(brut["stop_reason"]) };
   return tokens === undefined ? base : { ...base, tokens };
@@ -176,7 +182,8 @@ function parametresEffectifs(requete: RequeteHttp): ObjetJson {
 
 export function adaptateurSimule(cle_api: string): Adaptateur {
   return {
-    normalisation: { fonction: "normaliser_editeur_simule", version: "1.0.0" },
+    normalisation: { fonction: "normaliser_editeur_simule", version: "1.1.0" },
+    entetes_authentification: REGLES_SIMULE.entetes_authentification,
     construireRequete: (entree) => construireRequete(cle_api, entree),
     parametresEffectifs,
     classer,
@@ -200,7 +207,9 @@ export type IssueSimulee =
   | { readonly genre: "http"; readonly statut: number }
   | { readonly genre: "quota" }
   | { readonly genre: "reseau" }
-  | { readonly genre: "lent" };
+  | { readonly genre: "lent" }
+  /** Un corps donné octet pour octet (texte, gros entiers, UTF-8 invalide…), pour les tests. */
+  | { readonly genre: "corps"; readonly statut: number; readonly corps: string | Uint8Array };
 
 /** L'issue du `rang`-ième envoi (à partir de 1) d'un même corps de requête. */
 export type Scenario = (corps: ObjetJson, rang: number) => IssueSimulee;
@@ -247,9 +256,10 @@ const REPONSE_TARDIVE = {
   liens: [],
 } as const satisfies IssueSimulee;
 
-const CORPS_REFUS_LISTE = corpsJson([{ error: { code: REGLES_SIMULE.refus.code, message: "Refus simulé." } }]);
+/** Un refus dont le corps est une liste JSON, pas un objet : il sera stocké dans `brut_texte`. */
+export const CORPS_REFUS_LISTE = corpsJson([{ error: { code: REGLES_SIMULE.refus.code, message: "Refus simulé." } }]);
 
-function reponseHttp(issue: IssueSimulee, numero: number): ReponseHttp {
+function texteHttp(issue: IssueSimulee, numero: number): { readonly statut: number; readonly corps: string | Uint8Array } {
   switch (issue.genre) {
     case "reponse":
       return { statut: 200, corps: corpsReponse(issue, numero) };
@@ -263,9 +273,16 @@ function reponseHttp(issue: IssueSimulee, numero: number): ReponseHttp {
       return { statut: 429, corps: corpsJson({ type: "error", error: { code: "quota_depasse" } }) };
     case "lent":
       return { statut: 200, corps: corpsReponse(REPONSE_TARDIVE, numero) };
+    case "corps":
+      return { statut: issue.statut, corps: issue.corps };
     case "reseau":
       throw new ErreurReseau("Connexion simulée interrompue.");
   }
+}
+
+function reponseHttp(issue: IssueSimulee, numero: number): ReponseHttp {
+  const { statut, corps } = texteHttp(issue, numero);
+  return { statut, corps: typeof corps === "string" ? new TextEncoder().encode(corps) : corps };
 }
 
 export class TransportSimule implements Transport {
@@ -309,6 +326,7 @@ export const ISSUES_NOMMEES: Readonly<Record<string, IssueSimulee>> = {
   tronquee: { genre: "reponse", texte: TEXTE_SIMULE, stop_reason: "max_tokens", modele: "modele-simule-2026-12", liens: [] },
   sans_modele: { genre: "reponse", texte: TEXTE_SIMULE, stop_reason: "end_turn", modele: null, liens: [] },
   refus: { genre: "refus" },
+  refus_texte: { genre: "refus_non_objet" },
   http_503: { genre: "http", statut: 503 },
   quota: { genre: "quota" },
   reseau: { genre: "reseau" },

@@ -9,6 +9,6 @@
   },
   "profils": {
     "outil-alpha": ["reponse", "reponse", "reponse", "reponse", "tronquee", "sans_modele", "refus", "http_503", "quota", "lent"],
-    "outil-beta": ["reponse", "reponse", "http_503", "http_503", "reseau", "lent", "refus"]
+    "outil-beta": ["reponse", "reponse", "http_503", "http_503", "reseau", "lent", "refus", "refus_texte"]
   }
 }

@@ -306,6 +306,33 @@
       "regle_protocole": "§6, « au plus trois fois au total » ; décision de l'auteur du 2026-10-02"
     },
     {
+      "objet": "reponse",
+      "fichier": "reponse/valide-06-api-obtenue-refus-brut-texte.json",
+      "attendu": "valide",
+      "motif": "Refus de modération dont le corps est une liste JSON, pas un objet : stocké tel que reçu dans brut_texte, sans brut ni brut_sha256 ; son intégrité se vérifie par brut_octets_sha256, l'empreinte des octets reçus."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-15-brut-et-brut-texte.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 portant à la fois brut et brut_texte. Les deux sont exclusifs : deux lectures du même corps laisseraient la notation choisir laquelle croire.",
+      "regle_protocole": "§6, règle 7 ; décision de l'auteur du 2026-10-02 (brut_texte, brut_octets_sha256, requete.entetes)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-16-obtenue-sans-brut-octets-sha256.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 privée de brut_octets_sha256. Sans l'empreinte des octets reçus, rien ne prouve que brut est la lecture fidèle du corps HTTP (un entier au-delà de 2^53 ou un ordre de clés change en silence à la lecture JSON).",
+      "regle_protocole": "§6, règle 7 ; décision de l'auteur du 2026-10-02 (brut_texte, brut_octets_sha256, requete.entetes)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-17-requete-sans-entetes.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la requête n'a pas d'en-têtes. §6 enregistre la requête complète ; le seul retrait autorisé est celui des en-têtes d'authentification.",
+      "regle_protocole": "§6, règle 7 ; décision de l'auteur du 2026-10-02 (brut_texte, brut_octets_sha256, requete.entetes)"
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-01-juge-exacte.json",
       "attendu": "valide",

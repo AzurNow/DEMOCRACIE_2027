@@ -71,11 +71,19 @@
     "requete": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["corps", "sha256", "endpoint", "horodatage"],
+      "required": ["corps", "entetes", "sha256", "endpoint", "horodatage"],
       "description": "§6 : la requête complète est enregistrée. Aucune clé d'accès ne figure ici (§9 : les clés ne sont pas publiées) ; les en-têtes d'authentification sont retirés avant écriture, ce qui est le seul retrait autorisé.",
       "properties": {
         "corps": { "type": "object" },
-        "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "entetes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Décision de l'auteur du 2026-10-02 : tous les en-têtes envoyés, sauf ceux d'authentification, retirés par nom sans égard à la casse (authorization, x-api-key, api-key, et ceux que déclare l'adaptateur de l'éditeur ; pipeline/interrogation/editeur.ts). Ce retrait est le seul autorisé."
+        },
+        "sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Empreinte de la forme canonique de corps (validation/domaine/empreinte.ts:canoniser : clés triées, aucune espace), et de corps seul : ni les en-têtes, ni l'endpoint, ni les octets exacts envoyés sur le réseau. Elle identifie le contenu de la requête ; deux échantillons d'une même formulation ont donc la même."
+        },
         "endpoint": { "type": "string", "minLength": 1 },
         "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
       }
@@ -84,12 +92,22 @@
     "brut": {
       "type": "object",
       "minProperties": 1,
-      "description": "La charge utile de l'éditeur, telle quelle, forme libre assumée. JAMAIS lue par la notation, jamais nettoyée, jamais tronquée. Toute transformation vit en aval, dans normalise."
+      "description": "La charge utile de l'éditeur, telle quelle, forme libre assumée. JAMAIS lue par la notation, jamais nettoyée, jamais tronquée. Toute transformation vit en aval, dans normalise. Exclusif de brut_texte : présent quand le corps reçu est un objet JSON."
+    },
+
+    "brut_texte": {
+      "type": "string",
+      "description": "Décision de l'auteur du 2026-10-02 : le corps HTTP tel que reçu, décodé en UTF-8, quand il n'est pas un objet JSON (refus de modération en liste, réponse texte). Exclusif de brut. Un corps qui n'est pas de l'UTF-8 valide n'est pas stocké : l'interrogation lève une erreur explicite. Son intégrité se vérifie par brut_octets_sha256."
     },
 
     "brut_sha256": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
-      "description": "Empreinte des octets canoniques de brut. Rend l'immuabilité vérifiable plutôt que promise."
+      "description": "Empreinte de la forme canonique de brut (canoniser). Présente avec brut, absente avec brut_texte. Elle diffère de brut_octets_sha256 dès que la lecture JSON a changé quelque chose : ordre des clés, espaces, entiers au-delà de 2^53."
+    },
+
+    "brut_octets_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Décision de l'auteur du 2026-10-02 : SHA-256 des octets exacts du corps HTTP reçu, calculé avant toute lecture. Requis pour toute réponse obtenue du canal api. Les octets eux-mêmes ne sont pas copiés : brut ou brut_texte en sont la lecture."
     },
 
     "normalise": {
@@ -257,9 +275,21 @@
       "$comment": "Une réponse obtenue porte son brut, son empreinte, sa projection et ses métadonnées ; elle n'a pas de tentatives en échec. Conformité 2026-09-29, n° 27 : si elle en garde, deux au plus, puisque la tentative réussie est l'une des trois du §6.",
       "if": { "properties": { "statut_reponse": { "const": "obtenue" } }, "required": ["statut_reponse"] },
       "then": {
-        "required": ["brut", "brut_sha256", "normalise", "normalisation", "metadonnees"],
+        "required": ["normalise", "normalisation", "metadonnees"],
         "properties": { "tentatives": { "maxItems": 2 } },
-        "not": { "required": ["motif_manquante"] }
+        "not": { "required": ["motif_manquante"] },
+        "oneOf": [
+          {
+            "$comment": "Corps objet JSON : brut et son empreinte canonique.",
+            "required": ["brut", "brut_sha256"],
+            "not": { "required": ["brut_texte"] }
+          },
+          {
+            "$comment": "Corps qui n'est pas un objet JSON (décision de l'auteur du 2026-10-02) : brut_texte seul, sans brut ni brut_sha256.",
+            "required": ["brut_texte"],
+            "allOf": [{ "not": { "required": ["brut"] } }, { "not": { "required": ["brut_sha256"] } }]
+          }
+        ]
       }
     },
     {
@@ -287,8 +317,10 @@
         "required": ["tentatives", "motif_manquante"],
         "allOf": [
           { "not": { "required": ["brut"] } },
+          { "not": { "required": ["brut_texte"] } },
           { "not": { "required": ["normalise"] } },
-          { "not": { "required": ["brut_sha256"] } }
+          { "not": { "required": ["brut_sha256"] } },
+          { "not": { "required": ["brut_octets_sha256"] } }
         ]
       }
     },
@@ -308,6 +340,7 @@
         "required": ["canal", "statut_reponse"]
       },
       "then": {
+        "required": ["brut_octets_sha256"],
         "properties": { "metadonnees": { "required": ["modele_renvoye", "latence_ms"] } }
       }
     },

@@ -822,7 +822,7 @@
         "chemin": {
           "type": "string",
           "minLength": 1,
-          "description": "Chemin relatif dans le dépôt, par exemple runs/2026-12-01/tirage.json."
+          "description": "Chemin relatif dans le dépôt, sous runs/<date>/ où <date> est la date de date_gel à Paris (runs/README.md) : par exemple runs/2026-12-01/tirage.json pour un date_gel au 2026-12-01T06:00:00+01:00."
         },
         "sha256": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
