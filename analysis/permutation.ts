@@ -31,8 +31,9 @@
  * **Intervalles publiés (conformité n° 29).** « Sont publiés la valeur p corrigée, l'écart maximal
  * avec son intervalle, et l'exactitude de chaque candidat avec son intervalle. » (§8) Les deux
  * intervalles viennent du bootstrap en grappes de `bootstrap.ts` (grappe = item), amorcé depuis
- * `run.graines.bootstrap` — le §8 ne le dit pas explicitement pour l'écart ; c'est la lecture du
- * paragraphe « Incertitude », à écrire en révision 0.12. Clés, après la clé de l'appelant (outil,
+ * `run.graines.bootstrap` — règle écrite au §8, paragraphe « Test d'asymétrie (QR3, H4) » : « Ces
+ * deux intervalles viennent du même bootstrap en grappes que les taux (paragraphe « Incertitude »),
+ * chacun avec sa propre graine dérivée ». Clés, après la clé de l'appelant (outil,
  * mode) : `ecart_maximal` / `global` pour l'écart, `exactitude_candidat` / identifiant du candidat
  * pour chaque exactitude. L'écart est recalculé sur chaque rééchantillon par `ecartMaximal`, sur
  * les grappes des seuls candidats comparés ; il y est **indéfini** dès qu'un candidat du test n'a

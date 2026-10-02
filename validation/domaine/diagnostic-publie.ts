@@ -13,9 +13,20 @@
  */
 
 import type { DiagnosticLot } from "./analyse-lot.ts";
-import type { MotifIndefini } from "./kappa.ts";
+import { CLES_GRILLE } from "./grille.ts";
+import type { MotifIndefini, ResultatKappa } from "./kappa.ts";
 import { supersediteurDe, trouverLot } from "./lot.ts";
-import type { Lot, NatureLot } from "./types.ts";
+import type { CleGrille, Lot, NatureLot } from "./types.ts";
+
+/** Un kappa publié, du lot ou d'une question : même forme, même règle d'absence (§4). */
+export interface KappaPublie {
+  /** Absent quand le kappa n'est pas défini : jamais 0, jamais 1 (§4). */
+  readonly kappa?: number;
+  /** Présent si et seulement si `kappa` est absent. */
+  readonly motif_indefini?: MotifIndefini;
+  readonly accord_observe: number | null;
+  readonly n: number;
+}
 
 export interface DiagnosticPublie {
   readonly lot_id: string;
@@ -27,6 +38,12 @@ export interface DiagnosticPublie {
   readonly motif_indefini?: MotifIndefini;
   readonly accord_observe: number | null;
   readonly n: number;
+  /**
+   * §4 : « Un kappa par question de la grille est publié comme diagnostic secondaire ». Une clé
+   * par question de la grille ; la réponse à `position_univoque` y est publiée sans entrer dans
+   * le sort de l'item.
+   */
+  readonly kappa_par_question: Readonly<Record<CleGrille, KappaPublie>>;
   readonly exclus_contestation: number;
   readonly taille_lot: number;
   readonly taille_attendue: number;
@@ -68,13 +85,22 @@ function lienDeSupersession(lots: readonly Lot[], lot_id: string): string | null
   return suivant === null ? null : suivant.lot_id;
 }
 
-function champsKappa(diagnostic: DiagnosticLot): Pick<DiagnosticPublie, "kappa" | "motif_indefini"> {
-  const { kappa, motif_indefini } = diagnostic.kappa;
-  if (kappa !== null) return { kappa };
+/** Le kappa d'un résultat de calcul, absent avec son motif quand il n'est pas défini (§4). */
+function kappaPublie(resultat: ResultatKappa, contexte: string): KappaPublie {
+  const { kappa, motif_indefini, accord_observe, n } = resultat;
+  if (kappa !== null) return { kappa, accord_observe, n };
   if (motif_indefini === null) {
-    throw new Error(`Lot ${diagnostic.lot_id} : kappa absent sans motif, résultat de calcul incohérent.`);
+    throw new Error(`${contexte} : kappa absent sans motif, résultat de calcul incohérent.`);
   }
-  return { motif_indefini };
+  return { motif_indefini, accord_observe, n };
+}
+
+function kappaParQuestionPublie(diagnostic: DiagnosticLot): Record<CleGrille, KappaPublie> {
+  const publies: Partial<Record<CleGrille, KappaPublie>> = {};
+  for (const cle of CLES_GRILLE) {
+    publies[cle] = kappaPublie(diagnostic.kappa_par_question[cle], `Lot ${diagnostic.lot_id}, question ${cle}`);
+  }
+  return publies as Record<CleGrille, KappaPublie>;
 }
 
 function champsReannotation(lot: Lot): Pick<DiagnosticPublie, "reannote" | "date_calibration"> {
@@ -99,9 +125,8 @@ export function projeterDiagnostic(
     lot_id: lot.lot_id,
     nature: lot.nature,
     date_calcul,
-    ...champsKappa(diagnostic),
-    accord_observe: diagnostic.kappa.accord_observe,
-    n: diagnostic.kappa.n,
+    ...kappaPublie(diagnostic.kappa, `Lot ${diagnostic.lot_id}`),
+    kappa_par_question: kappaParQuestionPublie(diagnostic),
     exclus_contestation: diagnostic.exclus_contestation,
     taille_lot: diagnostic.taille_lot,
     taille_attendue: diagnostic.taille_attendue,

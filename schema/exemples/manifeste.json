@@ -818,6 +818,20 @@
       "regle_protocole": "§4, réannotation"
     },
     {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-04-sans-kappa-par-question.json",
+      "attendu": "invalide",
+      "motif": "Diagnostic sans kappa_par_question. §4 : un kappa par question de la grille est publié comme diagnostic secondaire.",
+      "regle_protocole": "§4, kappa par question"
+    },
+    {
+      "objet": "diagnostic-lot",
+      "fichier": "diagnostic-lot/invalide-05-kappa-question-et-motif.json",
+      "attendu": "invalide",
+      "motif": "Kappa d'une question publié avec un motif d'indéfinition. §4 : un kappa indéfini est publié absent avec son motif, un kappa défini ne porte pas de motif.",
+      "regle_protocole": "§4, kappa par question"
+    },
+    {
       "objet": "gabarits",
       "fichier": "gabarits/valide-01-six-gabarits.json",
       "attendu": "valide",

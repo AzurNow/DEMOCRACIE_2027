@@ -118,7 +118,7 @@
 
     "obsolescence_fraiche": {
       "type": "boolean",
-      "description": "§11 : une erreur d'obsolescence de moins de 14 jours après la source du changement est comptée mais signalée à part. Calculée à partir de run.date_gel et de item.obsolescence.date_changement, puis STOCKÉE : le site ne recalcule rien."
+      "description": "§11 : « Une erreur d'obsolescence est dite fraîche quand la date de gel du run est strictement antérieure à la date du changement plus 14 jours ; elle est comptée mais signalée à part. » Calculée à partir de run.date_gel et de item.obsolescence.date_changement, puis STOCKÉE : le site ne recalcule rien."
     },
 
     "attribution": {
