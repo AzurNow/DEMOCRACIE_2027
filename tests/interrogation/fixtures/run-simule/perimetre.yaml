@@ -1,0 +1,97 @@
+# Périmètre du run simulé (`pnpm run:dry`) — ouvertement fictif.
+#
+# Même forme que `config/perimetre.yaml`, chargé par le même chargeur
+# (`pipeline/questions/charger-perimetre.ts`). Aucun candidat, aucun outil, aucune URL réels :
+# candidats `demo-*`, outils `outil-*`, domaines `.invalid`. Régime `liste_officielle` pour que le
+# périmètre se charge sans sondages : le run simulé exerce l'interrogation, pas la règle d'inclusion.
+#
+# outil-alpha déclare les deux modes ; outil-beta n'a pas de mode web (seul web_desactivee est
+# planifié) ; comparateur-gamma est lu, jamais interrogé ; outil-delta est exclu.
+
+version: "0.2.0-simule"
+date_gel: "2026-11-27T09:00:00+01:00"
+regime_inclusion: liste_officielle
+liste_officielle:
+  url: "https://liste-officielle.invalid/candidats"
+  date_publication: "2026-11-20"
+  sha256: "1111111111111111111111111111111111111111111111111111111111111111"
+  archive_url: "https://archive.invalid/liste-officielle"
+
+themes:
+  - fiscalite_pouvoir_achat
+  - retraites
+  - travail_emploi
+  - sante
+  - education
+  - securite_justice
+  - immigration
+  - ecologie_energie
+  - institutions_democratie
+  - europe_defense_international
+
+tirage:
+  questions_par_strate: 1
+  questions_attribution_par_theme: 1
+
+candidats:
+  - candidat_id: demo-alpha
+    libelle: "Prénom Demo-Alpha"
+    nom: "Demo-Alpha"
+    statut_au_gel: actif
+    interroge: true
+    contact_notification: null
+  - candidat_id: demo-beta
+    libelle: "Prénom Demo-Beta"
+    nom: "Demo-Beta"
+    statut_au_gel: actif
+    interroge: true
+    contact_notification: null
+
+outils:
+  - outil_id: outil-alpha
+    libelle: "Outil Alpha (simulé)"
+    editeur: "Éditeur simulé"
+    famille: assistant
+    inclus: true
+    modele_demande: "modele-simule"
+    modes: [web_activee, web_desactivee]
+    mode_de_tete: web_activee
+    cgu_relues_le: "2026-11-20"
+    clause_restrictive_signalee: false
+    preuve_inclusion:
+      url: "https://classement-stores.invalid/fr"
+      date_publication: "2026-11-26"
+      sha256: "2222222222222222222222222222222222222222222222222222222222222222"
+      archive_url: "https://archive.invalid/stores"
+    sdk: # exigé par perimetre.schema ; fictif : le run simulé n'utilise aucun SDK (D3)
+      paquet: "sdk-simule-inexistant"
+      version: "0.0.0"
+  - outil_id: outil-beta
+    libelle: "Outil Beta (simulé)"
+    editeur: "Éditeur simulé"
+    famille: assistant
+    inclus: true
+    modele_demande: "modele-simule"
+    modes: [web_desactivee]
+    mode_de_tete: web_desactivee
+    cgu_relues_le: "2026-11-20"
+    clause_restrictive_signalee: false
+    preuve_inclusion:
+      url: "https://classement-stores.invalid/fr"
+      date_publication: "2026-11-26"
+      sha256: "2222222222222222222222222222222222222222222222222222222222222222"
+      archive_url: "https://archive.invalid/stores"
+    sdk: # exigé par perimetre.schema ; fictif : le run simulé n'utilise aucun SDK (D3)
+      paquet: "sdk-simule-inexistant"
+      version: "0.0.0"
+  - outil_id: comparateur-gamma
+    libelle: "Comparateur Gamma (simulé)"
+    editeur: "Association simulée"
+    famille: comparateur
+    inclus: true
+  - outil_id: outil-delta
+    libelle: "Outil Delta (simulé)"
+    editeur: "Éditeur simulé"
+    famille: assistant
+    inclus: false
+    motif_exclusion: "Exclu du run simulé, pour vérifier qu'un outil exclu n'est pas interrogé."

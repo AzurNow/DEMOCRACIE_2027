@@ -39,7 +39,8 @@
     "texte": "Ce candidat propose de ramener la TVA sur les produits énergétiques à 5,5 %.",
     "liens": [],
     "citations": [],
-    "troncature": false
+    "troncature": false,
+    "refus_api": false
   },
   "normalisation": {
     "fonction": "normaliser_reponse",

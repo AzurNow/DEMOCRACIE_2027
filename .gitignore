@@ -39,3 +39,8 @@ __pycache__/
 # fiches .json de ces répertoires (traçabilité de la production, §9) restent versionnées.
 /staging/textes/*.txt
 /staging/transcriptions/*.vtt
+
+# Volume d'un run (runs/README.md) : réponses brutes, journaux des tentatives, notations individuelles.
+# Hors Git par décision (CLAUDE.md, « Ce que Git stocke ») : il part dans l'archive Zenodo, référencée
+# depuis runs/<date>/run.json par son DOI et son empreinte SHA-256.
+/runs/*/volume/

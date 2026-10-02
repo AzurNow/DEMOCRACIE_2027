@@ -55,12 +55,13 @@
     "latence_ms": 3120,
     "stop_reason": "end_turn",
     "parametres_effectifs": {
-      "temperature": 1.0,
+      "temperature": 1,
       "max_tokens": 2048
     },
     "tokens": {
       "entree": 42,
       "sortie": 61
     }
-  }
+  },
+  "motif_manquante": "echecs"
 }

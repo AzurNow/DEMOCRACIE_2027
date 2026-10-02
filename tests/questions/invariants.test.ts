@@ -343,8 +343,9 @@ describe("exemples de schema/exemples/", () => {
   // 168 → 176 : conformité 2026-09-29, n° 15 (trois invalides de run), n° 27 (trois invalides de réponse), n° 29 (un valide et un invalide de notation).
   // 176 → 178 : conformité 2026-09-29, n° 5, deux invalides de diagnostic de lot.
   // 178 → 179 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
-  it("charge les 179 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(179);
+  // 179 → 188 : décisions de l'auteur du 2026-10-02 (lot interrogation), trois valides et six invalides de réponse (refus_api, motif_manquante).
+  it("charge les 188 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(188);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

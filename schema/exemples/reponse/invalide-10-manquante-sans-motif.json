@@ -10,7 +10,6 @@
   "formulation_id": "9RVVC2P20KRNNRY69ZPFCS99F5",
   "echantillon": 2,
   "statut_reponse": "manquante",
-  "motif_manquante": "echecs",
   "requete": {
     "corps": {
       "messages": [
