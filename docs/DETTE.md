@@ -13,6 +13,77 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-02 — Constats de la conformité du 2026-09-29 soldés côté code, protocole 0.14 et 0.15 (PR #59 à #70 : `analysis/`, `schema/`, `validation/domaine/`, `validation/serveur/routes.ts`, `pipeline/questions/`, `docs/PROTOCOLE.md`)
+
+### 1. Les métriques secondaires acceptent encore le canal application sans marque exploratoire — *haute*
+
+#62 a fermé le canal application aux métriques primaires (`parOutilEtMode` lève, `metriquesApplication`
+marque `exploratoire: true`). `repartitionDrapeaux`, `exactitudeParCle` et ses dérivées (par
+candidat, thème, gabarit, formulation) prennent toujours toutes les unités qu'on leur donne.
+
+**Pourquoi ça casse.** Si le futur `pnpm analyze` leur passe les unités assemblées sans filtrer le
+canal, l'exactitude par candidat publiée mélange API et application. Le chiffre est faux, il ne porte
+pas la marque « exploratoire » du §8, et aucun test ne tombe.
+
+**Ce qu'il faut faire.** Faire lever ces fonctions sur une unité du canal application, comme
+`parOutilEtMode`, au lot analyse. C'est la même porte que le point 2 du 2026-09-27.
+
+### 2. Une lecture de comparateur n'est pas confrontée à la version de l'item au gel — *haute*
+
+Depuis #66, le run fige `items_p_au_gel` (identifiants seuls), et `metriquesComparateur` vérifie
+qu'il y a une lecture par item et par comparateur. `reference_item.item_version` et `item_empreinte`
+de la lecture ne sont comparés à rien.
+
+**Pourquoi ça casse.** Un item corrigé entre la lecture et le gel est lu et noté sur son ancien
+contenu. La lecture passe tous les contrôles, et l'exactitude du comparateur mesure un contenu que le
+run ne retient plus, sans signal.
+
+**Ce qu'il faut faire.** Figer `{id, version, empreinte}` dans `items_p_au_gel` et refuser une
+lecture dont la version ou l'empreinte diffère (`LecturesComparateurIncoherentes`). Lot analyse ou
+interrogation, avant le premier run avec comparateurs.
+
+### 3. La règle du juge retiré est écrite, et rien ne la garde entre verdict, notations et run — *haute*
+
+La 0.15 (§7, n° 18) écarte les notations du juge retiré et exige une revue humaine de tout drapeau
+grave du juge restant. `verdict.schema.json` ne voit qu'un verdict à la fois : il admet
+`accord_juges` ou des `notations_sources` du juge retiré dans un run où `run.juges[].retire` est
+vrai. Il admet aussi `juge_unique_apres_retrait` sans drapeau alors que la notation du juge restant
+porte « fabrication ». `analysis/filtre.ts:assembler` ne lit ni `mode_resolution` ni
+`notations_sources`.
+
+**Pourquoi ça casse.** Dans un run où un juge est retiré, environ 75 % des notes peuvent venir du
+juge biaisé, ou une fabrication peut sortir sans revue. Toutes les exactitudes du run en dépendent,
+et le run reste vert.
+
+**Ce qu'il faut faire.** Écrire au lot notation un contrôle croisé bloquant verdict × notations ×
+run. L'auteur doit dire avant si « écartées de tout le run » vaut aussi pour l'accord juges-humains
+et le kappa des juges (`docs/TACHES-AUTEUR.md`).
+
+### 4. Le verrou d'un lot terminé n'est imposé que par les deux routes qui l'appellent — *moyenne*
+
+#69 refuse décision et annulation sur un lot terminé (`routes.ts:refuserSiLotTermine`). Rien
+d'autre n'empêche d'écrire au journal d'un lot : `JournalAnnotateur.ajouter` n'en sait rien.
+
+**Pourquoi ça casse.** Une future route, ou un outil en ligne de commande qui écrit au journal, peut
+changer une décision après le kappa. Le lot repasse au-dessus de 0,80 sans réannotation, ce que la
+0.15 interdit. Le journal en garde la trace, mais aucun test ne tombe.
+
+**Ce qu'il faut faire.** Au prochain chemin d'écriture, déplacer le verrou dans la couche qui écrit
+au journal, pas dans chaque route.
+
+### 5. La non-évaluabilité par le panel ne se lit pas sur la dernière décision — *basse*
+
+`item.schema.json` (#65) admet l'attestation d'écoute sur un item `non_evaluable` qui porte une
+décision `non_evaluabilite` et une décision ayant trouvé l'item vérifié, quel que soit leur rang.
+JSON Schema ne sait pas désigner la dernière décision.
+
+**Pourquoi ça casse.** Un fichier de `data/items/` corrigé à la main (non évaluable resté après un
+maintien) passe la validation. `pnpm panel` ne produit jamais cet état, et la relecture de la PR qui
+toucherait `data/` est le seul garde.
+
+**Ce qu'il faut faire.** Un contrôle TS dans `data-items.ts` (lecture et `reecrireItem`) : statut
+`non_evaluable` avec attestation ⇒ dernière décision `non_evaluabilite`.
+
 ## 2026-10-01 — Rattrapage de #54, tests manquants, barrière de symétrie (PR #55, #56, #57 : `pipeline/questions/symetrie.ts`, `pipeline/questions/completude.ts`, `outils/symmetry.ts`, `outils/items-au-gel.ts`, `schema/tirage.schema.json`, `tests/`)
 
 ### ~~1. Aucune condition de symétrie ne voit une strate remplie au-delà du quota~~ — réglé le 2026-10-01 par #59 (condition bloquante `quota_par_strate_respecte`, décision de l'auteur)

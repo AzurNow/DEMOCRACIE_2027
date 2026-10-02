@@ -5,17 +5,17 @@ traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une t�
 puis retirée à la clôture de session suivante.
 
 Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.13, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #57.
+`docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #70.
 
 ---
 
 ## 0. Fusions en attente
 
-- [ ] **Fusionner #59** (condition de quota, `donnees_commit` obligatoire), puis la PR de la
-      révision 0.14 du protocole. #59 part de `main`.
-- [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #56, dont
-      `lots/panel-maintien-apres-retrait` et `lots/tirage-contestations-mesure`), et leurs worktrees
-      sous `.claude/worktrees/`. Ne plus fusionner une PR dont la base est la branche d'une autre
+- [ ] **Relire et fusionner #67** (protocole 0.15 : c'est le texte qui sera gelé le 15 octobre),
+      puis **#68, #69 et #70** (code des décisions du 2026-10-02), dans n'importe quel ordre, puis
+      la PR de clôture du 2026-10-02. Toutes partent de `main`.
+- [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #66), et
+      les worktrees d'agents sous `.claude/worktrees/` (sept créés le 2026-10-02). Ne plus fusionner une PR dont la base est la branche d'une autre
       PR : c'est ainsi que #54 a manqué `main` (rattrapée par #55, `LESSONS.md`).
 
 ---
@@ -211,6 +211,9 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 ## 5. Décisions à prendre seulement si le cas se présente
 
+- [ ] **Run `publie_provisoire` dont les sept critères go/no-go sont verts** : le schéma l'accepte
+      (#61), alors que le §12 (« Sinon, le run est publié … avec la mention provisoire ») suggère
+      qu'un run tout vert est publié sans la mention. À trancher au plus tard au lot `go-no-go`.
 - [ ] **PDF servi sans `Content-Type` exact** : exception déclarée par source dans
       `config/sources.toml`, ou lecture de la signature `%PDF-` (`docs/DETTE.md`, 2026-09-23,
       point 3).

@@ -110,6 +110,12 @@ le même item, cas que la répartition des gabarits tolère à une question prè
 la suite, la lecture stricte aurait bloqué des tirages légitimes. Le conflit, porté à l'auteur, a
 donné la lecture « totaux propres par thème ».
 
+**Un exemple normatif écrit dans le protocole se lit par un test.** L'instance d'item de l'annexe A
+se disait « instance valide du schéma ». Elle a cessé de l'être avec #50 (source sans `format`), et
+son empreinte n'était pas celle de son contenu notant : quatre jours sans qu'aucun test ne tombe,
+découvert par une passe de conformité (n° 34). `tests/protocole-annexe-a.test.ts` lit désormais le
+bloc JSON du protocole tel quel, et le valide au schéma et à l'empreinte.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -163,6 +169,15 @@ répertoire temporaire et a écrit un item à la racine du dépôt. Lancés en p
 partageaient le même bac et échouaient à tort. Un substitut ne sert qu'aux fichiers qu'on touche :
 il exécute `beforeEach`/`afterEach`, il lance les tests l'un après l'autre, et `git status` se
 vérifie après chaque passe.
+
+**Dans un worktree, installer les dépendances, puis vérifier le commit, pas la chaîne.** Le
+2026-10-02, un worktree d'agent avait un `node_modules` vide : `pnpm check` a échoué sur « tsc:
+command not found », ce qui n'était pas une erreur du code. Un autre avait un lien `node_modules`
+ignoré par Git : `git add -A -- . ':!node_modules'` a refusé le chemin ignoré et sorti en erreur, et
+tout ce qui suivait dans la chaîne `&&` (commit, fusion de `main`) n'a pas tourné. Le compte de
+tests affiché ensuite venait d'une commande lancée après un `;`, et il a failli passer pour une
+vérification du commit. Dans un worktree : `pnpm install --frozen-lockfile --offline`, puis
+`git log -1` après tout enchaînement qui commite.
 
 ## Méthode
 
