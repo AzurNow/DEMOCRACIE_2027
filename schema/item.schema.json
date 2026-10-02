@@ -384,8 +384,17 @@
       "then": { "$ref": "#/$defs/sources_du_contenu_attestees_si_t2" }
     },
     {
-      "$comment": "Conformité n° 12 : en staging (en_attente) et pour un item à confirmer, aucune attestation d'écoute. Le pipeline n'écoute rien ; s'il pouvait écrire ce champ, l'attestation publiée pourrait être fausse. Protocole 0.13 (§4, grille de validation) : « L'attestation n'existe que sur un item vérifié ; elle est conservée si le panel retire ensuite l'item. » Elle est donc interdite aussi sur un item rejeté ou non évaluable, et admise sur retire_par_panel.",
-      "if": { "properties": { "statut_validation": { "enum": ["en_attente", "a_confirmer", "rejete", "non_evaluable"] } }, "required": ["statut_validation"] },
+      "$comment": "Conformité n° 12 : en staging (en_attente) et pour un item à confirmer, aucune attestation d'écoute. Le pipeline n'écoute rien ; s'il pouvait écrire ce champ, l'attestation publiée pourrait être fausse. Protocole 0.13 (§4, grille de validation) : « L'attestation n'existe que sur un item vérifié ; elle est conservée si le panel retire ensuite l'item. » Elle est donc interdite aussi sur un item rejeté, et admise sur retire_par_panel. Le cas non_evaluable fait l'objet de la règle suivante.",
+      "if": { "properties": { "statut_validation": { "enum": ["en_attente", "a_confirmer", "rejete"] } }, "required": ["statut_validation"] },
+      "then": { "$ref": "#/$defs/sources_du_contenu_sans_attestation" }
+    },
+    {
+      "$comment": "Conformité 2026-09-29, n° 6 : décision de l'auteur du 2026-10-02, texte à écrire au §4 en 0.15 : « L'attestation n'existe que sur un item vérifié ; elle est conservée si le panel retire ensuite l'item ou le déclare non évaluable. » Un item non_evaluable porte l'attestation seulement s'il a été déclaré non évaluable par le panel (une décision non_evaluabilite publiée) ET trouvé vérifié par une décision du panel (statut_validation_anterieur « verifie ») ; un item non évaluable par la double annotation, jamais vérifié, ne la porte pas. Limite : JSON Schema ne sait pas désigner la DERNIÈRE décision (ordre des dates) ; cette règle exige l'existence des deux décisions, pas leur rang. Un item vérifié, déclaré non évaluable puis maintenu redevient vérifié (statutReintegre) : le statut non_evaluable n'y est plus posé.",
+      "if": {
+        "properties": { "statut_validation": { "const": "non_evaluable" } },
+        "required": ["statut_validation"],
+        "not": { "$ref": "#/$defs/declare_non_evaluable_par_le_panel_apres_verification" }
+      },
       "then": { "$ref": "#/$defs/sources_du_contenu_sans_attestation" }
     },
     {
@@ -428,6 +437,31 @@
     "source_attestee_si_t2": {
       "if": { "required": ["tier"], "properties": { "tier": { "const": "T2" } } },
       "then": { "required": ["transcription_verifiee_par", "transcription_verifiee_le"] }
+    },
+
+    "declare_non_evaluable_par_le_panel_apres_verification": {
+      "$comment": "Conformité n° 6 (décision de l'auteur du 2026-10-02) : une décision du panel publiée est une non-évaluabilité, et une décision du panel a trouvé l'item vérifié. Les deux peuvent être la même (vérifié puis déclaré non évaluable) ou deux décisions distinctes (vérifié, retiré, puis déclaré non évaluable).",
+      "required": ["contestations"],
+      "properties": {
+        "contestations": {
+          "allOf": [
+            {
+              "contains": {
+                "required": ["decision_panel"],
+                "properties": { "decision_panel": { "required": ["decision"], "properties": { "decision": { "const": "non_evaluabilite" } } } }
+              }
+            },
+            {
+              "contains": {
+                "required": ["decision_panel"],
+                "properties": {
+                  "decision_panel": { "required": ["statut_validation_anterieur"], "properties": { "statut_validation_anterieur": { "const": "verifie" } } }
+                }
+              }
+            }
+          ]
+        }
+      }
     },
 
     "source_sans_attestation": {

@@ -97,12 +97,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 164 → 166 : conformité 2026-09-29, n° 24, deux invalides de tirage (entrée sans thème, entrée sans grappe).
   // 166 → 168 : décisions de l'auteur du 2026-10-01, deux invalides de run (planifié sans donnees_commit, symétrie sans condition de quota).
   // 168 → 176 : conformité 2026-09-29, n° 15 (trois invalides de run), n° 27 (trois invalides de réponse), n° 29 (un valide et un invalide de notation).
-  it("1. les 176 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 176 → 177 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
+  it("1. les 177 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(176);
+    expect(manifeste.exemples).toHaveLength(177);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -217,7 +218,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 164 → 166 : conformité 2026-09-29, n° 24, deux invalides de tirage (entrée sans thème, entrée sans grappe).
   // 166 → 168 : décisions de l'auteur du 2026-10-01, deux invalides de run (planifié sans donnees_commit, symétrie sans condition de quota).
   // 168 → 176 : conformité 2026-09-29, n° 15 (trois invalides de run), n° 27 (trois invalides de réponse), n° 29 (un valide et un invalide de notation).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 176 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(176);
+  // 176 → 177 : conformité 2026-09-29, n° 6, un valide d'item (non évaluable par le panel, attestation conservée).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 177 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(177);
   });
 });

@@ -1076,6 +1076,12 @@
     },
     {
       "objet": "item",
+      "fichier": "item/valide-06-non-evaluable-par-panel-attestation-conservee.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-05 dont la décision du panel est une non-évaluabilité (statut_validation non_evaluable, statut_validation_anterieur « verifie ») : l'attestation d'écoute de la source T2 est conservée. Conformité 2026-09-29, n° 6 : décision de l'auteur du 2026-10-02, texte à écrire au §4 en 0.15 : « elle est conservée si le panel retire ensuite l'item ou le déclare non évaluable ». À comparer à invalide-20 : même statut, sans décision du panel, l'attestation reste interdite."
+    },
+    {
+      "objet": "item",
       "fichier": "item/invalide-21-decision-panel-sans-statut-anterieur.json",
       "attendu": "invalide",
       "motif": "Copie de valide-05 (item retiré par le panel) dont la décision du panel ne porte pas statut_validation_anterieur. §4 (droit de réponse) : un maintien décidé sur un item que le panel avait retiré lui rend le statut qu'il avait avant ce retrait ; annexe E, point 6 : réintégration si l'item est maintenu ou corrigé ; décision de l'auteur du 2026-09-29 : de même après une non-évaluabilité décidée par le panel. Sans ce champ, le statut rendu ne se lit nulle part et devrait être deviné (un item rejeté redeviendrait vérifié). Erreur : /contestations/0/decision_panel (required).",
