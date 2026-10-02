@@ -32,7 +32,32 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
       (#53 à #57). n° 15, 27 et 29 traités dans #61, n° 10, 12 et 30 dans #62, n° 5, 22 et 32 dans #64,
       n° 6 dans #65, n° 11 dans #66, n° 35 dans #63. Restent ouverts du côté code : n° 23 et 25
       (chargeur du périmètre, lot interrogation).
-- [ ] **Faire écrire dans la prochaine révision** les décisions du 2026-09-28 ci-dessous.
+- [x] **0.15 écrite** (branche `protocole/0.15`) : les décisions ci-dessous non encore écrites en
+      0.14 (accord n° 12, décisions 12 et 13) et les douze décisions du 2026-10-02 sur les constats
+      « réviser le protocole » de la conformité du 2026-09-29, plus l'annexe A corrigée (n° 34),
+      désormais gardée par `tests/protocole-annexe-a.test.ts`.
+
+  Décisions du 2026-10-02 (conformité 2026-09-29), selon la recommandation, écrites en 0.15 :
+  - n° 13 : grammaire de la clé de graine d'une différence. Rien à coder.
+  - n° 16 : décisions figées sur un lot terminé par ses deux annotateurs. *À coder (verrou de la
+    route des décisions).*
+  - n° 18 : après le retrait d'un juge, ses notations sont écartées, note du juge restant hors
+    échantillon humain, revue humaine des drapeaux graves. *Vérification en cours (lot notation).*
+  - n° 19 : grappes rangées par `grappe_id`, consommation du générateur écrite. *À coder.*
+  - n° 20 : seuls les items à réponse classée entrent dans la permutation. Rien à coder.
+  - n° 21 : tendance alignée sur les effets de condition. *À coder.*
+  - n° 34 : annexe A corrigée (`format`, empreinte) et testée. *Fait (0.15).*
+  - n° 36 : normalisation des URL de sondage, `normalisation-url-v1`. *À coder.*
+  - n° 37 : la question d'écoute ne décide que d'un item que les deux décisions vérifieraient.
+    Rien à coder.
+  - n° 41 : « d'une à quatre questions ». Rien à coder.
+  - n° 42 : un candidat cité à tort dans une Q-ATT est une mauvaise attribution ; le drapeau
+    fabrication y reste une erreur de notation. Rien à coder.
+  - n° 43 : l'accord de deux humains porte sur le seul sourçage valide. *À coder.*
+  - n° 44 : couple sans test hors de la famille de Holm, mention « test sans objet ». Rien à coder.
+  Les n° 17 (écrit en 0.14) et 38 (outillage) ne demandent pas de texte.
+
+  Historique des décisions écrites en 0.14 et 0.15 :
 
   Accord du 2026-10-01 (conformité 2026-09-29, n° 12, trou signalé), selon la recommandation :
   §8, tendance : « un couple outil × mode marqué run incomplet au premier ou au dernier run sort de
