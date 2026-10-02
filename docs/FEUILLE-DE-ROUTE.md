@@ -20,6 +20,10 @@ Aucune décision en attente.
 
 **Décision du 2026-09-24 :** --mesures obligatoire, l'état « non contrôlé » disparaît ; --items désigne un répertoire, un fichier par item, lu en ordre de nom.
 
+### D12 — Comment l'interrogation traite-t-elle les refus de l'API, les délais entre tentatives, l'ordre des requêtes et les requêtes restées hors de la fenêtre de 48 h ?
+
+**Décision du 2026-10-02 :** Option 1, texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). Schéma reponse : normalise.refus_api et motif_manquante (echecs | hors_fenetre).
+
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.

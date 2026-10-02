@@ -186,6 +186,19 @@
       "recommandation": "Option 1.",
       "retenu": "--mesures obligatoire, l'état « non contrôlé » disparaît ; --items désigne un répertoire, un fichier par item, lu en ordre de nom.",
       "date_decision": "2026-09-24"
+    },
+    {
+      "id": "D12",
+      "statut": "tranchee",
+      "question": "Comment l'interrogation traite-t-elle les refus de l'API, les délais entre tentatives, l'ordre des requêtes et les requêtes restées hors de la fenêtre de 48 h ?",
+      "contexte": "Le §6 dit « délai croissant » sans valeur, ne dit ni l'ordre d'envoi ni le sort d'une requête non partie à la fin de la fenêtre, et le schéma faisait d'un refus de modération une tentative en échec, donc une manquante, contre « un refus est une non-réponse ».",
+      "options": [
+        "Refus API obtenu et classé non-réponse ; 30 s, 120 s, abandon à 180 s ; une file par outil, échantillon 1 avant 2, ordre (question_id, mode, formulation_id) ; manquante « hors fenêtre ».",
+        "Refus API retenté jusqu'à manquante ; délais plus courts ; ordre tiré à graine ; run invalide dès qu'une requête sort de la fenêtre."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1, texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). Schéma reponse : normalise.refus_api et motif_manquante (echecs | hors_fenetre).",
+      "date_decision": "2026-10-02"
     }
   ],
   "lots": [
@@ -295,7 +308,7 @@
       "decisions": [
         "D5"
       ],
-      "note": "Squelette de config/perimetre.yaml écrit le 2026-09-20 : thèmes, quotas, règles d'inclusion du §3 en commentaire, analyseur yaml 2.9.1. Listes nominatives vides et quota_par_strate à null : seul l'auteur les remplit, preuves archivées à l'appui. prompts/ n'existe pas encore. Bloque l'extraction, l'interrogation et la notation."
+      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation."
     },
     {
       "id": "collecte",
@@ -368,9 +381,10 @@
         }
       ],
       "decisions": [
-        "D3"
+        "D3",
+        "D12"
       ],
-      "note": "pnpm run:dry d'abord, jamais run:live par un agent. Doit écrire runs/README.md, disposition lue par analysis/filtre.ts:assembler() (DETTE point 3)."
+      "note": "pnpm run:dry d'abord, jamais run:live par un agent. Doit écrire runs/README.md, disposition lue par analysis/filtre.ts:assembler() (DETTE point 3). Lancé le 2026-10-02 en mode simulé (D12), sans SDK : interface d'éditeur, éditeur simulé, journal des tentatives et reprise, runs/README.md."
     },
     {
       "id": "notation",
