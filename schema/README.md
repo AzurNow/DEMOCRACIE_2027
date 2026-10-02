@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les vingt-deux fichiers
+## Les vingt-trois fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -32,6 +32,7 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `decision-arbitrage.schema.json` | décision d'arbitrage d'un désaccord d'annotation | §4, règle de concordance (protocole 0.10) : une entrée de `validation/arbitrage/decisions.json`, registre publié en ajout seul, écrit par `pnpm arbitrer` et relu par `pnpm promote`. L'arbitre (l'auteur ; le panel, ou l'auteur marqué `arbitre_seul` à sa place, pour la paire « non évaluable » / « rejeter ») choisit un contenu proposé par un annotateur (`contenu_retenu`), jamais un contenu rédigé ; la décision ne s'applique qu'à la version, l'empreinte, le lot et le motif sur lesquels elle a été prise. L'item promu porte alors un bloc `arbitrage`, et `item.schema.json` admet « vérifié » sur deux décisions concordantes **ou** sur un arbitrage d'issue « verifie » |
 | `notification-due.schema.json` | notification due à une campagne | §4, droit de réponse (protocole 0.10) : une ligne de `validation/notifications/dues.jsonl`, file en ajout seul écrite au même `--ecrire` que l'item par `pnpm promote` (création), `pnpm contester` (contestation) et `pnpm panel` (décision du panel). Aucune adresse : le destinataire est résolu à l'envoi |
 | `envoi-notification.schema.json` | envoi d'une notification | §4 : « chaque envoi, réussi ou non, est journalisé et publié ». Une ligne de `validation/notifications/envois.jsonl`, écrite par `pnpm notifier` (Python) seul : un courriel par campagne et par exécution, ligne `en_cours` synchronisée avant l'envoi, puis issue ; destinataire générique publié, empreinte du message, Message-ID, code SMTP. Remplace `item.notifications[]`, retiré du schéma d'item |
+| `perimetre.schema.json` | périmètre saisi d'un run | §3, §5, §6, §10 : `config/perimetre.yaml`, écrit à la main par l'auteur seul, aux noms de `run.perimetre` (décision de l'auteur du 2026-10-02). Valide le brouillon (clés à null, listes vides) comme le périmètre complet ; `pipeline/questions/charger-perimetre.ts` refuse un brouillon pour un run, applique la règle d'inclusion du §3, compte les items P au gel et rend l'instantané `run.perimetre`, revalidé contre `run.schema.json`, et les `ParametresTirage`. Aucune clé calculée au gel n'y est admise. Pas d'exemples au manifeste : ses cas limites sont dans `tests/questions/charger-perimetre.test.ts` |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -119,7 +120,8 @@ règle d'inclusion est invérifiable par un tiers), `items_p_verifies` compté a
 aux deux runs ; un candidat `nouveau` en est exclu. `perimetre.regime_inclusion` déclare le régime du
 §3 : `avant_liste_officielle` exige de tout candidat non retiré sa `declaration_candidature` et au
 moins deux `preuves_inclusion` (la fenêtre de 60 jours, que le schéma ne sait pas comparer, est
-contrôlée par `pipeline/questions/perimetre.ts`) ; `liste_officielle` exige la liste du Conseil
+contrôlée au chargement de `config/perimetre.yaml` par `pipeline/questions/charger-perimetre.ts`, qui
+applique `pipeline/questions/perimetre.ts`) ; `liste_officielle` exige la liste du Conseil
 constitutionnel archivée (`perimetre.liste_officielle`). `sous_seuil` est lié à `items_p_verifies`
 dans les deux sens, et ce dernier se compte par `pipeline/questions/couverture.ts`.
 

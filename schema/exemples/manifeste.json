@@ -1,5 +1,5 @@
 {
-  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants.",
+  "description": "Table de vérité des exemples. Chaque entrée dit ce que la validation DOIT produire. Les fichiers invalides ne sont pas des erreurs : ce sont les tests des règles du protocole encodées dans les schémas. Protocole 0.13 (n° 54) : chaque source d'un exemple d'item porte son format (pdf, html, audio, video), ajouté ouvertement à tous les exemples d'item existants. Décision de l'auteur du 2026-10-02 (conformité 2026-09-29, n° 23) : chaque declaration_candidature d'un exemple de run porte sa preuve archivée (sha256, archive_url), et chaque assistant inclus sa preuve_inclusion, ajoutées ouvertement à tous les exemples de run existants ; aucun verdict ni aucune erreur attendue ne change.",
   "exemples": [
     {
       "objet": "item",

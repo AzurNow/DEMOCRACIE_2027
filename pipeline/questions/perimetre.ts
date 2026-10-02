@@ -9,7 +9,8 @@
  *
  * `schema/run.schema.json` exige la déclaration et au moins deux preuves pour un candidat non
  * retiré de ce régime ; il ne sait pas comparer des dates. Cette fonction pure fait la partie que
- * le schéma ne peut pas faire, et un futur chargeur de `config/perimetre.yaml` l'appellera.
+ * le schéma ne peut pas faire ; le chargeur de `config/perimetre.yaml`,
+ * `charger-perimetre.ts:construirePerimetre`, l'appelle pour chaque candidat non retiré de ce régime.
  *
  * Placée ici plutôt que dans `outils/` : `outils/` porte des commandes en ligne, et la lecture des
  * dates (instant avec décalage obligatoire, date civile à minuit UTC) vit une seule fois dans

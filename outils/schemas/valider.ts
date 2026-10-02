@@ -8,7 +8,7 @@
  * fautif. Rien n'est complété, corrigé ni ignoré : ajv est réglé sans `useDefaults`,
  * `coerceTypes` ni `removeAdditional` (`registre.ts`), il ne touche donc pas à la valeur.
  *
- * Le registre des vingt-deux schémas est construit **une fois par processus**, au premier appel, à
+ * Le registre des vingt-trois schémas est construit **une fois par processus**, au premier appel, à
  * partir de `schema/` situé par rapport à ce fichier et non au répertoire courant : un outil lancé
  * depuis un autre répertoire, ou un bac d'essai qui porte sa propre copie partielle de
  * `schema/commun.schema.json`, valide contre les mêmes schémas que le dépôt.
@@ -59,27 +59,58 @@ export class SchemaInconnu extends Error {
 
 export type Valideur = <T>(nom: NomSchema, valeur: unknown, provenance: string) => T;
 
+/** Un pointeur JSON dans un schéma, fragment compris : `#/properties/perimetre`. */
+export type PointeurDeSchema = `#/${string}`;
+
+export type ValideurDeFragment = <T>(
+  nom: NomSchema,
+  pointeur: PointeurDeSchema,
+  valeur: unknown,
+  provenance: string,
+) => T;
+
+type Validateur = NonNullable<ReturnType<Registre["ajv"]["getSchema"]>>;
+
+function paresseux(construire: () => Registre): () => Registre {
+  let registre: Registre | null = null;
+  return (): Registre => {
+    if (registre === null) registre = construire();
+    return registre;
+  };
+}
+
+function exigerConforme<T>(validateur: Validateur, nom: string, valeur: unknown, provenance: string): T {
+  if (validateur(valeur) === true) return valeur as T;
+  const erreurs = copierErreurs(validateur.errors);
+  throw new ErreurSchema(
+    provenance,
+    nom,
+    erreurs.map(formaterErreur),
+    erreurs.map((erreur) => erreur.instancePath),
+  );
+}
+
 /**
  * Fabrique d'un valideur sur un registre construit paresseusement, une fois. Exportée pour les
  * tests (compter les constructions) ; le code de production utilise `valider`.
  */
 export function creerValideur(construire: () => Registre): Valideur {
-  let registre: Registre | null = null;
-  const obtenirRegistre = (): Registre => {
-    if (registre === null) registre = construire();
-    return registre;
-  };
+  const obtenirRegistre = paresseux(construire);
+  return <T>(nom: NomSchema, valeur: unknown, provenance: string): T =>
+    exigerConforme<T>(validateurDe(obtenirRegistre(), nom, provenance), nom, valeur, provenance);
+}
 
-  return <T>(nom: NomSchema, valeur: unknown, provenance: string): T => {
-    const validateur = validateurDe(obtenirRegistre(), nom, provenance);
-    if (validateur(valeur) === true) return valeur as T;
-    const erreurs = copierErreurs(validateur.errors);
-    throw new ErreurSchema(
-      provenance,
-      nom,
-      erreurs.map(formaterErreur),
-      erreurs.map((erreur) => erreur.instancePath),
-    );
+/**
+ * Même contrôle, contre une partie d'un schéma du registre : l'instantané `run.perimetre` que
+ * produit `pipeline/questions/charger-perimetre.ts` est validé contre
+ * `run#/properties/perimetre` avant d'être rendu, sans fabriquer un run entier autour de lui. Un
+ * pointeur qui ne désigne rien lève `SchemaInconnu`, jamais une validation silencieuse.
+ */
+export function creerValideurDeFragment(construire: () => Registre): ValideurDeFragment {
+  const obtenirRegistre = paresseux(construire);
+  return <T>(nom: NomSchema, pointeur: PointeurDeSchema, valeur: unknown, provenance: string): T => {
+    const validateur = validateurDeFragment(obtenirRegistre(), nom, pointeur, provenance);
+    return exigerConforme<T>(validateur, nom, valeur, `${provenance} (fragment ${pointeur})`);
   };
 }
 
@@ -90,7 +121,18 @@ function validateurDe(registre: Registre, nom: string, provenance: string) {
   return validateur;
 }
 
-export const valider: Valideur = creerValideur(() => construireRegistre(RACINE_SCHEMAS));
+function validateurDeFragment(registre: Registre, nom: string, pointeur: PointeurDeSchema, provenance: string) {
+  if (!estNomSchema(nom)) throw new SchemaInconnu(nom, provenance);
+  const validateur = registre.ajv.getSchema(`${urnSchema(nom)}${pointeur}`);
+  if (validateur === undefined) throw new SchemaInconnu(`${nom}${pointeur}`, provenance);
+  return validateur;
+}
+
+const registreDuDepot = paresseux(() => construireRegistre(RACINE_SCHEMAS));
+
+export const valider: Valideur = creerValideur(registreDuDepot);
+
+export const validerFragment: ValideurDeFragment = creerValideurDeFragment(registreDuDepot);
 
 /**
  * Même contrôle que `valider`, pour l'appelant qui doit **rapporter** la non-conformité au lieu de

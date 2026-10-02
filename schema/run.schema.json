@@ -167,7 +167,7 @@
             "avant_liste_officielle",
             "liste_officielle"
           ],
-          "description": "§3 (protocole 0.11) : « chaque run déclare son régime ». Avant la liste officielle du Conseil constitutionnel, un candidat non retiré est inclus sur sa déclaration de candidature et au moins deux sondages publiés dans les 60 jours précédant l'instant de gel (la fenêtre, que le JSON Schema ne sait pas comparer, est contrôlée par pipeline/questions/perimetre.ts:inclusionAvantListe). À partir de la liste, le périmètre est exactement cette liste, et sa version archivée (liste_officielle) est la seule preuve d'inclusion exigée."
+          "description": "§3 (protocole 0.11) : « chaque run déclare son régime ». Avant la liste officielle du Conseil constitutionnel, un candidat non retiré est inclus sur sa déclaration de candidature et au moins deux sondages publiés dans les 60 jours précédant l'instant de gel (la fenêtre, que le JSON Schema ne sait pas comparer, est contrôlée au chargement de config/perimetre.yaml par pipeline/questions/charger-perimetre.ts, qui applique pipeline/questions/perimetre.ts:inclusionAvantListe et refuse un candidat qui ne remplit pas la règle). À partir de la liste, le périmètre est exactement cette liste, et sa version archivée (liste_officielle) est la seule preuve d'inclusion exigée."
         },
         "liste_officielle": {
           "$ref": "#/$defs/preuve_archivee",
@@ -253,7 +253,9 @@
                 "additionalProperties": false,
                 "required": [
                   "url",
-                  "date"
+                  "date",
+                  "sha256",
+                  "archive_url"
                 ],
                 "properties": {
                   "url": {
@@ -269,9 +271,16 @@
                       "interesse",
                       "parti"
                     ]
+                  },
+                  "sha256": {
+                    "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256"
+                  },
+                  "archive_url": {
+                    "type": "string",
+                    "pattern": "^https?://"
                   }
                 },
-                "description": "§3 : candidature déclarée publiquement par l'intéressé ou par son parti. Exigée pour tout candidat non retiré dans le régime avant_liste_officielle."
+                "description": "§3 : candidature déclarée publiquement par l'intéressé ou par son parti. Exigée pour tout candidat non retiré dans le régime avant_liste_officielle. Décision de l'auteur du 2026-10-02 : l'instantané garde la preuve archivée (sha256, archive_url), comme une preuve de sondage, sans quoi la première condition du §3 est invérifiable par un tiers."
               },
               "items_p_verifies": {
                 "type": "integer",
@@ -410,6 +419,10 @@
               "clause_restrictive_signalee": {
                 "type": "boolean"
               },
+              "preuve_inclusion": {
+                "$ref": "#/$defs/preuve_archivee",
+                "description": "§3 : la preuve archivée qui fait entrer l'outil dans le périmètre (pour un assistant, le classement des applications sur les stores en France à la date de gel). Exigée d'un assistant inclus. Décision de l'auteur du 2026-10-02 : l'instantané la garde, recopiée de config/perimetre.yaml par pipeline/questions/charger-perimetre.ts."
+              },
               "par_mode": {
                 "type": "object",
                 "additionalProperties": false,
@@ -522,7 +535,8 @@
                     "modele_demande",
                     "modes",
                     "mode_de_tete",
-                    "alias_aveugle"
+                    "alias_aveugle",
+                    "preuve_inclusion"
                   ]
                 }
               },

@@ -1,0 +1,137 @@
+# Périmètre du run — Banc d'essai 2027
+#
+# Écrit à la main, par l'auteur seul. Aucun script, aucun agent n'écrit ce fichier : il décide
+# quels candidats et quels outils entrent dans une mesure publiée, et le §3 du protocole veut que
+# ce soient les règles qui décident, pas une personne. Ce fichier est la trace vérifiable que les
+# règles ont été appliquées ; il est publié avec le run.
+#
+# Ce qu'il alimente : le tirage (§5), l'interrogation (§6), la notation (§7), et l'instantané
+# `run.perimetre` que l'analyse lit (§8). Les dix thèmes ci-dessous doivent rester identiques à
+# ceux de `schema/commun.schema.json#/$defs/theme` — ils y sont énumérés une fois, ici une fois,
+# et nulle part ailleurs.
+#
+# Vocabulaire : chaque clé porte le nom de son champ dans `schema/run.schema.json#/properties/perimetre`,
+# sans table de traduction. Ce fichier ne contient que ce que l'auteur saisit ; ce qui se calcule au
+# gel (items P vérifiés, items P au gel, sous_seuil, alias aveugle, seuils par mode) est calculé par
+# le chargeur depuis `data/` et `analysis/`, jamais recopié ici.
+#
+# Règle de remplissage : une liste vide est une liste vide, jamais un « à compléter » qui passerait
+# inaperçu. Le pipeline refuse un run dont le périmètre ne porte ni candidat ni outil, et refuse
+# un `null` restant dans une clé obligatoire.
+
+version: "0.2.0-provisoire"
+date_gel: null # instant de référence du run (§6), décalage Europe/Paris explicite, ex. "2026-11-20T09:00:00+01:00". null tant qu'aucun run n'est gelé.
+
+# ---------------------------------------------------------------------------- régime d'inclusion
+# §3 (protocole 0.11) : chaque run déclare son régime.
+#   avant_liste_officielle : un candidat non retiré est inclus sur sa déclaration de candidature et au
+#                            moins deux sondages publiés dans les 60 jours précédant date_gel ;
+#                            liste_officielle doit rester absente (null).
+#   liste_officielle       : le périmètre est exactement la liste du Conseil constitutionnel, dont la
+#                            version archivée est la seule preuve d'inclusion exigée.
+regime_inclusion: null # avant_liste_officielle | liste_officielle
+liste_officielle: null
+#   url: "…"
+#   date_publication: "AAAA-MM-JJ"
+#   sha256: "…"
+#   archive_url: "…"
+
+# ---------------------------------------------------------------------------- thèmes
+# Les dix thèmes fixes du §3. Ni neuf ni onze : une position hors de ces thèmes est enregistrée
+# mais n'entre pas dans le tirage.
+themes:
+  - fiscalite_pouvoir_achat
+  - retraites
+  - travail_emploi
+  - sante
+  - education
+  - securite_justice
+  - immigration
+  - ecologie_energie
+  - institutions_democratie
+  - europe_defense_international
+
+# ---------------------------------------------------------------------------- tirage
+# Les deux quotas du §5, aux noms de `tirage.parametres` (ParametresTirage) : décidés le 2026-09-20
+# (D7, point 4) pour le premier, déclarés séparément pour le second (§5, protocole 0.9). Le
+# protocole ne fixe aucun nombre : obligatoires et sans valeur par défaut, pour qu'une valeur
+# implicite ne se transmette pas d'un run à l'autre sans être relue.
+#
+# Les parts du §5 (80 % de reprise, au moins 20 % d'absences et de fictifs) ne figurent pas ici :
+# ce sont des constantes du protocole, qui vivent une seule fois dans le code
+# (`tirage.ts:PART_REPRISE`, `symetrie.ts:PART_MINIMALE_ITEMS_A_F`). Les changer est un amendement.
+tirage:
+  questions_par_strate: null # entier ≥ 1 : questions par strate candidat × thème × gabarit
+  questions_attribution_par_theme: null # entier ≥ 1 : questions d'attribution par thème
+
+# ---------------------------------------------------------------------------- candidats
+# Règle d'inclusion (§3), à la date de gel du run, dans le régime avant_liste_officielle, les deux
+# conditions réunies :
+#   1. candidature déclarée publiquement par l'intéressé ou par son parti ;
+#   2. présence dans au moins deux sondages d'intention de vote publiés au cours des 60 jours
+#      précédents par un institut membre d'une association professionnelle reconnue, quel que
+#      soit le score. Deux preuves de la même URL (après normalisation-url-v1) ne comptent qu'une.
+# Dans le régime liste_officielle, declaration_candidature et preuves_inclusion sont facultatives.
+#
+# Chaque entrée porte ses preuves archivées, sans quoi la règle d'inclusion est invérifiable par un
+# tiers — c'est la seule chose qui distingue une liste appliquée d'une liste choisie.
+#
+#   - candidat_id: cle-stable-minuscules   # jamais inventée par un script
+#     libelle: "Prénom Nom"
+#     nom: "Nom"                     # nom de famille seul, cherché par la barrière de symétrie (§5)
+#     statut_au_gel: actif           # actif | nouveau | retire
+#     interroge: true                # faux pour un candidat retiré, dont les items O restent mesurés
+#     declaration_candidature:
+#       url: "…"
+#       date: "AAAA-MM-JJ"
+#       par: interesse               # interesse | parti
+#       sha256: "…"
+#       archive_url: "…"
+#     preuves_inclusion:             # au moins deux, publiées dans les 60 jours précédant date_gel
+#       - institut: "…"
+#         date_publication: "AAAA-MM-JJ"
+#         url: "…"
+#         sha256: "…"
+#         archive_url: "…"
+#     contact_notification:          # §4, droit de réponse : adresse générique de la campagne, lue
+#       adresse: "…"                 # par `pnpm notifier`. Clé obligatoire : null explicite si la
+#       preuve:                      # campagne n'en publie aucune.
+#         url: "…"
+#         date: "AAAA-MM-JJ"
+#         sha256: "…"
+#         archive_url: "…"
+candidats: []
+
+# ---------------------------------------------------------------------------- outils
+# Deux familles (§3). La liste nominative est fixée à la version 1.0 du protocole, publiée, et ne
+# bouge qu'en cas de disparition d'un outil ou de sortie d'un outil remplissant la règle — par
+# amendement (§9), jamais par commodité. Un outil ne peut pas demander à en sortir.
+#
+# Assistants : accessibles gratuitement en français, par API, et figurant dans le top des
+# applications de la catégorie sur les stores en France à la date de gel ; plus, systématiquement,
+# l'assistant édité en France (Le Chat), que le §3 nomme.
+#
+#   - outil_id: cle-stable
+#     libelle: "…"
+#     editeur: "…"
+#     famille: assistant             # assistant | comparateur
+#     inclus: true                   # false : outil remplissant la règle mais exclu, motif obligatoire
+#     motif_exclusion: "…"           # seulement si inclus: false
+#     modele_demande: "…"            # §6 : modèle par défaut du produit grand public à la date du run
+#     modes: [web_activee, web_desactivee] # §6 : les deux modes sont toujours publiés côte à côte
+#     mode_de_tete: web_activee      # §8 : le mode du réglage par défaut du produit grand public
+#     cgu_relues_le: "AAAA-MM-JJ"    # §10
+#     clause_restrictive_signalee: false # §10 : clause interdisant la publication comparative
+#     preuve_inclusion:              # classement de store à la date de gel, archivé
+#       url: "…"
+#       date_publication: "AAAA-MM-JJ"
+#       sha256: "…"
+#       archive_url: "…"
+#     sdk:                           # D3 : SDK officiel, version épinglée ; la réponse brute stockée reste le corps HTTP
+#       paquet: "…"
+#       version: "…"
+#
+# Comparateurs : sites publics comparant les positions d'au moins cinq candidats du périmètre,
+# accessibles sans compte, contenu consultable sans exécution de scripts tiers. Lecture du contenu
+# publié, jamais d'API : modele_demande, modes, mode_de_tete et sdk n'y sont pas exigés.
+outils: []

@@ -110,9 +110,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
     expect(rapport.fichiersOrphelins).toEqual([]);
   });
 
-  it("2. les vingt-deux schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 22 → 23 : perimetre (config/perimetre.yaml), conformité 2026-09-29, n° 23 et 25.
+  it("2. les vingt-trois schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(22);
+    expect(conformites).toHaveLength(23);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
