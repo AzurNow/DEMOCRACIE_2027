@@ -39,21 +39,24 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
 
   Décisions du 2026-10-02 (conformité 2026-09-29), selon la recommandation, écrites en 0.15 :
   - n° 13 : grammaire de la clé de graine d'une différence. Rien à coder.
-  - n° 16 : décisions figées sur un lot terminé par ses deux annotateurs. *À coder (verrou de la
-    route des décisions).*
+  - n° 16 : décisions figées sur un lot terminé par ses deux annotateurs. *Codé (#69).*
   - n° 18 : après le retrait d'un juge, ses notations sont écartées, note du juge restant hors
-    échantillon humain, revue humaine des drapeaux graves. *Vérification en cours (lot notation).*
-  - n° 19 : grappes rangées par `grappe_id`, consommation du générateur écrite. *À coder.*
+    échantillon humain, revue humaine des drapeaux graves. *À coder au lot notation* : aucun
+    contrôle croisé verdict × notations × run n'existe (un verdict peut s'appuyer sur une note du
+    juge retiré ; une note « juge unique » sans drapeau peut cacher un drapeau grave du juge restant).
+    **Question ouverte** : « écartées de tout le run » vaut-il aussi pour l'accord juges-humains et
+    le kappa des juges publiés avec le run ?
+  - n° 19 : grappes rangées par `grappe_id`, consommation du générateur écrite. *Codé (#70).*
   - n° 20 : seuls les items à réponse classée entrent dans la permutation. Rien à coder.
-  - n° 21 : tendance alignée sur les effets de condition. *À coder.*
+  - n° 21 : tendance alignée sur les effets de condition, appariée par question. *Codé (#70).*
   - n° 34 : annexe A corrigée (`format`, empreinte) et testée. *Fait (0.15).*
-  - n° 36 : normalisation des URL de sondage, `normalisation-url-v1`. *À coder.*
+  - n° 36 : normalisation des URL de sondage, `normalisation-url-v1`. *Codé (#68).*
   - n° 37 : la question d'écoute ne décide que d'un item que les deux décisions vérifieraient.
     Rien à coder.
   - n° 41 : « d'une à quatre questions ». Rien à coder.
   - n° 42 : un candidat cité à tort dans une Q-ATT est une mauvaise attribution ; le drapeau
     fabrication y reste une erreur de notation. Rien à coder.
-  - n° 43 : l'accord de deux humains porte sur le seul sourçage valide. *À coder.*
+  - n° 43 : l'accord de deux humains porte sur le seul sourçage valide. *Codé (#70).*
   - n° 44 : couple sans test hors de la famille de Holm, mention « test sans objet ». Rien à coder.
   Les n° 17 (écrit en 0.14) et 38 (outillage) ne demandent pas de texte.
 
