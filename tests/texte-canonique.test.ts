@@ -212,19 +212,13 @@ function corpsPour(nom: string, lot_id: string): unknown {
 describe("aucune route n'écrit sous staging/textes/", () => {
   it("aucune route n'écrit sous staging/textes/", () => {
     const textes = join(bac.racine, "staging/textes");
-    // L'autre annotateur a fini : la route du kappa calcule vraiment, au lieu de répondre « pas encore ».
-    for (const lot_id of ["ent-001", "lot-002"]) {
-      bac.journal("a2").ajouter(
-        lot_id,
-        decision({
-          annotateur_id: "a2",
-          item,
-          decision: "accepter",
-          lot_id,
-          lot_nature: lot_id.startsWith("ent") ? "entrainement" : "reel",
-        }),
-      );
-    }
+    // L'autre annotateur a fini lot-002 : la route du kappa y calcule vraiment, au lieu de répondre
+    // « pas encore ». Il laisse ent-001 inachevé : un lot terminé par les deux est figé (conformité
+    // n° 16), l'annulation n'y écrirait plus, et ce test doit exercer l'annulation.
+    bac.journal("a2").ajouter(
+      "lot-002",
+      decision({ annotateur_id: "a2", item, decision: "accepter", lot_id: "lot-002", lot_nature: "reel" }),
+    );
     const avant = instantane(textes);
     expect(avant.length).toBe(2);
 
