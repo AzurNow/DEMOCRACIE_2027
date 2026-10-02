@@ -246,6 +246,93 @@
       "regle_protocole": "§6, « au plus trois fois au total »"
     },
     {
+      "objet": "reponse",
+      "fichier": "reponse/valide-03-api-obtenue-refus-api.json",
+      "attendu": "valide",
+      "motif": "Refus de modération identifiable de l'API (statut HTTP et code propre à l'éditeur) : réponse obtenue, non retentée, brut = corps d'erreur tel que reçu, projection vide et normalise.refus_api à true ; la notation la classera en non-réponse (§7)."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/valide-04-api-manquante-hors-fenetre-une-tentative.json",
+      "attendu": "valide",
+      "motif": "Manquante hors fenêtre après une tentative : la deuxième aurait démarré à la fin de la fenêtre de 48 heures ou après. Le motif dit pourquoi elle n'a pas eu ses trois tentatives."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/valide-05-api-manquante-hors-fenetre-jamais-partie.json",
+      "attendu": "valide",
+      "motif": "Manquante hors fenêtre sans aucune tentative : la fenêtre s'est fermée avant que la requête ne parte. tentatives est présent et vide, jamais absent."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-09-hors-fenetre-trois-tentatives.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 déclarée hors fenêtre alors qu'elle a eu ses trois tentatives : c'est une manquante pour échecs. Confondre les deux motifs fausserait le diagnostic d'un run incomplet.",
+      "regle_protocole": "§6, décision de l'auteur du 2026-10-02 (protocole 0.16 à écrire)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-10-manquante-sans-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 privée de motif_manquante. Une manquante dit toujours pourquoi : échecs ou fenêtre fermée.",
+      "regle_protocole": "§6, décision de l'auteur du 2026-10-02 (protocole 0.16 à écrire)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-11-obtenue-avec-motif.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 (obtenue) portant un motif_manquante. Le motif n'existe que pour une réponse manquante.",
+      "regle_protocole": "§6, décision de l'auteur du 2026-10-02 (protocole 0.16 à écrire)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-12-refus-api-avec-texte.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-03 (refus de l'API) dont la projection porte un texte. Un refus de modération n'a pas de texte : en écrire un serait fabriquer une réponse que l'outil n'a pas donnée.",
+      "regle_protocole": "§6, décision de l'auteur du 2026-10-02 (protocole 0.16 à écrire)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-13-tentative-refus-api.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 dont la troisième tentative est classée refus_api. Un refus de l'API n'est plus une erreur de tentative : c'est une réponse obtenue, jamais retentée.",
+      "regle_protocole": "§6, décision de l'auteur du 2026-10-02 (protocole 0.16 à écrire)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-14-echecs-deux-tentatives.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-02 réduite à deux tentatives mais déclarée manquante pour échecs. Le motif échecs exige les trois tentatives du §6.",
+      "regle_protocole": "§6, « au plus trois fois au total » ; décision de l'auteur du 2026-10-02"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/valide-06-api-obtenue-refus-brut-texte.json",
+      "attendu": "valide",
+      "motif": "Refus de modération dont le corps est une liste JSON, pas un objet : stocké tel que reçu dans brut_texte, sans brut ni brut_sha256 ; son intégrité se vérifie par brut_octets_sha256, l'empreinte des octets reçus."
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-15-brut-et-brut-texte.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 portant à la fois brut et brut_texte. Les deux sont exclusifs : deux lectures du même corps laisseraient la notation choisir laquelle croire.",
+      "regle_protocole": "§6, règle 7 ; décision de l'auteur du 2026-10-02 (brut_texte, brut_octets_sha256, requete.entetes)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-16-obtenue-sans-brut-octets-sha256.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 privée de brut_octets_sha256. Sans l'empreinte des octets reçus, rien ne prouve que brut est la lecture fidèle du corps HTTP (un entier au-delà de 2^53 ou un ordre de clés change en silence à la lecture JSON).",
+      "regle_protocole": "§6, règle 7 ; décision de l'auteur du 2026-10-02 (brut_texte, brut_octets_sha256, requete.entetes)"
+    },
+    {
+      "objet": "reponse",
+      "fichier": "reponse/invalide-17-requete-sans-entetes.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la requête n'a pas d'en-têtes. §6 enregistre la requête complète ; le seul retrait autorisé est celui des en-têtes d'authentification.",
+      "regle_protocole": "§6, règle 7 ; décision de l'auteur du 2026-10-02 (brut_texte, brut_octets_sha256, requete.entetes)"
+    },
+    {
       "objet": "notation",
       "fichier": "notation/valide-01-juge-exacte.json",
       "attendu": "valide",

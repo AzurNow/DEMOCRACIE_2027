@@ -10,6 +10,7 @@
   "formulation_id": "9RVVC2P20KRNNRY69ZPFCS99F5",
   "echantillon": 2,
   "statut_reponse": "manquante",
+  "motif_manquante": "echecs",
   "requete": {
     "corps": {
       "messages": [
@@ -19,6 +20,10 @@
         }
       ],
       "max_tokens": 2048
+    },
+    "entetes": {
+      "content-type": "application/json",
+      "x-version-api": "2026-11-01"
     },
     "sha256": "5fb0efa1b8cc46a2fc97c2701377e1154eb63548a0fa1f8fdba5272b9623fa3b",
     "endpoint": "https://api.exemple-editeur.fr/v1/messages",

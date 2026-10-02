@@ -62,14 +62,28 @@
       "description": "§6 : après trois tentatives en échec, la réponse est manquante, \"comptée comme telle et jamais comme une erreur\". Distinct d'un refus, qui est une réponse OBTENUE notée non-réponse (§7). Le seuil de 20 % de manquantes par outil (§8, §12) n'est auditable que si les tentatives sont conservées."
     },
 
+    "motif_manquante": {
+      "type": "string",
+      "enum": ["echecs", "hors_fenetre"],
+      "description": "Décision de l'auteur du 2026-10-02 (§6, texte à écrire en protocole 0.16). Requis pour une réponse manquante, interdit pour une réponse obtenue. echecs : les trois tentatives du §6 ont échoué (exactement trois). hors_fenetre : la fenêtre semi-ouverte [debut, fin) du run s'est fermée avant que la requête ait pu commencer ou poursuivre ses tentatives (zéro à deux tentatives) ; aucune tentative ne démarre à fin ou après. Avec zéro tentative, la requête n'a jamais été envoyée : requete.horodatage est alors l'instant où elle a été constituée et déclarée hors fenêtre."
+    },
+
     "requete": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["corps", "sha256", "endpoint", "horodatage"],
+      "required": ["corps", "entetes", "sha256", "endpoint", "horodatage"],
       "description": "§6 : la requête complète est enregistrée. Aucune clé d'accès ne figure ici (§9 : les clés ne sont pas publiées) ; les en-têtes d'authentification sont retirés avant écriture, ce qui est le seul retrait autorisé.",
       "properties": {
         "corps": { "type": "object" },
-        "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+        "entetes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Décision de l'auteur du 2026-10-02 : tous les en-têtes envoyés, sauf ceux d'authentification, retirés par nom sans égard à la casse (authorization, x-api-key, api-key, et ceux que déclare l'adaptateur de l'éditeur ; pipeline/interrogation/editeur.ts). Ce retrait est le seul autorisé."
+        },
+        "sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Empreinte de la forme canonique de corps (validation/domaine/empreinte.ts:canoniser : clés triées, aucune espace), et de corps seul : ni les en-têtes, ni l'endpoint, ni les octets exacts envoyés sur le réseau. Elle identifie le contenu de la requête ; deux échantillons d'une même formulation ont donc la même."
+        },
         "endpoint": { "type": "string", "minLength": 1 },
         "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
       }
@@ -78,18 +92,28 @@
     "brut": {
       "type": "object",
       "minProperties": 1,
-      "description": "La charge utile de l'éditeur, telle quelle, forme libre assumée. JAMAIS lue par la notation, jamais nettoyée, jamais tronquée. Toute transformation vit en aval, dans normalise."
+      "description": "La charge utile de l'éditeur, telle quelle, forme libre assumée. JAMAIS lue par la notation, jamais nettoyée, jamais tronquée. Toute transformation vit en aval, dans normalise. Exclusif de brut_texte : présent quand le corps reçu est un objet JSON."
+    },
+
+    "brut_texte": {
+      "type": "string",
+      "description": "Décision de l'auteur du 2026-10-02 : le corps HTTP tel que reçu, décodé en UTF-8, quand il n'est pas un objet JSON (refus de modération en liste, réponse texte). Exclusif de brut. Un corps qui n'est pas de l'UTF-8 valide n'est pas stocké : l'interrogation lève une erreur explicite. Son intégrité se vérifie par brut_octets_sha256."
     },
 
     "brut_sha256": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
-      "description": "Empreinte des octets canoniques de brut. Rend l'immuabilité vérifiable plutôt que promise."
+      "description": "Empreinte de la forme canonique de brut (canoniser). Présente avec brut, absente avec brut_texte. Elle diffère de brut_octets_sha256 dès que la lecture JSON a changé quelque chose : ordre des clés, espaces, entiers au-delà de 2^53."
+    },
+
+    "brut_octets_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Décision de l'auteur du 2026-10-02 : SHA-256 des octets exacts du corps HTTP reçu, calculé avant toute lecture. Requis pour toute réponse obtenue du canal api. Les octets eux-mêmes ne sont pas copiés : brut ou brut_texte en sont la lecture."
     },
 
     "normalise": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["texte", "liens", "troncature"],
+      "required": ["texte", "liens", "troncature", "refus_api"],
       "description": "Projection AVEC PERTE de brut, seule entrée de la notation.",
       "properties": {
         "texte": { "type": "string" },
@@ -110,6 +134,10 @@
         "troncature": {
           "type": "boolean",
           "description": "Dérivé du stop_reason, jamais deviné. §6 fixe 2 048 tokens \"pour éviter toute troncature\" : la troncature arrivera quand même. Décision retenue : une réponse tronquée est OBTENUE et notée telle quelle (règle 7) ; le drapeau reste disponible pour une analyse de robustesse."
+        },
+        "refus_api": {
+          "type": "boolean",
+          "description": "Décision de l'auteur du 2026-10-02 (§6, texte à écrire en protocole 0.16). true : l'API a opposé un refus de modération identifiable (statut HTTP et code d'erreur propre à l'éditeur, reconnus par l'adaptateur de cet éditeur). Ce refus est une réponse OBTENUE, non retentée, que la notation classe en non-réponse (§7) ; brut est le corps d'erreur tel que reçu, texte vaut \"\", liens [] et troncature false. false pour toute autre réponse obtenue, y compris un refus écrit dans le texte de la réponse, que la notation classe aussi."
         }
       }
     },
@@ -163,30 +191,13 @@
       "type": "array",
       "description": "§6 : trois tentatives avec délai croissant avant de déclarer la réponse manquante. « Une requête est tentée au plus trois fois au total » (conformité 2026-09-29, n° 27) : trois éléments au plus, numérotés 1, 2, 3 dans l'ordre, sans trou ni doublon.",
       "maxItems": 3,
+      "$comment": "En draft 2020-12, items ne s'applique qu'APRÈS les prefixItems : chaque élément de prefixItems porte donc lui-même la forme d'une tentative ($defs/tentative). Sans cela, aucune des trois tentatives n'était contrôlée au-delà de son numéro (constaté le 2026-10-02, lot interrogation).",
       "prefixItems": [
-        { "properties": { "numero": { "const": 1 } } },
-        { "properties": { "numero": { "const": 2 } } },
-        { "properties": { "numero": { "const": 3 } } }
+        { "$ref": "#/$defs/tentative", "properties": { "numero": { "const": 1 } } },
+        { "$ref": "#/$defs/tentative", "properties": { "numero": { "const": 2 } } },
+        { "$ref": "#/$defs/tentative", "properties": { "numero": { "const": 3 } } }
       ],
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["numero", "horodatage", "erreur"],
-        "properties": {
-          "numero": { "type": "integer", "minimum": 1, "maximum": 3 },
-          "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
-          "erreur": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["type", "message"],
-            "properties": {
-              "type": { "type": "string", "enum": ["reseau", "http", "quota", "refus_api", "timeout", "autre"] },
-              "message": { "type": "string", "minLength": 1 },
-              "code_http": { "type": "integer" }
-            }
-          }
-        }
-      }
+      "items": { "$ref": "#/$defs/tentative" }
     },
 
     "saisie_manuelle": {
@@ -236,27 +247,91 @@
     }
   },
 
+  "$defs": {
+    "tentative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numero", "horodatage", "erreur"],
+      "properties": {
+        "numero": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "erreur": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "message"],
+          "description": "Une tentative en échec. Un refus de modération de l'API n'en est pas une (décision de l'auteur du 2026-10-02) : c'est une réponse obtenue, normalise.refus_api.",
+          "properties": {
+            "type": { "type": "string", "enum": ["reseau", "http", "quota", "timeout", "autre"] },
+            "message": { "type": "string", "minLength": 1 },
+            "code_http": { "type": "integer" }
+          }
+        }
+      }
+    }
+  },
+
   "allOf": [
     {
       "$comment": "Une réponse obtenue porte son brut, son empreinte, sa projection et ses métadonnées ; elle n'a pas de tentatives en échec. Conformité 2026-09-29, n° 27 : si elle en garde, deux au plus, puisque la tentative réussie est l'une des trois du §6.",
       "if": { "properties": { "statut_reponse": { "const": "obtenue" } }, "required": ["statut_reponse"] },
       "then": {
-        "required": ["brut", "brut_sha256", "normalise", "normalisation", "metadonnees"],
-        "properties": { "tentatives": { "maxItems": 2 } }
+        "required": ["normalise", "normalisation", "metadonnees"],
+        "properties": { "tentatives": { "maxItems": 2 } },
+        "not": { "required": ["motif_manquante"] },
+        "oneOf": [
+          {
+            "$comment": "Corps objet JSON : brut et son empreinte canonique.",
+            "required": ["brut", "brut_sha256"],
+            "not": { "required": ["brut_texte"] }
+          },
+          {
+            "$comment": "Corps qui n'est pas un objet JSON (décision de l'auteur du 2026-10-02) : brut_texte seul, sans brut ni brut_sha256.",
+            "required": ["brut_texte"],
+            "allOf": [{ "not": { "required": ["brut"] } }, { "not": { "required": ["brut_sha256"] } }]
+          }
+        ]
+      }
+    },
+    {
+      "$comment": "Décision de l'auteur du 2026-10-02 : un refus de l'API n'a ni texte, ni lien, ni troncature. Sa projection est fixée, pour que rien ne la confonde avec une réponse vide d'un autre genre.",
+      "if": {
+        "properties": { "normalise": { "properties": { "refus_api": { "const": true } }, "required": ["refus_api"] } },
+        "required": ["normalise"]
+      },
+      "then": {
+        "properties": {
+          "normalise": {
+            "properties": {
+              "texte": { "const": "" },
+              "liens": { "maxItems": 0 },
+              "troncature": { "const": false }
+            }
+          }
+        }
       }
     },
     {
       "$comment": "Une réponse manquante n'a RIEN à montrer : le contraire signifierait qu'on a inventé un contenu.",
       "if": { "properties": { "statut_reponse": { "const": "manquante" } }, "required": ["statut_reponse"] },
       "then": {
-        "required": ["tentatives"],
-        "properties": { "tentatives": { "minItems": 3 } },
+        "required": ["tentatives", "motif_manquante"],
         "allOf": [
           { "not": { "required": ["brut"] } },
+          { "not": { "required": ["brut_texte"] } },
           { "not": { "required": ["normalise"] } },
-          { "not": { "required": ["brut_sha256"] } }
+          { "not": { "required": ["brut_sha256"] } },
+          { "not": { "required": ["brut_octets_sha256"] } }
         ]
       }
+    },
+    {
+      "$comment": "Décision de l'auteur du 2026-10-02 : une manquante pour échecs a eu ses trois tentatives, exactement ; une manquante hors fenêtre en a eu de zéro à deux, la fenêtre s'étant fermée avant la suivante.",
+      "if": { "properties": { "motif_manquante": { "const": "echecs" } }, "required": ["motif_manquante"] },
+      "then": { "properties": { "tentatives": { "minItems": 3 } } }
+    },
+    {
+      "if": { "properties": { "motif_manquante": { "const": "hors_fenetre" } }, "required": ["motif_manquante"] },
+      "then": { "properties": { "tentatives": { "maxItems": 2 } } }
     },
     {
       "$comment": "Conformité n° 61, §6 : « identifiant de version renvoyé par l'API, horodatage, latence » sont enregistrés. Pour une réponse d'API obtenue, les deux clés sont présentes ; modele_renvoye peut valoir null (l'API ne le renvoie pas), latence_ms jamais. Le canal application n'a pas d'API : le §6 ne lui demande ni l'un ni l'autre.",
@@ -265,6 +340,7 @@
         "required": ["canal", "statut_reponse"]
       },
       "then": {
+        "required": ["brut_octets_sha256"],
         "properties": { "metadonnees": { "required": ["modele_renvoye", "latence_ms"] } }
       }
     },

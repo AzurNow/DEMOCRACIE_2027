@@ -1,0 +1,197 @@
+[
+  {
+    "id": "q_0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+    "gabarit": "Q-DIR",
+    "candidat_id": "demo-alpha",
+    "items": [
+      {
+        "reference": {
+          "item_id": "0F3C8M1N2P4Q5R6S7T8V9W0X1Y",
+          "item_version": 1,
+          "item_empreinte": "8b477097e01eb7edc50ef0dd171989014df655d99f93ca9f7672e3c0e5a50fc9"
+        },
+        "role": "principal"
+      }
+    ],
+    "grappe_id": "0F3C8M1N2P4Q5R6S7T8V9W0X1Y",
+    "formulations": [
+      {
+        "id": "3J6F1Q4R5S7T8V9W0X1Y2Z3A4B",
+        "registre": "neutre",
+        "texte": "Question simulée 1, formulation neutre : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "66a525f2d85cf86c722ab7cae8f2f0e72e8bbc57efa0e16103feca9d39678458",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      },
+      {
+        "id": "4K7G2R5S6T8V9W0X1Y2Z3A4B5C",
+        "registre": "familier",
+        "texte": "Question simulée 1, formulation familier : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "d27a61696d24bb75cbafa53c63c1a0538a2553189019065c8930b1cec864c095",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      },
+      {
+        "id": "5M8H3S6T7V9W0X1Y2Z3A4B5C6D",
+        "registre": "oriente",
+        "texte": "Question simulée 1, formulation oriente : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "423020b927993bf9e0b6bb410310c5e2a940180d547041724f89c3ad7c537a96",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      }
+    ],
+    "engendree_le": "2026-11-20T09:00:00+01:00",
+    "version_gabarits": "prompts/gabarits-1.0.0"
+  },
+  {
+    "id": "q_1b2c3d4e5f60718293a4b5c6d7e8f90a",
+    "gabarit": "Q-DIR",
+    "candidat_id": "demo-alpha",
+    "items": [
+      {
+        "reference": {
+          "item_id": "1G4D9N2P3Q5R6S7T8V9W0X1Y2Z",
+          "item_version": 1,
+          "item_empreinte": "d8cb0ec21c98be74c9c16c43ee6fd017a7e82fda32a950e46f6aaab046e9eded"
+        },
+        "role": "principal"
+      }
+    ],
+    "grappe_id": "1G4D9N2P3Q5R6S7T8V9W0X1Y2Z",
+    "formulations": [
+      {
+        "id": "6N9J4T7V8W0X1Y2Z3A4B5C6D7E",
+        "registre": "neutre",
+        "texte": "Question simulée 2, formulation neutre : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "8b6776dff5d3f735fb4338a606bfec6a4a3542706f45a26f7286e2a21e2da860",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      },
+      {
+        "id": "7P0K5V8W9X1Y2Z3A4B5C6D7E8F",
+        "registre": "familier",
+        "texte": "Question simulée 2, formulation familier : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "2d4dbb9aa173c553753e3bd6687efccdf4d30ccbe55277d1720465c18621327e",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      },
+      {
+        "id": "8Q1M6W9X0Y2Z3A4B5C6D7E8F9G",
+        "registre": "oriente",
+        "texte": "Question simulée 2, formulation oriente : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "d7f38f5e20b180bd6d8ee0e38f32be341d12140183cd4266b48c6a199cc1ddec",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      }
+    ],
+    "engendree_le": "2026-11-20T09:00:00+01:00",
+    "version_gabarits": "prompts/gabarits-1.0.0"
+  },
+  {
+    "id": "q_2c3d4e5f60718293a4b5c6d7e8f90a1b",
+    "gabarit": "Q-DIR",
+    "candidat_id": "demo-beta",
+    "items": [
+      {
+        "reference": {
+          "item_id": "2H5E0P3Q4R6S7T8V9W0X1Y2Z3A",
+          "item_version": 1,
+          "item_empreinte": "5a219dd273be23c9c0a2f42bd92247a1b27ac38b6ce1564d80ed21ef525481b6"
+        },
+        "role": "principal"
+      }
+    ],
+    "grappe_id": "2H5E0P3Q4R6S7T8V9W0X1Y2Z3A",
+    "formulations": [
+      {
+        "id": "9R2N7X0Y1Z3A4B5C6D7E8F9G0H",
+        "registre": "neutre",
+        "texte": "Question simulée 3, formulation neutre : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "1632573c854de8905d159037770ad50b6fbe5efca9a5a66b752ef98ee5f7a329",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      },
+      {
+        "id": "AS3P8Y1Z2A4B5C6D7E8F9G0H1J",
+        "registre": "familier",
+        "texte": "Question simulée 3, formulation familier : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "83657edf53ad631024c11446d1140853f76103278124c73692401e043280d02e",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      },
+      {
+        "id": "BT4Q9Z2A3B5C6D7E8F9G0H1J2K",
+        "registre": "oriente",
+        "texte": "Question simulée 3, formulation oriente : texte de démonstration, sans contenu réel.",
+        "empreinte_texte": "74ef02a3ce0a5887a6a0391d4f1be73bc079a35cce9e56988837a0e17a5c4a5f",
+        "production": {
+          "modele": "simule/aucun-modele",
+          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+        },
+        "relecture": {
+          "annotateur_id": "a-simule",
+          "date": "2026-11-20T10:00:00+01:00",
+          "sens_preserve": true
+        }
+      }
+    ],
+    "engendree_le": "2026-11-20T09:00:00+01:00",
+    "version_gabarits": "prompts/gabarits-1.0.0"
+  }
+]
