@@ -5,6 +5,33 @@
   "kappa": 0.84,
   "accord_observe": 0.918,
   "n": 49,
+  "kappa_par_question": {
+    "citation_fidele": {
+      "kappa": 0.7,
+      "accord_observe": 0.86,
+      "n": 50
+    },
+    "paraphrase_exacte": {
+      "kappa": 0.65,
+      "accord_observe": 0.84,
+      "n": 50
+    },
+    "position_univoque": {
+      "kappa": 0.55,
+      "accord_observe": 0.8,
+      "n": 50
+    },
+    "theme_correct": {
+      "motif_indefini": "accord_attendu_maximal",
+      "accord_observe": 1,
+      "n": 50
+    },
+    "quantification_correcte": {
+      "motif_indefini": "aucun_item_commun",
+      "accord_observe": null,
+      "n": 0
+    }
+  },
   "exclus_contestation": 1,
   "taille_lot": 50,
   "taille_attendue": 50,

@@ -28,7 +28,7 @@
     "version": {
       "type": "integer",
       "minimum": 1,
-      "description": "Incrémentée à tout changement du contenu notant. §9 exige que l'historique d'un item soit visible ; Git donne le quand, pas le contre-quoi une réponse a été notée."
+      "description": "Incrémentée à toute correction, paraphrase comprise, et quand la version de la mesure épinglée change (§4 : « la version trace l'historique, l'empreinte trace le contenu notant » ; seule une correction du contenu notant change l'empreinte). §9 exige que l'historique d'un item soit visible ; Git donne le quand, pas le contre-quoi une réponse a été notée."
     },
 
     "empreinte": {
@@ -520,7 +520,7 @@
         "citation_verbatim": {
           "type": "string",
           "minLength": 1,
-          "description": "Reproduite caractère pour caractère. Une coquille de la source reste dans la citation : le test verbatim (règle 5) est une comparaison de chaînes après normalisation des espaces et des guillemets, jamais un rapprochement."
+          "description": "Reproduite caractère pour caractère. Une coquille de la source reste dans la citation : le test verbatim (règle 5) est une comparaison de chaînes après la normalisation fixée du §4 (toute suite d'espaces devient une espace, espaces de début et de fin retirées, guillemets, apostrophes, primes et tirets typographiques ramenés à leur forme ASCII), jamais un rapprochement."
         },
         "quantification": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/quantification" },
         "source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source" },

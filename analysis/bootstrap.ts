@@ -22,8 +22,9 @@
  * `valeurDuTaux` (valeur absente ⇒ `null`), ce qui ne change ni les grappes, ni le flux aléatoire,
  * ni les quantiles : ses bornes sont exactement celles d'avant. La voie numérique sert l'écart
  * maximal du test d'asymétrie (`permutation.ts`), qui n'est pas un rapport d'effectifs. Le §8 ne
- * dit pas en toutes lettres que son intervalle vient du même bootstrap en grappes ; c'est la lecture
- * du paragraphe « Incertitude », retenue ici et à écrire en révision 0.12.
+ * dit pas, dans le paragraphe « Incertitude », que l'intervalle de l'écart vient du même bootstrap
+ * en grappes que les taux ; c'est écrit au paragraphe « Test d'asymétrie (QR3, H4) » (« Ces deux
+ * intervalles viennent du même bootstrap en grappes que les taux »).
  *
  * Le générateur est celui du dépôt (`validation/domaine/alea.ts`, SplitMix64 amorcé par sha256) :
  * la reproductibilité du §9 ne dépend d'aucune version de Node. Il est amorcé par
