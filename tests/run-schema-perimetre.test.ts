@@ -137,6 +137,33 @@ describe("conformité n° 19 : sous_seuil lié à items_p_verifies dans les deux
   });
 });
 
+describe("conformité n° 11 : la liste des items P au gel est figée dans le run", () => {
+  it("l'exemple réel porte, pour chaque candidat, autant d'identifiants que items_p_verifies", () => {
+    for (const c of perimetre(runValide())["candidats"] as Objet[]) {
+      expect((c["items_p_au_gel"] as unknown[]).length).toBe(c["items_p_verifies"]);
+    }
+  });
+
+  it("refuse un candidat sans items_p_au_gel", () => {
+    const run = runValide();
+    delete candidat(run, 0)["items_p_au_gel"];
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/0"));
+  });
+
+  it("refuse un identifiant listé deux fois", () => {
+    const run = runValide();
+    const liste = candidat(run, 1)["items_p_au_gel"] as string[];
+    liste.push(liste[0] as string);
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel"));
+  });
+
+  it("refuse un identifiant qui n'est pas un ULID", () => {
+    const run = runValide();
+    (candidat(run, 1)["items_p_au_gel"] as string[])[0] = "item-lisible";
+    expect(chemins(run)).toSatisfy(toutesSous("/perimetre/candidats/1/items_p_au_gel/0"));
+  });
+});
+
 describe("conformité n° 10 : régime avant la liste officielle", () => {
   it("l'exemple réel déclare le régime avant la liste", () => {
     expect(perimetre(runValide())["regime_inclusion"]).toBe("avant_liste_officielle");

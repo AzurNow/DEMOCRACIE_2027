@@ -170,11 +170,17 @@ export function entreeTirage(partiel: Partiel<EntreeTirage> = {}): EntreeTirage 
   }, partiel);
 }
 
+/** Identifiants triés de `n` items P, au format du run (`items_p_au_gel`). */
+export function itemsPAuGel(prefixe: string, n: number): readonly string[] {
+  return Array.from({ length: n }, (_, rang) => ulid(`${prefixe}-${rang}`)).sort();
+}
+
 export function candidat(partiel: Partiel<CandidatAuGel> = {}): CandidatAuGel {
   return fusionner<CandidatAuGel>({
     candidat_id: "candidat-a",
     statut_au_gel: "actif",
     items_p_verifies: 20,
+    items_p_au_gel: itemsPAuGel("item-p-candidat-a", 20),
     sous_seuil: false,
     interroge: true,
   }, partiel);
@@ -195,6 +201,20 @@ export function run(partiel: Partiel<Run> = {}): Run {
     date_gel: "2026-12-01T06:00:00+01:00",
     perimetre: { candidats: [candidat()], outils: [outil()] },
   }, partiel);
+}
+
+/**
+ * Run dont l'unique candidat interrogé porte `items` comme items P de référence, et dont les
+ * comparateurs inclus sont `comparateurs` (plus l'assistant neutre de la fabrique).
+ */
+export function runDeComparateurs(items: readonly string[], comparateurs: readonly string[] = ["comparateur-un"]): Run {
+  const tries = [...items].sort();
+  return run({
+    perimetre: {
+      candidats: [candidat({ items_p_verifies: tries.length, items_p_au_gel: tries, sous_seuil: tries.length < 10 })],
+      outils: [outil(), ...comparateurs.map((outil_id) => outil({ outil_id, famille: "comparateur", mode_de_tete: undefined }))],
+    },
+  });
 }
 
 export function lectureComparateur(partiel: Partiel<LectureComparateur> = {}): LectureComparateur {

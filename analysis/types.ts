@@ -239,6 +239,12 @@ export interface CandidatAuGel {
   readonly candidat_id: IdentifiantCourt;
   readonly statut_au_gel: "actif" | "nouveau" | "retire";
   readonly items_p_verifies: number;
+  /**
+   * Les identifiants triés des items P comptés au gel, dont `items_p_verifies` est la longueur.
+   * Décision de l'auteur du 2026-10-02 (conformité n° 11, texte à écrire au §8 en 0.15) : ce sont
+   * les « items P de référence » des comparateurs pour un candidat interrogé. Lu, jamais recalculé.
+   */
+  readonly items_p_au_gel: readonly Ulid[];
   /** §4 et §8 : lu, jamais recalculé ici. */
   readonly sous_seuil: boolean;
   readonly interroge: boolean;
