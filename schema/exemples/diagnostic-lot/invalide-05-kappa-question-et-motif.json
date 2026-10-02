@@ -19,7 +19,8 @@
     "position_univoque": {
       "kappa": 0.55,
       "accord_observe": 0.8,
-      "n": 50
+      "n": 50,
+      "motif_indefini": "accord_attendu_maximal"
     },
     "theme_correct": {
       "kappa": 0.9,

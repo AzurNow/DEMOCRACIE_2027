@@ -42,6 +42,27 @@ function dossier(item: Item, decisions: readonly EntreeDecision[], surcharges: P
 const CONFIRME = { couverture_theme_verifiee: true, corpus_complet: true, confirmation_absence: true };
 
 describe("accords", () => {
+  it("deux « accepter » dont l'un répond non à la position univoque : vérifié, la réponse n'entre pas dans le sort", () => {
+    // §4 : la réponse à « la position est-elle explicite et univoque » est un diagnostic, publié
+    // avec le kappa par question, et n'entre pas dans le sort de l'item.
+    const item = itemP();
+    const issue = evaluerPromotion(
+      dossier(item, [
+        decision({ annotateur_id: "a1", item, decision: "accepter" }),
+        decision({
+          annotateur_id: "a2",
+          item,
+          decision: "accepter",
+          reponses_grille: { ...GRILLE_TOUT_VRAI, position_univoque: false },
+        }),
+      ]),
+      OPTIONS_PROMOTION,
+    );
+    expect(issue.sort).toBe("promouvoir");
+    if (issue.sort !== "promouvoir") return;
+    expect(issue.statut).toBe("verifie");
+  });
+
   it("deux « accepter » sur la même version : item vérifié", () => {
     const item = itemP();
     const issue = evaluerPromotion(
