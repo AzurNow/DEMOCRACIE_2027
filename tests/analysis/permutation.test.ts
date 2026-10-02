@@ -249,22 +249,25 @@ describe("intervalles publiés avec le test d'asymétrie (conformité n° 29, §
   });
 
   it("écarte et compte les rééchantillons où l'écart n'est pas défini (candidat sans réponse classée tirée)", () => {
-    // A : 5 items (3 exactes). B : 1 item exact, grappe d'indice 5. Un rééchantillon qui ne tire
-    // pas B n'a pas d'exactitude de B : l'écart maximal, qui porte sur tous les candidats comparés,
-    // n'y est pas défini. §8 : écarté du calcul des bornes, et compté.
+    // A : 5 items (3 exactes). B : 1 item exact. Un rééchantillon qui ne tire pas B n'a pas
+    // d'exactitude de B : l'écart maximal, qui porte sur tous les candidats comparés, n'y est pas
+    // défini. §8 : écarté du calcul des bornes, et compté. Les grappes sont rangées par grappe_id
+    // (conformité n° 19, texte en 0.15) : l'indice de B est son rang dans cet ordre.
     const jeu = [
       ...items("candidat-a", 3, true, "a-exactes"),
       ...items("candidat-a", 2, false, "a-inexactes"),
       ...items("candidat-b", 1, true, "b-exactes"),
     ];
-    const grappes = [...new Set(jeu.map((u) => u.grappe_id))].map((id) => jeu.filter((u) => u.grappe_id === id));
+    const ids = [...new Set(jeu.map((u) => u.grappe_id))].sort();
+    const grappes = ids.map((id) => jeu.filter((u) => u.grappe_id === id));
+    const indiceB = ids.indexOf(ulid("b-exactes-item-0"));
     const cle = ["bootstrap", "outil-alpha", "web_activee", "ecart_maximal", "global"];
     const rng = generateur(graineDerivee(BOOTSTRAP.graine_du_run, cle));
     const valeurs: number[] = [];
     let indefinis = 0;
     for (let b = 0; b < BOOTSTRAP.reechantillonnages; b += 1) {
       const indices = grappes.map(() => rng.entier(grappes.length));
-      if (!indices.includes(5)) indefinis += 1;
+      if (!indices.includes(indiceB)) indefinis += 1;
       else valeurs.push(ecartMaximal(grappesEtiquetees(indices.flatMap((i) => grappes[i] ?? []))));
     }
     valeurs.sort((x, y) => x - y);

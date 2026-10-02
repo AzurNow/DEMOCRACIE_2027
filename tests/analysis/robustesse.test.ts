@@ -379,6 +379,39 @@ describe("(a) : la note humaine de l'échantillon, lue dans les notations indivi
     expect(() => recalculEchantillonHumain([dansEchantillon], notations)).toThrow(DivergenceSansArbitrage);
   });
 
+  it("un désaccord sur un booléen du sourçage que les métriques ne lisent pas n'est pas un désaccord", () => {
+    // Décision de l'auteur du 2026-10-02, conformité n° 43, texte en 0.15 : les métriques
+    // primaires ne lisent du sourçage que `au_moins_un_lien_soutenant` (`metriques.ts:
+    // sourcageValide`). a1 voit une citation et un lien vivant qui ne soutient pas ; a2 ne voit
+    // aucune citation. « Cite » et « lien existant » divergent, le sourçage valide (non) est le
+    // même : les deux humains s'accordent, aucun troisième n'est requis.
+    const notations = [
+      humaine("a1", {
+        categorie: "inexacte",
+        sourcage: { cite: true, liens: [{ verdict_existence: "existe", verdict_soutien: "ne_soutient_pas" }] },
+      }),
+      humaine("a2", { categorie: "inexacte", sourcage: { cite: false, liens: [] } }),
+    ];
+
+    const [recalculee] = recalculEchantillonHumain([dansEchantillon], notations);
+
+    expect(recalculee?.categorie).toBe("inexacte");
+    expect(recalculee?.sourcage.au_moins_un_lien_soutenant).toBe(false);
+  });
+
+  it("un désaccord sur le lien existant et soutenant, que lisent les métriques, reste un désaccord", () => {
+    const notations = [
+      humaine("a1", {
+        sourcage: { cite: true, liens: [{ verdict_existence: "existe", verdict_soutien: "soutient" }] },
+      }),
+      humaine("a2", {
+        sourcage: { cite: true, liens: [{ verdict_existence: "existe", verdict_soutien: "ne_soutient_pas" }] },
+      }),
+    ];
+
+    expect(() => recalculEchantillonHumain([dansEchantillon], notations)).toThrow(DivergenceSansArbitrage);
+  });
+
   it("divergence sans troisième humain : erreur nommée, jamais la note des juges en repli", () => {
     const notations = [juge("juge-1"), juge("juge-2"), humaine("a1"), humaine("a2", { categorie: "inexacte" })];
 

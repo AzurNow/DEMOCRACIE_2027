@@ -21,9 +21,12 @@
  * appelé pour un désaccord de juges ou une erreur grave non plus, puisqu'il n'est pas tiré au sort.
  *
  * « S'accorder » se lit strictement : les deux notes sont identiques sur tout ce que lisent les
- * métriques primaires — catégorie, ensemble des drapeaux, fraîcheur d'obsolescence, et les trois
- * booléens de sourçage. Sinon il n'existe pas de « leur note » à retenir sans inventer une règle de
- * fusion, et la réponse doit passer par le troisième humain. Une divergence sans troisième
+ * métriques primaires — catégorie, ensemble des drapeaux, fraîcheur d'obsolescence, et, du
+ * sourçage, le seul booléen que lit `metriques.ts:sourcageValide`, `au_moins_un_lien_soutenant`
+ * (décision de l'auteur du 2026-10-02, conformité n° 43, texte en 0.15). Un désaccord sur « cite »
+ * ou « lien existant » seuls ne change aucune métrique primaire : ce n'est pas un désaccord. Sinon
+ * il n'existe pas de « leur note » à retenir sans inventer une règle de fusion, et la réponse doit
+ * passer par le troisième humain. Une divergence sans troisième
  * notation lève `DivergenceSansArbitrage` : jamais la note des juges en repli.
  *
  * Deux lectures assumées, toutes deux visibles dans la sortie :
@@ -230,12 +233,13 @@ function memesDrapeaux(a: readonly Drapeau[], b: readonly Drapeau[]): boolean {
   return a.length === b.length && a.every((drapeau) => b.includes(drapeau));
 }
 
+/**
+ * Conformité n° 43 (décision de l'auteur du 2026-10-02, texte en 0.15) : seul le booléen que lisent
+ * les métriques primaires (`metriques.ts:sourcageValide`) départage deux humains. Si une métrique
+ * primaire venait à lire un autre booléen du sourçage, il entrerait ici aussi.
+ */
 function memeSourcage(a: SourcageRetenu, b: SourcageRetenu): boolean {
-  return (
-    a.cite === b.cite &&
-    a.au_moins_un_lien_existant === b.au_moins_un_lien_existant &&
-    a.au_moins_un_lien_soutenant === b.au_moins_un_lien_soutenant
-  );
+  return a.au_moins_un_lien_soutenant === b.au_moins_un_lien_soutenant;
 }
 
 /**

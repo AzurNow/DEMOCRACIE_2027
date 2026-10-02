@@ -45,6 +45,7 @@
 
 import { generateur, melanger, type GenerateurAleatoire } from "../validation/domaine/alea.ts";
 import {
+  comparerGrappes,
   intervalleNomme,
   valeurDuTaux,
   type IntervalleNomme,
@@ -121,6 +122,10 @@ export interface ResultatPermutation {
  * Agrège les unités par item. Sont écartés, explicitement : les items sans candidat (Q-ATT, que
  * le §5 interdit d'attribuer) et les items dont aucune réponse n'est classée (ni exacte ni
  * inexacte), qui ne portent aucune information d'exactitude.
+ *
+ * Les items sont rendus rangés par `grappe_id` (`bootstrap.ts:comparerGrappes`), quel que soit
+ * l'ordre des réponses : c'est sur cet ordre que Fisher-Yates mélange les étiquettes, du dernier
+ * item au premier (décision de l'auteur du 2026-10-02, conformité n° 19, texte en 0.15).
  */
 export function grappesEtiquetees(unites: readonly UniteAnalyse[]): GrappeEtiquetee[] {
   const parGrappe = new Map<Ulid, UniteAnalyse[]>();
@@ -141,7 +146,7 @@ export function grappesEtiquetees(unites: readonly UniteAnalyse[]): GrappeEtique
       classees: comptages.denominateur,
     });
   }
-  return grappes;
+  return grappes.sort((a, b) => comparerGrappes(a.grappe_id, b.grappe_id));
 }
 
 function candidatUnique(grappe_id: Ulid, membres: readonly UniteAnalyse[]): IdentifiantCourt {

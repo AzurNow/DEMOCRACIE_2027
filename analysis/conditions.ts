@@ -18,6 +18,7 @@
  * comparer deux modes sur des items différents ne mesure plus le mode.
  */
 
+import { apparier } from "./appariement.ts";
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { cleCouple, etatDesCouples, type EtatCouple, type PartageCouples } from "./seuils.ts";
@@ -60,7 +61,7 @@ function comparerUnePaire(
   statistique: Statistique,
   options: OptionsBootstrap,
 ): ComparaisonCondition {
-  const appariement = apparier(paire.a, paire.b);
+  const appariement = apparier(paire.a, paire.b, (u) => u.grappe_id);
   // Graine propre à la paire (`graines.ts`) : la clé de l'appelant, suivie de celle de la paire.
   const optionsDeLaPaire = { ...options, cle: [...options.cle, paire.cle] };
   return {
@@ -68,31 +69,6 @@ function comparerUnePaire(
     difference: differenceAppariee(appariement.a, appariement.b, statistique, optionsDeLaPaire),
     grappes_appariees: appariement.communes.length,
     grappes_exclues: appariement.exclues,
-  };
-}
-
-interface Appariement {
-  readonly a: UniteAnalyse[];
-  readonly b: UniteAnalyse[];
-  readonly communes: readonly Ulid[];
-  readonly exclues: readonly Ulid[];
-}
-
-function apparier(a: readonly UniteAnalyse[], b: readonly UniteAnalyse[]): Appariement {
-  const grappesA = new Set(a.map((u) => u.grappe_id));
-  const grappesB = new Set(b.map((u) => u.grappe_id));
-  const communes: Ulid[] = [];
-  const exclues: Ulid[] = [];
-  for (const grappe of new Set([...grappesA, ...grappesB])) {
-    if (grappesA.has(grappe) && grappesB.has(grappe)) communes.push(grappe);
-    else exclues.push(grappe);
-  }
-  const retenues = new Set(communes);
-  return {
-    a: a.filter((u) => retenues.has(u.grappe_id)),
-    b: b.filter((u) => retenues.has(u.grappe_id)),
-    communes,
-    exclues,
   };
 }
 
