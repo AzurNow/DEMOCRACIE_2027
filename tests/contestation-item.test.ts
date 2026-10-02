@@ -7,6 +7,9 @@
  * inexistante ; et le retour au tirage selon la décision.
  */
 
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { contestationPermetLeTirage, DecisionsPanelSimultanees } from "../pipeline/questions/contestation.ts";
 import { itemEngendreDesQuestions } from "../pipeline/questions/engendrement.ts";
@@ -28,10 +31,11 @@ import {
 } from "../validation/domaine/contestation-item.ts";
 import type { AccesTexte } from "../validation/domaine/corrections.ts";
 import { evaluerPromotion } from "../validation/domaine/promotion.ts";
-import type { Correction, Item } from "../validation/domaine/types.ts";
+import type { Correction, Item, Source } from "../validation/domaine/types.ts";
+import { creerItem, lireItem, reecrireItem } from "../validation/io/data-items.ts";
 import { valider } from "../outils/schemas/valider.ts";
 import { itemPromu } from "./aides/data.ts";
-import { decision as decisionAnnotateur, itemP, mesure, OPTIONS_PROMOTION } from "./aides/fabriques.ts";
+import { decision as decisionAnnotateur, itemP, mesure, OPTIONS_PROMOTION, source } from "./aides/fabriques.ts";
 
 const TRACE = { date: "2026-10-01T10:00:00+02:00", commit: "c".repeat(40) };
 const TRACE_DECISION = { date: "2026-10-20T10:00:00+02:00", commit: "d".repeat(40) };
@@ -435,5 +439,126 @@ describe("réintégration après un retrait ou une non-évaluabilité du panel (
     expect(() =>
       appliquerDecisionPanel(recue, decisionPanel({ contestation_id: "01JBANCESSA1C0NTESTAT10N09", date }), { ...TRACE_DECISION, date }, ACCES),
     ).toThrow(StatutPanelIncoherent);
+  });
+});
+
+/**
+ * Conformité 2026-09-29, n° 6 ; décision de l'auteur du 2026-10-02 (texte à écrire au §4 en
+ * 0.15) : « L'attestation n'existe que sur un item vérifié ; elle est conservée si le panel retire
+ * ensuite l'item ou le déclare non évaluable. » Un item non évaluable par la double annotation,
+ * jamais vérifié, ne la porte toujours pas.
+ */
+describe("non-évaluabilité décidée par le panel sur un item T2 (conformité n° 6)", () => {
+  const ATTESTATION = { transcription_verifiee_par: ["a1", "a2"], transcription_verifiee_le: "2026-09-20" } as const;
+
+  function sourceDe(item: Item): Source {
+    if (item.assertion === undefined) throw new Error(`Item ${item.id} sans assertion.`);
+    return item.assertion.source;
+  }
+
+  /** La source d'un enregistrement vidéo : un extrait, pas de page. */
+  function sourceT2(): Source {
+    const { page: _page, ...sansPage } = source({
+      tier: "T2",
+      type_document: "enregistrement_video",
+      format: "video",
+      url: "https://demo.invalid/emission",
+      extrait: { debut: "00:42:10", fin: "00:43:05" },
+    });
+    return sansPage;
+  }
+
+  /** Un item P à source T2, promu par la vraie règle, les deux annotateurs ayant écouté l'extrait. */
+  function promuT2(decisionAnnotateurs: "accepter" | "non_evaluable"): Item {
+    const base = itemP();
+    if (base.assertion === undefined) throw new Error("itemP sans assertion.");
+    const item = itemP({ assertion: { ...base.assertion, source: sourceT2() } });
+    const issue = evaluerPromotion(
+      {
+        item,
+        mesure: mesure({ id: item.mesure_id, version: item.mesure_version }),
+        lot_id: "lot-001",
+        lot_nature: "reel",
+        decisions: ["a1", "a2"].map((annotateur_id) =>
+          decisionAnnotateur({ annotateur_id, item, decision: decisionAnnotateurs, questions_specifiques: { transcription_ecoutee: true } }),
+        ),
+        registre_corrections_mesure: [],
+      },
+      OPTIONS_PROMOTION,
+    );
+    if (issue.sort !== "promouvoir") throw new Error(`L'item de départ aurait dû être promu : ${JSON.stringify(issue)}`);
+    return issue.item;
+  }
+
+  /** L'attestation posée à la main sur un item qui ne l'a pas reçue de la promotion. */
+  function avecAttestation(item: Item): Item {
+    if (item.assertion === undefined) throw new Error(`Item ${item.id} sans assertion.`);
+    return { ...item, assertion: { ...item.assertion, source: { ...item.assertion.source, ...ATTESTATION } } };
+  }
+
+  /** Contestation n° `rang`, reçue puis décidée le 2`rang` octobre. */
+  function decider(item: Item, rang: number, decision: DecisionDuPanel["decision"]): Item {
+    const id = `01JBANCESSA1C0NTESTAT10N${String(rang + 1).padStart(2, "0")}`;
+    const jour = `2026-10-2${rang}`;
+    const recue = ajouterContestation(item, contestation(id, { date_reception: `${jour}T09:00:00+02:00` }), TRACE);
+    const date = `${jour}T15:00:00+02:00`;
+    const choix = decisionPanel({ contestation_id: id, version_jugee: recue.version, date, decision });
+    return appliquerDecisionPanel(recue, choix, { ...TRACE_DECISION, date }, ACCES).item;
+  }
+
+  it("non-évaluabilité d'un item T2 vérifié : l'attestation est conservée, et l'item reste conforme au schéma", () => {
+    const verifie = promuT2("accepter");
+    expect(verifie.statut_validation).toBe("verifie");
+    const attestation = sourceDe(verifie);
+    expect(attestation.transcription_verifiee_par).toEqual(["a1", "a2"]);
+    // Le chemin de `pnpm contester` puis de `pnpm panel --ecrire` : lireItem, décision, reecrireItem
+    // (validation du schéma, puis ajout seul).
+    const data = mkdtempSync(join(tmpdir(), "banc-panel-t2-"));
+    try {
+      creerItem(data, verifie);
+      const recu = lireItem(data, verifie.id);
+      reecrireItem(data, recu, ajouterContestation(recu.item, contestation(), TRACE), { corrections: false });
+      const conteste = lireItem(data, verifie.id);
+      const choix = decisionPanel({ decision: "non_evaluabilite", version_jugee: conteste.item.version });
+      const { item: declare, autorisation } = appliquerDecisionPanel(conteste.item, choix, TRACE_DECISION, ACCES);
+      expect(() => reecrireItem(data, conteste, declare, autorisation)).not.toThrow();
+      const relu = lireItem(data, verifie.id).item;
+      expect(relu.statut_validation).toBe("non_evaluable");
+      expect(sourceDe(relu).transcription_verifiee_par).toEqual(attestation.transcription_verifiee_par);
+      expect(sourceDe(relu).transcription_verifiee_le).toBe(attestation.transcription_verifiee_le);
+    } finally {
+      rmSync(data, { recursive: true, force: true });
+    }
+  });
+
+  it("item non évaluable par la double annotation, jamais vérifié, portant une attestation : invalide", () => {
+    const nonEvaluable = promuT2("non_evaluable");
+    expect(nonEvaluable.statut_validation).toBe("non_evaluable");
+    expect(sourceDe(nonEvaluable).transcription_verifiee_par).toBeUndefined();
+    expect(() => valider("item", nonEvaluable, "item non évaluable sans attestation")).not.toThrow();
+    expect(() => valider("item", avecAttestation(nonEvaluable), "item non évaluable attesté")).toThrow(/\/assertion\/source/);
+    // Une non-évaluabilité du panel posée ensuite ne lui ouvre pas l'attestation : il n'a jamais
+    // été vérifié.
+    const declareParLePanel = decider(nonEvaluable, 0, "non_evaluabilite");
+    expect(declareParLePanel.statut_validation).toBe("non_evaluable");
+    expect(() => valider("item", avecAttestation(declareParLePanel), "item jamais vérifié attesté")).toThrow(/\/assertion\/source/);
+  });
+
+  it("non-évaluabilité du panel puis maintien : le statut vérifié est rendu, l'attestation est toujours là", () => {
+    const declare = decider(promuT2("accepter"), 0, "non_evaluabilite");
+    const maintenu = decider(declare, 1, "maintien");
+    expect(maintenu.statut_validation).toBe("verifie");
+    expect(sourceDe(maintenu).transcription_verifiee_par).toEqual(["a1", "a2"]);
+    expect(sourceDe(maintenu).transcription_verifiee_le).toBe(sourceDe(declare).transcription_verifiee_le);
+    expect(() => valider("item", maintenu, "item maintenu après non-évaluabilité")).not.toThrow();
+  });
+
+  it("item non évaluable dont la dernière décision du panel est un maintien, portant une attestation : invalide", () => {
+    // Non évaluable par la promotion, déclaré non évaluable par le panel, puis maintenu : il reste
+    // non évaluable, et sa dernière décision n'est pas une non-évaluabilité.
+    const maintenu = decider(decider(promuT2("non_evaluable"), 0, "non_evaluabilite"), 1, "maintien");
+    expect(maintenu.statut_validation).toBe("non_evaluable");
+    expect(() => valider("item", maintenu, "item maintenu non évaluable")).not.toThrow();
+    expect(() => valider("item", avecAttestation(maintenu), "item maintenu non évaluable attesté")).toThrow(/\/assertion\/source/);
   });
 });
