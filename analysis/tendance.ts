@@ -12,8 +12,17 @@
  *
  * La différence est orientée dernier − premier : un chiffre positif dit que le taux a monté
  * entre les deux runs, et rien d'autre. Ni « meilleur », ni « pire » (§8).
+ *
+ * **Appariement par question** (décision de l'auteur du 2026-10-02, conformité n° 21, texte en
+ * 0.15). Pour un couple outil × mode, une question commune dont l'outil n'a de réponse obtenue
+ * qu'à l'un des deux runs sort de la comparaison, comme l'item absent d'un bras sort d'un effet de
+ * condition : même fonction, `appariement.ts:apparier`, sur `question_id`. Elle est nommée dans
+ * `questions_exclues`, et `questions_communes` compte les seules questions sur lesquelles porte la
+ * différence. Le bootstrap reste en grappes (l'item) : après appariement, chaque grappe tirée
+ * porte des questions présentes aux deux runs.
  */
 
+import { apparier } from "./appariement.ts";
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import type { UniteAnalyse } from "./filtre.ts";
 import { cleCouple, etatDesCouples, type EtatCouple, type PartageCouples } from "./seuils.ts";
@@ -30,8 +39,17 @@ export interface EtatRun {
 export interface TendanceOutilEtMode {
   readonly outil_id: IdentifiantCourt;
   readonly mode: Mode;
+  /**
+   * Effectif de la différence : questions communes aux deux runs (§8) dont l'outil a une réponse
+   * obtenue dans ce mode aux deux runs (conformité n° 21).
+   */
   readonly questions_communes: number;
-  /** Dernier run moins premier run, sur les seules questions communes. */
+  /**
+   * Questions communes aux deux runs dont l'outil n'a de réponse obtenue dans ce mode qu'à l'un
+   * des deux : sorties de la comparaison, nommées, jamais complétées (conformité n° 21).
+   */
+  readonly questions_exclues: readonly string[];
+  /** Dernier run moins premier run, sur les seules questions appariées. */
   readonly difference: DifferenceTaux;
 }
 
@@ -93,12 +111,18 @@ export function tendanceParOutilEtMode(
     }
     const avant = unitesPremier.filter((u) => u.outil_id === outil_id && u.mode === mode);
     const apres = unitesDernier.filter((u) => u.outil_id === outil_id && u.mode === mode);
+    // Premier run en bras A : les questions exclues sont nommées celles du premier run d'abord.
+    const appariement = apparier(avant, apres, (u) => u.question_id);
     par_outil_et_mode.push({
       outil_id,
       mode,
-      questions_communes: questionsDesDeux(avant, apres),
+      questions_communes: appariement.communes.length,
+      questions_exclues: appariement.exclues,
       // Graine propre au couple (`graines.ts`) : la clé de l'appelant, suivie de l'outil puis du mode.
-      difference: differenceAppariee(apres, avant, statistique, { ...options, cle: [...options.cle, outil_id, mode] }),
+      difference: differenceAppariee(appariement.b, appariement.a, statistique, {
+        ...options,
+        cle: [...options.cle, outil_id, mode],
+      }),
     });
   }
   return { par_outil_et_mode, couples_exclus };
@@ -175,8 +199,3 @@ function modeExige(unite: UniteAnalyse): Mode {
   return unite.mode;
 }
 
-/** Questions que cet outil a effectivement rencontrées dans les deux runs. */
-function questionsDesDeux(avant: readonly UniteAnalyse[], apres: readonly UniteAnalyse[]): number {
-  const dansApres = new Set(apres.map((u) => u.question_id));
-  return new Set(avant.map((u) => u.question_id).filter((id) => dansApres.has(id))).size;
-}

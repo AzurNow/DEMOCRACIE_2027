@@ -99,6 +99,19 @@ export interface DifferenceTaux {
   readonly qualificatif: Qualificatif | null;
 }
 
+/**
+ * Rang des grappes (décision de l'auteur du 2026-10-02, conformité n° 19, texte en 0.15) : par
+ * `grappe_id` croissant, comparaison de chaînes JavaScript (`<`, unités de code UTF-16), jamais
+ * `localeCompare`, qui dépend de la locale de la machine. L'indice tiré par `tirerAvecRemise`
+ * désigne la grappe de ce rang : deux archives aux mêmes réponses dans un autre ordre donnent les
+ * mêmes bornes. Partagé avec la permutation (`permutation.ts:grappesEtiquetees`).
+ */
+export function comparerGrappes(a: Ulid, b: Ulid): number {
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
+}
+
+/** Les unités par grappe, clés rangées par `comparerGrappes` (conformité n° 19). */
 export function grapper(unites: readonly UniteAnalyse[]): Map<Ulid, UniteAnalyse[]> {
   const grappes = new Map<Ulid, UniteAnalyse[]>();
   for (const unite of unites) {
@@ -106,7 +119,7 @@ export function grapper(unites: readonly UniteAnalyse[]): Map<Ulid, UniteAnalyse
     if (existante === undefined) grappes.set(unite.grappe_id, [unite]);
     else existante.push(unite);
   }
-  return grappes;
+  return new Map([...grappes].sort(([a], [b]) => comparerGrappes(a, b)));
 }
 
 export function percentile(valeursTriees: readonly number[], p: number): number {
@@ -147,6 +160,12 @@ export function reechantillonnerStatistique(
  * Différence appariée par grappe : les deux bras sont recalculés sur les MÊMES grappes tirées,
  * sinon la corrélation entre les deux mesures d'un même item serait perdue et l'intervalle de la
  * différence, trop large.
+ *
+ * Les grappes tirées sont la réunion de celles des deux bras, rangée par `grappe_id`
+ * (`comparerGrappes`) — et non plus « celles du bras A, puis celles du seul bras B » (décision de
+ * l'auteur du 2026-10-02, conformité n° 19, texte en 0.15). Les effets de condition et la tendance
+ * apparient avant d'appeler (`appariement.ts:apparier`) : la réunion y est l'intersection. La
+ * robustesse n'apparie pas : une grappe d'un seul bras y est tirée et ne compte que dans ce bras.
  */
 export function reechantillonnerDifference(
   unitesA: readonly UniteAnalyse[],
@@ -156,7 +175,7 @@ export function reechantillonnerDifference(
 ): EchantillonBootstrap {
   const grappesA = grapper(unitesA);
   const grappesB = grapper(unitesB);
-  const cles = [...new Set([...grappesA.keys(), ...grappesB.keys()])];
+  const cles = [...new Set([...grappesA.keys(), ...grappesB.keys()])].sort(comparerGrappes);
   return echantillonner(
     cles.length,
     (indices) => {

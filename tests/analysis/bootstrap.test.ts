@@ -21,7 +21,7 @@ import {
 import { graineDerivee } from "../../analysis/graines.ts";
 import { exactitude } from "../../analysis/metriques.ts";
 import { generateur } from "../../validation/domaine/alea.ts";
-import { grappe } from "./fabriques.ts";
+import { grappe, ulid } from "./fabriques.ts";
 
 const OPTIONS = { reechantillonnages: 200, graine_du_run: 20261201, cle: ["test", "bootstrap"] };
 
@@ -74,25 +74,27 @@ describe("reproductibilité", () => {
 
 describe("contrat de rejeu depuis run.graines.bootstrap (constat n° 6)", () => {
   it("amorce le générateur par graineDerivee(graine_du_run, [\"bootstrap\", ...cle]), rien d'autre", () => {
-    // Deux grappes homogènes, dans l'ordre de première apparition : g-exacte (indice 0, taux 1),
-    // g-inexacte (indice 1, taux 0). Chaque rééchantillon tire deux indices avec remise ; sa
-    // valeur est la moyenne des deux taux. Un tiers qui rejoue le générateur avec la graine
-    // dérivée doit retrouver exactement la même liste de valeurs.
+    // Deux grappes homogènes, rangées par grappe_id (conformité n° 19, texte en 0.15) : l'indice
+    // d'une grappe est son rang dans cet ordre, quel que soit l'ordre des réponses. Chaque
+    // rééchantillon tire deux indices avec remise ; sa valeur est la moyenne des deux taux. Un
+    // tiers qui rejoue le générateur avec la graine dérivée doit retrouver la même liste.
     const jeu = [
       ...grappe("g-exacte", 1, { categorie: "exacte" }),
       ...grappe("g-inexacte", 1, { categorie: "inexacte" }),
     ];
     const options = { reechantillonnages: 50, graine_du_run: 20261201, cle: ["outil-alpha", "exactitude"] };
+    const indiceExact = [ulid("g-exacte"), ulid("g-inexacte")].sort().indexOf(ulid("g-exacte"));
 
     const rng = generateur(graineDerivee(20261201, ["bootstrap", "outil-alpha", "exactitude"]));
     const attendues: number[] = [];
     for (let i = 0; i < 50; i += 1) {
       const tirees = [rng.entier(2), rng.entier(2)];
-      attendues.push(tirees.filter((indice) => indice === 0).length / 2);
+      attendues.push(tirees.filter((indice) => indice === indiceExact).length / 2);
     }
     attendues.sort((x, y) => x - y);
 
     expect(reechantillonner(jeu, exactitude, options).valeurs).toEqual(attendues);
+    expect(reechantillonner([...jeu].reverse(), exactitude, options).valeurs).toEqual(attendues);
   });
 });
 
@@ -230,9 +232,13 @@ describe("statistique numérique (conformité n° 29)", () => {
     // Bornes relevées sur le code d'avant le constat n° 29 (`intervalleBootstrap` typé Taux),
     // 2 000 rééchantillonnages, graine 20261201. Elles ne doivent pas bouger d'un bit, ni par
     // l'ancienne entrée, ni par la voie numérique.
+    // Relevées de nouveau sous la règle du rang par grappe_id (décision de l'auteur du
+    // 2026-10-02, conformité n° 19, texte en 0.15), et retrouvées par un rejeu indépendant du
+    // générateur sur les grappes rangées par grappe_id. Avant, sous l'ordre de première
+    // apparition des réponses : haut 1 pour le jeu figé, 158 indéfinis pour le jeu creux.
     const fige = {
       bas: 0.5714285714285714,
-      haut: 1,
+      haut: 0.9473684210526315,
       nombre_grappes: 10,
       reechantillonnages: 2000,
       reechantillonnages_indefinis: 0,
@@ -243,7 +249,7 @@ describe("statistique numérique (conformité n° 29)", () => {
       haut: 1,
       nombre_grappes: 5,
       reechantillonnages: 2000,
-      reechantillonnages_indefinis: 158,
+      reechantillonnages_indefinis: 139,
       degenere: null,
     };
     const optionsCreux = { ...OPTIONS_FIGEES, cle: ["outil-alpha", "web_desactivee", "exactitude", "creux"] };
@@ -255,16 +261,18 @@ describe("statistique numérique (conformité n° 29)", () => {
   });
 
   it("rééchantillonne une statistique qui n'est pas un taux, sur les grappes tirées", () => {
-    // Statistique : nombre de réponses exactes (pas un rapport). Grappe 0 : 1 exacte ; grappe 1 :
-    // 3 exactes. Rejouer le générateur avec la graine dérivée donne la même liste.
+    // Statistique : nombre de réponses exactes (pas un rapport). Grappe n-a : 1 exacte ; grappe
+    // n-b : 3 exactes ; l'indice d'une grappe est son rang par grappe_id (conformité n° 19).
+    // Rejouer le générateur avec la graine dérivée donne la même liste.
     const jeu = [...grappe("n-a", 1, { categorie: "exacte" }), ...grappe("n-b", 3, { categorie: "exacte" })];
     const compte = (unites: readonly { categorie: string }[]) => unites.filter((u) => u.categorie === "exacte").length;
     const options = { reechantillonnages: 30, graine_du_run: 7, cle: ["outil-alpha", "compte"] };
+    const indiceA = [ulid("n-a"), ulid("n-b")].sort().indexOf(ulid("n-a"));
 
     const rng = generateur(graineDerivee(7, ["bootstrap", "outil-alpha", "compte"]));
     const attendues: number[] = [];
     for (let i = 0; i < 30; i += 1) {
-      attendues.push([rng.entier(2), rng.entier(2)].reduce((s, indice) => s + (indice === 0 ? 1 : 3), 0));
+      attendues.push([rng.entier(2), rng.entier(2)].reduce((s, indice) => s + (indice === indiceA ? 1 : 3), 0));
     }
     attendues.sort((x, y) => x - y);
 
@@ -273,17 +281,19 @@ describe("statistique numérique (conformité n° 29)", () => {
 
   it("écarte et compte un rééchantillon où la statistique numérique est indéfinie (§8)", () => {
     // Indéfinie quand la grappe inexacte manque au rééchantillon : deux grappes tirées avec
-    // remise, elle manque quand les deux indices valent 0. Le compte rejoué doit être exact.
+    // remise, elle manque quand les deux indices désignent la grappe exacte, dont le rang est fixé
+    // par grappe_id (conformité n° 19). Le compte rejoué doit être exact.
     const jeu = [...grappe("n-a", 1, { categorie: "exacte" }), ...grappe("n-b", 1, { categorie: "inexacte" })];
     const avecInexacte = (unites: readonly { categorie: string }[]) =>
       unites.some((u) => u.categorie === "inexacte") ? unites.length : null;
     const options = { reechantillonnages: 40, graine_du_run: 11, cle: ["outil-alpha", "indefinie"] };
+    const indiceExact = [ulid("n-a"), ulid("n-b")].sort().indexOf(ulid("n-a"));
 
     const rng = generateur(graineDerivee(11, ["bootstrap", "outil-alpha", "indefinie"]));
     let indefinis = 0;
     for (let i = 0; i < 40; i += 1) {
       const tirees = [rng.entier(2), rng.entier(2)];
-      if (tirees.every((t) => t === 0)) indefinis += 1;
+      if (tirees.every((t) => t === indiceExact)) indefinis += 1;
     }
 
     const echantillon = reechantillonnerStatistique(jeu, avecInexacte, options);

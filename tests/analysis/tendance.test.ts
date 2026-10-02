@@ -127,6 +127,65 @@ describe("tendance par outil", () => {
   });
 });
 
+describe("appariement des deux runs, comme les effets de condition (conformité n° 21)", () => {
+  // Décision de l'auteur du 2026-10-02, conformité n° 21, texte en 0.15 : une question commune
+  // dont l'outil n'a de réponse obtenue qu'à l'un des deux runs (manquante à l'autre, §6 : une
+  // réponse manquante ne forme pas d'unité) sort de la comparaison, comme
+  // `conditions.ts:comparerConditions` sort l'item absent d'un bras.
+  const questions = ["q1", "q2", "q3"].map((c) => questionAvecTexte(c, "v1"));
+
+  it("une question commune obtenue à un seul run sort de la tendance", () => {
+    // q1 : inexacte aux deux runs. q2 : exacte au premier, manquante au dernier. q3 : manquante au
+    // premier, exacte au dernier. Sans appariement : premier 1/2, dernier 1/2, et la différence
+    // comparerait {q1, q2} à {q1, q3}. Apparié : 0/1 contre 0/1 sur q1 seule, différence 0.
+    const premier = { questions, unites: [reponseA("q1", false), reponseA("q2", true)] };
+    const dernier = { questions, unites: [reponseA("q1", false), reponseA("q3", true)] };
+
+    const [ligne] = tendance(premier, dernier, exactitude, OPTIONS);
+
+    expect(ligne?.difference.taux_a).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+    expect(ligne?.difference.taux_b).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+    expect(ligne?.difference.difference).toBe(0);
+    expect(ligne?.difference.intervalle?.nombre_grappes).toBe(1);
+    expect(ligne?.questions_exclues).toEqual([idQuestion("q2"), idQuestion("q3")]);
+  });
+
+  it("l'effectif publié est celui de la différence", () => {
+    // q1, q2 : obtenues aux deux runs. q3 : obtenue au premier seul. L'effectif publié compte les
+    // questions sur lesquelles porte la différence (2), pas celles rencontrées à l'un des runs (3),
+    // et la différence porte exactement sur elles : ses dénominateurs comptent leurs réponses.
+    const premier = { questions, unites: [reponseA("q1", true), reponseA("q2", true), reponseA("q3", false)] };
+    const dernier = { questions, unites: [reponseA("q1", true), reponseA("q2", false)] };
+
+    const [ligne] = tendance(premier, dernier, exactitude, OPTIONS);
+
+    expect(ligne?.questions_communes).toBe(2);
+    expect(ligne?.difference.taux_b).toEqual({ numerateur: 2, denominateur: 2, valeur: 1 });
+    expect(ligne?.difference.taux_a).toEqual({ numerateur: 1, denominateur: 2, valeur: 0.5 });
+    expect(ligne?.difference.intervalle?.nombre_grappes).toBe(2);
+    expect(ligne?.questions_exclues).toEqual([idQuestion("q3")]);
+  });
+
+  it("apparie par question, pas par grappe : une question d'une grappe appariée, obtenue à un seul run, sort", () => {
+    // Deux questions du même item (même grappe, deux gabarits). qa obtenue aux deux runs, qb au
+    // premier seul. Apparier par grappe garderait qb au premier run, puisque la grappe y est
+    // présente aux deux : la différence comparerait encore deux ensembles de questions différents.
+    const grappe_id = ulid("item-partage");
+    const qa = { ...questionAvecTexte("qa", "v1"), grappe_id };
+    const qb = { ...questionAvecTexte("qb", "v1"), grappe_id };
+    const surItem = (cle: string, exacte: boolean) => ({ ...reponseA(cle, exacte), grappe_id });
+    const premier = { questions: [qa, qb], unites: [surItem("qa", true), surItem("qb", false)] };
+    const dernier = { questions: [qa, qb], unites: [surItem("qa", true)] };
+
+    const [ligne] = tendance(premier, dernier, exactitude, OPTIONS);
+
+    expect(ligne?.questions_communes).toBe(1);
+    expect(ligne?.difference.taux_b).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
+    expect(ligne?.difference.difference).toBe(0);
+    expect(ligne?.questions_exclues).toEqual([qb.id]);
+  });
+});
+
 describe("tendance par outil et par mode, sur le seul canal API (constat n° 46)", () => {
   const cles = ["q1", "q2", "q3"];
   const questions = cles.map((c) => questionAvecTexte(c, "v1"));
