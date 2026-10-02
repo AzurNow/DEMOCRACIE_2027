@@ -49,6 +49,13 @@ le surlignage se décale d'un caractère — sans erreur, sans exception, sans t
 tient en une ligne (un index par unité UTF-16, valant le point de code d'origine) ; la trouver après
 coup aurait supposé de soupçonner le surlignage plutôt que la source.
 
+**En draft 2020-12, `items` ne contraint que ce qui suit `prefixItems`.** Le schéma `reponse`
+déclarait la forme d'une tentative dans `items` et la numérotait dans `prefixItems` : avec au plus
+trois tentatives, toutes couvertes par `prefixItems`, la forme n'était jamais contrôlée. Le défaut est
+apparu le 2026-10-02 quand retirer `refus_api` de l'énumération des erreurs n'a rien changé à la
+validation. Déclarer la forme dans `$defs` et la référencer depuis chaque `prefixItems`, et prouver
+chaque restriction par un exemple invalide qui ne tombe que pour elle (`reponse/invalide-13`).
+
 ## Tests
 
 **Les exemples invalides sont les vrais tests.** Un exemple valide vérifie qu'on n'a rien oublié ;
@@ -195,7 +202,10 @@ chaque question de mesure, `grep` le protocole sur ses mots-clés et citer ce qu
 **Une réponse de l'auteur ne vaut pas autorisation d'écrire le protocole.** Le même jour, après deux
 décisions de l'auteur, j'ai voulu écrire la 0.12 dans `docs/PROTOCOLE.md`. Le mode automatique l'a
 refusé, à juste titre : CLAUDE.md réserve ce fichier à un accord explicite. Préparer le texte exact
-dans la réponse, et ne l'écrire que sur demande.
+dans la réponse, et ne l'écrire que sur demande. Récidive le 2026-10-02 : quatre décisions de l'auteur sur le §6,
+une branche `protocole/0.16` ouverte, l'écriture refusée de nouveau. Le texte proposé est allé dans
+`docs/TACHES-AUTEUR.md`, avec la ligne de révision. Le faire d'emblée : une décision de l'auteur
+s'écrit dans `TACHES-AUTEUR.md` et la feuille de route, jamais dans le protocole.
 
 **Relire le plan contre les briefs avant de les lancer.** Le 2026-09-27, le constat n° 29
 (intervalles du test d'asymétrie) figurait dans le groupe « analyse » du plan, mais dans aucun des

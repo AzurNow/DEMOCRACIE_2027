@@ -13,6 +13,61 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-02 — Lot interrogation en mode simulé, décision D12 (PR #74 et #75 : `pipeline/interrogation/`, `schema/reponse.schema.json`, `outils/run-dry.ts`, `runs/README.md`)
+
+### 1. Un refus de modération mal reconnu par un adaptateur devient une manquante sans signal — *haute*
+
+D12 fait d'un refus de l'API une réponse obtenue, classée non-réponse. C'est l'adaptateur de chaque
+éditeur qui le reconnaît, par un statut HTTP et un code d'erreur déclarés en données
+(`editeur-simule.ts:REGLES_SIMULE.refus`, `estRefus`). Seul l'éditeur simulé existe : aucune de ces
+règles n'a été confrontée à une vraie erreur de modération.
+
+**Pourquoi ça casse.** Si un éditeur renvoie son refus sous un autre code que celui déclaré, le
+refus est retenté trois fois puis compté manquant. Le taux de non-réponse de l'outil baisse, son
+taux de manquantes monte vers le seuil de 20 % du §8 (« run incomplet »), et aucun test ne tombe :
+les tests ne connaissent que les codes que l'adaptateur déclare lui-même.
+
+**Ce qu'il faut faire.** Pour chaque adaptateur réel, un test sur un corps de refus authentique,
+archivé depuis la documentation de l'éditeur ou un appel d'essai, avant `run:live`. Au premier run
+réel, relire les tentatives en erreur `http` 4xx de chaque outil.
+
+### 2. `brut_octets_sha256` ne prouve rien si le transport réel rend des octets déjà décodés — *moyenne*
+
+L'empreinte des octets reçus est prise sur `ReponseHttp.corps` (`tentatives.ts:empreinteOctets`),
+avant toute lecture. Un SDK officiel (D3) décompresse et décode souvent le corps avant de le rendre.
+
+**Pourquoi ça casse.** Branché tel quel, un transport réel ferait hacher un corps reconstruit :
+l'empreinte publiée n'est plus celle de ce que l'éditeur a envoyé, et rien ne le signale. Aucun
+chiffre publié ne change, mais la preuve d'immuabilité de la règle 7 devient fausse.
+
+**Ce qu'il faut faire.** Au premier adaptateur réel, lire le corps au niveau HTTP (réponse brute du
+SDK ou `fetch`), et un test qui compare l'empreinte au SHA-256 d'un corps compressé connu.
+
+### 3. Les tests de délais et de fenêtre ne valent que pour un code synchrone — *moyenne*
+
+`HorlogeVirtuelle` (`horloge.ts`) suppose que le code qu'elle pilote ne fait que des entrées-sorties
+synchrones ; c'est écrit dans son contrat, pas vérifié.
+
+**Pourquoi ça casse.** Un transport asynchrone, ou un stockage passé en `fs/promises`, laisse le
+temps virtuel immobile pendant une opération en vol : les tests des attentes de 30 s et 120 s, de
+l'abandon à 180 s et de la borne de fin de fenêtre restent verts sans plus rien mesurer.
+
+**Ce qu'il faut faire.** Avant le premier transport réel, un test qui fait échouer l'horloge
+virtuelle quand une promesse non résolue traverse un pas de temps, ou un `run:live` piloté par
+l'horloge système seule.
+
+### 4. Les en-têtes enregistrés gardent leur casse d'envoi — *basse*
+
+`requete.entetes` stocke les noms tels qu'envoyés. Un changement de version de SDK qui change la
+casse produit des clés différentes pour le même en-tête d'un run à l'autre ; un lecteur qui compare
+deux runs croit voir un en-tête apparaître et un autre disparaître.
+
+**Ce qu'il faut faire.** Décider au premier adaptateur réel : normaliser en minuscules à l'écriture
+(ce qui est une transformation, à justifier contre la règle 7), ou documenter la casse dans
+`runs/README.md`.
+
+---
+
 ## 2026-10-02 — Constats de la conformité du 2026-09-29 soldés côté code, protocole 0.14 et 0.15 (PR #59 à #70 : `analysis/`, `schema/`, `validation/domaine/`, `validation/serveur/routes.ts`, `pipeline/questions/`, `docs/PROTOCOLE.md`)
 
 ### 1. Les métriques secondaires acceptent encore le canal application sans marque exploratoire — *haute*
@@ -964,7 +1019,7 @@ lecteur sache pourquoi. C'est visible dans le rapport de reprise, à condition d
 dans le protocole ou `schema/README.md`, section Temps. Chaque changement est une ligne dans un
 prédicat nommé (`questionTirable`, `itemEngendreDesQuestions`, la table des résolveurs).
 
-### 3. Le contrat d'entrée de l'analyse précède la disposition de `runs/` — *moyenne*
+### 3. Le contrat d'entrée de l'analyse précède la disposition de `runs/` — *moyenne* — à moitié réglé le 2026-10-02 : `runs/README.md` écrit (#75) ; la lecture par `assembler()` reste au lot notation
 
 `analysis/types.ts:EntreesAnalyse` suppose une entrée de tirage par `question_id` et exactement un
 item principal par question, et `analysis/filtre.ts:assembler()` lève sur tout écart. La
