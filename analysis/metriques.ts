@@ -30,12 +30,14 @@ import {
   type LectureComparateur,
   type Mode,
   type Registre,
+  type Run,
   type Taux,
   type Theme,
   type TypeItem,
   type Verdict,
 } from "./types.ts";
 import { filtrerContexteRun, indexerVerdictsDuRun } from "./filtre.ts";
+import { comparateursDuRun, itemsPDeReference, lecturesParComparateur } from "./reference-comparateurs.ts";
 import { cleCouple, etatDesCouples, repartirParCandidat, type PartageCandidats, type PartageCouples } from "./seuils.ts";
 
 type Predicat<T = UniteAnalyse> = (objet: T) => boolean;
@@ -387,19 +389,22 @@ export interface MetriquesComparateur {
  * QR9 : les comparateurs sont lus, pas interrogés (§6). Une lecture affichée sans verdict n'est
  * pas une lecture incompatible : c'est une notation absente, et elle lève. Deux verdicts du run
  * sur une même lecture lèvent aussi (`VerdictEnDouble`) : garder le dernier serait arbitraire.
+ *
+ * Conformité n° 11, décision de l'auteur du 2026-10-02 (texte à écrire au §8 en 0.15) : la
+ * couverture se divise par les items P de référence que le run a figés (`itemsPDeReference`), pas
+ * par les lectures reçues. Chaque comparateur inclus du run est mesuré, et ses lectures du run
+ * doivent recouvrir exactement cette liste (`lecturesParComparateur`, qui lève sinon). Un run sans
+ * comparateur inclus rend une liste vide.
  */
 export function metriquesComparateur(
+  run: Run,
   lectures: readonly LectureComparateur[],
   verdicts: readonly Verdict[],
 ): MetriquesComparateur[] {
   const notes = indexVerdictsDeLecture(verdicts);
-  const groupes = new Map<IdentifiantCourt, LectureComparateur[]>();
-  for (const lecture of filtrerContexteRun(lectures)) {
-    const existant = groupes.get(lecture.outil_id);
-    if (existant === undefined) groupes.set(lecture.outil_id, [lecture]);
-    else existant.push(lecture);
-  }
-  return [...groupes].map(([outil_id, membres]) => mesurerComparateur(outil_id, membres, notes));
+  const reference = itemsPDeReference(run);
+  const groupes = lecturesParComparateur(filtrerContexteRun(lectures), reference, comparateursDuRun(run));
+  return [...groupes].map(([outil_id, membres]) => mesurerComparateur(outil_id, membres, reference.size, notes));
 }
 
 function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<string, CategorieRetenue> {
@@ -407,9 +412,11 @@ function indexVerdictsDeLecture(verdicts: readonly Verdict[]): ReadonlyMap<strin
   return new Map([...index].map(([id, verdict]) => [id, verdict.categorie_retenue]));
 }
 
+/** `itemsPDeReference` : le nombre d'items P de référence, dénominateur de la couverture (§8). */
 function mesurerComparateur(
   outil_id: IdentifiantCourt,
   lectures: readonly LectureComparateur[],
+  itemsPDeReference: number,
   notes: ReadonlyMap<string, CategorieRetenue>,
 ): MetriquesComparateur {
   const affichees = lectures.filter((l) => l.affiche);
@@ -422,7 +429,7 @@ function mesurerComparateur(
   });
   return {
     outil_id,
-    couverture: taux(affichees.length, lectures.length),
+    couverture: taux(affichees.length, itemsPDeReference),
     exactitude: exactitude(notees),
   };
 }
