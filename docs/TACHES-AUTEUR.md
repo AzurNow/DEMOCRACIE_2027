@@ -5,14 +5,15 @@ traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une t�
 puis retirée à la clôture de session suivante.
 
 Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #73.
+`docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
 
 ## 0. Fusions en attente
 
-- [x] #67 à #73 fusionnées le 2026-10-02 (protocole 0.15, décisions du 2026-10-02, clôture,
-      chargeur du périmètre, modèle 0.2.0 de `config/perimetre.yaml`).
+- [x] #67 à #75 fusionnées le 2026-10-02 (protocole 0.15, décisions du 2026-10-02, clôture,
+      chargeur du périmètre, modèle 0.2.0 de `config/perimetre.yaml`, D12, lot interrogation en
+      mode simulé).
 - [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #66), et
       les worktrees d'agents sous `.claude/worktrees/` (sept créés le 2026-10-02). Ne plus fusionner une PR dont la base est la branche d'une autre
       PR : c'est ainsi que #54 a manqué `main` (rattrapée par #55, `LESSONS.md`).
@@ -197,6 +198,11 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   écrit ; aucune tentative ne part hors de la fenêtre, et une requête qui n'a pas pu aboutir dans
   la fenêtre est manquante ; un refus opposé par l'API elle-même est une réponse obtenue, classée
   non-réponse. »
+
+- [ ] **Pour le premier `run:live` (lot interrogation)** : fournir, pour chaque outil, un corps
+      d'erreur de modération authentique (documentation de l'éditeur ou appel d'essai archivé), qui
+      servira de test à son adaptateur (`docs/DETTE.md`, 2026-10-02, lot interrogation, point 1).
+      `pnpm run:live` n'est jamais lancé par un agent.
 
 ### Adresse et courriels
 

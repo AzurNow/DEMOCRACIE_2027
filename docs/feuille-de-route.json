@@ -197,7 +197,7 @@
         "Refus API retenté jusqu'à manquante ; délais plus courts ; ordre tiré à graine ; run invalide dès qu'une requête sort de la fenêtre."
       ],
       "recommandation": "Option 1.",
-      "retenu": "Option 1, texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). Schéma reponse : normalise.refus_api et motif_manquante (echecs | hors_fenetre).",
+      "retenu": "Option 1, texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). Schéma reponse : normalise.refus_api et motif_manquante (echecs | hors_fenetre). Suite du même jour : un corps qui n'est pas un objet JSON est stocké dans brut_texte (exclusif de brut) ; brut_octets_sha256 hache les octets reçus avant tout parse ; requete.entetes garde les en-têtes sauf l'authentification ; runs/<date>/ est la date du gel à Paris.",
       "date_decision": "2026-10-02"
     }
   ],
@@ -366,7 +366,7 @@
       "id": "interrogation",
       "titre": "Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo",
       "jalon": "J4",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "opus",
       "taille": "M",
       "temps_auteur_h": 1,
@@ -384,7 +384,7 @@
         "D3",
         "D12"
       ],
-      "note": "pnpm run:dry d'abord, jamais run:live par un agent. Doit écrire runs/README.md, disposition lue par analysis/filtre.ts:assembler() (DETTE point 3). Lancé le 2026-10-02 en mode simulé (D12), sans SDK : interface d'éditeur, éditeur simulé, journal des tentatives et reprise, runs/README.md."
+      "note": "Mode simulé livré le 2026-10-02 (#75, D12) : plan ordonné par outil, tentatives et délais, fenêtre [mardi 6 h Paris, +48 h), refus API obtenu, manquantes motivées, écriture unique, journal des tentatives et reprise, `pnpm run:dry` testé de bout en bout sur fixtures, runs/README.md. Reste pour T4 : un adaptateur par éditeur avec son SDK (D3, liste des outils du périmètre), refus authentiques testés (DETTE 2026-10-02, lot interrogation, points 1 à 3), `run:live` lancé par l'auteur seul. La lecture de runs/ par assembler() vient au lot notation."
     },
     {
       "id": "notation",
