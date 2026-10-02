@@ -93,21 +93,33 @@ const VISE_PAR_UNE_CONTESTATION: ReadonlyMap<string, boolean> = new Map([
   ["arbitree", true],
 ]);
 
-export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
-  const [premier, second] = [...entree.etats.keys()].sort();
+function etatsDesDeux(etats: ReadonlyMap<string, EtatAnnotateur>): readonly [EtatAnnotateur, EtatAnnotateur] {
+  const [premier, second] = [...etats.keys()].sort();
   if (premier === undefined || second === undefined) {
     throw new Error("Un diagnostic de lot exige exactement deux annotateurs.");
   }
+  return [etats.get(premier) as EtatAnnotateur, etats.get(second) as EtatAnnotateur];
+}
 
-  const etatA = entree.etats.get(premier) as EtatAnnotateur;
-  const etatB = entree.etats.get(second) as EtatAnnotateur;
+/**
+ * Un lot est terminé quand les deux annotateurs ont fini : la définition de `diagnostiquerLot`
+ * (`les_deux_ont_fini`), partagée avec le verrou de `verrou-lot.ts`, jamais redéfinie.
+ */
+export function lesDeuxOntFini(entree: Pick<EntreeDiagnostic, "lot" | "items" | "etats">): boolean {
+  const [etatA, etatB] = etatsDesDeux(entree.etats);
+  const exclus = exclusPourContestation(entree);
+  return aFini(entree, etatA, exclus) && aFini(entree, etatB, exclus);
+}
+
+export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
+  const [etatA, etatB] = etatsDesDeux(entree.etats);
   const exclus = exclusPourContestation(entree);
   const paires = apparier(entree, etatA, etatB, exclus);
   const kappa = kappaPublie(paires.map((paire) => ({ a: paire.a.decision, b: paire.b.decision })));
 
   return {
     lot_id: entree.lot.lot_id,
-    les_deux_ont_fini: aFini(entree, etatA, exclus) && aFini(entree, etatB, exclus),
+    les_deux_ont_fini: lesDeuxOntFini(entree),
     kappa,
     kappa_par_question: kappaParQuestion(paires),
     taux_double_correction_divergente: tauxDivergence(paires),
@@ -125,7 +137,7 @@ export function diagnostiquerLot(entree: EntreeDiagnostic): DiagnosticLot {
  * l'item contesté, ce qui dépend de sa navigation (constat 9 du 2026-09-24). Les décisions déjà
  * portées sur un item exclu restent au journal ; elles ne sont simplement pas appariées.
  */
-function exclusPourContestation(entree: EntreeDiagnostic): ReadonlySet<string> {
+function exclusPourContestation(entree: Pick<EntreeDiagnostic, "lot" | "items">): ReadonlySet<string> {
   const exclus = new Set<string>();
   for (const reference of entree.lot.items) {
     const item = entree.items.get(reference.item_id);
@@ -165,7 +177,7 @@ function apparier(
 }
 
 /** Fini : chaque item que la contestation n'exclut pas au calcul porte une décision. */
-function aFini(entree: EntreeDiagnostic, etat: EtatAnnotateur, exclus: ReadonlySet<string>): boolean {
+function aFini(entree: Pick<EntreeDiagnostic, "lot">, etat: EtatAnnotateur, exclus: ReadonlySet<string>): boolean {
   for (const reference of entree.lot.items) {
     if (exclus.has(reference.item_id)) continue;
     if (!etat.decisions.has(reference.item_id)) return false;

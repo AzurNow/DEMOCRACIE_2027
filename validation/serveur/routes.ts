@@ -23,6 +23,7 @@ import { validerCorrections } from "../domaine/corrections.ts";
 import { RACCOURCIS, TOUCHES_DECISION, TOUCHE_CONFIRMATION, TOUCHES_REPONSE } from "../domaine/interaction.ts";
 import { itemCourant, prochaineVisite, progression, rejouer } from "../domaine/journal.ts";
 import { ordreAffichage, tailleAttendue } from "../domaine/lot.ts";
+import { refusSurLotTermine } from "../domaine/verrou-lot.ts";
 import { ulid } from "../domaine/ulid.ts";
 import type { Item, ItemDuLot, Lot } from "../domaine/types.ts";
 import { servirArchive } from "../io/archives.ts";
@@ -238,8 +239,8 @@ function enregistrerDecision(contexte: Contexte, _params: readonly string[], cor
   if ("erreur" in cadre) return cadre.erreur;
 
   const { lot, item } = cadre;
-  const retrait = retirerSiConteste(contexte, lot, item);
-  if (retrait !== null) return retrait;
+  const refus = refusAvantDecision(contexte, lot, item);
+  if (refus !== null) return refus;
 
   const corrections = validerCorrections(
     requete.corrections ?? [],
@@ -273,6 +274,27 @@ function enregistrerDecision(contexte: Contexte, _params: readonly string[], cor
   return { statut: 201, corps: { ok: true, id: construite.entree.id } };
 }
 
+/**
+ * Décision de l'auteur du 2026-10-02, conformité n° 16, texte au §4 en 0.15 : un lot terminé par
+ * ses deux annotateurs est figé. Refus 409, rien n'est écrit au journal. Même garde pour la
+ * décision et l'annulation, qui sont toutes deux des écritures.
+ */
+function refuserSiLotTermine(contexte: Contexte, lot: Lot): Reponse | null {
+  const refus = refusSurLotTermine({
+    lot,
+    items: itemsEffectifs(contexte.staging().items, contexte.itemsData()),
+    etats: contexte.etatsDuLot(lot),
+  });
+  return refus === null ? null : { statut: 409, corps: { ok: false, erreur: refus } };
+}
+
+/** Le verrou d'abord : un lot figé n'écrit rien, pas même le retrait d'un item contesté. */
+function refusAvantDecision(contexte: Contexte, lot: Lot, item: Item): Reponse | null {
+  const verrou = refuserSiLotTermine(contexte, lot);
+  if (verrou !== null) return verrou;
+  return retirerSiConteste(contexte, lot, item);
+}
+
 function accesCorrections(contexte: Contexte, item: Item) {
   return accesTexteCorrections(item, accesTextes(contexte).texte);
 }
@@ -282,6 +304,9 @@ function annuler(contexte: Contexte, _params: readonly string[], corps: unknown)
   const requete = corps as { lot_id?: string; commentaire?: string | null };
   const lot = contexte.lot(requete.lot_id ?? "");
   if (lot === null) return { statut: 404, corps: { erreur: "Lot inconnu" } };
+
+  const verrou = refuserSiLotTermine(contexte, lot);
+  if (verrou !== null) return verrou;
 
   const etat = rejouer(contexte.journal.lire(lot.lot_id));
   if (etat.annulable === null) {

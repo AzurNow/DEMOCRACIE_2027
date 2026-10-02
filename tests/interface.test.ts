@@ -370,3 +370,95 @@ describe("aucune ressource distante", () => {
     expect(code).not.toContain("::");
   });
 });
+
+/**
+ * Décision de l'auteur du 2026-10-02, conformité n° 16, texte au §4 en 0.15 : un lot terminé par
+ * ses deux annotateurs est figé, un changement d'avis passe par un lot de réannotation.
+ */
+describe("lot terminé : décisions figées (conformité n° 16)", () => {
+  function soumettre(annotateur: string, lot_id: string, item: Item, verdict = "accepter"): Reponse {
+    return appeler(bac.contexte(annotateur), "decision", [], {
+      lot_id,
+      item_id: item.id,
+      decision: verdict,
+      reponses_grille: GRILLE_TOUT_VRAI,
+      corrections: [],
+      duree_affichage_ms: 1000,
+      duree_active_ms: 900,
+    });
+  }
+
+  function decideLot(annotateur: string, lot_id: string, nature: "reel" | "entrainement" = "reel"): void {
+    for (const item of items) {
+      bac.journal(annotateur).ajouter(
+        lot_id,
+        decision({ annotateur_id: annotateur, item, decision: "accepter", lot_id, lot_nature: nature }),
+      );
+    }
+  }
+
+  it("refuse une décision sur un lot terminé par les deux annotateurs, et n'écrit rien au journal", () => {
+    decideTout("a1");
+    decideTout("a2");
+    const avant = instantaneJournaux();
+
+    const reponse = soumettre("a1", "lot-002", items[0] as Item, "rejeter");
+
+    expect(reponse.statut).toBe(409);
+    expect((reponse.corps as { erreur: string }).erreur).toContain("réannotation");
+    expect(instantaneJournaux()).toEqual(avant);
+  });
+
+  it("refuse aussi l'annulation sur un lot terminé, sans rien écrire", () => {
+    decideTout("a1");
+    decideTout("a2");
+    const avant = instantaneJournaux();
+
+    const reponse = appeler(bac.contexte("a1"), "annulation", [], { lot_id: "lot-002" });
+
+    expect(reponse.statut).toBe(409);
+    expect((reponse.corps as { erreur: string }).erreur).toContain("réannotation");
+    expect(instantaneJournaux()).toEqual(avant);
+  });
+
+  it("un seul annotateur a fini : le second décide encore, et le premier change encore d'avis", () => {
+    decideTout("a1");
+    expect(soumettre("a2", "lot-002", items[0] as Item).statut).toBe(201);
+    expect(soumettre("a1", "lot-002", items[0] as Item, "rejeter").statut).toBe(201);
+    expect(appeler(bac.contexte("a1"), "annulation", [], { lot_id: "lot-002" }).statut).toBe(201);
+  });
+
+  it("la dernière décision qui termine le lot est acceptée, la suivante est refusée", () => {
+    decideTout("a1");
+    bac.journal("a2").ajouter(
+      "lot-002",
+      decision({ annotateur_id: "a2", item: items[0] as Item, decision: "accepter", lot_id: "lot-002" }),
+    );
+
+    expect(soumettre("a2", "lot-002", items[1] as Item).statut).toBe(201);
+    expect(soumettre("a2", "lot-002", items[1] as Item, "rejeter").statut).toBe(409);
+    expect(soumettre("a1", "lot-002", items[0] as Item, "rejeter").statut).toBe(409);
+  });
+
+  it("un lot de réannotation qui supersède un lot terminé accepte des décisions", () => {
+    decideTout("a1");
+    decideTout("a2");
+    bac.ecrireLot({
+      ...lotDe("lot-002-r1", items, "reel"),
+      nature: "reannotation",
+      reannote: "lot-002",
+      date_calibration: "2026-10-03",
+    });
+
+    expect(soumettre("a1", "lot-002-r1", items[0] as Item, "rejeter").statut).toBe(201);
+    expect(soumettre("a2", "lot-002-r1", items[0] as Item).statut).toBe(201);
+  });
+
+  it("un lot d'entraînement suit la même règle", () => {
+    decideLot("a1", "ent-001", "entrainement");
+    expect(soumettre("a1", "ent-001", items[0] as Item, "rejeter").statut).toBe(201);
+    decideLot("a2", "ent-001", "entrainement");
+
+    expect(soumettre("a1", "ent-001", items[0] as Item, "rejeter").statut).toBe(409);
+  });
+});
