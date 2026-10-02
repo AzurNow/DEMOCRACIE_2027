@@ -93,6 +93,13 @@ tirage:
 #         url: "…"
 #         sha256: "…"
 #         archive_url: "…"
+#     contact_notification:          # §4, droit de réponse : adresse générique de la campagne, lue
+#       adresse: "…"                 # par `pnpm notifier`. Clé obligatoire : null explicite si la
+#       preuve:                      # campagne n'en publie aucune.
+#         url: "…"
+#         date: "AAAA-MM-JJ"
+#         sha256: "…"
+#         archive_url: "…"
 candidats: []
 
 # ---------------------------------------------------------------------------- outils

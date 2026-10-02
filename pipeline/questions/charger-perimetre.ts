@@ -76,7 +76,7 @@ interface CandidatSaisi {
   readonly interroge: boolean;
   readonly declaration_candidature?: DeclarationCandidature;
   readonly preuves_inclusion?: readonly PreuveSondage[];
-  readonly contact_notification?: unknown;
+  readonly contact_notification: unknown;
 }
 
 /** Ce que l'outil porte dans l'instantané : tout ce qui est saisi, sauf libelle, editeur et sdk. */
@@ -297,6 +297,9 @@ function motifsAlias(outils: readonly OutilSaisi[], alias: ReadonlyMap<string, s
     ...[...alias.keys()]
       .filter((id) => !connus.has(id))
       .map((id) => `alias_aveugle fourni pour « ${id} », absent des outils du périmètre`),
+    ...doublons([...alias.values()]).map(
+      (valeur) => `alias_aveugle « ${valeur} » attribué à plusieurs outils : l'aveuglement des juges ne tient plus (§7)`,
+    ),
   ];
 }
 

@@ -85,7 +85,7 @@
     "candidat": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["candidat_id", "libelle", "nom", "statut_au_gel", "interroge"],
+      "required": ["candidat_id", "libelle", "nom", "statut_au_gel", "interroge", "contact_notification"],
       "properties": {
         "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
         "libelle": { "$ref": "#/$defs/texte" },
@@ -122,7 +122,7 @@
           }
         },
         "contact_notification": {
-          "description": "§4 (protocole 0.10), droit de réponse : l'adresse de contact générique de la campagne, avec sa preuve archivée, ou null explicite si la campagne n'en publie aucune. Lue par outils/contacts.ts, qui en exige la présence ; absente du modèle du 2026-10-02 et hors de l'instantané du run. Admise ici pour que les deux lecteurs du même fichier ne se contredisent pas.",
+          "description": "§4 (protocole 0.10), droit de réponse : l'adresse de contact générique de la campagne, avec sa preuve archivée, ou null explicite si la campagne n'en publie aucune. Lue par outils/contacts.ts. Obligatoire ici aussi (décision de l'auteur du 2026-10-02), null explicite permis : un run ne se gèle pas sur un périmètre que la notification refuserait. Hors de l'instantané du run.",
           "anyOf": [
             { "type": "null" },
             {

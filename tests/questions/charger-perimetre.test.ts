@@ -79,6 +79,7 @@ function candidatActif(candidat_id: string, statut = "actif"): Objet {
     interroge: true,
     declaration_candidature: declaration(),
     preuves_inclusion: [sondage("x", "2026-10-05"), sondage("y", "2026-11-01")],
+    contact_notification: null,
   };
 }
 
@@ -117,7 +118,7 @@ function perimetreComplet(): Objet {
     candidats: [
       candidatActif("demo-alpha"),
       candidatActif("demo-beta", "nouveau"),
-      { candidat_id: "demo-gamma", libelle: "Prénom demo-gamma", nom: "Nom-demo-gamma", statut_au_gel: "retire", interroge: false },
+      { candidat_id: "demo-gamma", libelle: "Prénom demo-gamma", nom: "Nom-demo-gamma", statut_au_gel: "retire", interroge: false, contact_notification: null },
     ],
     outils: [
       assistantInclus(),
@@ -452,8 +453,30 @@ describe("cas 11 : alias aveugle et motif d'exclusion", () => {
     expect(refusDeSchema(perimetre).chemins).toContain("/outils/0");
   });
 
+  it("refuse un même alias attribué à deux outils (§7)", () => {
+    const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "O07"], ["outil-beta", "O07"]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("« O07 » attribué à plusieurs outils")]);
+  });
+
   it("porte l'alias fourni sur l'assistant inclus", () => {
     expect(charger(perimetreComplet()).perimetre.outils[0]).toMatchObject({ outil_id: "outil-alpha", alias_aveugle: "O07" });
+  });
+});
+
+describe("contact_notification : obligatoire, null explicite permis (décision du 2026-10-02)", () => {
+  it("refuse un candidat sans la clé", () => {
+    const perimetre = perimetreComplet();
+    delete rang(candidats(perimetre), 0)["contact_notification"];
+    expect(refusDeSchema(perimetre).chemins).toContain("/candidats/0");
+  });
+
+  it("accepte un contact archivé et le laisse hors de l'instantané", () => {
+    const perimetre = perimetreComplet();
+    rang(candidats(perimetre), 0)["contact_notification"] = {
+      adresse: "contact@campagne.invalid",
+      preuve: { url: "https://campagne.invalid/contact", date: "2026-09-01", sha256: sha("d"), archive_url: "https://web.archive.invalid/contact" },
+    };
+    expect(rang(charger(perimetre).perimetre.candidats, 0)).not.toHaveProperty("contact_notification");
   });
 });
 
