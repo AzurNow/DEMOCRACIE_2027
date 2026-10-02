@@ -17,6 +17,7 @@
  */
 
 import { instantDe, instantDeDateCivile } from "./reponse-attendue.ts";
+import { normaliserUrlSondage } from "./url-sondage.ts";
 
 /** §3 : « au cours des 60 jours précédents ». */
 export const FENETRE_SONDAGES_JOURS = 60;
@@ -62,13 +63,15 @@ function declarationAuGel(candidat: CandidatAvantListe, date_gel: string): boole
 
 /**
  * Un même sondage déclaré deux fois ne fait pas deux sondages : le décompte porte sur les URL
- * distinctes. Une preuve sans liste est l'absence de preuve, jamais une liste vide supposée.
+ * distinctes, après la normalisation de `url-sondage.ts` (décision de l'auteur du 2026-10-02,
+ * conformité n° 36, texte au §3 en 0.15). Une preuve sans liste est l'absence de preuve, jamais
+ * une liste vide supposée.
  */
 function sondagesDansLaFenetre(candidat: CandidatAvantListe, date_gel: string): number {
   const preuves = candidat.preuves_inclusion;
   if (preuves === undefined) return 0;
   const retenues = preuves.filter((preuve) => sondageDansLaFenetre(preuve.date_publication, date_gel));
-  return new Set(retenues.map((preuve) => preuve.url)).size;
+  return new Set(retenues.map((preuve) => normaliserUrlSondage(preuve.url))).size;
 }
 
 /** Les deux conditions du §3, évaluées à l'instant de gel. Aucune n'est court-circuitée. */
