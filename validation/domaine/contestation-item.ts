@@ -6,7 +6,10 @@
  *   du tirage suivant ; son contenu notant ne bouge pas.
  * - `appliquerDecisionPanel` : pose une décision motivée sur une contestation qui n'en a pas.
  *   L'item est « arbitree » seulement quand toutes ses contestations sont décidées ; un retrait le
- *   rend « retire_par_panel », une non-évaluabilité « non_evaluable » ; une correction passe par la
+ *   rend « retire_par_panel », une non-évaluabilité « non_evaluable », sans toucher aux sources :
+ *   l'attestation d'écoute d'une source T2 est conservée dans les deux cas (§4 pour le retrait ;
+ *   pour la non-évaluabilité, décision de l'auteur du 2026-10-02, conformité n° 6, texte à écrire
+ *   au §4 en 0.15 ; `item.schema.json` l'admet alors) ; une correction passe par la
  *   liste blanche des corrections et **rejoue le test verbatim** sur le texte canonique, incrémente
  *   la version et recalcule l'empreinte. Un maintien ou une correction sur un item que le panel
  *   avait sorti (retrait ou non-évaluabilité) lui rend le statut qu'il avait avant cette sortie

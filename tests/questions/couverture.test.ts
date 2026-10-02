@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 import { DecisionPanelPosterieureAuGel } from "../../pipeline/questions/contestation.ts";
-import { itemPCompteAuGel, itemsPComptesAuGel } from "../../pipeline/questions/couverture.ts";
+import { itemPCompteAuGel, itemsPAuGel, itemsPComptesAuGel } from "../../pipeline/questions/couverture.ts";
 import type { Item } from "../../pipeline/questions/types.ts";
 import { arbitre, contestation, decidePar, itemA, itemF, itemO, itemP, mesure } from "./fabriques.ts";
 
@@ -148,5 +148,38 @@ describe("itemsPComptesAuGel : le total d'un candidat", () => {
   it("signale un arbitrage illisible d'un item du candidat au lieu de l'ignorer", () => {
     const illisible = { ...p("illisible"), statut_contestation: "arbitree" as const, contestations: [{}] };
     expect(() => itemsPComptesAuGel([illisible], CANDIDAT, GEL, [MESURE])).toThrow();
+  });
+});
+
+/**
+ * Conformité n° 11, décision de l'auteur du 2026-10-02 (texte à écrire au §8 en 0.15) : les items P
+ * de référence des comparateurs sont ceux que compte le seuil. Le run fige leur liste ; le compte
+ * en est la longueur, pour qu'une seule définition serve aux deux.
+ */
+describe("itemsPAuGel : la liste que le run fige, dont le compte est la longueur", () => {
+  it("rend les identifiants triés des seuls items comptés, et le compte en est la longueur", () => {
+    const items = [
+      ...nItems(3, "liste"),
+      p("l-conteste", { statut_contestation: "contestee" }),
+      itemP({ cle: "l-autre", candidat_id: AUTRE, mesure: MESURE }),
+    ];
+    const liste = itemsPAuGel(items, CANDIDAT, GEL, [MESURE]);
+    const attendus = nItems(3, "liste").map((item) => item.id).sort();
+    expect(liste).toEqual(attendus);
+    expect(itemsPComptesAuGel(items, CANDIDAT, GEL, [MESURE])).toBe(liste.length);
+  });
+
+  it("exclut l'item obsolète exactement à l'instant du gel", () => {
+    const obsolete = p("l-obsolete-au-gel", { valide_du: "2026-09-01", valide_au: "2026-11-20" });
+    expect(itemsPAuGel([obsolete], CANDIDAT, "2026-11-20T00:00:00Z", [MESURE])).toEqual([]);
+  });
+
+  it("rend une liste vide pour un candidat sans item, jamais une absence", () => {
+    expect(itemsPAuGel([], CANDIDAT, GEL, [MESURE])).toEqual([]);
+  });
+
+  it("lève sur deux items comptés de même identifiant, au lieu de les dédoublonner en silence", () => {
+    const item = p("l-double");
+    expect(() => itemsPAuGel([item, { ...item }], CANDIDAT, GEL, [MESURE])).toThrow(item.id);
   });
 });

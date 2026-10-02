@@ -26,8 +26,19 @@ import {
   tauxObsolescenceFraiche,
 } from "../../analysis/metriques.ts";
 import { VerdictEnDouble } from "../../analysis/filtre.ts";
-import type { CategorieRetenue, Taux } from "../../analysis/types.ts";
-import { lectureComparateur, tousCompares, ulid, unite, unites, verdict } from "./fabriques.ts";
+import { LecturesComparateurIncoherentes } from "../../analysis/reference-comparateurs.ts";
+import type { CategorieRetenue, LectureComparateur, Taux } from "../../analysis/types.ts";
+import {
+  candidat,
+  empreinte,
+  lectureComparateur,
+  runDeComparateurs,
+  tousCompares,
+  ulid,
+  unite,
+  unites,
+  verdict,
+} from "./fabriques.ts";
 
 /** Un taux absent n'a pas de champ `valeur` : ni null, ni 0, ni NaN. */
 function attendreAbsent(t: Taux, denominateur: number): void {
@@ -366,59 +377,72 @@ describe("exactitude par candidat et seuil de couverture (conformité n° 30, §
   });
 });
 
+/** Lecture du run de `outil_id` sur l'item `item`, identifiée par `id`. */
+function lectureSur(id: string, item: string, affiche: boolean, outil_id = "comparateur-un"): LectureComparateur {
+  return lectureComparateur({
+    id: ulid(id),
+    outil_id,
+    affiche,
+    reference_item: { item_id: ulid(item), item_version: 1, item_empreinte: empreinte(item) },
+  });
+}
+
+function verdictDeLecture(id: string, lecture: string, categorie_retenue: CategorieRetenue = "exacte") {
+  return verdict({ id: ulid(id), objet_note: { type: "lecture_comparateur", id: ulid(lecture) }, categorie_retenue });
+}
+
+/** Le run dont les items P de référence sont les items nommés `noms`. */
+function runSur(noms: readonly string[], comparateurs?: readonly string[]) {
+  return runDeComparateurs(noms.map((nom) => ulid(nom)), comparateurs);
+}
+
 describe("comparateurs (QR9)", () => {
   it("calcule couverture et exactitude, et les rend absentes quand le dénominateur est nul", () => {
     // 4 items P de référence, 3 affichés (couverture 3/4 = 0,75), dont 2 compatibles (2/3).
+    const reference = runSur(["i1", "i2", "i3", "i4"]);
     const lectures = [
-      lectureComparateur({ id: ulid("l1"), affiche: true }),
-      lectureComparateur({ id: ulid("l2"), affiche: true }),
-      lectureComparateur({ id: ulid("l3"), affiche: true }),
-      lectureComparateur({ id: ulid("l4"), affiche: false }),
-      // Hors run : ne compte ni au numérateur ni au dénominateur.
-      lectureComparateur({ id: ulid("l5"), affiche: true, contexte: "pilote" }),
+      lectureSur("l1", "i1", true),
+      lectureSur("l2", "i2", true),
+      lectureSur("l3", "i3", true),
+      lectureSur("l4", "i4", false),
+      // Hors run : ne compte ni au numérateur ni au dénominateur, et n'est pas une lecture en double.
+      lectureComparateur({ ...lectureSur("l5", "i1", true), contexte: "pilote" }),
     ];
     const verdicts = [
-      verdict({ id: ulid("vl1"), objet_note: { type: "lecture_comparateur", id: ulid("l1") } }),
-      verdict({ id: ulid("vl2"), objet_note: { type: "lecture_comparateur", id: ulid("l2") } }),
-      verdict({
-        id: ulid("vl3"),
-        objet_note: { type: "lecture_comparateur", id: ulid("l3") },
-        categorie_retenue: "inexacte",
-      }),
+      verdictDeLecture("vl1", "l1"),
+      verdictDeLecture("vl2", "l2"),
+      verdictDeLecture("vl3", "l3", "inexacte"),
       verdict({ id: ulid("vl5"), contexte: "pilote", objet_note: { type: "lecture_comparateur", id: ulid("l5") } }),
     ];
 
-    const [mesure] = metriquesComparateur(lectures, verdicts);
+    const [mesure] = metriquesComparateur(reference, lectures, verdicts);
 
     expect(mesure?.outil_id).toBe("comparateur-un");
     expect(mesure?.couverture).toEqual({ numerateur: 3, denominateur: 4, valeur: 0.75 });
     expect(mesure?.exactitude).toEqual({ numerateur: 2, denominateur: 3, valeur: 2 / 3 });
 
-    // Aucun item affiché : l'exactitude n'existe pas. Aucune lecture : la couverture non plus.
-    const aucunAffichage = metriquesComparateur([lectureComparateur({ id: ulid("l6"), affiche: false })], []);
+    // Aucun item affiché : l'exactitude n'existe pas.
+    const aucunAffichage = metriquesComparateur(runSur(["i6"]), [lectureSur("l6", "i6", false)], []);
     expect(aucunAffichage[0]?.couverture).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
     attendreAbsent(aucunAffichage[0]?.exactitude as Taux, 0);
-    expect(metriquesComparateur([], [])).toEqual([]);
   });
 
   it("refuse une lecture affichée sans verdict, au lieu de la compter comme incompatible", () => {
-    const lectures = [lectureComparateur({ id: ulid("l1"), affiche: true })];
-
-    expect(() => metriquesComparateur(lectures, [])).toThrow(/verdict/);
+    expect(() => metriquesComparateur(runSur(["i1"]), [lectureSur("l1", "i1", true)], [])).toThrow(/verdict/);
   });
 });
 
 describe("exactitude des comparateurs : même règle que les assistants (constat n° 5)", () => {
   /** Un comparateur, une lecture affichée par catégorie donnée, plus `masquees` lectures non affichées. */
   function mesurer(categories: readonly CategorieRetenue[], masquees = 0) {
-    const lectures = [
-      ...categories.map((_, i) => lectureComparateur({ id: ulid(`la-${i}`), affiche: true })),
-      ...Array.from({ length: masquees }, (_, i) => lectureComparateur({ id: ulid(`lm-${i}`), affiche: false })),
-    ];
-    const verdicts = categories.map((categorie_retenue, i) =>
-      verdict({ id: ulid(`vla-${i}`), objet_note: { type: "lecture_comparateur", id: ulid(`la-${i}`) }, categorie_retenue }),
-    );
-    const [mesure] = metriquesComparateur(lectures, verdicts);
+    const affichees = categories.map((_, i) => lectureSur(`la-${i}`, `ia-${i}`, true));
+    const cachees = Array.from({ length: masquees }, (_, i) => lectureSur(`lm-${i}`, `im-${i}`, false));
+    const reference = runSur([
+      ...categories.map((_, i) => `ia-${i}`),
+      ...Array.from({ length: masquees }, (_, i) => `im-${i}`),
+    ]);
+    const verdicts = categories.map((categorie, i) => verdictDeLecture(`vla-${i}`, `la-${i}`, categorie));
+    const [mesure] = metriquesComparateur(reference, [...affichees, ...cachees], verdicts);
     if (mesure === undefined) throw new Error("aucune mesure rendue");
     return mesure;
   }
@@ -438,7 +462,7 @@ describe("exactitude des comparateurs : même règle que les assistants (constat
   });
 
   it("garde la couverture inchangée : les lectures non classées restent des items affichés", () => {
-    // 3 affichées (exacte, indéterminée, non-réponse) sur 4 lectures : couverture 3/4.
+    // 3 affichées (exacte, indéterminée, non-réponse) sur 4 items P de référence : couverture 3/4.
     expect(mesurer(["exacte", "indeterminee", "non_reponse"], 1).couverture).toEqual({
       numerateur: 3,
       denominateur: 4,
@@ -447,16 +471,127 @@ describe("exactitude des comparateurs : même règle que les assistants (constat
   });
 
   it("lève sur deux verdicts du run portant sur une même lecture, au lieu de garder le dernier", () => {
-    const lectures = [lectureComparateur({ id: ulid("l1"), affiche: true })];
-    const verdicts = [
-      verdict({ id: ulid("vl1"), objet_note: { type: "lecture_comparateur", id: ulid("l1") } }),
-      verdict({
-        id: ulid("vl1-bis"),
-        objet_note: { type: "lecture_comparateur", id: ulid("l1") },
-        categorie_retenue: "inexacte",
-      }),
-    ];
+    const verdicts = [verdictDeLecture("vl1", "l1"), verdictDeLecture("vl1-bis", "l1", "inexacte")];
 
-    expect(() => metriquesComparateur(lectures, verdicts)).toThrow(VerdictEnDouble);
+    expect(() => metriquesComparateur(runSur(["i1"]), [lectureSur("l1", "i1", true)], verdicts)).toThrow(
+      VerdictEnDouble,
+    );
+  });
+});
+
+/**
+ * Conformité n° 11 : la couverture d'un comparateur se divise par les items P de référence du run,
+ * pas par les lectures reçues. Décision de l'auteur du 2026-10-02 (texte à écrire au §8 en 0.15) :
+ * ce sont les items P comptés au gel pour les candidats interrogés (`items_p_au_gel`), la base du
+ * tirage et du seuil de couverture.
+ */
+describe("conformité n° 11 : couverture des comparateurs sur les items P de référence", () => {
+  function fautes(appel: () => unknown): LecturesComparateurIncoherentes {
+    try {
+      appel();
+    } catch (erreur) {
+      if (erreur instanceof LecturesComparateurIncoherentes) return erreur;
+      throw erreur;
+    }
+    throw new Error("aucune erreur levée");
+  }
+
+  it("lève sur un item P de référence sans lecture, au lieu de le sortir du dénominateur de la couverture", () => {
+    // Avant la correction : 1 affichée sur 1 lecture reçue, couverture 1/1 au lieu d'une erreur.
+    const erreur = fautes(() =>
+      metriquesComparateur(runSur(["i1", "i2"]), [lectureSur("l1", "i1", true)], [verdictDeLecture("v1", "l1")]),
+    );
+    expect(erreur.manquantes).toEqual([{ outil_id: "comparateur-un", item_id: ulid("i2") }]);
+    expect(erreur.en_double).toEqual([]);
+    expect(erreur.hors_reference).toEqual([]);
+    expect(erreur.message).toContain(ulid("i2"));
+  });
+
+  it("lève sur deux lectures du même outil sur le même item, au lieu de le compter deux fois", () => {
+    const lectures = [lectureSur("l1", "i1", true), lectureSur("l1-bis", "i1", false)];
+    const erreur = fautes(() => metriquesComparateur(runSur(["i1"]), lectures, [verdictDeLecture("v1", "l1")]));
+    expect(erreur.en_double).toEqual([
+      { outil_id: "comparateur-un", item_id: ulid("i1"), lectures: [ulid("l1"), ulid("l1-bis")] },
+    ]);
+    expect(erreur.manquantes).toEqual([]);
+  });
+
+  it("lève sur une lecture d'un item hors de la liste, par exemple contesté au gel", () => {
+    const lectures = [lectureSur("l1", "i1", false), lectureSur("l-hors", "conteste-au-gel", true)];
+    const erreur = fautes(() => metriquesComparateur(runSur(["i1"]), lectures, [verdictDeLecture("v", "l-hors")]));
+    expect(erreur.hors_reference).toEqual([ulid("l-hors")]);
+    expect(erreur.manquantes).toEqual([]);
+  });
+
+  it("lève sur une lecture d'un item P d'un candidat non interrogé, même listé au gel", () => {
+    const base = runSur(["i1"]);
+    const retire = candidat({
+      candidat_id: "candidat-retire",
+      statut_au_gel: "retire",
+      interroge: false,
+      items_p_verifies: 1,
+      items_p_au_gel: [ulid("item-du-retire")],
+      sous_seuil: true,
+    });
+    const reference = { ...base, perimetre: { ...base.perimetre, candidats: [...base.perimetre.candidats, retire] } };
+    const lectures = [lectureSur("l1", "i1", false), lectureSur("l-retire", "item-du-retire", false)];
+    expect(fautes(() => metriquesComparateur(reference, lectures, [])).hors_reference).toEqual([ulid("l-retire")]);
+  });
+
+  it("lève sur un comparateur du run sans aucune lecture quand la liste de référence n'est pas vide", () => {
+    const erreur = fautes(() => metriquesComparateur(runSur(["i1", "i2"]), [], []));
+    const attendues = [ulid("i1"), ulid("i2")].sort().map((item_id) => ({ outil_id: "comparateur-un", item_id }));
+    expect(erreur.manquantes).toEqual(attendues);
+  });
+
+  it("ne lève pas sur un run sans comparateur et sans lecture", () => {
+    expect(metriquesComparateur(runSur(["i1"], []), [], [])).toEqual([]);
+  });
+
+  it("lève sur une lecture d'un outil qui n'est pas un comparateur inclus du run, au lieu de l'ignorer", () => {
+    const lectures = [lectureSur("l1", "i1", false), lectureSur("l-inconnu", "i1", false, "comparateur-inconnu")];
+    expect(fautes(() => metriquesComparateur(runSur(["i1"]), lectures, [])).hors_perimetre).toEqual([
+      ulid("l-inconnu"),
+    ]);
+  });
+
+  it("rend une couverture absente, au dénominateur 0, quand la liste de référence est vide", () => {
+    const [mesure] = metriquesComparateur(runSur([]), [], []);
+    expect(mesure?.outil_id).toBe("comparateur-un");
+    expect(mesure?.couverture.numerateur).toBe(0);
+    attendreAbsent(mesure?.couverture as Taux, 0);
+    attendreAbsent(mesure?.exactitude as Taux, 0);
+  });
+
+  it("juge deux comparateurs sur la même liste de référence", () => {
+    // Liste de 3 items. Le premier en affiche 3, le second 1 : 3/3 et 1/3.
+    const reference = runSur(["i1", "i2", "i3"], ["comparateur-un", "comparateur-deux"]);
+    const lectures = [
+      lectureSur("a1", "i1", true),
+      lectureSur("a2", "i2", true),
+      lectureSur("a3", "i3", true),
+      lectureSur("b1", "i1", true, "comparateur-deux"),
+      lectureSur("b2", "i2", false, "comparateur-deux"),
+      lectureSur("b3", "i3", false, "comparateur-deux"),
+    ];
+    const verdicts = ["a1", "a2", "a3", "b1"].map((lecture) => verdictDeLecture(`v-${lecture}`, lecture));
+
+    const mesures = metriquesComparateur(reference, lectures, verdicts);
+
+    expect(mesures.map((m) => [m.outil_id, m.couverture])).toEqual([
+      ["comparateur-un", { numerateur: 3, denominateur: 3, valeur: 1 }],
+      ["comparateur-deux", { numerateur: 1, denominateur: 3, valeur: 1 / 3 }],
+    ]);
+  });
+
+  it("lève sur le comparateur auquel il manque un item, même quand l'autre est complet", () => {
+    const reference = runSur(["i1", "i2"], ["comparateur-un", "comparateur-deux"]);
+    const lectures = [
+      lectureSur("a1", "i1", false),
+      lectureSur("a2", "i2", false),
+      lectureSur("b1", "i1", false, "comparateur-deux"),
+    ];
+    const erreur = fautes(() => metriquesComparateur(reference, lectures, []));
+    expect(erreur.manquantes).toEqual([{ outil_id: "comparateur-deux", item_id: ulid("i2") }]);
   });
 });
