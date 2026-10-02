@@ -29,8 +29,9 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
       renvoi après correction de thème, tiers de la fiche).
 - [x] **Faire refaire la passe de conformité** sur la 0.13 : faite le 2026-09-29
       (`docs/conformite/2026-09-29.md`). Constats n° 1 à 4, 7 à 9, 14, 24, 31 et 33 traités
-      (#53 à #57). n° 15, 27 et 29 traités dans #61, n° 10, 12 et 30 dans #62. Restent ouverts du côté
-      code : n° 5, 11, 22, 23, 25, 32 et 35.
+      (#53 à #57). n° 15, 27 et 29 traités dans #61, n° 10, 12 et 30 dans #62, n° 5, 22 et 32 dans #64,
+      n° 6 dans #65, n° 11 dans #66, n° 35 dans #63. Restent ouverts du côté code : n° 23 et 25
+      (chargeur du périmètre, lot interrogation).
 - [ ] **Faire écrire dans la prochaine révision** les décisions du 2026-09-28 ci-dessous.
 
   Accord du 2026-10-01 (conformité 2026-09-29, n° 12, trou signalé), selon la recommandation :
@@ -41,13 +42,13 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   12. §4, grille (n° 6) : à la place de la phrase sur l'attestation, « L'attestation n'existe que
      sur un item vérifié ; elle est conservée si le panel retire ensuite l'item ou le déclare non
      évaluable. » Le schéma admet l'attestation sur un item non évaluable dont la dernière décision
-     du panel est une non-évaluabilité. *À coder.*
+     du panel est une non-évaluabilité. *Codé (#65).*
   13. §8 (n° 11, trou signalé) : les « items P de référence » de la couverture d'un comparateur
      sont ceux qui comptent pour le seuil de couverture, soit les items P vérifiés au gel des
      candidats interrogés, non contestés et sur la version courante de leur mesure (même base que
      le tirage). Texte proposé : « Les items P de référence d'un run sont ceux qui comptent pour le
      seuil de couverture de leur candidat ; chacun reçoit une lecture de chaque comparateur. »
-     *À coder.*
+     *Codé (#66).*
 
   Décisions du 2026-09-28 sur le renvoi après correction de thème (PR #50), selon la
   recommandation. La 1 précise le texte du §4 (« retournent en attente ») : à écrire dans la
