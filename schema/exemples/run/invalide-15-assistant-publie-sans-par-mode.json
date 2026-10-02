@@ -73,7 +73,9 @@
         "declaration_candidature": {
           "url": "https://exemple-candidat.fr/declaration",
           "date": "2026-06-02",
-          "par": "interesse"
+          "par": "interesse",
+          "sha256": "85538fc375ae9c69ceb4f77f587368539da727cc9561d78bf4c0d52bfbc9fc06",
+          "archive_url": "https://web.archive.org/web/20260602/https://exemple-candidat.fr/declaration"
         },
         "items_p_verifies": 31,
         "items_p_au_gel": [
@@ -134,7 +136,9 @@
         "declaration_candidature": {
           "url": "https://exemple-parti-b.fr/communique-candidature",
           "date": "2026-10-14",
-          "par": "parti"
+          "par": "parti",
+          "sha256": "47963be5e7c58eea3a7f6764bc7218cd37565162da3158bf5faca442bbc05e33",
+          "archive_url": "https://web.archive.org/web/20261014/https://exemple-parti-b.fr/communique-candidature"
         },
         "items_p_verifies": 8,
         "items_p_au_gel": [
@@ -197,7 +201,13 @@
         "mode_de_tete": "web_activee",
         "alias_aveugle": "O07",
         "cgu_relues_le": "2026-11-10",
-        "clause_restrictive_signalee": false
+        "clause_restrictive_signalee": false,
+        "preuve_inclusion": {
+          "url": "https://classement-stores.invalid/fr/outil-alpha",
+          "date_publication": "2026-12-01",
+          "sha256": "89ac741c1a3e0afa324ae7282442edd7600b84625eef88f86982991b7f047f97",
+          "archive_url": "https://web.archive.org/web/20261201/https://classement-stores.invalid/fr/outil-alpha"
+        }
       },
       {
         "outil_id": "comparateur-gamma",

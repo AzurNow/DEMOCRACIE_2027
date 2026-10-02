@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:perimetre",
+  "title": "Périmètre saisi",
+  "description": "config/perimetre.yaml, tel que l'auteur le saisit (§3, §5, §6, §10). Chaque clé porte le nom de son champ dans run.schema.json#/properties/perimetre (décision de l'auteur du 2026-10-02), sans table de traduction. Deux états sont valides ici : le brouillon (date_gel, regime_inclusion et quotas à null, listes vides) et le périmètre complet. Ce schéma ne dit pas si le fichier suffit à geler un run : pipeline/questions/charger-perimetre.ts refuse un null restant dans une clé obligatoire et des listes de candidats ou d'outils vides, applique la règle d'inclusion du §3 que le JSON Schema ne sait pas calculer (fenêtre de 60 jours, URL distinctes), puis valide l'instantané produit contre run.schema.json. Ce qui se calcule au gel (items_p_verifies, items_p_au_gel, sous_seuil, alias_aveugle, par_mode) n'est jamais saisi ici : une clé inconnue est refusée.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "date_gel",
+    "regime_inclusion",
+    "liste_officielle",
+    "themes",
+    "tirage",
+    "candidats",
+    "outils"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date_gel": {
+      "description": "Instant de référence du run, décalage explicite (run.date_gel). null tant qu'aucun run n'est gelé.",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+      ]
+    },
+    "regime_inclusion": {
+      "description": "§3 (protocole 0.11) : chaque run déclare son régime. null tant que le brouillon n'est pas arrêté.",
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "enum": ["avant_liste_officielle", "liste_officielle"] }
+      ]
+    },
+    "liste_officielle": {
+      "description": "§3 : la liste du Conseil constitutionnel, archivée. Exigée dans le régime liste_officielle, null dans le régime avant_liste_officielle (contrôlé au chargement).",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "urn:banc-essai-2027:schema:run#/$defs/preuve_archivee" }
+      ]
+    },
+    "themes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme" },
+      "description": "Les dix thèmes du §3. Le chargeur exige exactement l'ensemble de commun#/$defs/theme, ni un de moins ni un de plus."
+    },
+    "tirage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["questions_par_strate", "questions_attribution_par_theme"],
+      "description": "Les deux quotas du §5, aux noms de tirage.parametres (ParametresTirage). Le protocole ne fixe aucun nombre : null dans le brouillon, entier ≥ 1 pour un run, jamais de valeur par défaut. Les parts 80 % / 20 % du §5 sont des constantes du code (tirage.ts:PART_REPRISE, symetrie.ts:PART_MINIMALE_ITEMS_A_F), pas des clés de ce fichier.",
+      "properties": {
+        "questions_par_strate": { "$ref": "#/$defs/quota" },
+        "questions_attribution_par_theme": { "$ref": "#/$defs/quota" }
+      }
+    },
+    "candidats": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidat" }
+    },
+    "outils": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/outil" }
+    }
+  },
+  "$defs": {
+    "quota": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "integer", "minimum": 1 }
+      ]
+    },
+    "texte": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https?://"
+    },
+    "candidat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidat_id", "libelle", "nom", "statut_au_gel", "interroge"],
+      "properties": {
+        "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "libelle": { "$ref": "#/$defs/texte" },
+        "nom": { "$ref": "#/$defs/texte" },
+        "statut_au_gel": { "type": "string", "enum": ["actif", "nouveau", "retire"] },
+        "interroge": { "type": "boolean" },
+        "declaration_candidature": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "date", "par", "sha256", "archive_url"],
+          "description": "§3 : candidature déclarée publiquement par l'intéressé ou par son parti, archivée.",
+          "properties": {
+            "url": { "$ref": "#/$defs/url" },
+            "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+            "par": { "type": "string", "enum": ["interesse", "parti"] },
+            "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+            "archive_url": { "$ref": "#/$defs/url" }
+          }
+        },
+        "preuves_inclusion": {
+          "type": "array",
+          "description": "§3 : sondages d'intention de vote, archivés. Le décompte (fenêtre de 60 jours, URL distinctes après normalisation-url-v1, au moins deux) est fait au chargement.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["institut", "date_publication", "url", "sha256", "archive_url"],
+            "properties": {
+              "institut": { "$ref": "#/$defs/texte" },
+              "date_publication": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+              "url": { "$ref": "#/$defs/url" },
+              "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+              "archive_url": { "$ref": "#/$defs/url" }
+            }
+          }
+        },
+        "contact_notification": {
+          "description": "§4 (protocole 0.10), droit de réponse : l'adresse de contact générique de la campagne, avec sa preuve archivée, ou null explicite si la campagne n'en publie aucune. Lue par outils/contacts.ts, qui en exige la présence ; absente du modèle du 2026-10-02 et hors de l'instantané du run. Admise ici pour que les deux lecteurs du même fichier ne se contredisent pas.",
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["adresse", "preuve"],
+              "properties": {
+                "adresse": { "type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" },
+                "preuve": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["url", "date", "sha256", "archive_url"],
+                  "properties": {
+                    "url": { "$ref": "#/$defs/url" },
+                    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+                    "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+                    "archive_url": { "$ref": "#/$defs/url" }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "outil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outil_id", "libelle", "editeur", "famille", "inclus"],
+      "description": "libelle, editeur et sdk restent dans ce fichier : run.schema.json ne les porte pas, et le chargeur les projette hors de l'instantané.",
+      "properties": {
+        "outil_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "libelle": { "$ref": "#/$defs/texte" },
+        "editeur": { "$ref": "#/$defs/texte" },
+        "famille": { "type": "string", "enum": ["assistant", "comparateur"] },
+        "inclus": { "type": "boolean" },
+        "motif_exclusion": { "$ref": "#/$defs/texte" },
+        "modele_demande": { "$ref": "#/$defs/texte" },
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["web_activee", "web_desactivee"] }
+        },
+        "mode_de_tete": { "type": "string", "enum": ["web_activee", "web_desactivee"] },
+        "cgu_relues_le": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile" },
+        "clause_restrictive_signalee": { "type": "boolean" },
+        "preuve_inclusion": { "$ref": "urn:banc-essai-2027:schema:run#/$defs/preuve_archivee" },
+        "sdk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paquet", "version"],
+          "description": "D3 : SDK officiel, version épinglée.",
+          "properties": {
+            "paquet": { "$ref": "#/$defs/texte" },
+            "version": { "$ref": "#/$defs/texte" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "Mêmes exigences que run.schema pour un assistant inclus (alias_aveugle mis à part : il n'est jamais saisi), plus le SDK que le modèle du 2026-10-02 attend d'un assistant et pas d'un comparateur.",
+          "if": {
+            "properties": { "famille": { "const": "assistant" }, "inclus": { "const": true } },
+            "required": ["famille", "inclus"]
+          },
+          "then": {
+            "required": ["modele_demande", "modes", "mode_de_tete", "preuve_inclusion", "sdk"]
+          }
+        },
+        {
+          "$comment": "Un outil exclu porte son motif ; un outil inclus n'en porte pas.",
+          "if": {
+            "properties": { "inclus": { "const": false } },
+            "required": ["inclus"]
+          },
+          "then": { "required": ["motif_exclusion"] },
+          "else": { "not": { "required": ["motif_exclusion"] } }
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,5 @@
 /**
- * Les vingt-deux schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
+ * Les vingt-trois schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
  * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
  * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`, dix-huit avec
  * `transcription`).
@@ -41,6 +41,10 @@
  * `validation/notifications/dues.jsonl`, écrite par promote, contester et panel, et le journal
  * `validation/notifications/envois.jsonl`, écrit par `pnpm notifier` (Python) seul. Ils
  * remplacent `item.notifications[]`, retiré du schéma d'item.
+ *
+ * `perimetre` décrit `config/perimetre.yaml` tel que l'auteur le saisit (conformité 2026-09-29, n° 23
+ * et 25) : lu et validé par `pipeline/questions/charger-perimetre.ts`, qui en tire l'instantané
+ * `run.perimetre` et les paramètres du tirage. Le vingt-troisième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -65,6 +69,7 @@ export const NOMS_SCHEMAS = [
   "decision-arbitrage",
   "notification-due",
   "envoi-notification",
+  "perimetre",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];
