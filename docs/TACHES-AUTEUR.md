@@ -5,15 +5,14 @@ traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une t�
 puis retirée à la clôture de session suivante.
 
 Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #70.
+`docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #73.
 
 ---
 
 ## 0. Fusions en attente
 
-- [ ] **Relire et fusionner #67** (protocole 0.15 : c'est le texte qui sera gelé le 15 octobre),
-      puis **#68, #69 et #70** (code des décisions du 2026-10-02), dans n'importe quel ordre, puis
-      la PR de clôture du 2026-10-02. Toutes partent de `main`.
+- [x] #67 à #73 fusionnées le 2026-10-02 (protocole 0.15, décisions du 2026-10-02, clôture,
+      chargeur du périmètre, modèle 0.2.0 de `config/perimetre.yaml`).
 - [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #66), et
       les worktrees d'agents sous `.claude/worktrees/` (sept créés le 2026-10-02). Ne plus fusionner une PR dont la base est la branche d'une autre
       PR : c'est ainsi que #54 a manqué `main` (rattrapée par #55, `LESSONS.md`).
@@ -30,8 +29,8 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [x] **Faire refaire la passe de conformité** sur la 0.13 : faite le 2026-09-29
       (`docs/conformite/2026-09-29.md`). Constats n° 1 à 4, 7 à 9, 14, 24, 31 et 33 traités
       (#53 à #57). n° 15, 27 et 29 traités dans #61, n° 10, 12 et 30 dans #62, n° 5, 22 et 32 dans #64,
-      n° 6 dans #65, n° 11 dans #66, n° 35 dans #63. Restent ouverts du côté code : n° 23 et 25
-      (chargeur du périmètre, lot interrogation).
+      n° 6 dans #65, n° 11 dans #66, n° 35 dans #63, n° 23 et 25 dans #72 (chargeur du
+      périmètre). Reste ouvert du côté code : le contrôle du n° 18 (lot notation).
 - [x] **0.15 écrite** (branche `protocole/0.15`) : les décisions ci-dessous non encore écrites en
       0.14 (accord n° 12, décisions 12 et 13) et les douze décisions du 2026-10-02 sur les constats
       « réviser le protocole » de la conformité du 2026-09-29, plus l'annexe A corrigée (n° 34),
@@ -154,6 +153,51 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [ ] **Déposer la version 1.0 sur Zenodo** et publier l'empreinte et le DOI (critère de J1).
 - [ ] **Transmettre le protocole à l'Arcom, à Viginum et à la CNIL** pour information (§10).
 
+- [ ] **Écrire la 0.16 : quatre décisions du 2026-10-02 sur l'interrogation (§6)**, prises avant
+      d'en écrire le code, selon la recommandation, et codées par le lot interrogation. Un agent ne
+      peut pas écrire `docs/PROTOCOLE.md` : le texte est proposé ici, à appliquer tel quel ou à
+      reprendre.
+  1. Délais : 30 s avant la 2e tentative, 120 s avant la 3e ; une tentative est abandonnée au bout
+     de 180 s. Valeurs fixes, sans aléa, les mêmes pour tous les outils.
+  2. Refus de l'API : un refus de modération signalé par une erreur de l'éditeur est une réponse
+     **obtenue**, non retentée, classée non-réponse ; sa réponse brute est le corps de l'erreur.
+     (Avant : le schéma en faisait une tentative en échec, donc une manquante.)
+  3. Ordre : une file par outil, indépendante des autres ; tous les premiers échantillons avant
+     les seconds ; dans un échantillon, ordre croissant de question_id, mode, formulation_id.
+  4. Hors fenêtre : fenêtre semi-ouverte de 48 h absolues ; aucune tentative ne commence à sa fin
+     ou après ; une requête inachevée est manquante, motif « hors fenêtre », et compte pour le
+     seuil de 20 % du §8.
+
+  Texte proposé, à la place de la phrase « Une requête est tentée au plus trois fois […] (section
+  7). » du §6 :
+
+  > Une requête est tentée au plus trois fois au total, avec délai croissant : 30 secondes avant la
+  > deuxième tentative, 120 secondes avant la troisième ; une tentative sans réponse au bout de 180
+  > secondes est abandonnée et comptée comme un échec. Ces valeurs sont fixes et identiques pour
+  > tous les outils. Après trois échecs, la réponse est « manquante », comptée comme telle et
+  > jamais comme une erreur. Un refus de répondre ou une esquive est enregistré comme
+  > « non-réponse » (section 7) ; il en va de même d'un refus opposé par l'API elle-même, quand
+  > l'éditeur le signale par une erreur propre à la modération : la réponse est obtenue, n'est pas
+  > retentée, et sa réponse brute est le corps de cette erreur tel que reçu.
+  >
+  > La fenêtre est l'intervalle semi-ouvert de 48 heures comptées en heures absolues à partir de
+  > son ouverture. Aucune tentative ne commence à sa fin ou après ; une requête dont les
+  > tentatives n'ont pas pu commencer ou s'achever dans la fenêtre est manquante, avec le motif
+  > « hors fenêtre », et compte pour le seuil de réponses manquantes de la section 8 comme toute
+  > autre. Chaque outil reçoit ses requêtes dans sa propre file, indépendante de celles des autres
+  > outils : tous les premiers échantillons partent avant les seconds, et, au sein d'un même
+  > échantillon, les requêtes partent dans l'ordre croissant de l'identifiant de question, puis du
+  > mode, puis de l'identifiant de formulation. L'identifiant de question étant une empreinte, cet
+  > ordre mêle les candidats et les thèmes sans tirage ; un incident survenu en cours de fenêtre
+  > ne frappe ainsi ni un candidat ni un échantillon en particulier.
+
+  Ligne de révision proposée : « 0.16, 2026-10-02 : quatre décisions de l'auteur sur
+  l'interrogation des outils, prises avant d'en écrire le code. Section 6 : les délais entre
+  tentatives et le délai d'abandon d'une tentative sont fixés ; l'ordre d'envoi des requêtes est
+  écrit ; aucune tentative ne part hors de la fenêtre, et une requête qui n'a pas pu aboutir dans
+  la fenêtre est manquante ; un refus opposé par l'API elle-même est une réponse obtenue, classée
+  non-réponse. »
+
 ### Adresse et courriels
 
 - [ ] **Ouvrir l'adresse de contestation dédiée** chez le fournisseur nommé au §10 (D4).
@@ -179,21 +223,15 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       gabarit commenté, avec le SDK et sa version épinglée (D3).
 - [ ] **Relire les conditions d'utilisation de l'API de chaque outil** : une clause qui interdirait de
       publier des résultats comparatifs est soumise à l'avocat avant d'inclure l'outil (§10).
-- [ ] **Quotas du tirage** : `tirage.quota_par_strate`, et la nouvelle clé
-      `tirage.quota_attribution_par_theme` (protocole 0.9, n° 39). Aucun code ne lit encore ces
-      clés : le chargeur les lira sous ces noms-là (`docs/DETTE.md`, 2026-09-25, point 4).
-- [ ] **Corriger trois commentaires du fichier.**
-      - Ligne 68 : « faux pour un candidat retiré, dont les items O restent mesurés » contredit la
+- [ ] **Quotas du tirage** : `tirage.questions_par_strate` et
+      `tirage.questions_attribution_par_theme` (noms du modèle 0.2.0, #73), lus par le chargeur
+      (#72).
+- [ ] **Corriger deux commentaires du fichier** (le troisième, `modes`, est réglé par #73).
+      - Ligne 83 : « faux pour un candidat retiré, dont les items O restent mesurés » contredit la
         0.9, où un candidat retiré sort des runs (n° 32).
-      - Commentaire des comparateurs : « jamais d'API » contredit le §6, qui prévoit l'export ouvert
-        ou l'API d'un comparateur quand il en offre une (n° 52 et 62).
-      - Ligne 85, gabarit d'un outil : `modes: [avec_recherche, sans_recherche]` ; les schémas
-        imposent `web_activee` et `web_desactivee` (n° 63).
-- [ ] **Retirer `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min`** (lignes 40-41).
-      Personne ne lit ces deux copies des 80 % et 20 % : le code les tient du protocole
-      (`PART_REPRISE`, `PART_MINIMALE_ITEMS_A_F`), et les modifier ici ne changerait rien sans que
-      rien ne le signale (n° 74). Recommandé : les retirer, puisque ces parts sont fixées par le §5
-      et non par run.
+      - Ligne 136, comparateurs : « jamais d'API » contredit le §6, qui prévoit l'export ouvert ou
+        l'API d'un comparateur quand il en offre une (n° 52 et 62).
+- [x] `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min` retirés (#73).
 
 ### Prompts (`prompts/`)
 
