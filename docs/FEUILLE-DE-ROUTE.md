@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-02.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-03.
 
 ## Décisions en attente
 
@@ -23,6 +23,10 @@ Aucune décision en attente.
 ### D12 — Comment l'interrogation traite-t-elle les refus de l'API, les délais entre tentatives, l'ordre des requêtes et les requêtes restées hors de la fenêtre de 48 h ?
 
 **Décision du 2026-10-02 :** Option 1, texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). Schéma reponse : normalise.refus_api et motif_manquante (echecs | hors_fenetre). Suite du même jour : un corps qui n'est pas un objet JSON est stocké dans brut_texte (exclusif de brut) ; brut_octets_sha256 hache les octets reçus avant tout parse ; requete.entetes garde les en-têtes sauf l'authentification ; runs/<date>/ est la date du gel à Paris.
+
+### D13 — Après le retrait d'un juge (§7, conformité n° 18), « ses notations sont écartées de tout le run » vaut-il aussi pour l'accord juges-humains et le kappa des juges publiés avec le run ?
+
+**Décision du 2026-10-03 :** Option 1 : les notations d'un juge retiré sont écartées aussi de l'accord juges-humains et du kappa des juges publiés avec le run. Si un juge est retiré en cours de run, l'accord ne porte plus que sur le juge restant, ce que le texte de la 0.16 doit dire. À coder au lot notation avec le contrôle croisé du n° 18.
 
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 

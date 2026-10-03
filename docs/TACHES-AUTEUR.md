@@ -14,7 +14,7 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [x] #67 à #75 fusionnées le 2026-10-02 (protocole 0.15, décisions du 2026-10-02, clôture,
       chargeur du périmètre, modèle 0.2.0 de `config/perimetre.yaml`, D12, lot interrogation en
       mode simulé).
-- [ ] Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #66), et
+- [x] (2026-10-03) Supprimer les branches `lots/*`, `protocole/*` et `docs/*` déjà fusionnées (#38 à #66), et
       les worktrees d'agents sous `.claude/worktrees/` (sept créés le 2026-10-02). Ne plus fusionner une PR dont la base est la branche d'une autre
       PR : c'est ainsi que #54 a manqué `main` (rattrapée par #55, `LESSONS.md`).
 
@@ -44,8 +44,9 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
     échantillon humain, revue humaine des drapeaux graves. *À coder au lot notation* : aucun
     contrôle croisé verdict × notations × run n'existe (un verdict peut s'appuyer sur une note du
     juge retiré ; une note « juge unique » sans drapeau peut cacher un drapeau grave du juge restant).
-    **Question ouverte** : « écartées de tout le run » vaut-il aussi pour l'accord juges-humains et
-    le kappa des juges publiés avec le run ?
+    **Tranché le 2026-10-03 (D13)** : oui, les notations du juge retiré sont aussi écartées de
+    l'accord juges-humains et du kappa des juges publiés avec le run. *À écrire en 0.16* : l'accord
+    ne porte alors que sur le juge restant.
   - n° 19 : grappes rangées par `grappe_id`, consommation du générateur écrite. *Codé (#70).*
   - n° 20 : seuls les items à réponse classée entrent dans la permutation. Rien à coder.
   - n° 21 : tendance alignée sur les effets de condition, appariée par question. *Codé (#70).*

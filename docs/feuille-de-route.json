@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-02",
+  "date_maj": "2026-10-03",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -199,6 +199,19 @@
       "recommandation": "Option 1.",
       "retenu": "Option 1, texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). Schéma reponse : normalise.refus_api et motif_manquante (echecs | hors_fenetre). Suite du même jour : un corps qui n'est pas un objet JSON est stocké dans brut_texte (exclusif de brut) ; brut_octets_sha256 hache les octets reçus avant tout parse ; requete.entetes garde les en-têtes sauf l'authentification ; runs/<date>/ est la date du gel à Paris.",
       "date_decision": "2026-10-02"
+    },
+    {
+      "id": "D13",
+      "statut": "tranchee",
+      "question": "Après le retrait d'un juge (§7, conformité n° 18), « ses notations sont écartées de tout le run » vaut-il aussi pour l'accord juges-humains et le kappa des juges publiés avec le run ?",
+      "contexte": "La 0.15 écarte les notations d'un juge retiré, garde la note du juge restant hors échantillon humain et fait revoir les drapeaux graves par un humain, mais ne dit pas si ces notations comptent encore dans les chiffres d'accord publiés.",
+      "options": [
+        "Oui : écartées aussi de l'accord juges-humains et du kappa des juges ; c'est le plus restrictif et le plus fidèle à « tout le run ».",
+        "Non : gardées dans les chiffres d'accord avec une mention ; ils décrivent le juge tel qu'il a fonctionné, pas le résultat final."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1 : les notations d'un juge retiré sont écartées aussi de l'accord juges-humains et du kappa des juges publiés avec le run. Si un juge est retiré en cours de run, l'accord ne porte plus que sur le juge restant, ce que le texte de la 0.16 doit dire. À coder au lot notation avec le contrôle croisé du n° 18.",
+      "date_decision": "2026-10-03"
     }
   ],
   "lots": [
@@ -405,9 +418,10 @@
         }
       ],
       "decisions": [
+        "D13",
         "D3"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3)."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés."
     },
     {
       "id": "analyse",
