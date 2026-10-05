@@ -200,6 +200,36 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   la fenêtre est manquante ; un refus opposé par l'API elle-même est une réponse obtenue, classée
   non-réponse. »
 
+- [ ] **Écrire aussi en 0.16 : D13 et D14 (§7, notation)**, tranchées le 2026-10-03 et le
+      2026-10-05 avant le code du lot notation, selon la recommandation. Texte proposé :
+
+  À la fin du paragraphe « Test contrefactuel de biais du juge », à la place de « Les notations
+  déjà rendues par le juge retiré […] revue par un humain. » :
+
+  > Le test contrefactuel est exécuté avant la notation des autres réponses du run, de sorte qu'un
+  > retrait est connu avant le tirage de l'échantillon humain ; l'échantillon de 25 % prolonge
+  > l'ordre de tirage de celui de 10 % et le contient. Les permutations sont un dérangement des
+  > candidats du run, tiré avec sa graine dérivée, appliqué par remplacement exact du libellé et
+  > du nom seul déclarés au périmètre ; les 200 réponses sont tirées parmi celles dont la réponse
+  > ou l'item nomme au moins un candidat. Une note change lorsqu'elle diffère sur l'un des
+  > éléments que lisent les métriques primaires : catégorie, drapeaux, fraîcheur de
+  > l'obsolescence, sourçage valide. Les notations déjà rendues par le juge retiré sont écartées de
+  > tout le run, y compris de l'accord juges-humains et du kappa des juges publiés avec lui, qui ne
+  > portent plus que sur le juge restant ; hors de l'échantillon humain, la note retenue est celle
+  > du juge restant, et toute réponse qu'il marque « fabrication » ou « mauvaise attribution »
+  > reste revue par un humain.
+
+  Dans le paragraphe « Conflit d'intérêts », remplacer « en renotant un sous-ensemble après
+  permutation des noms d'outils dans les métadonnées » par « en renotant un sous-ensemble après
+  permutation des noms d'outils dans le texte des réponses, seule trace de leur identité que voit
+  le juge ».
+
+  Ligne de révision, à fusionner avec celle ci-dessus : « Section 7 : le test contrefactuel précède
+  la notation du run, et l'échantillon de 25 % contient celui de 10 % ; la permutation, le
+  sous-ensemble et ce qu'est un changement de note sont écrits ; les notations d'un juge retiré
+  sortent aussi des chiffres d'accord ; le contrefactuel outil permute les noms dans le texte des
+  réponses. »
+
 - [ ] **Pour le premier `run:live` (lot interrogation)** : fournir, pour chaque outil, un corps
       d'erreur de modération authentique (documentation de l'éditeur ou appel d'essai archivé), qui
       servira de test à son adaptateur (`docs/DETTE.md`, 2026-10-02, lot interrogation, point 1).
