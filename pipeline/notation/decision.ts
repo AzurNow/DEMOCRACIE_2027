@@ -14,7 +14,7 @@
  * 2. **Juge indéterminé.** Un juge ne rend jamais `indeterminee` (§7) : une telle notation lève
  *    `JugeIndetermine`, même d'un juge retiré. Elle n'est pas avalée.
  * 3. **Extrait.** Un extrait qui échoue au test verbatim (`extrait.ts`) invalide la notation du
- *    juge : elle ne compte pas, et un humain est requis.
+ *    juge : elle ne compte pas, et un humain est requis, sous le motif `extrait_invalide` (D15).
  * 4. **Échantillon humain.** La note humaine prévaut : celle des deux humains s'ils s'accordent,
  *    sinon celle du troisième (`echantillon_humain_10`, nom du schéma conservé à 25 %).
  * 5. **Hors échantillon.** Désaccord, extrait invalide ou drapeau grave posé par un juge non retiré
@@ -179,7 +179,19 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
   ["arbitrage_echantillon_10", "arbitrages"],
   ["desaccord_juges", "appeles"],
   ["erreur_grave", "appeles"],
+  ["extrait_invalide", "appeles"],
 ]);
+
+/**
+ * Le motif sous lequel l'humain appelé hors échantillon doit noter (D15). Un extrait invalide exige
+ * `extrait_invalide`, même si un drapeau grave est aussi posé : c'est le défaut qui retire la note
+ * d'un juge, et le plus restrictif est de ne pas le laisser masquer par un autre motif. Un extrait
+ * invalide et un désaccord ne coexistent pas : le désaccord ne se lit qu'entre deux notations qui
+ * comptent, donc à extrait valide. Sans extrait invalide, `desaccord_juges` ou `erreur_grave`.
+ */
+function motifsHumainsAdmis(bilan: BilanJuges): readonly MotifNotation[] {
+  return bilan.invalides.length > 0 ? ["extrait_invalide"] : ["desaccord_juges", "erreur_grave"];
+}
 
 function casierHumain(notation: NotationIndividuelle, tri: Record<Casier, NotationIndividuelle[]>, objet_id: Ulid): NotationIndividuelle[] {
   const casier = notation.motif_notation === undefined ? undefined : CASIER_DU_MOTIF.get(notation.motif_notation);
@@ -256,6 +268,7 @@ function trancherParHumain(
   if (autres.length > 0) {
     throw new NotationsIncoherentes(entree.objet_note.id, `${appeles.length} humains appelés : le §7 en fait trancher un.`);
   }
+  verifierMotifAppele(humain, motifsHumainsAdmis(bilan), entree.objet_note.id);
   const grave = bilan.grave || porteDrapeauGrave(humain);
   return verdict(entree, {
     note: noteDe(humain),
@@ -264,6 +277,14 @@ function trancherParHumain(
     humains: [humain],
     desaccord: bilan.desaccord,
   });
+}
+
+function verifierMotifAppele(humain: NotationIndividuelle, admis: readonly MotifNotation[], objet_id: Ulid): void {
+  if (humain.motif_notation !== undefined && admis.includes(humain.motif_notation)) return;
+  throw new NotationsIncoherentes(
+    objet_id,
+    `l'humain ${humain.notateur.id} note sous le motif ${String(humain.motif_notation)} ; la situation exige ${admis.join(" ou ")} (D15).`,
+  );
 }
 
 function accordDesJuges(entree: EntreeDecision, premiere: NotationIndividuelle, seconde: NotationIndividuelle): Decision {

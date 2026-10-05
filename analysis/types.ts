@@ -128,6 +128,7 @@ export const MOTIFS_NOTATION = [
   "contrefactuel",
   "arbitrage_panel",
   "arbitrage_echantillon_10",
+  "extrait_invalide",
 ] as const;
 export type MotifNotation = (typeof MOTIFS_NOTATION)[number];
 

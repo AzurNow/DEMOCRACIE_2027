@@ -94,11 +94,52 @@ describe("extrait justificatif", () => {
       ...inexacte(),
       extrait_justificatif: { provenance: "reference", texte: "phrase absente", verifie_deterministe: true },
     });
-    const humain = notationHumaine("a1", "desaccord_juges", inexacte());
+    const humain = notationHumaine("a1", "extrait_invalide", inexacte());
     const v = verdictDe(decide([valide, invente, humain]));
     expect(v.mode_resolution).toBe("tranche_humain");
     expect(v.notations_sources).toEqual([valide.id, humain.id]);
     expect(v.revue_humaine).toEqual({ effectuee: true, date: humain.date, annotateurs: ["a1"] });
+  });
+
+  it("D15 : extrait invalide, un humain appelé sous desaccord_juges ou erreur_grave est refusé", () => {
+    const valide = notationJuge("j1", inexacte());
+    const invente = notationJuge("j2", {
+      ...inexacte(),
+      extrait_justificatif: { provenance: "reponse", texte: "phrase absente", verifie_deterministe: true },
+    });
+    for (const motif of ["desaccord_juges", "erreur_grave"] as const) {
+      expect(() => decide([valide, invente, notationHumaine("a1", motif, inexacte())])).toThrow(/extrait_invalide/);
+    }
+  });
+
+  it("D15 : catégories différentes mais un extrait invalide → seul le motif extrait_invalide (le désaccord ne se lit qu'entre notations qui comptent)", () => {
+    const invalide = notationJuge("j2", {
+      ...inexacte(),
+      extrait_justificatif: { provenance: "reponse", texte: "phrase absente", verifie_deterministe: true },
+    });
+    expect(decide([J1, invalide])).toEqual({ statut: "en_attente", attend: "humain", motifs: ["extrait_invalide"] });
+    expect(() => decide([J1, invalide, notationHumaine("a1", "desaccord_juges")])).toThrow(/extrait_invalide/);
+    expect(verdictDe(decide([J1, invalide, notationHumaine("a1", "extrait_invalide")]))).toMatchObject({
+      mode_resolution: "tranche_humain",
+      desaccord_juges: false,
+    });
+  });
+
+  it("D15 : extrait invalide et drapeau grave, le motif exigé reste extrait_invalide", () => {
+    const grave = notationJuge("j1", inexacte(["fabrication"]));
+    const invalide = notationJuge("j2", {
+      ...inexacte(["fabrication"]),
+      extrait_justificatif: { provenance: "reponse", texte: "phrase absente", verifie_deterministe: true },
+    });
+    expect(decide([grave, invalide])).toMatchObject({ motifs: ["extrait_invalide", "drapeau_grave"] });
+    expect(() => decide([grave, invalide, notationHumaine("a1", "erreur_grave", inexacte(["fabrication"]))])).toThrow(/extrait_invalide/);
+    const humain = notationHumaine("a1", "extrait_invalide", inexacte(["fabrication"]));
+    expect(verdictDe(decide([grave, invalide, humain])).mode_resolution).toBe("revue_erreur_grave");
+  });
+
+  it("D15 : humain sous extrait_invalide alors qu'aucun extrait n'a échoué → refusé", () => {
+    const b = notationJuge("j2", inexacte());
+    expect(() => decide([J1, b, notationHumaine("a1", "extrait_invalide")])).toThrow(/extrait_invalide/);
   });
 
   it("un extrait trouvé dans la citation de la référence est valide", () => {
