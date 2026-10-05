@@ -16,7 +16,8 @@
  * demandé et renvoyé, paramètres), `requete` (corps, en-têtes, point d'accès), et tout le brut
  * (`brut`, `brut_texte` et leurs empreintes, règle 7). L'alias aveugle n'est pas transmis non
  * plus : le juge n'en a pas besoin pour noter, et le plus restrictif est de ne rien lui donner qui
- * distingue deux outils. `appels_outils` de la projection, que le §7 ne cite pas, n'est pas
+ * distingue deux outils. Les citations sont projetées sur `{ url, texte }` (D15) : aucun autre
+ * champ de l'objet de l'éditeur ne passe. `appels_outils` de la projection, que le §7 ne cite pas, n'est pas
  * transmis. Le nom du candidat arrive par la question et par les textes de l'item, qui le portent ;
  * l'identifiant du candidat de chaque item est transmis, l'item le portant.
  *
@@ -31,8 +32,11 @@ import type { ObjetJson, ReponseObtenue } from "../interrogation/types.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
 
-/** Version du format de la charge : un champ ajouté ou retiré la change. */
-export const VERSION_CHARGE_JUGE = "charge-juge-v1";
+/**
+ * Version du format de la charge : un champ ajouté ou retiré la change. v2 (décision D15 de
+ * l'auteur) : les citations sont projetées sur `{ url, texte }`.
+ */
+export const VERSION_CHARGE_JUGE = "charge-juge-v2";
 
 export interface PromptDeJuge {
   /** Chemin d'un fichier de `prompts/`, fourni par l'appelant. */
@@ -85,10 +89,19 @@ export interface ItemSoumis {
   };
 }
 
+/**
+ * Une citation, dans la forme commune à tous les éditeurs (D15). Un champ absent de l'objet reçu,
+ * ou qui n'y est pas une chaîne, est absent ici : jamais remplacé par une valeur par défaut.
+ */
+export interface CitationSoumise {
+  readonly url?: string;
+  readonly texte?: string;
+}
+
 export interface ReponseSoumise {
   readonly texte: string;
   readonly liens: readonly string[];
-  readonly citations?: readonly ObjetJson[];
+  readonly citations?: readonly CitationSoumise[];
   readonly troncature: boolean;
   readonly refus_api: boolean;
   readonly normalisation: { readonly fonction: string; readonly version: string };
@@ -128,10 +141,25 @@ function reponseSoumise(reponse: ReponseObtenue): ReponseSoumise {
   return {
     texte: projection.texte,
     liens: [...projection.liens],
-    ...(projection.citations === undefined ? {} : { citations: projection.citations }),
+    ...(projection.citations === undefined ? {} : { citations: projection.citations.map(citationSoumise) }),
     troncature: projection.troncature,
     refus_api: projection.refus_api,
     normalisation: { fonction: reponse.normalisation.fonction, version: reponse.normalisation.version },
+  };
+}
+
+/**
+ * Seules les clés `url` et `texte` de l'objet sont lues ; tout autre champ (type, indices, clés
+ * propres à l'éditeur, en snake_case ou en camelCase) reste hors de la charge, car sa forme seule
+ * peut désigner l'éditeur. Ramener les champs d'un éditeur vers `url` et `texte` est le travail de
+ * la normalisation de son adaptateur (`reponse.normalisation`), pas de la notation.
+ */
+function citationSoumise(citation: ObjetJson): CitationSoumise {
+  const url = citation["url"];
+  const texte = citation["texte"];
+  return {
+    ...(typeof url === "string" ? { url } : {}),
+    ...(typeof texte === "string" ? { texte } : {}),
   };
 }
 

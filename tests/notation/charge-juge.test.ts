@@ -14,6 +14,22 @@ import { itemA, itemO, itemP } from "../aides/fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 
+/** Une citation telle qu'un éditeur la renvoie : la forme commune, noyée dans des champs qui lui sont propres. */
+const CITATION_EDITEUR = {
+  type: "url_citation",
+  url: "https://exemple.invalid/source",
+  texte: "ramener la TVA sur les produits énergétiques",
+  start_index: 3,
+  end_index: 41,
+  cited_text: "texte-cite-propre-editeur",
+  documentIndex: 2,
+  encryptedIndex: "index-chiffre-propre-editeur",
+  annotation_kind: "annotation-propre-editeur",
+};
+
+/** La même citation, nue : seulement la forme commune. */
+const CITATION_NUE = { url: CITATION_EDITEUR.url, texte: CITATION_EDITEUR.texte };
+
 /** Une réponse obtenue conforme au schéma, dont chaque champ d'identité porte une valeur repérable. */
 function reponse(): ReponseObtenue {
   const lue = valider<ReponseObtenue>("reponse", JSON.parse(readFileSync(EXEMPLE, "utf8")), EXEMPLE);
@@ -26,7 +42,7 @@ function reponse(): ReponseObtenue {
       mode: "web_activee",
       metadonnees: { ...lue.metadonnees, modele_demande: "modele-demande-secret", modele_renvoye: "modele-renvoye-secret" },
       requete: { ...lue.requete, endpoint: "https://api.editeur-secret.invalid/v1" },
-      normalise: { ...lue.normalise, liens: ["https://exemple.invalid/source"] },
+      normalise: { ...lue.normalise, liens: ["https://exemple.invalid/source"], citations: [CITATION_EDITEUR] },
     },
     "réponse de test",
   );
@@ -52,6 +68,10 @@ function identites(r: ReponseObtenue): readonly string[] {
     r.requete.endpoint,
     r.requete.sha256,
     r.brut_octets_sha256,
+    CITATION_EDITEUR.type,
+    CITATION_EDITEUR.cited_text,
+    CITATION_EDITEUR.encryptedIndex,
+    CITATION_EDITEUR.annotation_kind,
   ];
 }
 
@@ -64,6 +84,26 @@ describe("aveuglement", () => {
     // comme valeurs JSON entières.
     expect(serialisee).not.toContain(JSON.stringify(r.canal));
     expect(serialisee).not.toContain(JSON.stringify(r.mode));
+    // Clés propres à l'éditeur, cherchées dans la réponse soumise (« type » est aussi une clé légitime
+    // de l'item de référence).
+    const reponseSerialisee = JSON.stringify(construireCharge(demande(r)).reponse);
+    for (const cle of ["type", "start_index", "end_index", "cited_text", "documentIndex", "encryptedIndex", "annotation_kind"]) {
+      expect(reponseSerialisee).not.toContain(`"${cle}"`);
+    }
+  });
+
+  it("D15 : une citation chargée de champs d'éditeur donne exactement la charge de la citation nue", () => {
+    const r = reponse();
+    const nue: ReponseObtenue = { ...r, normalise: { ...r.normalise, citations: [CITATION_NUE] } };
+    expect(construireCharge(demande(r))).toEqual(construireCharge(demande(nue)));
+    expect(construireCharge(demande(r)).reponse.citations).toEqual([CITATION_NUE]);
+  });
+
+  it("D15 : un champ absent ou non textuel de la citation reste absent, jamais remplacé", () => {
+    const r = reponse();
+    const citations = [{ url: "https://exemple.invalid/a", type: "x" }, { texte: "seul" }, { url: 12, texte: null }, {}];
+    const charge = construireCharge(demande({ ...r, normalise: { ...r.normalise, citations } }));
+    expect(charge.reponse.citations).toEqual([{ url: "https://exemple.invalid/a" }, { texte: "seul" }, {}, {}]);
   });
 
   it("le brut n'y figure pas : ni son contenu propre, ni ses empreintes", () => {
@@ -112,13 +152,14 @@ describe("contenu", () => {
     expect(charge.reponse).toEqual({
       texte: r.normalise.texte,
       liens: ["https://exemple.invalid/source"],
-      citations: [],
+      citations: [CITATION_NUE],
       troncature: false,
       refus_api: false,
       normalisation: { fonction: "normaliser_reponse", version: "1.0.0" },
     });
     expect(charge.version_normalisation_verbatim).toBe(VERSION_NORMALISATION);
     expect(charge.version_charge).toBe(VERSION_CHARGE_JUGE);
+    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v2");
   });
 
   it("porte la question, la date du run, le prompt désigné et l'identifiant opaque de la réponse", () => {
