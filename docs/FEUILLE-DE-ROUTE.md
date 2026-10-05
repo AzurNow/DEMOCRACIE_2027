@@ -32,6 +32,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-05 :** Option 1 sur les quatre points. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). À coder au lot notation.
 
+### D15 — Cinq points laissés ouverts par la PR A du lot notation : accord partiel des notations, citations transmises au juge, motif de l'humain appelé sur un extrait refusé, population et arrondi de l'échantillon humain, identifiant du candidat dans la charge.
+
+**Décision du 2026-10-05 :** Option 1 sur les cinq points, codée dans la PR #79. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
+
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.

@@ -1,0 +1,194 @@
+/**
+ * Contrôle croisé verdicts × notations × run (conformité n° 18 ; D13). Cas limite 15 du brief :
+ * un run propre ne rend aucune violation, et chaque violation a son test. Les verdicts du run propre
+ * sont produits par `decider`, et validés contre le schéma.
+ */
+
+import { describe, expect, it } from "vitest";
+import { ulid } from "../analysis/fabriques.ts";
+import { controleCroise, type EntreeControleCroise } from "../../pipeline/notation/controle-croise.ts";
+import { decider } from "../../pipeline/notation/decision.ts";
+import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
+import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../pipeline/notation/types.ts";
+import { valider } from "../../outils/schemas/valider.ts";
+import { inexacte, notationHumaine, notationJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+
+const REPONSES = Array.from({ length: 30 }, (_, i) => ulid(`reponse-croise-${i}`));
+
+function surObjet(id: string): { objet_note: { type: "reponse"; id: string } } {
+  return { objet_note: { type: "reponse", id } };
+}
+
+/** Un run complet et propre : chaque réponse notée par les juges actifs, et par deux humains si tirée. */
+function runPropre(run: RunDeNotation): EntreeControleCroise {
+  const echantillon = new Set(tirerEchantillonHumain(REPONSES, run.graines.echantillon_humain, run.taux_echantillon_humain));
+  const notations: NotationIndividuelle[] = [];
+  const verdicts: VerdictProduit[] = [];
+  for (const id of REPONSES) {
+    const dans = echantillon.has(id);
+    const siennes = [
+      notationJuge("j1", surObjet(id)),
+      notationJuge("j2", surObjet(id)),
+      ...(dans ? [notationHumaine("a1", "echantillon_aleatoire_10", surObjet(id)), notationHumaine("a2", "echantillon_aleatoire_10", surObjet(id))] : []),
+    ];
+    notations.push(...siennes);
+    const decision = decider({
+      run,
+      objet_note: { type: "reponse", id },
+      notations: siennes,
+      dans_echantillon_humain: dans,
+      textes: { reponse: REPONSE_PROJETEE, citations_reference: [] },
+      verdict_id: ulid(`verdict-${id}`),
+      date: "2026-12-06T12:00:00+01:00",
+    });
+    if (decision.statut !== "verdict") throw new Error(`réponse ${id} en attente`);
+    verdicts.push(valider<VerdictProduit>("verdict", decision.verdict, `verdict ${id}`));
+  }
+  return { run, reponses_obtenues: REPONSES, notations, verdicts };
+}
+
+function codes(entree: EntreeControleCroise): readonly string[] {
+  return controleCroise(entree).map((v) => v.code);
+}
+
+/** Remplace le verdict d'indice `i` (après validation de schéma : la violation n'est visible qu'ici). */
+function avecVerdict(entree: EntreeControleCroise, i: number, modifier: (v: VerdictProduit) => VerdictProduit): EntreeControleCroise {
+  const verdicts = entree.verdicts.map((v, j) => (j === i ? valider<VerdictProduit>("verdict", modifier(v), "verdict modifié") : v));
+  return { ...entree, verdicts };
+}
+
+function verdictA(entree: EntreeControleCroise, i: number): VerdictProduit {
+  const verdict = entree.verdicts[i];
+  if (verdict === undefined) throw new Error(`aucun verdict d'indice ${i}`);
+  return verdict;
+}
+
+function premiere(ids: readonly string[]): string {
+  const [id] = ids;
+  if (id === undefined) throw new Error("liste vide");
+  return id;
+}
+
+function indiceHorsEchantillon(entree: EntreeControleCroise): number {
+  return entree.verdicts.findIndex((v) => !v.dans_echantillon_humain);
+}
+
+function indiceDansEchantillon(entree: EntreeControleCroise): number {
+  return entree.verdicts.findIndex((v) => v.dans_echantillon_humain);
+}
+
+describe("run propre", () => {
+  it("sans retrait : aucune violation, et l'échantillon de 10 % est bien représenté", () => {
+    const propre = runPropre(runDeNotation());
+    expect(propre.verdicts.filter((v) => v.dans_echantillon_humain)).toHaveLength(3);
+    expect(controleCroise(propre)).toEqual([]);
+  });
+
+  it("avec un juge retiré : aucune violation, échantillon de 25 %, juge_unique ailleurs", () => {
+    const propre = runPropre(runDeNotation(["j2"]));
+    expect(propre.verdicts.filter((v) => v.dans_echantillon_humain)).toHaveLength(8);
+    expect(propre.verdicts.filter((v) => v.mode_resolution === "juge_unique_apres_retrait")).toHaveLength(22);
+    expect(controleCroise(propre)).toEqual([]);
+  });
+});
+
+describe("violations", () => {
+  it("un verdict qui cite une notation de juge retiré", () => {
+    const run = runDeNotation(["j2"]);
+    const propre = runPropre(run);
+    const i = indiceHorsEchantillon(propre);
+    const objet = verdictA(propre, i).objet_note.id;
+    const retire = notationJuge("j2", surObjet(objet));
+    const entree = avecVerdict(propre, i, (v) => ({ ...v, notations_sources: [...v.notations_sources, retire.id] }));
+    const violations = controleCroise(entree);
+    expect(violations).toEqual([expect.objectContaining({ code: "source_de_juge_retire", verdict_id: verdictA(propre, i).id })]);
+  });
+
+  it("juge_unique_apres_retrait alors qu'aucun juge n'est retiré", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const entree = avecVerdict(propre, i, (v) => ({ ...v, mode_resolution: "juge_unique_apres_retrait", notations_sources: v.notations_sources.slice(0, 1) }));
+    expect(codes(entree)).toEqual(["juge_unique_sans_retrait"]);
+  });
+
+  it("un verdict hors échantillon qui ignore un drapeau grave du juge restant", () => {
+    const propre = runPropre(runDeNotation(["j2"]));
+    const i = indiceHorsEchantillon(propre);
+    const objet = verdictA(propre, i).objet_note.id;
+    const restant = notationJuge("j1", { ...surObjet(objet), ...inexacte(["fabrication"]) });
+    const notations = propre.notations.map((n) => (n.id === restant.id ? restant : n));
+    expect(codes({ ...propre, notations })).toEqual(["drapeau_grave_ignore"]);
+  });
+
+  it("le drapeau grave du juge retiré, lui, n'est pas une violation (D13)", () => {
+    const propre = runPropre(runDeNotation(["j2"]));
+    const i = indiceHorsEchantillon(propre);
+    const objet = verdictA(propre, i).objet_note.id;
+    const retire = notationJuge("j2", { ...surObjet(objet), ...inexacte(["fabrication"]) });
+    const notations = propre.notations.map((n) => (n.id === retire.id ? retire : n));
+    expect(codes({ ...propre, notations })).toEqual([]);
+  });
+
+  it("une notation source qui porte sur un autre objet", () => {
+    const propre = runPropre(runDeNotation());
+    const [a, b] = [indiceHorsEchantillon(propre), propre.verdicts.findIndex((v, j) => j > indiceHorsEchantillon(propre) && !v.dans_echantillon_humain)];
+    const etrangere = premiere(verdictA(propre, b).notations_sources);
+    const entree = avecVerdict(propre, a, (v) => ({ ...v, notations_sources: [premiere(v.notations_sources), etrangere] }));
+    expect(codes(entree)).toEqual(["source_hors_objet_ou_run"]);
+  });
+
+  it("une notation source qui porte sur un autre run", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const source = premiere(verdictA(propre, i).notations_sources);
+    const notations = propre.notations.map((n) => (n.id === source ? { ...n, run_id: ulid("autre-run") } : n));
+    expect(codes({ ...propre, notations })).toEqual(["source_hors_objet_ou_run"]);
+  });
+
+  it("une notation source introuvable", () => {
+    const propre = runPropre(runDeNotation());
+    const entree = avecVerdict(propre, 0, (v) => ({ ...v, notations_sources: [...v.notations_sources, ulid("fantome")] }));
+    expect(codes(entree)).toEqual(["source_introuvable"]);
+  });
+
+  it("un verdict dans l'échantillon dont l'appartenance ne correspond pas au tirage rejoué", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const entree = avecVerdict(propre, i, (v) => ({ ...v, dans_echantillon_humain: true, mode_resolution: "tranche_humain" }));
+    expect(codes(entree)).toContain("appartenance_echantillon_non_rejouee");
+  });
+
+  it("une réponse tirée dont le verdict se dit hors échantillon", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceDansEchantillon(propre);
+    const entree = avecVerdict(propre, i, (v) => ({ ...v, dans_echantillon_humain: false }));
+    expect(codes(entree)).toEqual(["appartenance_echantillon_non_rejouee"]);
+  });
+
+  it("un échantillon tiré à 10 % alors qu'un juge est retiré : l'appartenance rejouée à 25 % diverge", () => {
+    const aDix = runPropre(runDeNotation(["j2"], { taux_echantillon_humain: 0.1 }));
+    const rejoue = { ...aDix, run: runDeNotation(["j2"]) };
+    expect(codes(rejoue)).toContain("appartenance_echantillon_non_rejouee");
+  });
+
+  it("une notation d'humain absente là où le mode l'exige", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const entree = avecVerdict(propre, i, (v) => ({ ...v, mode_resolution: "tranche_humain" }));
+    expect(codes(entree)).toEqual(["notation_humaine_absente"]);
+  });
+
+  it("un verdict d'échantillon qui ne cite qu'un humain", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceDansEchantillon(propre);
+    const verdict = verdictA(propre, i);
+    const unHumain = verdict.notations_sources.filter((id) => propre.notations.find((n) => n.id === id)?.notateur.id !== "a2");
+    const entree = avecVerdict(propre, i, (v) => ({ ...v, notations_sources: unHumain }));
+    expect(codes(entree)).toEqual(["notation_humaine_absente"]);
+  });
+
+  it("un taux d'échantillon incohérent avec le retrait", () => {
+    const propre = runPropre(runDeNotation());
+    const run = { ...propre.run, taux_echantillon_humain: 0.25 as const };
+    expect(codes({ ...propre, run, verdicts: [] })).toEqual(["taux_echantillon_incoherent"]);  });
+});

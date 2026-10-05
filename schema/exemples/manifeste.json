@@ -406,6 +406,19 @@
       "regle_protocole": "§7, sourçage"
     },
     {
+      "objet": "notation",
+      "fichier": "notation/valide-05-humain-extrait-invalide.json",
+      "attendu": "valide",
+      "motif": "Humain appelé hors échantillon parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : la notation du juge est invalidée et la réponse est notée par un humain). Motif extrait_invalide, décision D15 de l'auteur."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-08-extrait-invalide-par-un-juge.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-05 portée par un juge automatique. §7 : un extrait invalide renvoie la réponse à un HUMAIN ; un juge sous le motif extrait_invalide noterait à sa place (D15).",
+      "regle_protocole": "§7, règle de décision"
+    },
+    {
       "objet": "verdict",
       "fichier": "verdict/valide-01-accord-des-deux-juges.json",
       "attendu": "valide",

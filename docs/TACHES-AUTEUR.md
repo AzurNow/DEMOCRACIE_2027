@@ -230,6 +230,26 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   sortent aussi des chiffres d'accord ; le contrefactuel outil permute les noms dans le texte des
   réponses. »
 
+- [ ] **Écrire aussi en 0.16 : D15 (§7)**, tranchée le 2026-10-05 et codée par la PR #79. Texte
+      proposé :
+
+  Dans « Juges automatiques », après « (texte, liens, citations) » : « , chaque citation réduite à
+  son lien et à son texte, sous une forme commune à tous les éditeurs ».
+
+  Dans « Règle de décision », à la fin du premier point (« Accord des deux juges : note retenue. ») :
+  « Si les deux notations s'accordent sur ce que lisent les métriques primaires mais diffèrent sur
+  un autre champ que porte la note retenue (motif d'inexactitude, citation d'une source, existence
+  d'un lien), la réponse est notée par un humain. »
+
+  Dans le point sur l'échantillon, après « de chaque run » : « , parmi les réponses obtenues, sa
+  taille arrondie à l'entier supérieur ».
+
+  Dans le point sur l'extrait justificatif, ajouter : « la notation humaine porte alors ce motif ».
+
+  Ligne de révision, à fusionner : « Section 7 : les citations transmises au juge sont projetées ;
+  un accord partiel des juges est tranché par un humain ; l'échantillon humain est tiré parmi les
+  réponses obtenues, arrondi au supérieur. »
+
 - [ ] **Pour le premier `run:live` (lot interrogation)** : fournir, pour chaque outil, un corps
       d'erreur de modération authentique (documentation de l'éditeur ou appel d'essai archivé), qui
       servira de test à son adaptateur (`docs/DETTE.md`, 2026-10-02, lot interrogation, point 1).
