@@ -47,7 +47,11 @@
 
 import { differenceAppariee, type DifferenceTaux, type OptionsBootstrap, type Statistique } from "./bootstrap.ts";
 import { filtrerContexteRun, type UniteAnalyse } from "./filtre.ts";
-import type { CategorieRetenue, Drapeau, Notation, Run, SourcageRetenu, Ulid } from "./types.ts";
+import { lireNote, memeNote, type NoteLue } from "./note-lue.ts";
+import type { Notation, Run, Ulid } from "./types.ts";
+
+/** Réexportée : sa définition vit dans `note-lue.ts`, avec l'égalité de deux notes. */
+export { sourcageDeNotation } from "./note-lue.ts";
 
 export type Recalcul =
   | "echantillon_humain"
@@ -100,14 +104,6 @@ export class EchantillonHumainIncoherent extends Error {
 const MOTIF_ECHANTILLON = "echantillon_aleatoire_10";
 const MOTIF_ARBITRAGE = "arbitrage_echantillon_10";
 
-/** Ce que les métriques primaires lisent d'une note : c'est aussi ce sur quoi deux humains s'accordent. */
-interface NoteLue {
-  readonly categorie: CategorieRetenue;
-  readonly drapeaux: readonly Drapeau[];
-  readonly obsolescence_fraiche: boolean | null;
-  readonly sourcage: SourcageRetenu;
-}
-
 interface NotationsHumaines {
   readonly echantillon: Notation[];
   readonly arbitrages: Notation[];
@@ -126,21 +122,6 @@ export function recalculEchantillonHumain(
   return unites
     .filter((u) => u.dans_echantillon_humain)
     .map((u) => ({ ...u, ...noteHumaineRetenue(u.reponse_id, parReponse.get(u.reponse_id)) }));
-}
-
-/**
- * Traduction d'une notation individuelle vers les trois booléens de `sourcage_retenu` (§7, §8 :
- * « au moins une source existante qui soutient l'affirmation ») : `au_moins_un_lien_existant` =
- * au moins un lien dont le test HTTP dit `existe` ; `au_moins_un_lien_soutenant` = au moins un
- * MÊME lien qui existe ET soutient. Un lien mort qui « soutient » ne soutient rien.
- */
-export function sourcageDeNotation(notation: Notation): SourcageRetenu {
-  const liens = notation.sourcage.liens;
-  return {
-    cite: notation.sourcage.cite,
-    au_moins_un_lien_existant: liens.some((l) => l.verdict_existence === "existe"),
-    au_moins_un_lien_soutenant: liens.some((l) => l.verdict_existence === "existe" && l.verdict_soutien === "soutient"),
-  };
 }
 
 function estLueParRecalculA(notation: Notation): boolean {
@@ -209,37 +190,6 @@ function arbitrage(reponse_id: Ulid, arbitrages: readonly Notation[], notees: re
     throw new EchantillonHumainIncoherent(reponse_id, `l'arbitre ${arbitre.notateur.id} n'est pas un troisième humain.`);
   }
   return arbitre;
-}
-
-function lireNote(notation: Notation): NoteLue {
-  return {
-    categorie: notation.categorie,
-    drapeaux: notation.drapeaux,
-    obsolescence_fraiche: notation.obsolescence_fraiche === undefined ? null : notation.obsolescence_fraiche,
-    sourcage: sourcageDeNotation(notation),
-  };
-}
-
-function memeNote(a: NoteLue, b: NoteLue): boolean {
-  return (
-    a.categorie === b.categorie &&
-    memesDrapeaux(a.drapeaux, b.drapeaux) &&
-    a.obsolescence_fraiche === b.obsolescence_fraiche &&
-    memeSourcage(a.sourcage, b.sourcage)
-  );
-}
-
-function memesDrapeaux(a: readonly Drapeau[], b: readonly Drapeau[]): boolean {
-  return a.length === b.length && a.every((drapeau) => b.includes(drapeau));
-}
-
-/**
- * Conformité n° 43 (décision de l'auteur du 2026-10-02, texte en 0.15) : seul le booléen que lisent
- * les métriques primaires (`metriques.ts:sourcageValide`) départage deux humains. Si une métrique
- * primaire venait à lire un autre booléen du sourçage, il entrerait ici aussi.
- */
-function memeSourcage(a: SourcageRetenu, b: SourcageRetenu): boolean {
-  return a.au_moins_un_lien_soutenant === b.au_moins_un_lien_soutenant;
 }
 
 /**

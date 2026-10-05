@@ -1,0 +1,96 @@
+/**
+ * Fabriques des tests du noyau de notation. Notations conformes à `schema/notation.schema.json`
+ * par défaut (juge exacte, sans lien) : chaque test pose ce qui compte. Aucun contenu réel.
+ */
+
+import { empreinte, ulid } from "../analysis/fabriques.ts";
+import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
+import type { MotifNotation } from "../../analysis/types.ts";
+import type { LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
+
+export const RUN_ID = ulid("run-notation");
+export const REPONSE_ID = ulid("reponse-notation");
+export const ITEM_REF = { item_id: ulid("item-notation"), item_version: 1, item_empreinte: empreinte("item-notation") };
+
+type Surcharges = { -readonly [K in keyof NotationIndividuelle]?: NotationIndividuelle[K] };
+
+/** L'objet noté que posent les surcharges, sinon la réponse de test : il entre dans l'identifiant. */
+function objetDe(surcharges: Surcharges): string {
+  return surcharges.objet_note === undefined ? REPONSE_ID : surcharges.objet_note.id;
+}
+
+export function notationJuge(juge_id: string, surcharges: Surcharges = {}): NotationIndividuelle {
+  return {
+    id: ulid(`notation-${juge_id}-${objetDe(surcharges)}`),
+    run_id: RUN_ID,
+    contexte: "run",
+    objet_note: { type: "reponse", id: REPONSE_ID },
+    notateur: {
+      type: "juge",
+      id: juge_id,
+      famille_modele: `famille-${juge_id}`,
+      modele: `famille-${juge_id}/modele`,
+      version_prompt: "prompts/judge-primaire-1.0.0",
+      a_vu_identite_outil: false,
+    },
+    gabarit: "Q-DIR",
+    references_item: [ITEM_REF],
+    categorie: "exacte",
+    drapeaux: [],
+    sourcage: { cite: false, liens: [] },
+    date: "2026-12-03T11:00:00+01:00",
+    motif_notation: "notation_juge",
+    ...surcharges,
+  };
+}
+
+export function notationHumaine(
+  annotateur: string,
+  motif: MotifNotation,
+  surcharges: Surcharges = {},
+): NotationIndividuelle {
+  return {
+    id: ulid(`notation-${annotateur}-${motif}-${objetDe(surcharges)}`),
+    run_id: RUN_ID,
+    contexte: "run",
+    objet_note: { type: "reponse", id: REPONSE_ID },
+    notateur: { type: "humain", id: annotateur, sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false },
+    gabarit: "Q-DIR",
+    references_item: [ITEM_REF],
+    categorie: "exacte",
+    drapeaux: [],
+    sourcage: { cite: false, liens: [] },
+    date: "2026-12-05T09:30:00+01:00",
+    motif_notation: motif,
+    ...surcharges,
+  };
+}
+
+/** Inexacte, avec un extrait qui figure dans `REPONSE_PROJETEE`. */
+export function inexacte(drapeaux: NotationIndividuelle["drapeaux"] = []): Surcharges {
+  return {
+    categorie: "inexacte",
+    drapeaux,
+    motif_inexactitude: "position_inventee",
+    extrait_justificatif: { provenance: "reponse", texte: "supprimer la taxe", verifie_deterministe: true },
+  };
+}
+
+export const REPONSE_PROJETEE = "Le candidat veut supprimer la taxe foncière, selon la presse.";
+
+export function lien(existence: LienNotation["verdict_existence"], soutien: LienNotation["verdict_soutien"], url = "https://exemple.invalid/a"): LienNotation {
+  return { url_citee: url, date_test: "2026-12-03T11:05:00+01:00", verdict_existence: existence, verdict_soutien: soutien };
+}
+
+export function runDeNotation(retires: readonly string[] = [], surcharges: Partial<RunDeNotation> = {}): RunDeNotation {
+  return {
+    id: RUN_ID,
+    juges: ["j1", "j2"].map((juge_id) => ({ juge_id, retire: retires.includes(juge_id) })),
+    taux_echantillon_humain: retires.length > 0 ? 0.25 : 0.1,
+    graines: {
+      echantillon_humain: { valeur: 20261201, ...GENERATEUR_DU_TIRAGE },
+      contrefactuel: { valeur: 20261202, ...GENERATEUR_DU_TIRAGE },
+    },
+    ...surcharges,
+  };
+}
