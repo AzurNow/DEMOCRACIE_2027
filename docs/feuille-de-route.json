@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-03",
+  "date_maj": "2026-10-05",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -212,6 +212,19 @@
       "recommandation": "Option 1.",
       "retenu": "Option 1 : les notations d'un juge retiré sont écartées aussi de l'accord juges-humains et du kappa des juges publiés avec le run. Si un juge est retiré en cours de run, l'accord ne porte plus que sur le juge restant, ce que le texte de la 0.16 doit dire. À coder au lot notation avec le contrôle croisé du n° 18.",
       "date_decision": "2026-10-03"
+    },
+    {
+      "id": "D14",
+      "statut": "tranchee",
+      "question": "Quatre points du §7 que le protocole ne tranche pas, rencontrés en préparant le lot notation : ordre du test contrefactuel et de l'échantillon de 25 %, forme de la permutation des candidats, ce qu'est un changement de note, et contrefactuel outil.",
+      "contexte": "Le §7 fait passer l'échantillon humain à 25 % après un retrait sans dire quand ni comment il se rapporte au 10 % ; il permute « les noms de candidats » sans dire lesquels ni sur quelles réponses ; il retire un juge au-delà de 3 % de notes changées sans définir le changement ; il permute les noms d'outils « dans les métadonnées », que le juge ne reçoit jamais.",
+      "options": [
+        "Contrefactuel avant la notation de masse, 25 % emboîté sur le 10 % ; dérangement à graine dérivée par remplacement exact du libellé et du nom seul, 200 réponses tirées parmi celles qui nomment un candidat ; changement = tout ce que lisent les métriques primaires ; contrefactuel outil par permutation dans le texte des réponses.",
+        "Variantes moins restrictives : ordre libre ou tirages indépendants ; toutes réponses ou échange par paires ; catégorie seule ; contrefactuel outil reporté."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). À coder au lot notation.",
+      "date_decision": "2026-10-05"
     }
   ],
   "lots": [
@@ -419,9 +432,10 @@
       ],
       "decisions": [
         "D13",
+        "D14",
         "D3"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte."
     },
     {
       "id": "analyse",

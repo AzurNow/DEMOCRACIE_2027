@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-03.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-05.
 
 ## Décisions en attente
 
@@ -27,6 +27,10 @@ Aucune décision en attente.
 ### D13 — Après le retrait d'un juge (§7, conformité n° 18), « ses notations sont écartées de tout le run » vaut-il aussi pour l'accord juges-humains et le kappa des juges publiés avec le run ?
 
 **Décision du 2026-10-03 :** Option 1 : les notations d'un juge retiré sont écartées aussi de l'accord juges-humains et du kappa des juges publiés avec le run. Si un juge est retiré en cours de run, l'accord ne porte plus que sur le juge restant, ce que le texte de la 0.16 doit dire. À coder au lot notation avec le contrôle croisé du n° 18.
+
+### D14 — Quatre points du §7 que le protocole ne tranche pas, rencontrés en préparant le lot notation : ordre du test contrefactuel et de l'échantillon de 25 %, forme de la permutation des candidats, ce qu'est un changement de note, et contrefactuel outil.
+
+**Décision du 2026-10-05 :** Option 1 sur les quatre points. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). À coder au lot notation.
 
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
