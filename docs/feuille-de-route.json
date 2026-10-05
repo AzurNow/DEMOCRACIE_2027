@@ -225,6 +225,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md (un agent n'écrit pas le protocole). À coder au lot notation.",
       "date_decision": "2026-10-05"
+    },
+    {
+      "id": "D15",
+      "statut": "tranchee",
+      "question": "Cinq points laissés ouverts par la PR A du lot notation : accord partiel des notations, citations transmises au juge, motif de l'humain appelé sur un extrait refusé, population et arrondi de l'échantillon humain, identifiant du candidat dans la charge.",
+      "contexte": "Deux notations peuvent concorder au sens de D14 (3) et différer sur le motif d'inexactitude ou les booléens de sourçage que porte le verdict ; les objets de citation des éditeurs ont une forme qui trahit l'outil ; le schéma n'a pas de motif pour l'humain appelé sur un extrait refusé ; le §7 dit « 10 % des réponses » sans arrondi ni population ; la charge porte candidat_id.",
+      "options": [
+        "Accord partiel → humain (accord_sans_note_commune) ; citations projetées en { url, texte } ; motif extrait_invalide ajouté au schéma ; échantillon parmi les réponses obtenues, taille arrondie au supérieur ; candidat_id transmis et permuté au contrefactuel (PR B).",
+        "Variantes : sourçage le plus défavorable, citations telles quelles ou liens seuls, motif desaccord_juges réutilisé, arrondi à l'entier proche."
+      ],
+      "recommandation": "Option 1 sur les cinq points.",
+      "retenu": "Option 1 sur les cinq points, codée dans la PR #79. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
+      "date_decision": "2026-10-05"
     }
   ],
   "lots": [
@@ -433,9 +446,10 @@
       "decisions": [
         "D13",
         "D14",
+        "D15",
         "D3"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15."
     },
     {
       "id": "analyse",
