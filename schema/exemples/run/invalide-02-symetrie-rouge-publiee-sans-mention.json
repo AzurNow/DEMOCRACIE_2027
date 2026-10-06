@@ -232,7 +232,11 @@
       "famille_modele": "famille-x",
       "modele": "famille-x/modele-juge-1",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.012,
+      "taux_changement_contrefactuel": 0.01,
+      "changements_contrefactuel": {
+        "numerateur": 2,
+        "denominateur": 200
+      },
       "kappa_juge_humain": 0.83,
       "retire": false
     },
@@ -241,12 +245,39 @@
       "famille_modele": "famille-y",
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.021,
+      "taux_changement_contrefactuel": 0.02,
+      "changements_contrefactuel": {
+        "numerateur": 4,
+        "denominateur": 200
+      },
       "kappa_juge_humain": 0.78,
       "retire": false
     }
   ],
   "taux_echantillon_humain": 0.1,
+  "contrefactuel_candidats": {
+    "etat": "termine",
+    "eligibles": 480,
+    "taille_visee": 200,
+    "taille": 200,
+    "sous_effectif": false,
+    "correspondances": {
+      "cand-a": "cand-d",
+      "cand-b": "cand-a",
+      "cand-d": "cand-b"
+    },
+    "cle_graine": [
+      "contrefactuel",
+      "noms_candidats",
+      "sous_ensemble"
+    ],
+    "cle_graine_derangement": [
+      "contrefactuel",
+      "noms_candidats",
+      "derangement"
+    ],
+    "mentions_residuelles": 0
+  },
   "kappa_paire_juges": 0.81,
   "symetrie": {
     "statut_global": "rouge",

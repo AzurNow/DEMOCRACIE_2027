@@ -347,8 +347,9 @@ describe("exemples de schema/exemples/", () => {
   // 188 → 192 : décisions de l'auteur du 2026-10-02 (suite du lot interrogation), un valide et trois invalides de réponse (brut_texte, brut_octets_sha256, requete.entetes).
   // 192 → 194 : décision D15 de l'auteur (lot notation), une notation valide et une invalide sous le motif extrait_invalide.
   // 194 → 196 : décision D17 de l'auteur, une notation et un verdict invalides portant la fraîcheur sans le drapeau obsolescence.
-  it("charge les 196 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(196);
+  // 196 → 202 : lot notation (entrées-sorties, §7), deux valides et quatre invalides de run (test contrefactuel publié : bloc, taux et effectifs des juges).
+  it("charge les 202 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(202);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

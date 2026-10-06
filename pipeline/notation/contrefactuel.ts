@@ -44,7 +44,7 @@ import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import type { NotationIndividuelle, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 
 /** §7 : « au-delà de 3 % », en fraction exacte. */
-const SEUIL_RETRAIT = { numerateur: 3, denominateur: 100 } as const;
+export const SEUIL_RETRAIT = { numerateur: 3, denominateur: 100 } as const;
 
 export interface PaireContrefactuelle {
   /** La réponse d'origine, membre du sous-ensemble. */

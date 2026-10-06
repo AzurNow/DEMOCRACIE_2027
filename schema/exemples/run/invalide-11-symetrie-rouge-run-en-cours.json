@@ -232,7 +232,11 @@
       "famille_modele": "famille-x",
       "modele": "famille-x/modele-juge-1",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.012,
+      "taux_changement_contrefactuel": 0.01,
+      "changements_contrefactuel": {
+        "numerateur": 2,
+        "denominateur": 200
+      },
       "kappa_juge_humain": 0.83,
       "retire": false
     },
@@ -241,7 +245,11 @@
       "famille_modele": "famille-y",
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.021,
+      "taux_changement_contrefactuel": 0.02,
+      "changements_contrefactuel": {
+        "numerateur": 4,
+        "denominateur": 200
+      },
       "kappa_juge_humain": 0.78,
       "retire": false
     }

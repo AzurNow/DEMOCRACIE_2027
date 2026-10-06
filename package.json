@@ -26,6 +26,7 @@
     "contester": "node --experimental-strip-types outils/contester.ts",
     "panel": "node --experimental-strip-types outils/panel.ts",
     "diagnostics": "node --experimental-strip-types outils/diagnostics.ts",
+    "notation:controle": "node --experimental-strip-types outils/notation-controle.ts",
     "proprete": "node --experimental-strip-types outils/proprete.ts",
     "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts",
     "collecte": "uv run python -m pipeline.collecte",

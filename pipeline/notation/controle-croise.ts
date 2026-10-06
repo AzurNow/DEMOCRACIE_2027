@@ -10,13 +10,18 @@
  * population du tirage, reçue en entrée : un verdict en attente n'existe pas encore, les verdicts
  * ne la donnent donc pas), de `run.graines.echantillon_humain` et de `run.taux_echantillon_humain`,
  * avec `echantillons.ts:tirerEchantillonHumain`, le même tirage que celui qui a désigné les humains.
+ *
+ * Le résultat publié du test contrefactuel (lot notation, PR C) est relu juge par juge, quand il
+ * est présent : le retrait se décide sur les effectifs, en entiers (`SEUIL_RETRAIT` de
+ * `contrefactuel.ts`, « au-delà de 3 % » strict), et le taux publié doit être leur quotient exact.
  */
 
 import type { Ulid } from "../../analysis/types.ts";
+import { SEUIL_RETRAIT } from "./contrefactuel.ts";
 import { jugesDuRun } from "./decision.ts";
 import { tirerEchantillonHumain } from "./echantillons.ts";
 import { porteDrapeauGrave } from "./note-retenue.ts";
-import type { ModeResolution, NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
+import type { JugeDuRun, ModeResolution, NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
 
 export const CODES_VIOLATION = [
   "source_introuvable",
@@ -27,6 +32,9 @@ export const CODES_VIOLATION = [
   "appartenance_echantillon_non_rejouee",
   "notation_humaine_absente",
   "taux_echantillon_incoherent",
+  "retrait_contrefactuel_incoherent",
+  "taux_contrefactuel_incoherent",
+  "denominateur_contrefactuel_incoherent",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
 
@@ -75,9 +83,13 @@ export function controleCroise(entree: EntreeControleCroise): readonly Violation
   return [...violationsDuRun(entree.run), ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx))];
 }
 
-/** §7 : le taux passe à 25 % quand un juge est retiré, et à ce seul cas. */
 function violationsDuRun(run: RunDeNotation): Violation[] {
   jugesDuRun(run, run.id);
+  return [...tauxEchantillon(run), ...run.juges.flatMap((juge) => [...violationsContrefactuelles(juge), ...denominateurContrefactuel(juge, run)])];
+}
+
+/** §7 : le taux passe à 25 % quand un juge est retiré, et à ce seul cas. */
+function tauxEchantillon(run: RunDeNotation): Violation[] {
   const retrait = run.juges.some((j) => j.retire);
   const attendu = retrait ? 0.25 : 0.1;
   if (run.taux_echantillon_humain === attendu) return [];
@@ -85,6 +97,49 @@ function violationsDuRun(run: RunDeNotation): Violation[] {
     {
       code: "taux_echantillon_incoherent",
       detail: `taux_echantillon_humain ${run.taux_echantillon_humain} alors que ${retrait ? "un juge est retiré" : "aucun juge n'est retiré"} (attendu ${attendu}).`,
+    },
+  ];
+}
+
+/**
+ * §7 : « au-delà de 3 %, le juge concerné est retiré du run ». Un juge sans effectifs publiés (test
+ * pas encore fait, ou indéfini) n'a rien à contrôler ici ; le schéma exige le taux et ses
+ * effectifs ensemble, et les exige d'un test terminé.
+ */
+function violationsContrefactuelles(juge: JugeDuRun): Violation[] {
+  const changements = juge.changements_contrefactuel;
+  if (changements === undefined) return [];
+  const { numerateur, denominateur } = changements;
+  const violations: Violation[] = [];
+  const auDela = numerateur * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * denominateur;
+  if (juge.retire !== auDela) {
+    violations.push({
+      code: "retrait_contrefactuel_incoherent",
+      detail: `juge ${juge.juge_id} : ${numerateur} changements sur ${denominateur} ${auDela ? "dépassent" : "ne dépassent pas"} 3 %, et retire vaut ${String(juge.retire)}.`,
+    });
+  }
+  if (juge.taux_changement_contrefactuel !== numerateur / denominateur) {
+    violations.push({
+      code: "taux_contrefactuel_incoherent",
+      detail: `juge ${juge.juge_id} : taux_changement_contrefactuel ${String(juge.taux_changement_contrefactuel)} au lieu de ${numerateur}/${denominateur}.`,
+    });
+  }
+  return violations;
+}
+
+/**
+ * Le dénominateur du taux d'un juge est la taille du sous-ensemble publiée dans
+ * `contrefactuel_candidats.taille`. Contrôlé quand les deux sont présents ; le schéma exige le bloc
+ * d'un run publié.
+ */
+function denominateurContrefactuel(juge: JugeDuRun, run: RunDeNotation): Violation[] {
+  const changements = juge.changements_contrefactuel;
+  const bloc = run.contrefactuel_candidats;
+  if (changements === undefined || bloc === undefined || changements.denominateur === bloc.taille) return [];
+  return [
+    {
+      code: "denominateur_contrefactuel_incoherent",
+      detail: `juge ${juge.juge_id} : ${changements.denominateur} paires au dénominateur, pour un sous-ensemble de ${bloc.taille} réponse(s) (contrefactuel_candidats.taille).`,
     },
   ];
 }

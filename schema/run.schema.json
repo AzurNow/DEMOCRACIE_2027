@@ -664,6 +664,25 @@
             "minimum": 0,
             "maximum": 1
           },
+          "changements_contrefactuel": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "numerateur",
+              "denominateur"
+            ],
+            "description": "§7 : les effectifs exacts du taux de changement au test contrefactuel, dont taux_changement_contrefactuel est le quotient. Le retrait (« au-delà de 3 % ») se décide sur eux, en entiers : numerateur × 100 > 3 × denominateur. Le contrôle croisé (pipeline/notation/controle-croise.ts) vérifie le quotient et le retrait.",
+            "properties": {
+              "numerateur": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "denominateur": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
           "kappa_juge_humain": {
             "type": "number",
             "minimum": -1,
@@ -708,7 +727,15 @@
               ]
             }
           }
-        ]
+        ],
+        "dependentRequired": {
+          "taux_changement_contrefactuel": [
+            "changements_contrefactuel"
+          ],
+          "changements_contrefactuel": [
+            "taux_changement_contrefactuel"
+          ]
+        }
       }
     },
     "taux_echantillon_humain": {
@@ -718,6 +745,85 @@
         0.25
       ],
       "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
+    },
+    "contrefactuel_candidats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "etat",
+        "eligibles",
+        "taille_visee",
+        "taille",
+        "sous_effectif",
+        "correspondances",
+        "cle_graine",
+        "cle_graine_derangement",
+        "mentions_residuelles"
+      ],
+      "description": "§7 : le test contrefactuel des noms de candidats, publié avec le run (« Le taux de changement est publié »). Décisions D14 et D16 de l'auteur (textes proposés pour la 0.16). Rempli par pipeline/notation/publication-contrefactuel.ts à partir du résultat de pipeline/notation/contrefactuel.ts ; un test en attente (paire incomplète) ne se publie pas. Le taux de chaque juge vit dans juges[].taux_changement_contrefactuel, avec ses effectifs exacts dans juges[].changements_contrefactuel. Le retrait des deux juges (D16 (3)) ne crée aucun champ : le run est invalide, avec la raison dans invalidation.motif.",
+      "properties": {
+        "etat": {
+          "type": "string",
+          "enum": [
+            "termine",
+            "indefini"
+          ],
+          "description": "termine : chaque paire a ses deux notations par juge, le taux de chaque juge est calculé. indefini : aucune réponse éligible (aucune ne nomme un candidat), le sous-ensemble est vide et aucun taux n'existe, jamais 0 %."
+        },
+        "eligibles": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "D14 (2) : réponses obtenues du run dont la réponse ou l'item nomme au moins un candidat, parmi lesquelles le sous-ensemble est tiré."
+        },
+        "taille_visee": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "§7 : 200 réponses (pipeline/notation/echantillons.ts, TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL)."
+        },
+        "taille": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Taille effective du sous-ensemble : le dénominateur du taux de chaque juge."
+        },
+        "sous_effectif": {
+          "type": "boolean",
+          "description": "Moins d'éligibles que la taille visée : tous sont pris, et c'est dit, jamais en silence."
+        },
+        "correspondances": {
+          "type": "object",
+          "minProperties": 2,
+          "propertyNames": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+          },
+          "additionalProperties": {
+            "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court"
+          },
+          "description": "D14 (2) : le dérangement des candidats du périmètre, candidat_id source → candidat_id image, un seul pour tout le run (pipeline/notation/derangement.ts, correspondancesDe)."
+        },
+        "cle_graine": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "§7 : la clé lisible de la graine du sous-ensemble, dérivée de graines.contrefactuel comme en section 8 (pipeline/notation/echantillons.ts, CLE_SOUS_ENSEMBLE_CONTREFACTUEL)."
+        },
+        "cle_graine_derangement": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "D14 (2) : la clé lisible de la graine du dérangement des candidats, dérivée de graines.contrefactuel comme en section 8 (pipeline/notation/derangement.ts, CLE_DERANGEMENT_CANDIDATS). Publiée pour que le dérangement se rejoue, et pas seulement se lise dans correspondances."
+        },
+        "mentions_residuelles": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total, sur les paires du sous-ensemble, des formes de candidat restées en clair après permutation (pipeline/notation/permutation.ts) : publié, jamais corrigé."
+        }
+      }
     },
     "kappa_paire_juges": {
       "type": "number",
@@ -1444,6 +1550,91 @@
                   }
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§7 : « Le taux de changement est publié. » Un run publié, même provisoire, publie le test contrefactuel des noms de candidats (D14, D16). Optionnel tant que le run est planifié ou en cours.",
+      "if": {
+        "properties": {
+          "statut": {
+            "enum": [
+              "publie",
+              "publie_provisoire"
+            ]
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "required": [
+          "contrefactuel_candidats"
+        ]
+      }
+    },
+    {
+      "$comment": "§7 : un test indéfini (aucune réponse éligible) n'a pas de taux ; aucun juge n'en publie, ni 0 %, ni ses effectifs.",
+      "if": {
+        "properties": {
+          "contrefactuel_candidats": {
+            "properties": {
+              "etat": {
+                "const": "indefini"
+              }
+            },
+            "required": [
+              "etat"
+            ]
+          }
+        },
+        "required": [
+          "contrefactuel_candidats"
+        ]
+      },
+      "then": {
+        "properties": {
+          "juges": {
+            "items": {
+              "properties": {
+                "taux_changement_contrefactuel": false,
+                "changements_contrefactuel": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§7 : un test terminé publie le taux de chaque juge, avec ses effectifs.",
+      "if": {
+        "properties": {
+          "contrefactuel_candidats": {
+            "properties": {
+              "etat": {
+                "const": "termine"
+              }
+            },
+            "required": [
+              "etat"
+            ]
+          }
+        },
+        "required": [
+          "contrefactuel_candidats"
+        ]
+      },
+      "then": {
+        "properties": {
+          "juges": {
+            "items": {
+              "required": [
+                "taux_changement_contrefactuel",
+                "changements_contrefactuel"
+              ]
             }
           }
         }

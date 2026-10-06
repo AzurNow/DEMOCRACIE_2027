@@ -137,10 +137,22 @@ export interface VerdictProduit {
   readonly date: Instant;
 }
 
+/** Les effectifs exacts du taux de changement au test contrefactuel (`run.schema.json`). */
+export interface ChangementsContrefactuel {
+  readonly numerateur: number;
+  readonly denominateur: number;
+}
+
 /** Un juge du run (`run.schema.json#/properties/juges`), réduit à ce que la notation lit. */
 export interface JugeDuRun {
   readonly juge_id: IdentifiantCourt;
   readonly retire: boolean;
+  /**
+   * Le résultat publié du test contrefactuel, présent une fois le test terminé, absent avant ou
+   * s'il est indéfini (le schéma exige les deux champs ensemble). Lu par le contrôle croisé.
+   */
+  readonly taux_changement_contrefactuel?: number;
+  readonly changements_contrefactuel?: ChangementsContrefactuel;
 }
 
 /** `run.schema.json#/properties/taux_echantillon_humain` : stocké, jamais supposé. */
@@ -170,4 +182,9 @@ export interface RunDeNotation {
     readonly echantillon_humain: GraineTirage;
     readonly contrefactuel: GraineTirage;
   };
+  /**
+   * `run.schema.json#/properties/contrefactuel_candidats`, réduit à la taille du sous-ensemble :
+   * le dénominateur du taux de chaque juge. Absent tant que le test n'est pas publié.
+   */
+  readonly contrefactuel_candidats?: { readonly taille: number };
 }
