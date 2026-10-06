@@ -291,6 +291,16 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : l'humain ne voit pas la note des juges ; le
   troisième humain de l'échantillon note à l'aveugle ; le jeu d'or a son propre tirage. »
 
+- [ ] **Écrire aussi en 0.16 : D19 (§7, test contrefactuel et sourçage)**, tranchée le
+      2026-10-06. Texte proposé, dans « Test contrefactuel de biais du juge », après la phrase sur
+      le sous-ensemble : « Une réponse refusée par l'outil n'y entre pas : elle n'a pas de texte à
+      permuter. » ; dans « Sourçage », après « Un lien mort ne soutient jamais rien » : « : quand
+      le test HTTP dit un lien mort, son soutien est noté non applicable, quelle que soit la note
+      du juge ».
+
+  Ligne de révision, à fusionner : « Section 7 : un refus n'entre pas au test contrefactuel ; le
+  soutien d'un lien mort est non applicable, fixé par le test HTTP. »
+
 - [ ] **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
       HTTP déterministe de l'existence des liens cités, et aucun code ne le fait. C'est un appel
       réseau nouveau, à autoriser, avec ses règles (redirections, délais, « inaccessible »).

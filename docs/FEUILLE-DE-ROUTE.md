@@ -48,6 +48,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-06 :** Option 1 sur les trois points. À coder au lot notation-humaine. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
+### D19 — Deux points laissés ouverts par la PR D du lot notation (#89) : un refus de l'API est-il éligible au test contrefactuel ; que fait la chaîne quand un juge dit « soutient » sur un lien que le test HTTP dit mort ?
+
+**Décision du 2026-10-06 :** Option 1 sur les deux points. Exclusion des refus déjà codée (#89) ; forçage de non_applicable à coder au lot notation. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
+
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.
