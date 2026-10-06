@@ -44,6 +44,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-06 :** Option 1. Schémas de notation et de verdict : obsolescence_fraiche absente sans le drapeau obsolescence (PR #82). Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
+### D18 — Trois points de la notation humaine des réponses que le §7 ne tranche pas : ce que voit l'humain appelé, ce que fait le troisième humain de l'échantillon, le tirage du jeu d'or.
+
+**Décision du 2026-10-06 :** Option 1 sur les trois points. À coder au lot notation-humaine. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
+
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.
@@ -106,6 +110,7 @@ flowchart LR
     lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo<br/>T3"]:::T3
     lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T2"]:::T2
     lot_notation_humaine["notation-humaine<br/>Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or<br/>T0"]:::T0
+    lot_test_liens["test-liens<br/>Test HTTP déterministe de l'existence des liens cités (§7, sourçage)<br/>T0"]:::T0
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
     lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
@@ -124,10 +129,13 @@ flowchart LR
   lot_questions_tirage_symetrie --> lot_interrogation
   lot_interrogation -.-> lot_notation
   lot_perimetre_prompts --> lot_notation
+  lot_test_liens --> lot_notation
   lot_notation --> lot_notation_humaine
+  lot_test_liens --> lot_notation_humaine
   lot_validation_interface -.-> lot_notation_humaine
   lot_analyse --> lot_site
   lot_go_no_go --> lot_site
+  lot_interrogation -.-> lot_test_liens
   classDef T0 fill:#78716c,color:#ffffff,stroke:#44403c
   classDef T1 fill:#b45309,color:#ffffff,stroke:#78350f
   classDef T2 fill:#0369a1,color:#ffffff,stroke:#0c4a6e
@@ -155,8 +163,9 @@ flowchart LR
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T3 | atteint | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
-| notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T2 | bloqué par perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
-| notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T0 | bloqué par notation | sonnet | L | 2 | notation, validation-interface (informe) |
+| notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T2 | bloqué par perimetre-prompts, test-liens | opus | L | 2 | interrogation (informe), perimetre-prompts, test-liens |
+| notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T0 | bloqué par notation, test-liens | sonnet | L | 2 | notation, test-liens, validation-interface (informe) |
+| test-liens | Test HTTP déterministe de l'existence des liens cités (§7, sourçage) | J4 | T0 | débloqué | opus | M | 1 | interrogation (informe) |
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
 | go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T0 | bloqué par analyse, notation | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse, go-no-go | sonnet | M | 2 | analyse, go-no-go |
@@ -199,6 +208,7 @@ flowchart LR
 - interrogation (T3)
 - notation (T2)
 - notation-humaine (T0)
+- test-liens (T0)
 
 ### J5
 
