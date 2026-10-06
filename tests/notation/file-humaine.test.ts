@@ -158,6 +158,7 @@ describe("hors échantillon", () => {
       [notationJuge("j1", sur(H1)), notationJuge("j2", { ...sur(H1), ...inexacte() })],
       [notationJuge("j1", { ...sur(H1), ...inexacte(["fabrication"]) }), notationJuge("j2", { ...sur(H1), ...inexacte(["fabrication"]) })],
       [notationJuge("j1", { ...sur(H1), ...inexacte(), extrait_justificatif: { provenance: "reponse", texte: "absent", verifie_deterministe: true } }), notationJuge("j2", sur(H1))],
+      [notationJuge("j1", { ...sur(H1), ...inexacte() }), notationJuge("j2", { ...sur(H1), ...inexacte(), motif_inexactitude: "position_opposee" })],
     ];
     for (const juges of cas) {
       const [tache] = tachesDe(construireFile(entree(IDS, [...autres, ...juges])), H1);
@@ -169,12 +170,24 @@ describe("hors échantillon", () => {
     }
   });
 
-  it("accord des juges sans note commune : ni tâche, ni motif inventé ; la réponse est rapportée à part", () => {
+  it("accord partiel des juges (D15) : tâche accord_partiel_juges, une place", () => {
     const j1 = notationJuge("j1", { ...sur(H1), ...inexacte() });
     const j2 = notationJuge("j2", { ...sur(H1), ...inexacte(), motif_inexactitude: "position_opposee" });
     const file = construireFile(entree(IDS, [...autres, j1, j2]));
-    expect(tachesDe(file, H1)).toEqual([]);
-    expect(file.sans_motif_admis).toEqual([{ reponse_id: H1, motifs: ["accord_sans_note_commune"] }]);
+    expect(tachesDe(file, H1)).toEqual([{ reponse_id: H1, motif_notation: "accord_partiel_juges", places_restantes: 1, deja_notee_par: [] }]);
+    expect(file.sans_motif_admis).toEqual([]);
+  });
+});
+
+describe("échantillon : deux humains qui s'accordent sans note commune", () => {
+  it("ni tâche, ni arbitrage (§7 retient leur note) : la réponse est rapportée à part", () => {
+    const humains = [
+      notationHumaine("a1", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte() }),
+      notationHumaine("a2", "echantillon_aleatoire_10", { ...sur(DANS), ...inexacte(), motif_inexactitude: "position_opposee" }),
+    ];
+    const file = construireFile(entree(IDS, [...jugesDAccord(IDS), ...humains]));
+    expect(tachesDe(file, DANS)).toEqual([]);
+    expect(file.sans_motif_admis).toEqual([{ reponse_id: DANS, motifs: ["accord_sans_note_commune"] }]);
   });
 });
 

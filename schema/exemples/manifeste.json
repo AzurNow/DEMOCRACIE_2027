@@ -419,6 +419,19 @@
       "regle_protocole": "§7, règle de décision"
     },
     {
+      "objet": "notation",
+      "fichier": "notation/valide-06-humain-accord-partiel-juges.json",
+      "attendu": "valide",
+      "motif": "Humain appelé hors échantillon parce que les deux juges s'accordent sur ce que lisent les métriques primaires mais diffèrent sur un champ que porte la note retenue. Motif accord_partiel_juges, décision D15 de l'auteur (« accord partiel → humain »)."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-10-accord-partiel-par-un-juge.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-06 portée par un juge automatique. D15 : un accord partiel des juges renvoie la réponse à un HUMAIN ; un juge sous le motif accord_partiel_juges noterait à sa place.",
+      "regle_protocole": "§7, règle de décision"
+    },
+    {
       "objet": "verdict",
       "fichier": "verdict/valide-01-accord-des-deux-juges.json",
       "attendu": "valide",

@@ -29,9 +29,11 @@
  *   distincts. Une réponse tirée aussi dans l'échantillon est notée deux fois, sous deux motifs.
  * - **Attend un juge** : `decider` rend « en attente » d'un juge. Ce n'est pas une tâche humaine ;
  *   l'état est rendu à part (`attend_juge`).
- * - **Sans motif admis** : `decider` attend un humain sous `accord_sans_note_commune`, qu'aucun motif
- *   humain du schéma ne couvre ; la file n'en invente pas, et rend ces réponses à part
- *   (`sans_motif_admis`). Question ouverte, posée à l'auteur.
+ * - **Sans motif admis** : dans l'échantillon, deux humains qui s'accordent sans note commune
+ *   laissent `decider` en attente d'un humain (`accord_sans_note_commune`), mais le §7 retient la
+ *   note de deux humains qui s'accordent et n'admet pas d'arbitre entre eux ; la file n'invente pas
+ *   de tâche et rend ces réponses à part (`sans_motif_admis`). Question ouverte, posée à l'auteur.
+ *   Hors échantillon, le même cas est un accord partiel des juges (D15), tâche `accord_partiel_juges`.
  *
  * **Contraintes tenues.** Deux notations d'échantillon par deux annotateurs distincts ; l'arbitre
  * distinct des deux premiers ; deux notations de calibration par deux annotateurs distincts ; un seul
@@ -129,13 +131,15 @@ export function separerCalibration(notations: readonly NotationIndividuelle[]): 
  * Le motif sous lequel l'humain appelé hors échantillon note, selon ce qu'attend `decider`, dans cet
  * ordre de priorité : un extrait invalide exige `extrait_invalide` (`decision.ts:motifsHumainsAdmis`) ;
  * sinon `desaccord_juges` si les juges divergent, même si un drapeau grave est aussi posé ; sinon
- * `erreur_grave`. `decider` admet `desaccord_juges` comme `erreur_grave` sans extrait invalide : le
- * désaccord est retenu, parce qu'il est la raison première de l'appel.
+ * `erreur_grave` ; enfin `accord_partiel_juges` pour un accord des juges sans note commune (D15).
+ * `decider` admet `desaccord_juges` comme `erreur_grave` sans extrait invalide : le désaccord est
+ * retenu, parce qu'il est la raison première de l'appel.
  */
 const MOTIF_HUMAIN_DE_L_ATTENTE: readonly (readonly [MotifAttente, MotifHumain])[] = [
   ["extrait_invalide", "extrait_invalide"],
   ["desaccord_juges", "desaccord_juges"],
   ["drapeau_grave", "erreur_grave"],
+  ["accord_sans_note_commune", "accord_partiel_juges"],
 ];
 
 const MOTIFS_ECHANTILLON: ReadonlySet<MotifHumain> = new Set<MotifHumain>(["echantillon_aleatoire_10", "arbitrage_echantillon_10"]);
@@ -227,15 +231,15 @@ function bilanDeReponse(ctx: Contexte, reponse: ReponseDeLaFile, notations: read
   const { decision, calibration } = separerCalibration(notations);
   const dans = ctx.echantillon.has(id);
   const resultat = decider({ run: ctx.run, objet_note: { type: "reponse", id }, notations: decision, dans_echantillon_humain: dans, textes: reponse.textes, ...VERDICT_JETABLE });
-  const sansMotif = attenteSansMotifAdmis(id, resultat);
+  const sansMotif = dans ? attenteSansMotifAdmis(id, resultat) : [];
   return {
-    taches: [...(dans ? tachesEchantillon(id, decision) : tachesHorsEchantillon(id, resultat, sansMotif.length > 0)), ...tachesJeuOr(ctx, id, calibration)],
+    taches: [...(dans ? tachesEchantillon(id, decision) : tachesHorsEchantillon(id, resultat)), ...tachesJeuOr(ctx, id, calibration)],
     attend_juge: resultat.statut === "en_attente" && resultat.attend === "juge" ? [{ reponse_id: id, motifs: resultat.motifs }] : [],
     sans_motif_admis: sansMotif,
   };
 }
 
-/** `decider` attend un humain sous `accord_sans_note_commune`, qu'aucun motif humain ne couvre. */
+/** Dans l'échantillon, `decider` attend un humain sous `accord_sans_note_commune`, qu'aucun motif humain ne couvre. */
 function attenteSansMotifAdmis(reponse_id: Ulid, resultat: Decision): readonly ReponseEnAttente[] {
   const bloquee = resultat.statut === "en_attente" && resultat.attend === "humain" && resultat.motifs.includes("accord_sans_note_commune");
   return bloquee ? [{ reponse_id, motifs: resultat.motifs }] : [];
@@ -295,8 +299,8 @@ function verifierEchantillon(id: Ulid, premiers: readonly NotationIndividuelle[]
 
 /* ------------------------------------------------------------------ hors échantillon */
 
-function tachesHorsEchantillon(id: Ulid, resultat: Decision, sansMotif: boolean): readonly Tache[] {
-  if (resultat.statut === "verdict" || resultat.attend === "juge" || sansMotif) return [];
+function tachesHorsEchantillon(id: Ulid, resultat: Decision): readonly Tache[] {
+  if (resultat.statut === "verdict" || resultat.attend === "juge") return [];
   const appel = MOTIF_HUMAIN_DE_L_ATTENTE.find(([attente]) => resultat.motifs.includes(attente));
   if (appel === undefined) throw new FileIncoherente(`réponse ${id} : decider attend un humain (${resultat.motifs.join(", ")}) sans motif connu de la file.`);
   return [tache(id, appel[1], 1, [])];
