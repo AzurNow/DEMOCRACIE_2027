@@ -1,0 +1,414 @@
+/**
+ * La chaîne de notation d'un run (§7) : des réponses obtenues aux verdicts, par deux juges.
+ *
+ * C'est l'orchestration du vrai run. Deux éléments seulement lui sont injectés : les juges (le port
+ * `juge.ts`) et le fournisseur d'existences des liens (`fournisseur-existences.ts`). Elle ne sait
+ * pas si l'un ou l'autre est simulé, et ne branche jamais là-dessus ; elle refuse seulement un juge
+ * dont l'identité n'est pas celle que déclare `run.json` (`JugesNonConformes`).
+ *
+ * **Ordre du §7 (D14 (1)).** Le test contrefactuel passe avant la notation de masse :
+ *
+ * 1. **Sous-ensemble.** Les réponses éligibles (D14 (2) : la réponse ou l'item nomme un candidat,
+ *    `candidats.ts`), hors refus de l'API, que `reponse-contrefactuelle.ts` refuse de permuter
+ *    faute de texte, sont tirées (`tirerSousEnsembleContrefactuel`) ; le dérangement des candidats
+ *    est tiré (`tirerDerangement`).
+ * 2. **Paires.** Chaque réponse du sous-ensemble est notée par les deux juges (notation ordinaire du
+ *    run, réutilisée ensuite par la règle de décision), puis sa réponse permutée (`demandePermutee`)
+ *    est écrite et notée par les deux juges (contexte `contrefactuel_candidat`, motif `contrefactuel`).
+ * 3. **Test et inscription.** `testerContrefactuel`, `publierContrefactuel`, puis l'inscription dans
+ *    `run.json` (`inscription-contrefactuel.ts`) : retrait éventuel d'un juge, échantillon à 25 %.
+ *    Deux juges retirés (D16 (3)) : le run est invalide, la chaîne s'arrête là.
+ * 4. **Masse.** Le run est relu ; chaque réponse obtenue est notée par les juges non retirés (un juge
+ *    retiré n'est plus appelé, ses notations du sous-ensemble restent écrites et sont écartées par
+ *    `decider`, D13), puis décidée (`decider`) avec l'appartenance à l'échantillon humain
+ *    (`tirerEchantillonHumain`, sur toutes les réponses obtenues). Un verdict est écrit ; une
+ *    attente est rendue avec ses motifs, sans verdict inventé.
+ *
+ * **Liens.** Une réponse dont un lien n'a pas de verdict d'existence n'est ni notée ni décidée : elle
+ * est rendue en attente `test_liens`. Si une réponse du sous-ensemble contrefactuel attend ainsi,
+ * le test ne peut pas se faire, et la notation de masse n'a pas lieu (D14 (1)).
+ *
+ * **Reprise (règle 7).** Les identifiants sont dérivés du run, du rôle de l'objet et de l'objet
+ * (`identifiantDerive`) : une relance retrouve les mêmes. Une notation de juge déjà écrite (même
+ * contexte, même objet, même juge) n'est pas redemandée ; une réponse contrefactuelle ou un verdict
+ * déjà écrits ne sont pas réécrits ; `run.json` n'est inscrit qu'une fois. Rien n'est jamais réécrit.
+ *
+ * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
+ * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
+ * attentes qui peuvent l'être.
+ */
+
+import { createHash } from "node:crypto";
+import { lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe, type RunLu } from "../../analysis/lecture-run.ts";
+import type { Instant, Ulid } from "../../analysis/types.ts";
+import type { ReponseObtenue } from "../interrogation/types.ts";
+import { canoniser } from "../../validation/domaine/empreinte.ts";
+import { nommeUnCandidat, textesNommables } from "./candidats.ts";
+import { construireCharge, type DemandeCharge, type QuestionPosee, type ReferenceSoumise } from "./charge-juge.ts";
+import { testerContrefactuel, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
+import { decider, type MotifAttente } from "./decision.ts";
+import { tirerDerangement, type Derangement } from "./derangement.ts";
+import { comparerChaines, tirerEchantillonHumain, tirerSousEnsembleContrefactuel } from "./echantillons.ts";
+import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
+import type { FournisseurExistences } from "./fournisseur-existences.ts";
+import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
+import { notationDeJuge, versionPromptDe, type Juge } from "./juge.ts";
+import { publierContrefactuel } from "./publication-contrefactuel.ts";
+import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
+import { DepotNotation } from "./stockage.ts";
+import type { NotationIndividuelle, RunDeNotation } from "./types.ts";
+import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
+
+/** Une réponse obtenue du run, avec sa question posée et ses items épinglés au gel. */
+export interface ReponseANoter {
+  readonly reponse: ReponseObtenue;
+  readonly question: QuestionPosee;
+  readonly references: readonly ReferenceSoumise[];
+}
+
+export interface EnvironnementChaine {
+  readonly repertoire_run: string;
+  readonly juges: readonly Juge[];
+  readonly existences: FournisseurExistences;
+  /** L'instant posé sur chaque notation et chaque verdict écrits. */
+  maintenant(): Instant;
+}
+
+/** Les motifs d'attente de `decider`, plus ceux qui empêchent d'y arriver. */
+export type MotifEnAttente = MotifAttente | "test_liens" | "contrefactuel_en_attente" | "run_invalide";
+
+export interface Attente {
+  readonly reponse_id: Ulid;
+  readonly motifs: readonly MotifEnAttente[];
+}
+
+export type EtatContrefactuel =
+  | { readonly statut: IssueInscription; readonly resultat: ResultatContrefactuel }
+  | { readonly statut: "en_attente_test_liens"; readonly reponse_ids: readonly Ulid[] }
+  | { readonly statut: "run_invalide"; readonly raison: string; readonly resultat: ResultatContrefactuel };
+
+export interface ResultatChaine {
+  readonly run_id: Ulid;
+  readonly contrefactuel: EtatContrefactuel;
+  /** Les réponses dont le verdict est écrit, maintenant ou par une exécution précédente. */
+  readonly verdicts: readonly Ulid[];
+  /** Les réponses sans verdict, chacune avec ses motifs. */
+  readonly attentes: readonly Attente[];
+}
+
+export class JugesNonConformes extends Error {
+  constructor(detail: string) {
+    super(`Juges refusés : ${detail}`);
+    this.name = "JugesNonConformes";
+  }
+}
+
+export class ReponsesNonConformes extends Error {
+  constructor(detail: string) {
+    super(`Réponses à noter refusées : ${detail}`);
+    this.name = "ReponsesNonConformes";
+  }
+}
+
+/* ------------------------------------------------------------------ identifiants */
+
+const ALPHABET_CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** Un identifiant au motif ULID du schéma, dérivé des composants (sha256, 128 premiers bits). */
+export function identifiantDerive(composants: readonly string[]): Ulid {
+  const octets = createHash("sha256").update(composants.join("\u0000"), "utf8").digest();
+  let valeur = 0n;
+  for (const octet of octets.subarray(0, 16)) valeur = (valeur << 8n) | BigInt(octet);
+  const caracteres: string[] = [];
+  for (let rang = 0; rang < 26; rang += 1) {
+    caracteres.push(ALPHABET_CROCKFORD.charAt(Number(valeur % 32n)));
+    valeur /= 32n;
+  }
+  return caracteres.reverse().join("");
+}
+
+/* ------------------------------------------------------------------ état de la chaîne */
+
+interface Preparee extends ReponseANoter {
+  readonly textes: TextesDeVerification;
+  /** `null` : au moins un lien sans verdict d'existence. */
+  readonly existences: ReadonlyMap<string, ExistenceEtablie> | null;
+}
+
+interface Etat {
+  readonly env: EnvironnementChaine;
+  readonly run: RunLu;
+  readonly depot: DepotNotation;
+  /** Rangées par identifiant croissant. */
+  readonly reponses: readonly Preparee[];
+  readonly parId: ReadonlyMap<Ulid, Preparee>;
+  /** Toutes les notations du run, lues puis écrites. */
+  readonly notations: NotationIndividuelle[];
+  /** Clés (contexte, objet, juge) des notations de juge déjà écrites. */
+  readonly cles: Set<string>;
+  /** Réponses contrefactuelles déjà écrites, par identifiant, sous forme canonique. */
+  readonly contrefactuelles: Map<Ulid, string>;
+  /** Objets qui ont déjà leur verdict. */
+  readonly verdicts: Set<Ulid>;
+}
+
+type Cote = { readonly contexte: "run"; readonly motif: "notation_juge" } | { readonly contexte: "contrefactuel_candidat"; readonly motif: "contrefactuel" };
+
+const COTE_RUN: Cote = { contexte: "run", motif: "notation_juge" };
+const COTE_PERMUTE: Cote = { contexte: "contrefactuel_candidat", motif: "contrefactuel" };
+
+/** Ce qu'un juge note : une demande de charge, d'un côté, et ce qu'il faut pour assembler la notation. */
+interface Cible {
+  readonly cote: Cote;
+  readonly objet_id: Ulid;
+  readonly demande: Omit<DemandeCharge, "prompt">;
+  readonly textes: TextesDeVerification;
+  readonly existences: ReadonlyMap<string, ExistenceEtablie>;
+}
+
+export async function noterRun(reponses: readonly ReponseANoter[], env: EnvironnementChaine): Promise<ResultatChaine> {
+  const etat = ouvrir(reponses, env);
+  const contrefactuel = await passerContrefactuel(etat);
+  if (contrefactuel.statut === "en_attente_test_liens" || contrefactuel.statut === "run_invalide") {
+    return { run_id: etat.run.id, contrefactuel, verdicts: [], attentes: etat.reponses.map((r) => attenteSansMasse(r, contrefactuel.statut)) };
+  }
+  const run = runDeNotationDe(lireRunJson(env.repertoire_run));
+  return { run_id: etat.run.id, contrefactuel, ...(await noterEnMasse(etat, run)) };
+}
+
+function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): Etat {
+  const run = lireRunJson(env.repertoire_run);
+  verifierJuges(run, env.juges);
+  const depot = DepotNotation.ouvrir(env.repertoire_run);
+  const lues = lireNotationsDuRun(env.repertoire_run, run.id);
+  const preparees = [...reponses].sort((a, b) => comparerChaines(a.reponse.id, b.reponse.id)).map((r) => preparer(r, env.existences));
+  return {
+    env,
+    run,
+    depot,
+    reponses: preparees,
+    parId: indexerReponses(preparees, run.id),
+    notations: [...lues.notations],
+    cles: new Set(lues.notations.filter((n) => n.notateur.type === "juge").map(cleDeNotation)),
+    contrefactuelles: new Map(lues.reponses_contrefactuelles.map((r) => [r.id, canoniser(r)])),
+    verdicts: new Set(lireVerdicts(env.repertoire_run, run.id).map((v) => v.objet_note.id)),
+  };
+}
+
+/** Ce que `run.schema.json` exige de chaque juge déclaré (`required`), et que `RunLu` ne type pas. */
+interface JugeDeclare {
+  readonly juge_id: string;
+  readonly famille_modele: string;
+  readonly modele: string;
+  readonly version_prompt: string;
+}
+
+/** Les juges injectés sont exactement ceux du run, sous l'identité que `run.json` déclare. */
+function verifierJuges(run: RunLu, juges: readonly Juge[]): void {
+  // `lireRunJson` a validé run.json contre son schéma, qui exige ces quatre champs de chaque juge.
+  const declares = run.juges as unknown as readonly JugeDeclare[];
+  const recus = juges.map((juge) => juge.identite.juge_id).sort(comparerChaines);
+  const ids = declares.map((juge) => juge.juge_id).sort(comparerChaines);
+  if (recus.join("\u0000") !== ids.join("\u0000")) {
+    throw new JugesNonConformes(`juges reçus (${recus.join(", ")}), juges du run ${run.id} (${ids.join(", ")}).`);
+  }
+  for (const juge of juges) {
+    const declare = declares.find((j) => j.juge_id === juge.identite.juge_id);
+    const recue = { famille_modele: juge.identite.famille_modele, modele: juge.identite.modele, version_prompt: versionPromptDe(juge.identite.prompt) };
+    const attendue = { famille_modele: declare?.famille_modele, modele: declare?.modele, version_prompt: declare?.version_prompt };
+    if (canoniser(recue) !== canoniser(attendue)) {
+      throw new JugesNonConformes(`le juge ${juge.identite.juge_id} se présente comme ${canoniser(recue)}, le run le déclare ${canoniser(attendue)}.`);
+    }
+  }
+}
+
+function preparer(r: ReponseANoter, fournisseur: FournisseurExistences): Preparee {
+  const items = r.references.map((reference) => reference.item);
+  return {
+    ...r,
+    textes: { reponse: r.reponse.normalise.texte, citations_reference: citationsDeReference(items) },
+    existences: existencesCompletes(r.reponse, fournisseur),
+  };
+}
+
+/** Le verdict d'existence de chaque lien cité, ou `null` s'il en manque un : jamais supposé. */
+function existencesCompletes(reponse: ReponseObtenue, fournisseur: FournisseurExistences): ReadonlyMap<string, ExistenceEtablie> | null {
+  const liens = [...new Set(reponse.normalise.liens)];
+  if (liens.length === 0) return new Map();
+  const index = indexerExistences(reponse.id, liens, fournisseur.existencesDe(reponse.id, liens));
+  return liens.every((lien) => index.has(lien)) ? index : null;
+}
+
+function indexerReponses(reponses: readonly Preparee[], run_id: Ulid): ReadonlyMap<Ulid, Preparee> {
+  const index = new Map<Ulid, Preparee>();
+  for (const r of reponses) {
+    if (r.reponse.run_id !== run_id) {
+      throw new ReponsesNonConformes(`la réponse ${r.reponse.id} est du run ${r.reponse.run_id}, pas du run ${run_id}.`);
+    }
+    if (index.has(r.reponse.id)) throw new ReponsesNonConformes(`la réponse ${r.reponse.id} figure deux fois.`);
+    index.set(r.reponse.id, r);
+  }
+  return index;
+}
+
+function cleDeNotation(notation: NotationIndividuelle): string {
+  return cle(notation.contexte, notation.objet_note.id, notation.notateur.id);
+}
+
+function cle(contexte: string, objet_id: Ulid, juge_id: string): string {
+  return `${contexte}\u0000${objet_id}\u0000${juge_id}`;
+}
+
+function exigerPreparee(etat: Etat, reponse_id: Ulid): Preparee {
+  const r = etat.parId.get(reponse_id);
+  if (r === undefined) throw new ReponsesNonConformes(`la réponse ${reponse_id} n'est pas parmi les réponses à noter.`);
+  return r;
+}
+
+/* ------------------------------------------------------------------ juges */
+
+/** Fait noter la cible par chaque juge qui ne l'a pas déjà notée, et écrit chaque notation. */
+async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible): Promise<void> {
+  for (const juge of juges) {
+    if (etat.cles.has(cle(cible.cote.contexte, cible.objet_id, juge.identite.juge_id))) continue;
+    const charge = construireCharge({ ...cible.demande, prompt: juge.identite.prompt });
+    const sortie = await juge.noter(charge);
+    const notation = notationDeJuge(juge.identite, sortie, {
+      id: identifiantDerive([etat.run.id, "notation", cible.cote.contexte, cible.objet_id, juge.identite.juge_id]),
+      run_id: etat.run.id,
+      contexte: cible.cote.contexte,
+      motif_notation: cible.cote.motif,
+      objet_id: cible.objet_id,
+      gabarit: cible.demande.question.gabarit,
+      references_item: cible.demande.references.map(({ item }) => ({ item_id: item.id, item_version: item.version, item_empreinte: item.empreinte })),
+      date: etat.env.maintenant(),
+      liens: charge.reponse.liens,
+      existences: cible.existences,
+      textes: cible.textes,
+    });
+    etat.depot.ecrireNotation(notation);
+    etat.notations.push(notation);
+    etat.cles.add(cleDeNotation(notation));
+  }
+}
+
+function demandeDe(etat: Etat, r: Preparee): Omit<DemandeCharge, "prompt"> {
+  return { reponse: r.reponse, question: r.question, references: r.references, date_run: etat.run.date_gel };
+}
+
+function cibleOrigine(etat: Etat, r: Preparee, existences: ReadonlyMap<string, ExistenceEtablie>): Cible {
+  return { cote: COTE_RUN, objet_id: r.reponse.id, demande: demandeDe(etat, r), textes: r.textes, existences };
+}
+
+/* ------------------------------------------------------------------ test contrefactuel */
+
+/** D14 (1) : le test précède tout retrait, donc il se joue sur le run tel qu'il était au gel. */
+function runAvantLeTest(run: RunDeNotation): RunDeNotation {
+  const { contrefactuel_candidats: _publie, ...gel } = run;
+  return { ...gel, juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })), taux_echantillon_humain: 0.1 };
+}
+
+/** D14 (2), et une réponse qui a un texte à permuter (un refus de l'API n'en a pas). */
+function estEligible(r: Preparee, run: RunDeNotation): boolean {
+  if (r.reponse.normalise.refus_api) return false;
+  return nommeUnCandidat(textesNommables(r.reponse.normalise.texte, r.references.map((reference) => reference.item)), run.candidats);
+}
+
+async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
+  const run = runAvantLeTest(runDeNotationDe(etat.run));
+  const eligibles = etat.reponses.filter((r) => estEligible(r, run)).map((r) => r.reponse.id);
+  const sous_ensemble = tirerSousEnsembleContrefactuel(eligibles, run.graines.contrefactuel);
+  const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).existences === null);
+  if (attendent.length > 0) return { statut: "en_attente_test_liens", reponse_ids: attendent };
+  const derangement = tirerDerangement(run.candidats, run.graines.contrefactuel);
+  const paires: PaireContrefactuelle[] = [];
+  for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaire(etat, exigerPreparee(etat, id), derangement));
+  const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires) });
+  const publication = publierContrefactuel(resultat, sous_ensemble, derangement, run);
+  if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat };
+  return { statut: inscrireContrefactuel(etat.env.repertoire_run, publication), resultat };
+}
+
+async function noterPaire(etat: Etat, r: Preparee, derangement: Derangement): Promise<PaireContrefactuelle> {
+  const existences = exigerExistences(r);
+  await noterParLesJuges(etat, etat.env.juges, cibleOrigine(etat, r, existences));
+  const contrefactuelle_id = identifiantDerive([etat.run.id, "reponse_contrefactuelle", "noms_candidats", r.reponse.id]);
+  const permutee = permuter(etat, r, contrefactuelle_id, derangement);
+  const cible: Cible = { cote: COTE_PERMUTE, objet_id: contrefactuelle_id, demande: permutee.demande, textes: permutee.textes, existences };
+  await noterParLesJuges(etat, etat.env.juges, cible);
+  return {
+    reponse_id: r.reponse.id,
+    contrefactuelle_id,
+    textes_origine: r.textes,
+    textes_permutes: permutee.textes,
+    mentions_residuelles: permutee.mentions_residuelles,
+  };
+}
+
+/** La demande permutée ; sa réponse est écrite une fois, et une relance la retrouve identique. */
+function permuter(etat: Etat, r: Preparee, contrefactuelle_id: Ulid, derangement: Derangement): DemandePermutee {
+  const [premier] = etat.env.juges;
+  if (premier === undefined) throw new JugesNonConformes("aucun juge.");
+  // Le prompt ne touche ni la réponse ni les textes permutés ; chaque juge reçoit le sien (noterParLesJuges).
+  const permutee = demandePermutee({ ...demandeDe(etat, r), prompt: premier.identite.prompt }, contrefactuelle_id, derangement);
+  const deja = etat.contrefactuelles.get(contrefactuelle_id);
+  if (deja === undefined) {
+    etat.depot.ecrireReponseContrefactuelle(permutee.reponse);
+    etat.contrefactuelles.set(contrefactuelle_id, canoniser(permutee.reponse));
+  } else if (deja !== canoniser(permutee.reponse)) {
+    throw new ReponsesNonConformes(`la réponse contrefactuelle ${contrefactuelle_id} écrite diffère de celle que la permutation redonne.`);
+  }
+  return permutee;
+}
+
+function exigerExistences(r: Preparee): ReadonlyMap<string, ExistenceEtablie> {
+  if (r.existences === null) throw new ReponsesNonConformes(`la réponse ${r.reponse.id} attend le test des liens.`);
+  return r.existences;
+}
+
+/** Les notations de juge portant sur les deux côtés des paires, et elles seules. */
+function notationsDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[]): readonly NotationIndividuelle[] {
+  const objets = new Set(paires.flatMap((p) => [p.reponse_id, p.contrefactuelle_id]));
+  return etat.notations.filter((n) => n.notateur.type === "juge" && objets.has(n.objet_note.id));
+}
+
+/* ------------------------------------------------------------------ notation de masse */
+
+function attenteSansMasse(r: Preparee, statut: "en_attente_test_liens" | "run_invalide"): Attente {
+  if (r.existences === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
+  return { reponse_id: r.reponse.id, motifs: [statut === "run_invalide" ? "run_invalide" : "contrefactuel_en_attente"] };
+}
+
+async function noterEnMasse(etat: Etat, run: RunDeNotation): Promise<Pick<ResultatChaine, "verdicts" | "attentes">> {
+  const retires = new Set(run.juges.filter((juge) => juge.retire).map((juge) => juge.juge_id));
+  const actifs = etat.env.juges.filter((juge) => !retires.has(juge.identite.juge_id));
+  const echantillon = new Set(tirerEchantillonHumain(etat.reponses.map((r) => r.reponse.id), run.graines.echantillon_humain, run.taux_echantillon_humain));
+  const verdicts: Ulid[] = [];
+  const attentes: Attente[] = [];
+  for (const r of etat.reponses) {
+    const attente = await noterReponse(etat, run, actifs, r, echantillon.has(r.reponse.id));
+    if (attente === null) verdicts.push(r.reponse.id);
+    else attentes.push(attente);
+  }
+  return { verdicts, attentes };
+}
+
+/** `null` : la réponse a son verdict. */
+async function noterReponse(etat: Etat, run: RunDeNotation, actifs: readonly Juge[], r: Preparee, dans: boolean): Promise<Attente | null> {
+  if (r.existences === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
+  await noterParLesJuges(etat, actifs, cibleOrigine(etat, r, r.existences));
+  if (etat.verdicts.has(r.reponse.id)) return null;
+  const decision = decider({
+    run,
+    objet_note: { type: "reponse", id: r.reponse.id },
+    notations: etat.notations.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
+    dans_echantillon_humain: dans,
+    textes: r.textes,
+    verdict_id: identifiantDerive([etat.run.id, "verdict", r.reponse.id]),
+    date: etat.env.maintenant(),
+  });
+  if (decision.statut === "en_attente") return { reponse_id: r.reponse.id, motifs: decision.motifs };
+  etat.depot.ecrireVerdict(decision.verdict);
+  etat.verdicts.add(r.reponse.id);
+  return null;
+}

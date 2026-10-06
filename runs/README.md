@@ -137,3 +137,33 @@ Sortie 0 sans violation, 1 avec au moins une, 2 si le run n'a pas pu être lu. N
 Le run simulé écrit cette même disposition sous un répertoire temporaire, ou sous
 `--sortie <chemin>` : `<chemin>/<date>/volume/…`. **Jamais dans `runs/` par défaut** : un run simulé
 n'est pas un run.
+
+## `pnpm notation:dry`
+
+La chaîne de notation du §7 (`pipeline/notation/chaine.ts`, celle du vrai run) de bout en bout sur
+le run simulé de `pnpm run:dry`, sans modèle ni appel réseau : seuls les juges
+(`pipeline/notation/juge-simule.ts`) et le fournisseur des verdicts d'existence des liens
+(`pipeline/notation/fournisseur-simule.ts`) sont simulés. Même sortie que `run:dry` : un répertoire
+temporaire neuf, ou `--sortie <chemin>` ; **une sortie sous `runs/` est refusée** avant toute
+écriture, et le juge et le fournisseur simulés refusent eux-mêmes un répertoire de `runs/`.
+
+```
+pnpm run:dry --sortie X && pnpm notation:dry --sortie X     note le run interrogé
+pnpm notation:dry                                           interroge (comme run:dry) puis note
+```
+
+Ce que la commande ajoute sous `<sortie>/<date>/` :
+
+- `run.json` et `questions.json`, que `run:dry` n'écrit pas, posés depuis les fixtures
+  (`tests/notation/fixtures/notation-dry/run.json`, `tests/interrogation/fixtures/run-simule/questions.json`),
+  jamais réécrits ; les items épinglés sont lus dans `tests/notation/fixtures/notation-dry/items/`,
+  puisqu'aucun item fictif n'entre dans `data/` ;
+- le test contrefactuel, d'abord (D14 (1)) : `volume/reponses-contrefactuelles/`, les notations des
+  deux côtés dans `volume/notations/`, puis son inscription dans `run.json`
+  (`contrefactuel_candidats`, juges, taux de l'échantillon humain), une seule fois ;
+- la notation de masse par les juges non retirés (`volume/notations/`) et un verdict par réponse
+  décidée (`verdicts/`).
+
+Les réponses qui attendent un humain ne reçoivent aucun verdict : le bilan imprimé, relu du disque,
+les compte par motif. Relancer sur la même sortie ne réécrit aucun fichier.
+`pnpm notation:controle <sortie>/<date>` passe sur le répertoire produit.
