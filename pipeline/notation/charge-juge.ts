@@ -29,6 +29,7 @@
 
 import type { Gabarit, Instant, RoleItem } from "../../analysis/types.ts";
 import type { ObjetJson, ReponseObtenue } from "../interrogation/types.ts";
+import type { ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
 
@@ -56,7 +57,8 @@ export interface ReferenceSoumise {
 }
 
 export interface DemandeCharge {
-  readonly reponse: ReponseObtenue;
+  /** Une réponse du run, ou sa copie permutée du test contrefactuel (`reponse-contrefactuelle.ts`). */
+  readonly reponse: ReponseObtenue | ReponseContrefactuelle;
   readonly question: QuestionPosee;
   readonly references: readonly ReferenceSoumise[];
   /** `run.date_gel` : l'instant de référence unique du run. */
@@ -136,7 +138,7 @@ export function construireCharge(demande: DemandeCharge): ChargeJuge {
   };
 }
 
-function reponseSoumise(reponse: ReponseObtenue): ReponseSoumise {
+function reponseSoumise(reponse: ReponseObtenue | ReponseContrefactuelle): ReponseSoumise {
   const projection = reponse.normalise;
   return {
     texte: projection.texte,

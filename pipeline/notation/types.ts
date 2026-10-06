@@ -146,9 +146,24 @@ export interface JugeDuRun {
 /** `run.schema.json#/properties/taux_echantillon_humain` : stocké, jamais supposé. */
 export type TauxEchantillonHumain = 0.1 | 0.25;
 
+/**
+ * Un candidat du périmètre du run (`run.schema.json#/properties/perimetre/properties/candidats`),
+ * réduit à ce que lit le test contrefactuel : son identifiant, son libellé et son nom seul.
+ */
+export interface CandidatDuRun {
+  readonly candidat_id: IdentifiantCourt;
+  readonly libelle: string;
+  readonly nom: string;
+}
+
 /** La part d'un run que lit le noyau de notation. */
 export interface RunDeNotation {
   readonly id: Ulid;
+  /**
+   * Tous les candidats déclarés au périmètre du run, interrogés ou non : le dérangement du test
+   * contrefactuel (§7, D14 (2)) se tire sur eux (`derangement.ts`).
+   */
+  readonly candidats: readonly CandidatDuRun[];
   readonly juges: readonly JugeDuRun[];
   readonly taux_echantillon_humain: TauxEchantillonHumain;
   readonly graines: {

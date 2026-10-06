@@ -139,7 +139,7 @@ export function comparerChaines(a: string, b: string): number {
 }
 
 /** Une graine qui déclare un autre générateur que celui du tirage promet un tirage non rejouable. */
-function verifierGraine(graine: GraineTirage): void {
+export function verifierGraine(graine: GraineTirage): void {
   for (const champ of ["algorithme", "bibliotheque", "version"] as const) {
     const attendu = GENERATEUR_DU_TIRAGE[champ];
     if (graine[champ] !== attendu) throw new GraineNonConforme(champ, graine[champ], `« ${attendu} »`);

@@ -6,7 +6,7 @@
 import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
-import type { LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun, LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
 
 export const RUN_ID = ulid("run-notation");
 export const REPONSE_ID = ulid("reponse-notation");
@@ -82,9 +82,20 @@ export function lien(existence: LienNotation["verdict_existence"], soutien: Lien
   return { url_citee: url, date_test: "2026-12-03T11:05:00+01:00", verdict_existence: existence, verdict_soutien: soutien };
 }
 
+/**
+ * Trois candidats fictifs. Le nom seul du deuxième est contenu dans son libellé (chevauchement), et
+ * celui du troisième commence par une voyelle (élision « d’Ollivier »).
+ */
+export const CANDIDATS_DU_RUN: readonly CandidatDuRun[] = [
+  { candidat_id: "demo-alpha", libelle: "Alix Martinez", nom: "Martinez" },
+  { candidat_id: "demo-beta", libelle: "Maxime Le Brun", nom: "Le Brun" },
+  { candidat_id: "demo-gamma", libelle: "Camille Ollivier", nom: "Ollivier" },
+];
+
 export function runDeNotation(retires: readonly string[] = [], surcharges: Partial<RunDeNotation> = {}): RunDeNotation {
   return {
     id: RUN_ID,
+    candidats: CANDIDATS_DU_RUN,
     juges: ["j1", "j2"].map((juge_id) => ({ juge_id, retire: retires.includes(juge_id) })),
     taux_echantillon_humain: retires.length > 0 ? 0.25 : 0.1,
     graines: {
