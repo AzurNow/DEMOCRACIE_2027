@@ -1,5 +1,5 @@
 {
-  "$comment": "Configuration serveur, outils et tests. Le client a la sienne : validation/client/tsconfig.json.",
+  "$comment": "Configuration serveur, outils et tests. Les clients ont la leur : validation/client/tsconfig.json et notation-humaine/client/tsconfig.json.",
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
@@ -24,6 +24,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["analysis", "pipeline", "validation/domaine", "validation/io", "validation/serveur", "validation/fixtures", "outils", "tests"],
-  "exclude": ["node_modules", "validation/client"]
+  "include": ["analysis", "pipeline", "validation/domaine", "validation/io", "validation/serveur", "validation/fixtures", "notation-humaine/serveur", "outils", "tests"],
+  "exclude": ["node_modules", "validation/client", "notation-humaine/client"]
 }

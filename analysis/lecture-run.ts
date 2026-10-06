@@ -173,6 +173,8 @@ export interface CandidatDuRunLu extends CandidatAuGel {
 /** La part de `run.json` que lisent l'analyse, la notation et la lecture du run. */
 export interface RunLu extends Run {
   readonly statut: string;
+  /** `run.schema.json`, `type_run` : `pilote` désigne le run qui porte le jeu d'or (D18). */
+  readonly type_run: string;
   readonly perimetre: { readonly candidats: readonly CandidatDuRunLu[]; readonly outils: Run["perimetre"]["outils"] };
   readonly versions: { readonly donnees_commit: string };
   readonly tirage: { readonly chemin: string; readonly sha256: string };
