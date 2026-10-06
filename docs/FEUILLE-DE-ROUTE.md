@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-05.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-06.
 
 ## Décisions en attente
 
@@ -96,7 +96,7 @@ flowchart LR
   subgraph jalon_J4["J4 · 22 nov. 2026"]
     lot_alignement_0_3["alignement-0-3<br/>Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)<br/>T2"]:::T2
     lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo<br/>T3"]:::T3
-    lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T0"]:::T0
+    lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T2"]:::T2
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
     lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
@@ -144,7 +144,7 @@ flowchart LR
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T3 | atteint | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
-| notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T0 | bloqué par perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
+| notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T2 | bloqué par perimetre-prompts | opus | L | 2 | interrogation (informe), perimetre-prompts |
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
 | go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T0 | bloqué par analyse, notation | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse, go-no-go | sonnet | M | 2 | analyse, go-no-go |
@@ -185,7 +185,7 @@ flowchart LR
 
 - alignement-0-3 (T2)
 - interrogation (T3)
-- notation (T0)
+- notation (T2)
 
 ### J5
 

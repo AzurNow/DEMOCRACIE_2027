@@ -56,6 +56,13 @@ apparu le 2026-10-02 quand retirer `refus_api` de l'énumération des erreurs n'
 validation. Déclarer la forme dans `$defs` et la référencer depuis chaque `prefixItems`, et prouver
 chaque restriction par un exemple invalide qui ne tombe que pour elle (`reponse/invalide-13`).
 
+**Construire une charge aveugle en projetant aussi les sous-objets.** La charge du juge était
+construite champ par champ pour ne rien laisser passer de l'outil, mais la PR #79 recopiait les
+citations de l'éditeur telles quelles : leur forme (clés en camelCase ou snake_case, `type`,
+indices) suffisait à reconnaître l'éditeur, donc l'outil noté. La fuite, signalée par l'agent comme
+choix en attente, a été fermée par D15 (projection sur `{ url, texte }`). Un objet ouvert (`ObjetJson`) recopié dans une
+structure aveugle annule l'aveuglement ; chaque niveau doit être projeté.
+
 ## Tests
 
 **Les exemples invalides sont les vrais tests.** Un exemple valide vérifie qu'on n'a rien oublié ;

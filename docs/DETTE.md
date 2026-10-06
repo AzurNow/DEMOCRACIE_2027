@@ -13,6 +13,58 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-05 — Décisions D13 à D15 et noyau pur du lot notation (PR #77, #78, #79 : `pipeline/notation/`, `analysis/note-lue.ts`, `schema/notation.schema.json`)
+
+### 1. Une seule égalité, tenue par convention, gouverne désormais trois mesures — *haute*
+
+`analysis/note-lue.ts:notationsConcordent` définit depuis D14 (3) l'accord des humains (kappa,
+recalcul (a)), l'accord des juges (`decision.ts`) et, à la PR B, « la note change » du test
+contrefactuel. Ce qu'elle compare (`NoteLue`) est censé être exactement ce que lisent les
+métriques primaires de `analysis/metriques.ts` ; seul un commentaire le dit, aucun test ne relie
+les deux.
+
+**Pourquoi ça casse.** Qu'une métrique primaire se mette à lire un champ de plus (le motif
+d'inexactitude, `au_moins_un_lien_existant`) sans que `NoteLue` suive : deux juges qui divergent
+sur ce champ sont déclarés d'accord, aucun humain ne tranche, le taux de changement contrefactuel
+sous-estime le biais et un juge qui aurait dû être retiré passe sous les 3 %. Tous les tests
+restent verts.
+
+**Ce qu'il faut faire.** Un test qui énumère les champs de notation lus par `metriques.ts` (par
+une notation témoin dont on fait varier chaque champ un à un) et exige que `notationsConcordent`
+distingue exactement ceux-là. À écrire dans la PR B, avant que le contrefactuel n'en dépende.
+
+### 2. Une citation d'adaptateur réel non ramenée à `{ url, texte }` arrive vide au juge — *haute*
+
+`charge-juge.ts:citationSoumise` ne lit que les clés `url` et `texte` (D15). La projection d'un
+adaptateur (`reponse.normalise.citations`) est typée `ObjetJson[]` : rien n'oblige un adaptateur à
+produire ces deux clés. L'éditeur simulé n'en produit qu'une (`url`).
+
+**Pourquoi ça casse.** Un adaptateur réel qui laisse `uri`, `title` ou `cited_text` tels quels
+remet au juge des citations `{}` : il juge le soutien des sources sans leur texte, le sourçage
+valide des notations change, et rien ne le signale, puisqu'un objet vide est une citation
+admise.
+
+**Ce qu'il faut faire.** Au premier adaptateur réel, typer la projection des citations en
+`{ url?, texte? }` à la frontière de l'adaptateur, et faire lever `construireCharge` sur une
+citation qui ne porte ni l'une ni l'autre clé.
+
+### 3. Une mention de candidat hors de la forme déclarée échappe au dérangement — *haute*
+
+`candidats.ts:occurrencesDeNom` cherche le libellé et le nom en casse exacte et en mot entier,
+lecture restrictive de D14 (2). « LE PEN », « Mme Le Pen » ou un prénom seul ne sont pas trouvés,
+donc ni comptés pour l'éligibilité ni permutés par la PR B.
+
+**Pourquoi ça casse.** Une réponse permutée garde alors une mention du vrai candidat à côté du nom
+substitué. Le juge peut s'y raccrocher, la note change moins qu'elle ne le devrait, et le taux de
+changement contrefactuel sous-estime le biais du juge sans qu'aucun test ne tombe.
+
+**Ce qu'il faut faire.** Dans la PR B, après permutation, compter les mentions résiduelles sous
+une recherche large (casse ignorée), sans rien remplacer de plus, et publier ce compte avec le
+résultat du contrefactuel. Si le compte n'est pas nul, c'est à l'auteur de décider s'il faut
+élargir les formes déclarées au périmètre.
+
+---
+
 ## 2026-10-02 — Lot interrogation en mode simulé, décision D12 (PR #74 et #75 : `pipeline/interrogation/`, `schema/reponse.schema.json`, `outils/run-dry.ts`, `runs/README.md`)
 
 ### 1. Un refus de modération mal reconnu par un adaptateur devient une manquante sans signal — *haute*
