@@ -238,6 +238,19 @@
       "recommandation": "Option 1 sur les cinq points.",
       "retenu": "Option 1 sur les cinq points, codée dans la PR #79. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
       "date_decision": "2026-10-05"
+    },
+    {
+      "id": "D16",
+      "statut": "tranchee",
+      "question": "Quatre points du test contrefactuel des candidats que le §7 ne tranche pas : permutation de la question, extrait invalide dans une paire, retrait des deux juges, contrefactuel outil.",
+      "contexte": "Le §7 permute les noms « dans la réponse et dans l'item » alors que le juge reçoit aussi la question ; il ne dit pas comment compter une paire dont un extrait échoue au test verbatim ; il retire tout juge au-delà de 3 % sans prévoir le cas où les deux le sont ; le contrefactuel outil n'a ni taille, ni éligibilité, ni noms déclarés.",
+      "options": [
+        "Question permutée avec la réponse et l'item ; extrait invalide d'un côté = changement, notation manquante = test en attente ; deux juges au-delà de 3 % = run invalide avant la notation de masse ; contrefactuel outil reporté à une décision et une PR propres.",
+        "Variantes : lettre du §7 (question non permutée) ; paire exclue et comptée ; garder le juge le moins biaisé ; contrefactuel outil dans la PR B."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. À coder dans la PR B du lot notation. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
+      "date_decision": "2026-10-06"
     }
   ],
   "lots": [
@@ -447,6 +460,7 @@
         "D13",
         "D14",
         "D15",
+        "D16",
         "D3"
       ],
       "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler())."
