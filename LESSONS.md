@@ -393,3 +393,17 @@ la branche de #53, que plus rien ne suivait. Ses sept commits (Q-ATT contestée,
 dépassée, `contestes_au_gel`) n'ont jamais atteint `main`, et la passe suivante aurait repris un
 état sans eux. Il a fallu une PR de rattrapage (#55). Une PR empilée se rebase sur `main` avant sa
 fusion. À la reprise d'une session, comparer `main` aux branches des dernières PR fusionnées.
+
+**Pour l'aveuglement, vérifier ce que chaque champ servi révèle, pas seulement qui il nomme.** Le
+brief de l'écran de notation humaine (#88) autorisait à servir la `TacheAnnotateur`, qui porte le
+motif de la tâche. Or `desaccord_juges`, `erreur_grave`, `accord_partiel_juges` et
+`arbitrage_echantillon_10` disent ce qu'ont noté les juges ou l'autre humain : l'aveuglement de D18
+aurait fui par un champ sans nom d'outil ni de personne. L'agent l'a vu et n'a servi que le
+`reponse_id`. Avant d'écrire « seulement X » dans un brief d'aveuglement, se demander pour chaque
+champ de X ce qu'un annotateur en déduirait.
+
+**Écrire le texte d'amendement dans les mots exacts de la question tranchée.** Pour D19, l'auteur a
+choisi de forcer `non_applicable` quand un juge dit « soutient » sur un lien mort ; le texte proposé
+pour la 0.16 disait « quelle que soit la note du juge », ce qui forçait aussi `ne_soutient_pas` et
+`indetermine`. Le code (#91) suivait la question, le texte allait plus loin : l'agent l'a relevé.
+Relire le texte d'amendement contre la question posée, mot pour mot, avant de le commiter.

@@ -13,6 +13,48 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-06 (soir) — Notation humaine, chaîne de notation simulée, D19 (PR #87 à #91 : `pipeline/notation/`, `notation-humaine/`, `outils/notation-humaine.ts`, `outils/notation-dry.ts`)
+
+### 1. L'écran de notation humaine affiche la vue champ par champ, et rien ne garde qu'il montre tout ce que voit le juge — *moyenne*
+
+`notation-humaine/client/affichage.ts` rend la `VueAnnotateur` champ par champ, sur des types
+recopiés à la main dans `notation-humaine/client/types.ts` : aucun type n'est partagé avec
+`pipeline/notation/vue-annotateur.ts`. D18 exige que l'humain voie exactement la charge du juge.
+
+**Pourquoi ça casse.** Un champ ajouté à la charge du juge (une date de validité, un état d'item)
+arrive au client et n'y est pas affiché : les humains notent avec moins que les juges, l'accord
+juges-humains et le kappa du jeu d'or (J4) baissent ou montent pour une raison qui n'est pas le juge,
+et tous les tests restent verts.
+
+**Ce qu'il faut faire.** Un test qui énumère les feuilles d'une `VueAnnotateur` de fixture et vérifie
+que chacune est lue par `affichage.ts` (ou une liste explicite des champs volontairement non
+affichés), à écrire avant la formation des annotateurs.
+
+### 2. L'avis du juge n'est conservé nulle part, et le forçage de D19 l'efface — *moyenne*
+
+Le port `pipeline/notation/juge.ts` reçoit une `SortieJuge` que seule la notation assemblée garde ;
+`soutienApresTestHttp` remplace « soutient » par `non_applicable` sur un lien mort, et le schéma de
+notation (`additionalProperties: false`) n'a aucun champ pour l'avis d'origine.
+
+**Pourquoi ça casse.** Un juge qui déclare soutenants des liens morts (signe qu'il invente le contenu
+des pages) devient indiscernable d'un juge correct : le taux n'est calculable par personne, ni par
+nous ni par un tiers qui voudrait auditer les juges, alors que le §7 promet que tout est renotable.
+
+**Ce qu'il faut faire.** L'auteur choisit (`docs/TACHES-AUTEUR.md`, D19) : champ facultatif
+`verdict_soutien_juge` présent seulement en cas de forçage, ou sortie brute des juges dans l'archive
+du run.
+
+### 3. `pnpm notation:dry` n'exerce plus de lien existant et soutenant — *basse*
+
+L'éditeur simulé ne cite qu'un lien, devenu mort dans la table du fournisseur simulé (#91) pour
+atteindre le cas D19. Le chemin fournisseur → notation → `sourcage_retenu` vrai n'est plus parcouru
+de bout en bout ; les tests unitaires de `juge.ts` et `note-retenue.ts` le couvrent.
+
+**Ce qu'il faut faire.** Un second lien dans `pipeline/interrogation/editeur-simule.ts`, existant et
+soutenant, au prochain passage sur l'éditeur simulé.
+
+---
+
 ## 2026-10-06 — Lot notation, PR B et C, décisions D16 et D17 (PR #81 à #84 : `pipeline/notation/`, `analysis/lecture-run.ts`, `outils/notation-controle.ts`, `schema/run.schema.json`, `schema/notation.schema.json`, `schema/verdict.schema.json`)
 
 ### 1. Les mentions résiduelles sont publiées, mais rien ne réagit à leur nombre — *haute*
@@ -181,7 +223,7 @@ run ne retient plus, sans signal.
 lecture dont la version ou l'empreinte diffère (`LecturesComparateurIncoherentes`). Lot analyse ou
 interrogation, avant le premier run avec comparateurs.
 
-### 3. La règle du juge retiré est écrite, et rien ne la garde entre verdict, notations et run — *haute*
+### ~~3. La règle du juge retiré est écrite, et rien ne la garde entre verdict, notations et run~~ — réglé le 2026-10-06 par `controle-croise.ts` (#84), exercé de bout en bout sur un retrait par `chaine.ts` (#89, test 3)
 
 La 0.15 (§7, n° 18) écarte les notations du juge retiré et exige une revue humaine de tout drapeau
 grave du juge restant. `verdict.schema.json` ne voit qu'un verdict à la fois : il admet
