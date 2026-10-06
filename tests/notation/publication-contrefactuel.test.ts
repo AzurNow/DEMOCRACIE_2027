@@ -91,6 +91,7 @@ describe("12. ResultatContrefactuel → champs du run", () => {
       sous_effectif: false,
       correspondances: { "demo-alpha": "demo-beta", "demo-beta": "demo-gamma", "demo-gamma": "demo-alpha" },
       cle_graine: [...CLE_SOUS_ENSEMBLE_CONTREFACTUEL],
+      cle_graine_derangement: ["contrefactuel", "noms_candidats", "derangement"],
       mentions_residuelles: 3,
     });
     expect(publication.juges).toEqual([

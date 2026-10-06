@@ -53,6 +53,18 @@ describe("13. retrait et taux du test contrefactuel", () => {
     expect(codes(runAvec([arrondi, juge("j2", false, 0)]))).toEqual(["taux_contrefactuel_incoherent"]);
   });
 
+  it("dénominateur d'un juge différent de contrefactuel_candidats.taille : violation", () => {
+    const run = { ...runAvec([juge("j1", false, 2, 199), juge("j2", false, 2)]), contrefactuel_candidats: { taille: 200 } };
+    const violations = controleCroise({ run, reponses_obtenues: [], notations: [], verdicts: [] });
+    expect(violations.map((v) => v.code)).toEqual(["denominateur_contrefactuel_incoherent"]);
+    expect(violations[0]?.detail).toContain("j1");
+  });
+
+  it("dénominateurs égaux à contrefactuel_candidats.taille : aucune violation", () => {
+    const run = { ...runAvec([juge("j1", false, 2), juge("j2", false, 4)]), contrefactuel_candidats: { taille: 200 } };
+    expect(codes(run)).toEqual([]);
+  });
+
   it("juges sans résultat contrefactuel (run planifié, ou test indéfini) : rien à contrôler", () => {
     expect(codes(runDeNotation())).toEqual([]);
   });

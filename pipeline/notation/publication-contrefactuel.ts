@@ -14,14 +14,15 @@
  *   est indéfini ; et ses juges doivent être ceux du run.
  *
  * `cle_graine` est la clé lisible du sous-ensemble (`CLE_SOUS_ENSEMBLE_CONTREFACTUEL`), celle que
- * le §7 dit publiée avec le résultat ; le dérangement est publié en clair (`correspondances`).
+ * le §7 dit publiée avec le résultat ; `cle_graine_derangement` est celle du dérangement
+ * (`CLE_DERANGEMENT_CANDIDATS`), publié aussi en clair (`correspondances`).
  *
  * Un run invalide garde un taux d'échantillon humain stocké, que le schéma exige : 25 %, celui
  * qu'impose un retrait (§7), et celui que le contrôle croisé attend dès qu'un juge est retiré.
  */
 
 import type { ResultatContrefactuel, ResultatJuge } from "./contrefactuel.ts";
-import { correspondancesDe, type Derangement } from "./derangement.ts";
+import { CLE_DERANGEMENT_CANDIDATS, correspondancesDe, type Derangement } from "./derangement.ts";
 import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, comparerChaines, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import type { ChangementsContrefactuel, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 
@@ -34,6 +35,7 @@ export interface BlocContrefactuelCandidats {
   readonly sous_effectif: boolean;
   readonly correspondances: Readonly<Record<string, string>>;
   readonly cle_graine: readonly string[];
+  readonly cle_graine_derangement: readonly string[];
   readonly mentions_residuelles: number;
 }
 
@@ -101,6 +103,7 @@ function bloc(etat: BlocContrefactuelCandidats["etat"], commun: Commun, sous_ens
     sous_effectif: commun.sous_effectif,
     correspondances: correspondancesDe(derangement),
     cle_graine: [...CLE_SOUS_ENSEMBLE_CONTREFACTUEL],
+    cle_graine_derangement: [...CLE_DERANGEMENT_CANDIDATS],
     mentions_residuelles: commun.mentions_residuelles,
   };
 }

@@ -182,4 +182,9 @@ export interface RunDeNotation {
     readonly echantillon_humain: GraineTirage;
     readonly contrefactuel: GraineTirage;
   };
+  /**
+   * `run.schema.json#/properties/contrefactuel_candidats`, réduit à la taille du sous-ensemble :
+   * le dénominateur du taux de chaque juge. Absent tant que le test n'est pas publié.
+   */
+  readonly contrefactuel_candidats?: { readonly taille: number };
 }

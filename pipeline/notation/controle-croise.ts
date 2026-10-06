@@ -34,6 +34,7 @@ export const CODES_VIOLATION = [
   "taux_echantillon_incoherent",
   "retrait_contrefactuel_incoherent",
   "taux_contrefactuel_incoherent",
+  "denominateur_contrefactuel_incoherent",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
 
@@ -84,7 +85,7 @@ export function controleCroise(entree: EntreeControleCroise): readonly Violation
 
 function violationsDuRun(run: RunDeNotation): Violation[] {
   jugesDuRun(run, run.id);
-  return [...tauxEchantillon(run), ...run.juges.flatMap(violationsContrefactuelles)];
+  return [...tauxEchantillon(run), ...run.juges.flatMap((juge) => [...violationsContrefactuelles(juge), ...denominateurContrefactuel(juge, run)])];
 }
 
 /** §7 : le taux passe à 25 % quand un juge est retiré, et à ce seul cas. */
@@ -124,6 +125,23 @@ function violationsContrefactuelles(juge: JugeDuRun): Violation[] {
     });
   }
   return violations;
+}
+
+/**
+ * Le dénominateur du taux d'un juge est la taille du sous-ensemble publiée dans
+ * `contrefactuel_candidats.taille`. Contrôlé quand les deux sont présents ; le schéma exige le bloc
+ * d'un run publié.
+ */
+function denominateurContrefactuel(juge: JugeDuRun, run: RunDeNotation): Violation[] {
+  const changements = juge.changements_contrefactuel;
+  const bloc = run.contrefactuel_candidats;
+  if (changements === undefined || bloc === undefined || changements.denominateur === bloc.taille) return [];
+  return [
+    {
+      code: "denominateur_contrefactuel_incoherent",
+      detail: `juge ${juge.juge_id} : ${changements.denominateur} paires au dénominateur, pour un sous-ensemble de ${bloc.taille} réponse(s) (contrefactuel_candidats.taille).`,
+    },
+  ];
 }
 
 function violationsDuVerdict(verdict: VerdictProduit, ctx: Contexte): Violation[] {

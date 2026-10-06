@@ -8,6 +8,7 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { CLE_DERANGEMENT_CANDIDATS } from "../pipeline/notation/derangement.ts";
 import { urnSchema } from "../outils/schemas/noms.ts";
 import { construireRegistre } from "../outils/schemas/registre.ts";
 
@@ -35,6 +36,26 @@ describe("11. bloc contrefactuel_candidats et effectifs des juges", () => {
     expect(erreurs("valide-01-mensuel-publie.json")).toEqual([]);
     expect(erreurs("valide-05-contrefactuel-indefini.json")).toEqual([]);
     expect(erreurs("valide-06-invalide-deux-juges-retires.json")).toEqual([]);
+  });
+
+  it("le bloc des exemples publie la clé du dérangement, celle de derangement.ts", () => {
+    const exemple = JSON.parse(readFileSync(join(RACINE_SCHEMA, "exemples", "run", "valide-01-mensuel-publie.json"), "utf8")) as {
+      contrefactuel_candidats: { cle_graine_derangement: unknown };
+    };
+    expect(exemple.contrefactuel_candidats.cle_graine_derangement).toEqual([...CLE_DERANGEMENT_CANDIDATS]);
+  });
+
+  it("un bloc sans cle_graine_derangement : tombe pour cette seule obligation", () => {
+    const valider = ajv.getSchema(urnSchema("run"));
+    if (valider === undefined) throw new Error("schéma run absent du registre");
+    const run = JSON.parse(readFileSync(join(RACINE_SCHEMA, "exemples", "run", "valide-01-mensuel-publie.json"), "utf8")) as {
+      contrefactuel_candidats: Record<string, unknown>;
+    };
+    delete run.contrefactuel_candidats["cle_graine_derangement"];
+    expect(valider(run)).toBe(false);
+    expect((valider.errors ?? []).filter((e) => e.keyword !== "if").map((e) => [e.instancePath, e.keyword, JSON.stringify(e.params)])).toEqual([
+      ["/contrefactuel_candidats", "required", JSON.stringify({ missingProperty: "cle_graine_derangement" })],
+    ]);
   });
 
   it("run publié sans le bloc : tombe pour cette seule obligation", () => {

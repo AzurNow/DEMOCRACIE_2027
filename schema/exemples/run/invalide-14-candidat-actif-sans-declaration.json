@@ -264,6 +264,11 @@
       "noms_candidats",
       "sous_ensemble"
     ],
+    "cle_graine_derangement": [
+      "contrefactuel",
+      "noms_candidats",
+      "derangement"
+    ],
     "mentions_residuelles": 0
   },
   "kappa_paire_juges": 0.81,

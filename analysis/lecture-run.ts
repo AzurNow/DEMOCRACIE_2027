@@ -180,6 +180,7 @@ export interface RunLu extends Run {
   readonly juges: readonly JugeDuRun[];
   readonly taux_echantillon_humain: TauxEchantillonHumain;
   readonly graines: { readonly echantillon_humain: GraineTirage; readonly contrefactuel: GraineTirage };
+  readonly contrefactuel_candidats?: { readonly taille: number };
 }
 
 interface TirageLu {
@@ -224,6 +225,7 @@ export function runDeNotationDe(run: RunLu): RunDeNotation {
     juges: run.juges,
     taux_echantillon_humain: run.taux_echantillon_humain,
     graines: { echantillon_humain: run.graines.echantillon_humain, contrefactuel: run.graines.contrefactuel },
+    ...(run.contrefactuel_candidats === undefined ? {} : { contrefactuel_candidats: { taille: run.contrefactuel_candidats.taille } }),
   };
 }
 
