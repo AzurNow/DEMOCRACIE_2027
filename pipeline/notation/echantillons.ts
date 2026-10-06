@@ -1,6 +1,6 @@
 /**
- * Les deux tirages de la notation (§7) : l'échantillon humain et le sous-ensemble du test
- * contrefactuel.
+ * Les trois tirages de la notation (§7) : l'échantillon humain, le sous-ensemble du test
+ * contrefactuel et le jeu d'or.
  *
  * §7 (protocole 0.13) : « L'échantillon humain et ce sous-ensemble sont tirés avec le générateur du
  * tirage (SplitMix64, `splitmix64-sha256-v1`), chacun avec sa graine dérivée de la graine publiée et
@@ -30,6 +30,14 @@
  * l'item nomme au moins un candidat (`candidats.ts`, `nommeUnCandidat`). Ce module ne reçoit que
  * les éligibles, déjà filtrés. S'il y en a moins de 200, toutes sont prises et le résultat le dit
  * (`sous_effectif`), jamais en silence.
+ *
+ * **Jeu d'or** (§7, calibration ; D18 de l'auteur du 2026-10-06, texte proposé pour la 0.16) : 300
+ * réponses tirées parmi les réponses obtenues du run pilote, avec la graine dérivée de
+ * `run.graines.echantillon_humain` et de la clé `["jeu_or"]`, indépendamment de l'échantillon
+ * humain (même entier publié, autre clé, donc autre suite aléatoire). Consommation identique à celle
+ * des deux autres tirages : tri croissant des identifiants reçus, Fisher-Yates du dernier au premier,
+ * préfixe de 300. Moins de 300 réponses obtenues : toutes sont prises, et `sous_effectif` le dit.
+ * Texte haché : `<valeur>␀jeu_or`.
  */
 
 import { graineDerivee } from "../../analysis/graines.ts";
@@ -57,6 +65,15 @@ export const CLE_SOUS_ENSEMBLE_CONTREFACTUEL: readonly string[] = ["contrefactue
 /** §7 : « un sous-ensemble de 200 réponses est renoté ». */
 export const TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL = 200;
 
+/**
+ * Clé lisible de la graine du jeu d'or, dérivée de `run.graines.echantillon_humain` (D18).
+ * Texte haché : `<valeur>␀jeu_or`.
+ */
+export const CLE_JEU_OR: readonly string[] = ["jeu_or"];
+
+/** §7 : « 300 réponses issues d'un run pilote sont doublement notées par des humains ». */
+export const TAILLE_JEU_OR = 300;
+
 /** Le taux publié, écrit en fraction exacte : la taille se calcule en entiers. */
 const FRACTION_DU_TAUX: ReadonlyMap<number, { readonly numerateur: number; readonly denominateur: number }> = new Map([
   [0.1, { numerateur: 1, denominateur: 10 }],
@@ -69,6 +86,16 @@ export interface SousEnsembleContrefactuel {
   readonly eligibles: number;
   readonly taille_visee: number;
   /** Moins d'éligibles que la taille visée : tous sont pris, et c'est dit. */
+  readonly sous_effectif: boolean;
+}
+
+export interface JeuOr {
+  /** Les réponses tirées, dans l'ordre du tirage. */
+  readonly reponse_ids: readonly string[];
+  /** Nombre de réponses obtenues du run pilote parmi lesquelles le tirage a eu lieu. */
+  readonly obtenues: number;
+  readonly taille_visee: number;
+  /** Moins de réponses obtenues que la taille visée : toutes sont prises, et c'est dit. */
   readonly sous_effectif: boolean;
 }
 
@@ -114,6 +141,20 @@ export function tirerSousEnsembleContrefactuel(
     eligibles: eligibles.length,
     taille_visee: TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL,
     sous_effectif: eligibles.length < TAILLE_SOUS_ENSEMBLE_CONTREFACTUEL,
+  };
+}
+
+/**
+ * Le jeu d'or, tiré parmi les réponses obtenues du run pilote. `graine` est
+ * `run.graines.echantillon_humain` du run pilote (D18).
+ */
+export function tirerJeuOr(reponse_ids: readonly string[], graine: GraineTirage): JeuOr {
+  const ordre = ordreTire(reponse_ids, graine, CLE_JEU_OR);
+  return {
+    reponse_ids: ordre.slice(0, TAILLE_JEU_OR),
+    obtenues: reponse_ids.length,
+    taille_visee: TAILLE_JEU_OR,
+    sous_effectif: reponse_ids.length < TAILLE_JEU_OR,
   };
 }
 

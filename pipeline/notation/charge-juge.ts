@@ -138,7 +138,7 @@ export function construireCharge(demande: DemandeCharge): ChargeJuge {
   };
 }
 
-function reponseSoumise(reponse: ReponseObtenue | ReponseContrefactuelle): ReponseSoumise {
+export function reponseSoumise(reponse: ReponseObtenue | ReponseContrefactuelle): ReponseSoumise {
   const projection = reponse.normalise;
   return {
     texte: projection.texte,
@@ -165,7 +165,7 @@ function citationSoumise(citation: ObjetJson): CitationSoumise {
   };
 }
 
-function itemSoumis({ item, role }: ReferenceSoumise): ItemSoumis {
+export function itemSoumis({ item, role }: ReferenceSoumise): ItemSoumis {
   return {
     item_id: item.id,
     item_version: item.version,
