@@ -13,9 +13,41 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-06 — Lot notation, PR B et C, décisions D16 et D17 (PR #81 à #84 : `pipeline/notation/`, `analysis/lecture-run.ts`, `outils/notation-controle.ts`, `schema/run.schema.json`, `schema/notation.schema.json`, `schema/verdict.schema.json`)
+
+### 1. Les mentions résiduelles sont publiées, mais rien ne réagit à leur nombre — *haute*
+
+La PR B compte les mentions de candidat que le remplacement exact laisse en clair (casse
+différente) et la PR C les publie dans `run.json#/contrefactuel_candidats/mentions_residuelles`.
+C'est la moitié du point 3 de l'entrée du 2026-10-05 : le compte existe, aucune règle ne le lit.
+
+**Pourquoi ça casse.** Un run où le juge voit encore « LE PEN » à côté du nom substitué publie un
+taux de changement trop bas, et le go/no-go du §12 le compare à 3 % sans regarder ce compte.
+
+**Ce qu'il faut faire.** Au premier run pilote, lire ce compte. S'il n'est pas nul, l'auteur décide :
+élargir les formes déclarées au périmètre, ou faire du compte un critère du go/no-go (amendement).
+
+### 2. `pnpm notation:controle` confond un run invalide et un run illisible — *basse*
+
+Sur un run dont les deux juges sont retirés (D16 (3)), `jugesDuRun` lève et l'outil sort en 2, le
+code d'une erreur de lecture.
+
+**Ce qu'il faut faire.** Quand l'outil sera branché sur la chaîne de publication, traiter le run
+`invalide` à part (rapport sans contrôle croisé des verdicts, qui n'existent pas).
+
+### 3. Relire un run exige Git et le commit des données gelées — *basse*
+
+`analysis/lecture-run.ts` relit les items par `git show <donnees_commit>:data/items/…`. Un tiers qui
+clone en profondeur 1, ou qui n'a que l'archive Zenodo, obtient une erreur nommée.
+
+**Ce qu'il faut faire.** Dire dans le README de publication qu'un clone complet est requis, ou
+joindre à l'archive les items au gel avec leurs empreintes.
+
+---
+
 ## 2026-10-05 — Décisions D13 à D15 et noyau pur du lot notation (PR #77, #78, #79 : `pipeline/notation/`, `analysis/note-lue.ts`, `schema/notation.schema.json`)
 
-### 1. Une seule égalité, tenue par convention, gouverne désormais trois mesures — *haute*
+### ~~1. Une seule égalité, tenue par convention, gouverne désormais trois mesures~~ — réglé le 2026-10-06 par la PR #82 (`tests/analysis/egalite-metriques.test.ts`) et la décision D17
 
 `analysis/note-lue.ts:notationsConcordent` définit depuis D14 (3) l'accord des humains (kappa,
 recalcul (a)), l'accord des juges (`decision.ts`) et, à la PR B, « la note change » du test

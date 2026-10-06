@@ -130,6 +130,14 @@ son empreinte n'était pas celle de son contenu notant : quatre jours sans qu'au
 découvert par une passe de conformité (n° 34). `tests/protocole-annexe-a.test.ts` lit désormais le
 bloc JSON du protocole tel quel, et le valide au schéma et à l'empreinte.
 
+**Tester une correspondance dans les deux sens.** `notationsConcordent` était censée distinguer
+« tout ce que lisent les métriques primaires » : c'était écrit en commentaire depuis la 0.7, et
+chaque sens était plausible à la lecture. Le garde de la PR #82, qui fait varier chaque champ un à un
+et compare les métriques calculées, a trouvé quatre écarts (deux drapeaux lus seulement par une
+métrique secondaire, la fraîcheur sans drapeau) ; ils sont devenus la décision D17. Le sens
+« métriques différentes ⇒ notes différentes » protège la mesure ; l'autre révèle ce que le texte du
+protocole dit de travers.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
