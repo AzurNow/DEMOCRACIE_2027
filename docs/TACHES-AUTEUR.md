@@ -4,7 +4,7 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+Mis à jour le 2026-10-06. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
 `docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
@@ -295,11 +295,32 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
       2026-10-06. Texte proposé, dans « Test contrefactuel de biais du juge », après la phrase sur
       le sous-ensemble : « Une réponse refusée par l'outil n'y entre pas : elle n'a pas de texte à
       permuter. » ; dans « Sourçage », après « Un lien mort ne soutient jamais rien » : « : quand
-      le test HTTP dit un lien mort, son soutien est noté non applicable, quelle que soit la note
-      du juge ».
+      le test HTTP dit un lien mort, un soutien déclaré par le juge est noté non applicable ».
+      (Corrigé à la clôture du 2026-10-06 : la question tranchée ne portait que sur « soutient » ;
+      `ne_soutient_pas` et `indetermine` restent tels quels, ce que fait le code, #91.)
 
-  Ligne de révision, à fusionner : « Section 7 : un refus n'entre pas au test contrefactuel ; le
-  soutien d'un lien mort est non applicable, fixé par le test HTTP. »
+  Ligne de révision, à fusionner : « Section 7 : un refus n'entre pas au test contrefactuel ; un
+  lien mort déclaré soutenant par le juge est noté non applicable. »
+
+- [ ] **Traçabilité de l'avis du juge (D19, `docs/DETTE.md` 2026-10-06 soir, point 2).** Le forçage
+      efface ce que le juge avait dit, et la sortie brute des juges n'est stockée nulle part.
+      Options : champ facultatif `verdict_soutien_juge` sur le lien, présent seulement en cas de
+      forçage (amendement du schéma, recommandé) ; ou sortie brute des juges dans l'archive du run.
+
+- [ ] **Lien inaccessible noté soutenant sans copie archivée** : le schéma le refuse (conformité
+      n° 29), un juge peut le produire, et l'écriture échoue alors visiblement. À trancher avec le
+      cadrage du lot `test-liens` (forcer, refuser, ou exiger la copie du test HTTP).
+
+- [ ] **Trois questions de la notation humaine (#87, #88)** :
+      (1) dans l'échantillon, deux humains d'accord au sens de `notationsConcordent` sans note
+      commune restent en attente : le §7 n'admet pas d'arbitre ici ; faut-il un troisième humain ?
+      (2) `reponse.normalisation.fonction` est montrée au juge et à l'humain : imposer aux
+      adaptateurs un nom neutre, qui ne trahisse pas l'outil ? (3) double soumission : garder deux
+      messages (« tâche indisponible », « fichier déjà écrit ») ou un seul ?
+
+- [ ] **Cadrer l'écrivain du gel** (lot notation, #89) : aucun code n'écrit `run.json` ni
+      `questions.json` pour un vrai run, et personne n'inscrit un run invalide (D16 (3)), dont le
+      schéma exige `publication` et `depot`. Dire quel outil gèle un run et quand il est invalidé.
 
 - [ ] **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
       HTTP déterministe de l'existence des liens cités, et aucun code ne le fait. C'est un appel

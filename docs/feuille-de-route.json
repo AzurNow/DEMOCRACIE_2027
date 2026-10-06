@@ -482,7 +482,7 @@
       "id": "notation",
       "titre": "Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves",
       "jalon": "J4",
-      "niveau": "T2",
+      "niveau": "T3",
       "agent": "opus",
       "taille": "L",
       "temps_auteur_h": 2,
@@ -508,13 +508,13 @@
         "D17",
         "D3"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur)."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens."
     },
     {
       "id": "notation-humaine",
       "titre": "Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or",
       "jalon": "J4",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "sonnet",
       "taille": "L",
       "temps_auteur_h": 2,
@@ -535,7 +535,7 @@
       "decisions": [
         "D18"
       ],
-      "note": "Ajouté le 2026-10-06 : aucun lot ne prévoyait la saisie des notations humaines que le §7 exige (échantillon, arbitrage du troisième humain, humain appelé sur désaccord, extrait invalide ou drapeau grave) ni le jeu d'or de 300 réponses (J4). L'interface de validation ne sait valider que des items. Bloqué par la PR C du lot notation (écriture des notations dans runs/<date>/volume/notations/). Double notation humaine à l'aveugle : un annotateur ne voit ni l'outil, ni la note des juges, ni celle de l'autre humain. À livrer avant J4 (2026-11-22), idéalement assez tôt pour former les annotateurs. Le 2026-10-06 : D18 tranchée. Découpage : PR 1 (file de travail, vue de l'annotateur = charge du juge, construction et contrôle d'une notation humaine, tirage du jeu d'or), PR 2 (écran local, sur le modèle de pnpm validate). Le kappa juge-humain (critère de J4) n'est calculé nulle part : à prévoir au lot analyse ou go-no-go. Le 2026-10-06 : PR 1 (#87, domaine) et PR 2 (#88, écran pnpm notation:humaine, aveugle total, fournisseur d'existences vide en production) fusionnées ; seules les réponses sans lien sont notables tant que test-liens manque."
+      "note": "Ajouté le 2026-10-06 : aucun lot ne prévoyait la saisie des notations humaines que le §7 exige (échantillon, arbitrage du troisième humain, humain appelé sur désaccord, extrait invalide ou drapeau grave) ni le jeu d'or de 300 réponses (J4). L'interface de validation ne sait valider que des items. Bloqué par la PR C du lot notation (écriture des notations dans runs/<date>/volume/notations/). Double notation humaine à l'aveugle : un annotateur ne voit ni l'outil, ni la note des juges, ni celle de l'autre humain. À livrer avant J4 (2026-11-22), idéalement assez tôt pour former les annotateurs. Le 2026-10-06 : D18 tranchée. Découpage : PR 1 (file de travail, vue de l'annotateur = charge du juge, construction et contrôle d'une notation humaine, tirage du jeu d'or), PR 2 (écran local, sur le modèle de pnpm validate). Le kappa juge-humain (critère de J4) n'est calculé nulle part : à prévoir au lot analyse ou go-no-go. Le 2026-10-06 : PR 1 (#87, domaine) et PR 2 (#88, écran pnpm notation:humaine, aveugle total, fournisseur d'existences vide en production) fusionnées ; seules les réponses sans lien sont notables tant que test-liens manque. T2 : domaine et routes du serveur testés, cas limites couverts ; le client n'est testé par aucun navigateur (pas de jsdom), d'où pas T3."
     },
     {
       "id": "test-liens",
