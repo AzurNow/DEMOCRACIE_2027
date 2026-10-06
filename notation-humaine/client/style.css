@@ -1,0 +1,148 @@
+/*
+ * Écran de notation humaine. Même sobriété que l'interface de validation, mêmes couleurs.
+ * Aucune ressource distante : ni police, ni feuille de style, ni image.
+ */
+
+:root {
+  --encre: #1a1a1a;
+  --papier: #fdfdfc;
+  --papier-second: #f2f1ee;
+  --trait: #d5d3cd;
+  --appui: #2b4c7e;
+  --alerte: #8b2b2b;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--encre);
+  background: var(--papier);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#bandeau {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--trait);
+  background: var(--papier-second);
+  font-size: 0.85rem;
+}
+
+#bandeau #comptes {
+  flex: 1;
+  text-align: right;
+  color: #555;
+}
+
+#ecran {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.volets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  overflow: hidden;
+}
+
+.volet {
+  overflow: auto;
+  padding: 1rem;
+}
+
+.volet + .volet {
+  border-left: 1px solid var(--trait);
+}
+
+.vide {
+  padding: 2rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 1rem 0 0.5rem;
+}
+
+h3 {
+  font-size: 0.95rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.note {
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.question,
+.reponse {
+  white-space: pre-wrap;
+  padding: 0.5rem 0.75rem;
+  background: var(--papier-second);
+  border-left: 3px solid var(--trait);
+}
+
+.reference {
+  border-top: 1px solid var(--trait);
+  padding-top: 0.5rem;
+}
+
+.etat ul {
+  margin: 0.25rem 0;
+}
+
+fieldset {
+  border: 1px solid var(--trait);
+  margin: 0 0 0.75rem;
+}
+
+.choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0 0 0.5rem;
+}
+
+textarea,
+input[type="text"],
+select {
+  font: inherit;
+  padding: 0.3rem;
+  border: 1px solid var(--trait);
+}
+
+button[type="submit"] {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  background: var(--appui);
+  border: 0;
+  cursor: pointer;
+}
+
+.alerte,
+.refus {
+  color: var(--alerte);
+}
+
+.refus {
+  border: 1px solid var(--alerte);
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+}
