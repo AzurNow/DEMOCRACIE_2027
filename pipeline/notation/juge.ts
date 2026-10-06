@@ -16,13 +16,21 @@
  * notation individuelle de `schema/notation.schema.json` à partir de ces trois sources ; la
  * validation de schéma a lieu à l'écriture (`stockage.ts`).
  *
+ * **Le soutien d'un lien mort (D19).** Le juge ne connaît pas l'existence des liens : il peut
+ * déclarer « soutient » un lien que le test HTTP dit mort. §7 : « Un lien mort ne soutient jamais
+ * rien. » La notation porte alors `non_applicable` pour ce lien, quoi que le juge ait répondu
+ * (`soutienApresTestHttp`). Le forçage couvre exactement la combinaison que le schéma refuse (mort ×
+ * soutient) : un lien inaccessible ou non testable peut être noté soutenant d'après une copie
+ * archivée, il n'est pas forcé. Le sourçage valide du §8 (`analysis/note-lue.ts`) n'en change pas :
+ * un lien mort n'y comptait déjà pas comme soutenant.
+ *
  * **Identité.** `identite` porte ce que le run déclare de chaque juge (`run.schema.json#/properties/
  * juges`) ; `version_prompt` du run et de la notation est `versionPromptDe(prompt)`, le chemin du
  * prompt et sa version joints par `@`. La chaîne refuse un juge dont l'identité ne correspond pas à
  * celle que déclare `run.json`.
  */
 
-import type { CategorieRetenue, Drapeau, Gabarit, Instant, ReferenceItem, Ulid, VerdictSoutien } from "../../analysis/types.ts";
+import type { CategorieRetenue, Drapeau, Gabarit, Instant, ReferenceItem, Ulid, VerdictExistence, VerdictSoutien } from "../../analysis/types.ts";
 import type { ChargeJuge, PromptDeJuge } from "./charge-juge.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
@@ -149,7 +157,16 @@ function existenceDe(cadre: CadreNotationJuge, url: string): ExistenceEtablie {
   return existence;
 }
 
-/** Recopie champ par champ du résultat du test HTTP, plus l'avis de soutien du juge. */
+/**
+ * D19, §7 : « Un lien mort ne soutient jamais rien. » Quand le test HTTP dit un lien mort, un avis
+ * « soutient » est noté `non_applicable` ; tout autre avis, et tout avis sur un lien qui n'est pas
+ * mort, est rendu tel quel.
+ */
+export function soutienApresTestHttp(soutien: VerdictSoutien, existence: VerdictExistence): VerdictSoutien {
+  return existence === "mort" && soutien === "soutient" ? "non_applicable" : soutien;
+}
+
+/** Recopie champ par champ du résultat du test HTTP, plus l'avis de soutien du juge, après D19. */
 function lienNote(soutien: SoutienDeLien, e: ExistenceEtablie): LienNotation {
   return {
     url_citee: e.url_citee,
@@ -157,7 +174,7 @@ function lienNote(soutien: SoutienDeLien, e: ExistenceEtablie): LienNotation {
     ...(e.code_http === undefined ? {} : { code_http: e.code_http }),
     date_test: e.date_test,
     verdict_existence: e.verdict_existence,
-    verdict_soutien: soutien.verdict_soutien,
+    verdict_soutien: soutienApresTestHttp(soutien.verdict_soutien, e.verdict_existence),
     ...(e.sha256_contenu === undefined ? {} : { sha256_contenu: e.sha256_contenu }),
     ...(e.archive_url === undefined ? {} : { archive_url: e.archive_url }),
   };

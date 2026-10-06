@@ -133,7 +133,7 @@ describe("le juge simulé", () => {
 describe("le fournisseur d'existences simulé", () => {
   it("rend les verdicts de sa table, rien pour un lien inconnu", () => {
     const fournisseur = fournisseurSimule(parametresDeReference().existences, temporaire());
-    expect(fournisseur.existencesDe("r", [LIEN, "https://inconnu.invalid/"])).toEqual([expect.objectContaining({ url_citee: LIEN, verdict_existence: "existe" })]);
+    expect(fournisseur.existencesDe("r", [LIEN, "https://inconnu.invalid/"])).toEqual([expect.objectContaining({ url_citee: LIEN, verdict_existence: "mort" })]);
     expect(fournisseur.existencesDe("r", ["https://inconnu.invalid/"])).toEqual([]);
   });
 

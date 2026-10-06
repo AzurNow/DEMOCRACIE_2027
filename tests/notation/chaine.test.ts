@@ -17,7 +17,9 @@ import { JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatCha
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
+import type { ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
+import type { SortieJuge } from "../../pipeline/notation/juge.ts";
 import { ContrefactuelDejaInscrit } from "../../pipeline/notation/inscription-contrefactuel.ts";
 import {
   environnementSimule,
@@ -403,6 +405,36 @@ describe("11. le bilan", () => {
     const { resultat, prepare } = await noter(nouvelleSortie());
     const ampute: ResultatChaine = { ...resultat, attentes: resultat.attentes.slice(1) };
     expect(() => bilanNotation(prepare.repertoire_run, ampute, prepare.reponses.map((r) => r.reponse.id))).toThrow(ReponsePerdue);
+  });
+});
+
+describe("12. D19 : un juge dit « soutient » sur un lien que le test HTTP dit mort", () => {
+  it("le run de référence atteint le cas ; chaque notation écrite porte non_applicable pour ce lien, aucune ErreurSchema, aucune violation", async () => {
+    const morts = new Set(parametresDeReference().existences.filter((e) => e.verdict_existence === "mort").map((e) => e.url_citee));
+    const rendus: { readonly juge_id: string; readonly reponse_id: string; readonly sortie: SortieJuge }[] = [];
+    const { prepare, resultat } = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({
+      ...env,
+      juges: env.juges.map((juge) => ({
+        identite: juge.identite,
+        noter: async (charge: ChargeJuge) => {
+          const sortie = await juge.noter(charge);
+          rendus.push({ juge_id: juge.identite.juge_id, reponse_id: charge.reponse_id, sortie });
+          return sortie;
+        },
+      })),
+    }));
+    const soutientUnMort = (s: SortieJuge): boolean => s.sourcage.soutiens.some((l) => morts.has(l.url_citee) && l.verdict_soutien === "soutient");
+    const atteints = rendus.filter((r) => soutientUnMort(r.sortie));
+    expect(atteints.length).toBeGreaterThan(0);
+    const notations = lireNotationsDuRun(prepare.repertoire_run, resultat.run_id).notations;
+    for (const { juge_id, reponse_id } of atteints) {
+      const notation = notations.find((n) => n.notateur.id === juge_id && n.objet_note.id === reponse_id);
+      if (notation === undefined) throw new Error(`aucune notation écrite du juge ${juge_id} sur ${reponse_id}`);
+      const liensMorts = notation.sourcage.liens.filter((l) => morts.has(l.url_citee));
+      expect(liensMorts.length).toBeGreaterThan(0);
+      for (const l of liensMorts) expect(l).toMatchObject({ verdict_existence: "mort", verdict_soutien: "non_applicable" });
+    }
+    expect(violations(prepare.repertoire_run)).toEqual([]);
   });
 });
 

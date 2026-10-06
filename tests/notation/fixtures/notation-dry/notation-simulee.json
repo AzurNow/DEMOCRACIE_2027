@@ -1,5 +1,5 @@
 {
-  "$comment": "Notation simulée de `pnpm notation:dry` (pipeline/notation/notation-simulee.ts). Les juges sont ceux que déclare run.json, à l'identité près ; leur prompt est simule://juge-simule@1.0.0, aucun fichier de prompts/. La répartition donne, par nature de réponse, le poids entier de chaque scénario de juge-simule.ts:REGLES_JUGE_SIMULE ; le scénario d'une réponse est tiré avec la graine. Aucun biais : le test contrefactuel ne retire aucun juge sur le run de référence. La table des existences donne le verdict du test HTTP de chaque lien que l'éditeur simulé cite ; un lien absent de la table laisse sa réponse en attente du test des liens. run.json porte des commits à zéro : un run simulé ne lit ni le code ni data/ à un commit (ses items sont dans items/, épinglés par empreinte).",
+  "$comment": "Notation simulée de `pnpm notation:dry` (pipeline/notation/notation-simulee.ts). Les juges sont ceux que déclare run.json, à l'identité près ; leur prompt est simule://juge-simule@1.0.0, aucun fichier de prompts/. La répartition donne, par nature de réponse, le poids entier de chaque scénario de juge-simule.ts:REGLES_JUGE_SIMULE ; le scénario d'une réponse est tiré avec la graine. Aucun biais : le test contrefactuel ne retire aucun juge sur le run de référence. La table des existences donne le verdict du test HTTP de chaque lien que l'éditeur simulé cite ; un lien absent de la table laisse sa réponse en attente du test des liens. Le seul lien que cite l'éditeur simulé est déclaré mort : le scénario « exacte » du juge simulé le dit soutenant, et la chaîne note ce soutien non_applicable (D19, §7 : un lien mort ne soutient jamais rien) ; pnpm notation:dry exerce ainsi le forçage de bout en bout. run.json porte des commits à zéro : un run simulé ne lit ni le code ni data/ à un commit (ses items sont dans items/, épinglés par empreinte).",
   "date_notation": "2026-12-04T10:00:00+01:00",
   "juge_simule": {
     "graine": 20261204,
@@ -15,8 +15,8 @@
   "existences": [
     {
       "url_citee": "https://source-simulee.invalid/page",
-      "verdict_existence": "existe",
-      "code_http": 200,
+      "verdict_existence": "mort",
+      "code_http": 404,
       "date_test": "2026-12-04T09:00:00+01:00"
     }
   ]
