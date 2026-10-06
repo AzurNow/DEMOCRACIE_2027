@@ -23,14 +23,33 @@ runs/<date>/
   volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
-    notations/<id>.json             les notations individuelles (schema/notation.schema.json)
+    notations/<id>.json             une notation individuelle par fichier (schema/notation.schema.json)
+    reponses-contrefactuelles/<id>.json
+                                    les réponses permutées du test contrefactuel (§7), contexte ≠ run
 ```
 
-Ce lot (interrogation, mode simulé) écrit seulement `volume/reponses/` et `volume/tentatives/`.
-`run.json`, `tirage.json`, `questions.json` et `mesures.json` suivent l'usage déjà documenté de
-`pnpm symmetry` (`outils/symmetry.ts`). Les noms `verdicts/`, `metriques/` et `notations/` sont la
-disposition proposée pour les lots suivants, à confirmer par eux ; ils n'ont pas encore d'écrivain
-dans le dépôt.
+L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
+`volume/tentatives/`. La notation (`pipeline/notation/stockage.ts:DepotNotation`) écrit
+`verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`,
+`questions.json` et `mesures.json` suivent l'usage déjà documenté de `pnpm symmetry`
+(`outils/symmetry.ts`). Le nom `metriques/` reste la disposition proposée pour le lot de l'analyse ;
+il n'a pas encore d'écrivain dans le dépôt.
+
+## `verdicts/`, `volume/notations/`, `volume/reponses-contrefactuelles/`
+
+Mêmes garanties que `volume/reponses/` (règle 7) : chaque objet est validé contre son schéma, puis
+écrit par ouverture exclusive ; un fichier existant n'est jamais remplacé, et rien n'est écrit quand
+un contrôle échoue. Chaque objet porte le `run_id` du `run.json` de son répertoire.
+
+- `verdicts/<id>.json` : un verdict par objet noté, et seulement pour un objet de contexte `run` ;
+  un second verdict sur le même objet est refusé dès l'écriture.
+- `volume/notations/<id>.json` : une notation individuelle par fichier, tous contextes confondus
+  (notations du run, des humains, du test contrefactuel).
+- `volume/reponses-contrefactuelles/<id>.json` : les réponses permutées du test contrefactuel, de
+  contexte autre que `run`, une par réponse d'origine et par contexte. Un dossier à part de
+  `volume/reponses/` : une réponse contrefactuelle partage la requête de sa réponse d'origine, que
+  le stockage de l'interrogation refuserait une seconde fois, et ces textes n'ont été produits par
+  aucun outil.
 
 ## `volume/reponses/<id>.json`
 
@@ -76,9 +95,10 @@ tenir le plafond de trois tentatives du §6 après un arrêt brutal (`pipeline/i
 ## Ce que l'analyse lira
 
 `analysis/filtre.ts:assembler()` prend un `EntreesAnalyse` : `run`, `entrees_tirage`, `questions`,
-`items`, `reponses`, `verdicts`. Sa lecture depuis cette disposition vient au lot notation, sans
-couche intermédiaire (docs/DETTE.md, « Le contrat d'entrée de l'analyse précède la disposition de
-`runs/` ») :
+`items`, `reponses`, `verdicts`. `analysis/lecture-run.ts:lireRun` le lit depuis cette disposition,
+sans couche intermédiaire (docs/DETTE.md, « Le contrat d'entrée de l'analyse précède la disposition
+de `runs/` »), chaque fichier validé contre son schéma ; un fichier illisible, non conforme, mal
+nommé, d'un autre run ou hors du contexte de son dossier est une erreur qui cite son chemin :
 
 | Champ de `EntreesAnalyse` | Lu dans |
 | --- | --- |
@@ -89,8 +109,28 @@ couche intermédiaire (docs/DETTE.md, « Le contrat d'entrée de l'analyse préc
 | `reponses` | `runs/<date>/volume/reponses/*.json`, chaque fichier validé ; pour un tiers, le volume se reconstitue depuis l'archive Zenodo, dont l'empreinte est vérifiée contre `run.json#/depot/archives` |
 | `verdicts` | `runs/<date>/verdicts/*.json` |
 
-Les journaux de tentatives et les notations individuelles ne passent pas par `assembler()` : les
-premiers servent l'audit du §6, les secondes le recalcul de robustesse §8(a).
+Précisions de la lecture :
+
+- `tirage.json` : `run.json#/tirage/chemin` doit désigner un fichier du répertoire du run
+  (`runs/<date>/<fichier>`), et le SHA-256 de ses octets doit être `run.json#/tirage/sha256`.
+- `items` : chaque item est lu par Git au commit `run.versions.donnees_commit`, à la version et à
+  l'empreinte qu'épinglent les questions ; une version introuvable est une erreur, jamais la version
+  courante à sa place.
+- `reponses` : `volume/` absent, ou sans `reponses/`, est une erreur qui dit de reconstituer le
+  volume ; un `reponses/` vide est lu tel quel, et `assembler()` décide.
+- Archive Zenodo : vérifiée seulement si l'appelant en fournit le fichier, contre l'empreinte que
+  `run.json#/depot/archives` déclare sous le même nom ; sinon le résultat dit `non_verifiee`.
+
+Les journaux de tentatives, les notations individuelles et les réponses contrefactuelles ne passent
+pas par `assembler()` : les premiers servent l'audit du §6 ; les notations et les réponses
+contrefactuelles sont relues par `lireNotationsDuRun`, pour le contrôle croisé et le recalcul de
+robustesse §8(a).
+
+## `pnpm notation:controle <repertoire_run>`
+
+Le contrôle croisé n° 18 (§7 ; D13) sur un run enregistré : lit `run.json`, `volume/reponses/`,
+`volume/notations/` (et `volume/reponses-contrefactuelles/`) et `verdicts/`, imprime chaque violation.
+Sortie 0 sans violation, 1 avec au moins une, 2 si le run n'a pas pu être lu. N'écrit rien.
 
 ## `pnpm run:dry`
 
