@@ -265,6 +265,19 @@
       "recommandation": "Option 1 : l'écart va dans le sens prudent (plus de changements contrefactuels, plus d'humains), et la mauvaise attribution, drapeau grave, reste dans l'accord.",
       "retenu": "Option 1. Schémas de notation et de verdict : obsolescence_fraiche absente sans le drapeau obsolescence (PR #82). Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
       "date_decision": "2026-10-06"
+    },
+    {
+      "id": "D18",
+      "statut": "tranchee",
+      "question": "Trois points de la notation humaine des réponses que le §7 ne tranche pas : ce que voit l'humain appelé, ce que fait le troisième humain de l'échantillon, le tirage du jeu d'or.",
+      "contexte": "Le §7 dit les annotateurs aveugles à l'outil et à l'autre annotateur, sans parler des notes des juges ; il fait arbitrer l'échantillon par un troisième humain sans dire s'il note ou choisit ; il fixe 300 réponses du run pilote pour le jeu d'or sans dire comment elles sont tirées.",
+      "options": [
+        "Aveugle total (l'humain voit exactement la charge du juge, ni les notes des juges ni celles des autres humains) ; le troisième humain note à l'aveugle et sa note est retenue ; jeu d'or tiré à part (graine dérivée, clé jeu_or, motif calibration_jeu_or), indépendant de l'échantillon.",
+        "Variantes : l'humain voit les notes des juges ; l'arbitre choisit l'une des deux notes ; le jeu d'or prolonge l'échantillon de 10 %."
+      ],
+      "recommandation": "Option 1 sur les trois points.",
+      "retenu": "Option 1 sur les trois points. À coder au lot notation-humaine. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
+      "date_decision": "2026-10-06"
     }
   ],
   "lots": [
@@ -468,6 +481,10 @@
         {
           "lot": "interrogation",
           "type": "informe"
+        },
+        {
+          "lot": "test-liens",
+          "type": "bloque"
         }
       ],
       "decisions": [
@@ -496,10 +513,33 @@
         {
           "lot": "validation-interface",
           "type": "informe"
+        },
+        {
+          "lot": "test-liens",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D18"
+      ],
+      "note": "Ajouté le 2026-10-06 : aucun lot ne prévoyait la saisie des notations humaines que le §7 exige (échantillon, arbitrage du troisième humain, humain appelé sur désaccord, extrait invalide ou drapeau grave) ni le jeu d'or de 300 réponses (J4). L'interface de validation ne sait valider que des items. Bloqué par la PR C du lot notation (écriture des notations dans runs/<date>/volume/notations/). Double notation humaine à l'aveugle : un annotateur ne voit ni l'outil, ni la note des juges, ni celle de l'autre humain. À livrer avant J4 (2026-11-22), idéalement assez tôt pour former les annotateurs. Le 2026-10-06 : D18 tranchée. Découpage : PR 1 (file de travail, vue de l'annotateur = charge du juge, construction et contrôle d'une notation humaine, tirage du jeu d'or), PR 2 (écran local, sur le modèle de pnpm validate). Le kappa juge-humain (critère de J4) n'est calculé nulle part : à prévoir au lot analyse ou go-no-go."
+    },
+    {
+      "id": "test-liens",
+      "titre": "Test HTTP déterministe de l'existence des liens cités (§7, sourçage)",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "M",
+      "temps_auteur_h": 1,
+      "depend_de": [
+        {
+          "lot": "interrogation",
+          "type": "informe"
         }
       ],
       "decisions": [],
-      "note": "Ajouté le 2026-10-06 : aucun lot ne prévoyait la saisie des notations humaines que le §7 exige (échantillon, arbitrage du troisième humain, humain appelé sur désaccord, extrait invalide ou drapeau grave) ni le jeu d'or de 300 réponses (J4). L'interface de validation ne sait valider que des items. Bloqué par la PR C du lot notation (écriture des notations dans runs/<date>/volume/notations/). Double notation humaine à l'aveugle : un annotateur ne voit ni l'outil, ni la note des juges, ni celle de l'autre humain. À livrer avant J4 (2026-11-22), idéalement assez tôt pour former les annotateurs."
+      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité)."
     },
     {
       "id": "analyse",

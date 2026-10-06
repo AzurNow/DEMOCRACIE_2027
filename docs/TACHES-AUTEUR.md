@@ -280,6 +280,21 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : l'accord de deux notations porte sur tous les
   drapeaux. Section 11 : la fraîcheur n'existe qu'avec le drapeau obsolescence. »
 
+- [ ] **Écrire aussi en 0.16 : D18 (§7, notation humaine)**, tranchée le 2026-10-06. Texte
+      proposé, dans « Annotateurs humains », après « (sans voir l'outil, ni l'autre annotateur) » :
+      « ni la note des juges : un humain reçoit exactement ce que reçoit un juge » ; dans le point
+      sur l'échantillon, après « arbitrée par un troisième humain » : « qui la note à son tour à
+      l'aveugle » ; dans « Calibration et fiabilité publiée », après « 300 réponses issues d'un run
+      pilote » : « , tirées parmi ses réponses obtenues avec une graine dérivée de la graine publiée
+      et de la clé « jeu_or », indépendamment de l'échantillon humain, ».
+
+  Ligne de révision, à fusionner : « Section 7 : l'humain ne voit pas la note des juges ; le
+  troisième humain de l'échantillon note à l'aveugle ; le jeu d'or a son propre tirage. »
+
+- [ ] **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
+      HTTP déterministe de l'existence des liens cités, et aucun code ne le fait. C'est un appel
+      réseau nouveau, à autoriser, avec ses règles (redirections, délais, « inaccessible »).
+
 - [ ] **Pour le premier `run:live` (lot interrogation)** : fournir, pour chaque outil, un corps
       d'erreur de modération authentique (documentation de l'éditeur ou appel d'essai archivé), qui
       servira de test à son adaptateur (`docs/DETTE.md`, 2026-10-02, lot interrogation, point 1).
