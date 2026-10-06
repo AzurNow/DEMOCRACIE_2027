@@ -250,6 +250,22 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   un accord partiel des juges est tranché par un humain ; l'échantillon humain est tiré parmi les
   réponses obtenues, arrondi au supérieur. »
 
+- [ ] **Écrire aussi en 0.16 : D16 (§7, test contrefactuel)**, tranchée le 2026-10-06 avant la
+      PR B du lot notation. Texte proposé, dans « Test contrefactuel de biais du juge », après
+      « dans la réponse et dans l'item de référence » : « , ainsi que dans la question transmise au
+      juge » ; puis, après « Une note qui change avec le nom seul révèle un biais du juge. » :
+
+  > Une paire dont l'une des deux notations porte un extrait justificatif invalide compte comme un
+  > changement ; le taux n'est calculé qu'une fois les deux notations de chaque paire rendues. Si
+  > les deux juges dépassent 3 %, la notation du run s'arrête et le run est marqué invalide, avec
+  > cette raison (section 12).
+
+  Le contrefactuel outil (paragraphe « Conflit d'intérêts ») reste à préciser par une décision
+  propre : taille du sous-ensemble, réponses éligibles, noms d'outils déclarés.
+
+  Ligne de révision, à fusionner : « Section 7 : le contrefactuel permute aussi la question ; un
+  extrait invalide compte comme un changement ; le retrait des deux juges invalide le run. »
+
 - [ ] **Pour le premier `run:live` (lot interrogation)** : fournir, pour chaque outil, un corps
       d'erreur de modération authentique (documentation de l'éditeur ou appel d'essai archivé), qui
       servira de test à son adaptateur (`docs/DETTE.md`, 2026-10-02, lot interrogation, point 1).

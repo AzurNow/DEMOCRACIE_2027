@@ -36,6 +36,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-05 :** Option 1 sur les cinq points, codée dans la PR #79. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
+### D16 — Quatre points du test contrefactuel des candidats que le §7 ne tranche pas : permutation de la question, extrait invalide dans une paire, retrait des deux juges, contrefactuel outil.
+
+**Décision du 2026-10-06 :** Option 1 sur les quatre points. À coder dans la PR B du lot notation. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
+
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.
