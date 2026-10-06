@@ -233,6 +233,54 @@ describe("désaccord et ce qui fait une note différente (D14 (3))", () => {
   });
 });
 
+describe("accord partiel des juges (D15) : un humain sous accord_partiel_juges", () => {
+  const A = notationJuge("j1", inexacte());
+  const B = notationJuge("j2", { ...inexacte(), motif_inexactitude: "position_opposee" });
+
+  it("humain présent sous accord_partiel_juges : sa note est retenue, tranche_humain, sources = deux juges + l'humain", () => {
+    const humain = notationHumaine("a1", "accord_partiel_juges", { ...inexacte(), motif_inexactitude: "position_opposee" });
+    const v = verdictDe(decide([A, B, humain]));
+    expect(v).toMatchObject({ mode_resolution: "tranche_humain", motif_inexactitude_retenu: "position_opposee", desaccord_juges: false, erreur_grave: false });
+    expect(v.notations_sources).toEqual([A.id, B.id, humain.id]);
+    expect(v.revue_humaine).toMatchObject({ effectuee: true, annotateurs: ["a1"] });
+  });
+
+  it("l'humain appelé pose un drapeau grave : revue_erreur_grave", () => {
+    const humain = notationHumaine("a1", "accord_partiel_juges", inexacte(["fabrication"]));
+    expect(verdictDe(decide([A, B, humain]))).toMatchObject({ mode_resolution: "revue_erreur_grave", erreur_grave: true });
+  });
+
+  it("sourçage partiel (existence d'un lien) : même règle", () => {
+    const a = notationJuge("j1", { sourcage: { cite: true, liens: [lien("mort", "non_applicable")] } });
+    const b = notationJuge("j2", { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
+    const humain = notationHumaine("a1", "accord_partiel_juges", { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } });
+    expect(verdictDe(decide([a, b, humain])).mode_resolution).toBe("tranche_humain");
+  });
+
+  it("humain sous desaccord_juges alors que la situation est un accord partiel : incohérence", () => {
+    expect(() => decide([A, B, notationHumaine("a1", "desaccord_juges", inexacte())])).toThrow(NotationsIncoherentes);
+    expect(() => decide([A, B, notationHumaine("a1", "erreur_grave", inexacte())])).toThrow(/accord_partiel_juges/);
+  });
+
+  it("accord_partiel_juges sur un vrai désaccord : incohérence", () => {
+    expect(() => decide([J1, notationJuge("j2", inexacte()), notationHumaine("a1", "accord_partiel_juges")])).toThrow(NotationsIncoherentes);
+  });
+
+  it("accord_partiel_juges sur un accord complet : incohérence, rien ne l'exige", () => {
+    expect(() => decide([J1, J2, notationHumaine("a1", "accord_partiel_juges")])).toThrow(/ne l'exige/);
+  });
+
+  it("accord_partiel_juges après un extrait invalide : incohérence, extrait_invalide est exigé", () => {
+    const invalide = notationJuge("j2", { ...inexacte(), extrait_justificatif: { provenance: "reponse", texte: "absent", verifie_deterministe: true } });
+    expect(() => decide([J1, invalide, notationHumaine("a1", "accord_partiel_juges")])).toThrow(/extrait_invalide/);
+  });
+
+  it("accord_partiel_juges sur une réponse de l'échantillon : incohérence", () => {
+    const humains = ["a1", "a2"].map((a) => notationHumaine(a, "echantillon_aleatoire_10"));
+    expect(() => decide([J1, J2, ...humains, notationHumaine("a3", "accord_partiel_juges")], { dans_echantillon_humain: true })).toThrow(NotationsIncoherentes);
+  });
+});
+
 describe("juge retiré (D13)", () => {
   const RUN = runDeNotation(["j2"]);
 

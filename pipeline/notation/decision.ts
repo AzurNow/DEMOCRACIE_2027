@@ -19,8 +19,9 @@
  *    sinon celle du troisième (`echantillon_humain_10`, nom du schéma conservé à 25 %).
  * 5. **Hors échantillon.** Désaccord, extrait invalide ou drapeau grave posé par un juge non retiré
  *    : un humain tranche (`tranche_humain`, ou `revue_erreur_grave` dès qu'un drapeau grave est posé
- *    par un juge non retiré ou par cet humain). Sinon, accord des deux juges (`accord_juges`), ou
- *    juge restant seul après un retrait (`juge_unique_apres_retrait`).
+ *    par un juge non retiré ou par cet humain). Accord des deux juges sans note commune : un humain
+ *    tranche aussi, sous `accord_partiel_juges` (D15). Sinon, accord des deux juges
+ *    (`accord_juges`), ou juge restant seul après un retrait (`juge_unique_apres_retrait`).
  *
  * « S'accorder » est `analysis/note-lue.ts:notationsConcordent` (D14 (3)), seule égalité du dépôt.
  *
@@ -28,6 +29,11 @@
  * métriques primaires ne lisent pas, mais que le verdict porte : `motif_inexactitude`, `cite`,
  * `au_moins_un_lien_existant`. Le §7 ne dit pas lequel retenir. Plutôt que d'inventer une règle de
  * fusion, la réponse attend un humain (`accord_sans_note_commune`) : voir `note-retenue.ts:noteCommune`.
+ * Hors échantillon (D15, « accord partiel → humain »), cet humain note sous `accord_partiel_juges`,
+ * et sa note est retenue (`tranche_humain`, ou `revue_erreur_grave` s'il pose un drapeau grave),
+ * avec les deux juges et lui pour sources. Dans l'échantillon, deux humains qui s'accordent sans
+ * note commune laissent la réponse en attente : le §7 retient leur note commune et n'admet pas
+ * d'arbitrage entre deux humains qui s'accordent (question ouverte).
  *
  * Toute incohérence des entrées (notation d'un autre run ou d'un autre objet, juge inconnu, deux
  * notations d'un même juge, humain sous un motif que la situation n'appelle pas…) lève
@@ -38,7 +44,7 @@ import { notationsConcordent } from "../../analysis/note-lue.ts";
 import type { Instant, MotifNotation, ObjetNote, Ulid } from "../../analysis/types.ts";
 import { comparerChaines } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
-import { construireVerdict, noteCommune, noteDe, porteDrapeauGrave, type Resolution } from "./note-retenue.ts";
+import { construireVerdict, noteCommune, noteDe, porteDrapeauGrave, type NoteRetenue, type Resolution } from "./note-retenue.ts";
 import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
 
 export interface EntreeDecision {
@@ -180,6 +186,7 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
   ["desaccord_juges", "appeles"],
   ["erreur_grave", "appeles"],
   ["extrait_invalide", "appeles"],
+  ["accord_partiel_juges", "appeles"],
 ]);
 
 /**
@@ -187,10 +194,14 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
  * `extrait_invalide`, même si un drapeau grave est aussi posé : c'est le défaut qui retire la note
  * d'un juge, et le plus restrictif est de ne pas le laisser masquer par un autre motif. Un extrait
  * invalide et un désaccord ne coexistent pas : le désaccord ne se lit qu'entre deux notations qui
- * comptent, donc à extrait valide. Sans extrait invalide, `desaccord_juges` ou `erreur_grave`.
+ * comptent, donc à extrait valide. Sans extrait invalide, `desaccord_juges` ou `erreur_grave` dès que
+ * les juges divergent ou posent un drapeau grave. Sinon, l'humain n'est appelé que par un accord
+ * partiel des juges (D15 : accord au sens de `notationsConcordent`, sans note commune), et
+ * `accord_partiel_juges` est alors le seul motif admis.
  */
 function motifsHumainsAdmis(bilan: BilanJuges): readonly MotifNotation[] {
-  return bilan.invalides.length > 0 ? ["extrait_invalide"] : ["desaccord_juges", "erreur_grave"];
+  if (bilan.invalides.length > 0) return ["extrait_invalide"];
+  return bilan.desaccord || bilan.grave ? ["desaccord_juges", "erreur_grave"] : ["accord_partiel_juges"];
 }
 
 function casierHumain(notation: NotationIndividuelle, tri: Record<Casier, NotationIndividuelle[]>, objet_id: Ulid): NotationIndividuelle[] {
@@ -241,12 +252,15 @@ function deciderHorsEchantillon(entree: EntreeDecision, tri: Tri, bilan: BilanJu
   if (bilan.manquants.length > 0) return enAttente("juge", ["notation_juge_manquante"]);
   const motifs = motifsHumainRequis(bilan);
   if (motifs.length > 0) return trancherParHumain(entree, tri.appeles, bilan, motifs);
-  if (tri.appeles.length > 0) {
-    throw new NotationsIncoherentes(entree.objet_note.id, "humain appelé alors que ni désaccord, ni extrait invalide, ni drapeau grave ne l'exige.");
-  }
   const [premiere, seconde] = bilan.comptees;
   if (premiere === undefined) throw new NotationsIncoherentes(entree.objet_note.id, "aucune notation de juge ne compte, sans motif d'humain.");
-  return seconde === undefined ? jugeUnique(entree, premiere) : accordDesJuges(entree, premiere, seconde);
+  const note = seconde === undefined ? noteDe(premiere) : noteCommune(premiere, seconde);
+  // D15 : accord partiel des juges, un humain donne la note (`accord_partiel_juges`).
+  if (note === null) return trancherParHumain(entree, tri.appeles, bilan, ["accord_sans_note_commune"]);
+  if (tri.appeles.length > 0) {
+    throw new NotationsIncoherentes(entree.objet_note.id, "humain appelé alors que ni désaccord, ni extrait invalide, ni drapeau grave, ni accord partiel ne l'exige.");
+  }
+  return seconde === undefined ? jugeUnique(entree, premiere) : accordDesJuges(entree, premiere, seconde, note);
 }
 
 function motifsHumainRequis(bilan: BilanJuges): MotifAttente[] {
@@ -287,9 +301,7 @@ function verifierMotifAppele(humain: NotationIndividuelle, admis: readonly Motif
   );
 }
 
-function accordDesJuges(entree: EntreeDecision, premiere: NotationIndividuelle, seconde: NotationIndividuelle): Decision {
-  const note = noteCommune(premiere, seconde);
-  if (note === null) return enAttente("humain", ["accord_sans_note_commune"]);
+function accordDesJuges(entree: EntreeDecision, premiere: NotationIndividuelle, seconde: NotationIndividuelle, note: NoteRetenue): Decision {
   return verdict(entree, { note, mode: "accord_juges", sources: [premiere, seconde], humains: [], desaccord: false });
 }
 

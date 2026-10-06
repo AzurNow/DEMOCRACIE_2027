@@ -239,9 +239,10 @@
         "contrefactuel",
         "arbitrage_panel",
         "arbitrage_echantillon_10",
-        "extrait_invalide"
+        "extrait_invalide",
+        "accord_partiel_juges"
       ],
-      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts)."
+      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas."
     }
   },
 
@@ -266,6 +267,11 @@
     {
       "$comment": "D15 : extrait_invalide est le motif de l'HUMAIN appelé quand l'extrait d'un juge échoue au test verbatim (§7). Un juge sous ce motif noterait à la place de l'humain que le §7 exige.",
       "if": { "properties": { "motif_notation": { "const": "extrait_invalide" } }, "required": ["motif_notation"] },
+      "then": { "properties": { "notateur": { "properties": { "type": { "const": "humain" } } } } }
+    },
+    {
+      "$comment": "D15 : accord_partiel_juges est le motif de l'HUMAIN appelé quand les deux juges s'accordent sans note commune (§7). Un juge sous ce motif noterait à la place de l'humain que D15 exige.",
+      "if": { "properties": { "motif_notation": { "const": "accord_partiel_juges" } }, "required": ["motif_notation"] },
       "then": { "properties": { "notateur": { "properties": { "type": { "const": "humain" } } } } }
     },
     {
