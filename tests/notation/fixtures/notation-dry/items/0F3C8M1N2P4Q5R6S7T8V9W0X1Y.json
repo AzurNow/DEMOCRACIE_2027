@@ -1,0 +1,70 @@
+{
+  "id": "0F3C8M1N2P4Q5R6S7T8V9W0X1Y",
+  "version": 1,
+  "candidat_id": "demo-alpha",
+  "libelle_lisible": "Item simulé simule-1",
+  "mesure_id": "3GEQ9HEFYAAZ5VCP5N8MHF8NVE",
+  "mesure_version": 1,
+  "statut_validation": "verifie",
+  "statut_contestation": "aucune",
+  "valide_du": "2026-09-01",
+  "valide_au": null,
+  "validations": [
+    {
+      "annotateur_id": "a1",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    },
+    {
+      "annotateur_id": "a2",
+      "decision": "accepter",
+      "date": "2026-09-20T10:00:00+02:00",
+      "lot_id": "lot-003",
+      "reponses_grille": {
+        "citation_fidele": true,
+        "paraphrase_exacte": true,
+        "position_univoque": true,
+        "theme_correct": true,
+        "quantification_correcte": true
+      }
+    }
+  ],
+  "contestations": [],
+  "historique": [
+    {
+      "date": "2026-09-03T10:00:00+02:00",
+      "changement": "création",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version_resultante": 1
+    }
+  ],
+  "type": "P",
+  "assertion": {
+    "position": "pour",
+    "paraphrase": "Demo-Alpha propose une mesure simulée de démonstration.",
+    "citation_verbatim": "Prénom Demo-Alpha défend une mesure simulée, sans contenu réel.",
+    "source": {
+      "tier": "T1",
+      "url": "https://demo.invalid/programme.pdf",
+      "type_document": "programme_pdf",
+      "format": "pdf",
+      "page": 14,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "texte_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "archive_url": "https://archive.invalid/programme.pdf",
+      "date_source": "2026-09-01",
+      "date_collecte": "2026-09-03T09:12:00+02:00",
+      "chemin_local": "validation/fixtures/archives/programme.pdf",
+      "publication": "publique"
+    }
+  },
+  "empreinte": "7e358945e4ea8d3f310120a8793f534876811cce100498eaa9007b9955b83380"
+}

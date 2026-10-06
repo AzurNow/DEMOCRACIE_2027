@@ -120,7 +120,7 @@ export function construireVue(demande: DemandeVue): VueAnnotateur {
   };
 }
 
-function indexerExistences(reponse_id: string, liens: readonly string[], existences: readonly ExistenceEtablie[]): ReadonlyMap<string, ExistenceEtablie> {
+export function indexerExistences(reponse_id: string, liens: readonly string[], existences: readonly ExistenceEtablie[]): ReadonlyMap<string, ExistenceEtablie> {
   const index = new Map<string, ExistenceEtablie>();
   for (const existence of existences) {
     if (index.has(existence.url_citee)) throw new ExistencesIncoherentes(reponse_id, `deux verdicts d'existence pour le lien ${existence.url_citee}.`);

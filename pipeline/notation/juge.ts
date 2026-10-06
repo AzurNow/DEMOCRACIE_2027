@@ -1,0 +1,164 @@
+/**
+ * Le port d'un juge automatique (§7) : une charge entre, une sortie structurée sort.
+ *
+ * « Il rend une sortie structurée : catégorie, drapeaux, verdict de sourçage, extrait justificatif. »
+ * Le juge ne reçoit que la `ChargeJuge` (`charge-juge.ts`), construite champ par champ et aveugle à
+ * l'outil : le type de `noter` est la garantie que rien d'autre ne lui parvient, ni la réponse
+ * brute, ni l'outil, ni le mode, ni l'alias aveugle. Un vrai juge (prompt de `prompts/judge-*`, à
+ * l'auteur) et le juge simulé de `pnpm notation:dry` (`juge-simule.ts`) implémentent ce même port ;
+ * la chaîne de notation (`chaine.ts`) ne sait pas lequel elle appelle.
+ *
+ * **Ce que le juge rend, et ce qu'il ne rend pas.** Il rend la note (catégorie, drapeaux, motif,
+ * fraîcheur, attribution), son avis de soutien sur chaque lien et son extrait justificatif. Il ne
+ * rend ni l'existence d'un lien, qui vient du test HTTP déterministe (`fournisseur-existences.ts`),
+ * ni le contrôle de son extrait, que fait le test verbatim (`extrait.ts`), ni l'identifiant, le
+ * contexte, la date ou le motif de la notation, que pose la chaîne. `notationDeJuge` assemble la
+ * notation individuelle de `schema/notation.schema.json` à partir de ces trois sources ; la
+ * validation de schéma a lieu à l'écriture (`stockage.ts`).
+ *
+ * **Identité.** `identite` porte ce que le run déclare de chaque juge (`run.schema.json#/properties/
+ * juges`) ; `version_prompt` du run et de la notation est `versionPromptDe(prompt)`, le chemin du
+ * prompt et sa version joints par `@`. La chaîne refuse un juge dont l'identité ne correspond pas à
+ * celle que déclare `run.json`.
+ */
+
+import type { CategorieRetenue, Drapeau, Gabarit, Instant, ReferenceItem, Ulid, VerdictSoutien } from "../../analysis/types.ts";
+import type { ChargeJuge, PromptDeJuge } from "./charge-juge.ts";
+import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
+import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
+import type { LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
+
+export interface IdentiteJuge {
+  readonly juge_id: string;
+  readonly famille_modele: string;
+  readonly modele: string;
+  readonly prompt: PromptDeJuge;
+}
+
+export interface SoutienDeLien {
+  readonly url_citee: string;
+  readonly verdict_soutien: VerdictSoutien;
+}
+
+/** La sortie structurée du §7. `categorie` reste large : `indeterminee` est refusée en aval, pas tue ici. */
+export interface SortieJuge {
+  readonly categorie: CategorieRetenue;
+  readonly drapeaux: readonly Drapeau[];
+  readonly motif_inexactitude?: MotifInexactitude;
+  readonly obsolescence_fraiche?: boolean;
+  readonly attribution?: NotationIndividuelle["attribution"];
+  /** `soutiens` : un avis par lien de `charge.reponse.liens`, dans le même ordre, si `cite` ; aucun sinon. */
+  readonly sourcage: { readonly cite: boolean; readonly soutiens: readonly SoutienDeLien[] };
+  readonly extrait_justificatif?: { readonly provenance: "reponse" | "reference"; readonly texte: string };
+}
+
+export interface Juge {
+  readonly identite: IdentiteJuge;
+  noter(charge: ChargeJuge): Promise<SortieJuge>;
+}
+
+export class SortieJugeIncoherente extends Error {
+  constructor(juge_id: string, objet_id: string, detail: string) {
+    super(`Juge ${juge_id}, objet ${objet_id} : ${detail}`);
+    this.name = "SortieJugeIncoherente";
+  }
+}
+
+/** `run.schema.json#/properties/juges/items/properties/version_prompt` et `notateur.version_prompt`. */
+export function versionPromptDe(prompt: PromptDeJuge): string {
+  return `${prompt.chemin}@${prompt.version}`;
+}
+
+/** Ce que la chaîne pose autour de la sortie du juge. */
+export interface CadreNotationJuge {
+  readonly id: Ulid;
+  readonly run_id: Ulid;
+  readonly contexte: "run" | "contrefactuel_candidat";
+  readonly motif_notation: "notation_juge" | "contrefactuel";
+  readonly objet_id: Ulid;
+  readonly gabarit: Gabarit;
+  readonly references_item: readonly ReferenceItem[];
+  readonly date: Instant;
+  /** `charge.reponse.liens`, dans l'ordre. */
+  readonly liens: readonly string[];
+  /** Le verdict d'existence de chaque lien, établi par le test HTTP (§7). */
+  readonly existences: ReadonlyMap<string, ExistenceEtablie>;
+  /** Les textes contre lesquels l'extrait est contrôlé, du côté noté (origine ou permuté). */
+  readonly textes: TextesDeVerification;
+}
+
+export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): NotationIndividuelle {
+  const brouillon: NotationIndividuelle = {
+    id: cadre.id,
+    run_id: cadre.run_id,
+    contexte: cadre.contexte,
+    objet_note: { type: "reponse", id: cadre.objet_id },
+    notateur: {
+      type: "juge",
+      id: identite.juge_id,
+      famille_modele: identite.famille_modele,
+      modele: identite.modele,
+      version_prompt: versionPromptDe(identite.prompt),
+      a_vu_identite_outil: false,
+    },
+    gabarit: cadre.gabarit,
+    references_item: cadre.references_item.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte })),
+    categorie: sortie.categorie,
+    drapeaux: [...sortie.drapeaux],
+    ...(sortie.motif_inexactitude === undefined ? {} : { motif_inexactitude: sortie.motif_inexactitude }),
+    ...(sortie.obsolescence_fraiche === undefined ? {} : { obsolescence_fraiche: sortie.obsolescence_fraiche }),
+    ...(sortie.attribution === undefined ? {} : { attribution: sortie.attribution }),
+    sourcage: { cite: sortie.sourcage.cite, liens: liensNotes(identite.juge_id, sortie, cadre) },
+    ...(sortie.extrait_justificatif === undefined
+      ? {}
+      : { extrait_justificatif: { provenance: sortie.extrait_justificatif.provenance, texte: sortie.extrait_justificatif.texte, verifie_deterministe: false } }),
+    date: cadre.date,
+    motif_notation: cadre.motif_notation,
+  };
+  return avecExtraitControle(brouillon, cadre.textes);
+}
+
+/** `verifie_deterministe` est le résultat du test verbatim (`extrait.ts`), jamais la parole du juge. */
+function avecExtraitControle(notation: NotationIndividuelle, textes: TextesDeVerification): NotationIndividuelle {
+  const extrait = notation.extrait_justificatif;
+  if (extrait === undefined) return notation;
+  return { ...notation, extrait_justificatif: { ...extrait, verifie_deterministe: controlerExtrait(notation, textes).valide } };
+}
+
+/** Chaque avis de soutien, joint au verdict d'existence de son lien ; l'ordre est celui de la charge. */
+function liensNotes(juge_id: string, sortie: SortieJuge, cadre: CadreNotationJuge): readonly LienNotation[] {
+  const { cite, soutiens } = sortie.sourcage;
+  if (!cite) {
+    if (soutiens.length > 0) throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "avis de soutien sur des liens alors que la réponse est notée sans source citée.");
+    return [];
+  }
+  exigerAlignes(juge_id, cadre, soutiens);
+  return soutiens.map((soutien) => lienNote(soutien, existenceDe(cadre, soutien.url_citee)));
+}
+
+function exigerAlignes(juge_id: string, cadre: CadreNotationJuge, soutiens: readonly SoutienDeLien[]): void {
+  const alignes = soutiens.length === cadre.liens.length && soutiens.every((soutien, rang) => soutien.url_citee === cadre.liens[rang]);
+  if (!alignes) {
+    throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `${soutiens.length} avis de soutien pour ${cadre.liens.length} lien(s) de la charge, ou dans un autre ordre.`);
+  }
+}
+
+function existenceDe(cadre: CadreNotationJuge, url: string): ExistenceEtablie {
+  const existence = cadre.existences.get(url);
+  if (existence === undefined) throw new LienSansVerdictExistence(cadre.objet_id, url);
+  return existence;
+}
+
+/** Recopie champ par champ du résultat du test HTTP, plus l'avis de soutien du juge. */
+function lienNote(soutien: SoutienDeLien, e: ExistenceEtablie): LienNotation {
+  return {
+    url_citee: e.url_citee,
+    ...(e.url_finale === undefined ? {} : { url_finale: e.url_finale }),
+    ...(e.code_http === undefined ? {} : { code_http: e.code_http }),
+    date_test: e.date_test,
+    verdict_existence: e.verdict_existence,
+    verdict_soutien: soutien.verdict_soutien,
+    ...(e.sha256_contenu === undefined ? {} : { sha256_contenu: e.sha256_contenu }),
+    ...(e.archive_url === undefined ? {} : { archive_url: e.archive_url }),
+  };
+}

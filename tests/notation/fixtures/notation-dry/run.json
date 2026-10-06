@@ -1,0 +1,203 @@
+{
+  "id": "01KBCS0G00SM0R0N0S1M01E000",
+  "date_gel": "2026-11-27T09:00:00+01:00",
+  "fenetre": {
+    "debut": "2026-12-01T06:00:00+01:00",
+    "fin": "2026-12-03T06:00:00+01:00"
+  },
+  "type_run": "mensuel",
+  "statut": "en_cours",
+  "versions": {
+    "protocole": "0.15",
+    "code_commit": "0000000000000000000000000000000000000000",
+    "donnees_commit": "0000000000000000000000000000000000000000",
+    "amendements_appliques": []
+  },
+  "graines": {
+    "tirage": {
+      "valeur": 20261127,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "echantillon_humain": {
+      "valeur": 20261128,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "bootstrap": {
+      "valeur": 20261129,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "permutation": {
+      "valeur": 20261130,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    },
+    "contrefactuel": {
+      "valeur": 20261131,
+      "algorithme": "splitmix64-sha256-v1",
+      "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+      "version": "1"
+    }
+  },
+  "perimetre": {
+    "regime_inclusion": "liste_officielle",
+    "liste_officielle": {
+      "url": "https://liste-officielle.invalid/candidats",
+      "date_publication": "2026-11-20",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "archive_url": "https://archive.invalid/liste-officielle"
+    },
+    "candidats": [
+      {
+        "candidat_id": "demo-alpha",
+        "libelle": "Prénom Demo-Alpha",
+        "nom": "Demo-Alpha",
+        "statut_au_gel": "actif",
+        "preuves_inclusion": [],
+        "items_p_verifies": 10,
+        "items_p_au_gel": [],
+        "sous_seuil": false,
+        "interroge": true
+      },
+      {
+        "candidat_id": "demo-beta",
+        "libelle": "Prénom Demo-Beta",
+        "nom": "Demo-Beta",
+        "statut_au_gel": "actif",
+        "preuves_inclusion": [],
+        "items_p_verifies": 10,
+        "items_p_au_gel": [],
+        "sous_seuil": false,
+        "interroge": true
+      }
+    ],
+    "outils": [
+      {
+        "outil_id": "outil-alpha",
+        "famille": "assistant",
+        "inclus": true,
+        "modele_demande": "modele-simule",
+        "modes": [
+          "web_activee",
+          "web_desactivee"
+        ],
+        "mode_de_tete": "web_activee",
+        "alias_aveugle": "A01",
+        "cgu_relues_le": "2026-11-10",
+        "clause_restrictive_signalee": false,
+        "preuve_inclusion": {
+          "url": "https://classement-stores.invalid/fr",
+          "date_publication": "2026-11-26",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "archive_url": "https://archive.invalid/stores"
+        }
+      },
+      {
+        "outil_id": "outil-beta",
+        "famille": "assistant",
+        "inclus": true,
+        "modele_demande": "modele-simule",
+        "modes": [
+          "web_desactivee"
+        ],
+        "mode_de_tete": "web_desactivee",
+        "alias_aveugle": "B02",
+        "cgu_relues_le": "2026-11-10",
+        "clause_restrictive_signalee": false,
+        "preuve_inclusion": {
+          "url": "https://classement-stores.invalid/fr",
+          "date_publication": "2026-11-26",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "archive_url": "https://archive.invalid/stores"
+        }
+      },
+      {
+        "outil_id": "comparateur-gamma",
+        "famille": "comparateur",
+        "inclus": true
+      }
+    ]
+  },
+  "juges": [
+    {
+      "juge_id": "juge-simule-a",
+      "famille_modele": "famille-simulee-a",
+      "modele": "simule/juge-a",
+      "version_prompt": "simule://juge-simule@1.0.0",
+      "retire": false
+    },
+    {
+      "juge_id": "juge-simule-b",
+      "famille_modele": "famille-simulee-b",
+      "modele": "simule/juge-b",
+      "version_prompt": "simule://juge-simule@1.0.0",
+      "retire": false
+    }
+  ],
+  "taux_echantillon_humain": 0.1,
+  "symetrie": {
+    "statut_global": "vert",
+    "conditions": [
+      {
+        "code": "nombre_questions_par_candidat",
+        "statut": "vert",
+        "mesure": 0,
+        "seuil": 0
+      },
+      {
+        "code": "repartition_gabarits_formulations",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      },
+      {
+        "code": "repartition_themes",
+        "statut": "ecart_tolere",
+        "mesure": 2,
+        "seuil": 0,
+        "detail_par_candidat": [
+          {
+            "candidat_id": "cand-a",
+            "valeur": 0
+          },
+          {
+            "candidat_id": "cand-b",
+            "valeur": 2
+          }
+        ],
+        "commentaire": "Écart imprimé dans le rapport du run : les items disponibles ne permettent pas une répartition identique (§5)."
+      },
+      {
+        "code": "aucun_item_conteste_ou_en_attente",
+        "statut": "vert"
+      },
+      {
+        "code": "aucun_nom_candidat_dans_q_att",
+        "statut": "vert"
+      },
+      {
+        "code": "part_items_a_f_minimale",
+        "statut": "vert",
+        "mesure": 0.23,
+        "seuil": 0.2
+      },
+      {
+        "code": "quota_par_strate_respecte",
+        "statut": "vert",
+        "mesure": 1,
+        "seuil": 1
+      }
+    ]
+  },
+  "tirage": {
+    "chemin": "runs/2026-11-27/tirage.json",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "nombre_questions": 3
+  }
+}
