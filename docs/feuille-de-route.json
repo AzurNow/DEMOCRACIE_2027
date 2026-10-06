@@ -481,6 +481,27 @@
       "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler())."
     },
     {
+      "id": "notation-humaine",
+      "titre": "Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "sonnet",
+      "taille": "L",
+      "temps_auteur_h": 2,
+      "depend_de": [
+        {
+          "lot": "notation",
+          "type": "bloque"
+        },
+        {
+          "lot": "validation-interface",
+          "type": "informe"
+        }
+      ],
+      "decisions": [],
+      "note": "Ajouté le 2026-10-06 : aucun lot ne prévoyait la saisie des notations humaines que le §7 exige (échantillon, arbitrage du troisième humain, humain appelé sur désaccord, extrait invalide ou drapeau grave) ni le jeu d'or de 300 réponses (J4). L'interface de validation ne sait valider que des items. Bloqué par la PR C du lot notation (écriture des notations dans runs/<date>/volume/notations/). Double notation humaine à l'aveugle : un annotateur ne voit ni l'outil, ni la note des juges, ni celle de l'autre humain. À livrer avant J4 (2026-11-22), idéalement assez tôt pour former les annotateurs."
+    },
+    {
       "id": "analyse",
       "titre": "Métriques §8, bootstrap en grappes, permutation, Holm, robustesse",
       "jalon": "J5",
