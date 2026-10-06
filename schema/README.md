@@ -137,7 +137,7 @@ exactement un `principal` — au plus un pour une question d'attribution, aucun 
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 192 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 202 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -149,7 +149,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | reponse | réponse manquante portant un contenu · réponse d'API sans mode · artefact contrefactuel sans traçabilité · réponse d'API sans la clé `modele_renvoye` · manquante hors fenêtre avec trois tentatives · manquante sans `motif_manquante` · obtenue portant un `motif_manquante` · refus de l'API portant un texte · tentative classée `refus_api` · manquante pour échecs avec deux tentatives · `brut` et `brut_texte` ensemble · obtenue sans `brut_octets_sha256` · requête sans `entetes` |
 | notation | juge attribuant « indéterminée » · drapeau sur une réponse exacte · note non exacte sans extrait justificatif · arbitrage de l'échantillon humain confié à un juge · échantillon humain noté par un juge · lien mort noté « soutient » · fraîcheur sans drapeau obsolescence |
 | verdict | fabrication retenue sans revue humaine · verdict sans notation source · désaccord avec une seule source · réponse de l'échantillon humain retenue sur l'accord des juges · soutien retenu sans lien existant · fraîcheur sans drapeau obsolescence |
-| run | graine sans algorithme nommé · symétrie rouge et run publié · candidat à 8 items P déclaré au-dessus du seuil · candidat sans libellé · candidat sans nom seul · graine au-delà de 2^53 − 1 · juge d'un run publié sans kappa juge-humain ni motif · kappa de la paire publié avec un motif d'indéfinition · mode à 30 % de manquantes déclaré comparable · symétrie rouge et run en cours · candidat à 25 items P déclaré sous le seuil · candidat actif avec une seule preuve de sondage · candidat actif sans déclaration de candidature (régime avant la liste) · assistant inclus d'un run publié sans `par_mode` · run publié sans `donnees_commit` · run invalide portant un go/no-go · run invalide sans `publication` · run invalide sans `depot` · graine de l'échantillon humain en PCG64 · graine du contrefactuel en PCG64 · run planifié sans `donnees_commit` · symétrie sans la condition de quota |
+| run | graine sans algorithme nommé · symétrie rouge et run publié · candidat à 8 items P déclaré au-dessus du seuil · candidat sans libellé · candidat sans nom seul · graine au-delà de 2^53 − 1 · juge d'un run publié sans kappa juge-humain ni motif · kappa de la paire publié avec un motif d'indéfinition · mode à 30 % de manquantes déclaré comparable · symétrie rouge et run en cours · candidat à 25 items P déclaré sous le seuil · candidat actif avec une seule preuve de sondage · candidat actif sans déclaration de candidature (régime avant la liste) · assistant inclus d'un run publié sans `par_mode` · run publié sans `donnees_commit` · run invalide portant un go/no-go · run invalide sans `publication` · run invalide sans `depot` · graine de l'échantillon humain en PCG64 · graine du contrefactuel en PCG64 · run planifié sans `donnees_commit` · symétrie sans la condition de quota · run publié sans le test contrefactuel (`contrefactuel_candidats`) · test contrefactuel indéfini et un juge qui publie un taux · taux de changement contrefactuel sans ses effectifs (`changements_contrefactuel`) · test contrefactuel terminé et un juge sans taux |
 | tirage | entrée d'attribution nommant un candidat · deux items principaux dans une entrée · question reprise sans run d'origine · item arbitré sans décision du panel figée · décision figée sur un item non arbitré · graine au-delà de 2^53 − 1 · entrée sans prémisse résolue au gel · tirage sans ses quotas (`parametres`) · tirage sans `contestes_au_gel` · entrée sans `theme` · entrée sans `grappe_id` |
 | lecture-comparateur | absence d'affichage portant un extrait · affichage sans extrait · cadence supérieure à une page par seconde · lecture de pages sans respect de robots.txt |
 | decision | annulation portant une décision · decision=corriger avec corrections vide · item O portant reponses_grille au lieu de reponses_par_etat |
@@ -163,7 +163,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | diagnostic-lot | kappa indéfini remplacé par 0 à côté de son motif · diagnostic sans `supersede_par` · lot de réannotation sans date de calibration |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 192/192 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 202/202 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

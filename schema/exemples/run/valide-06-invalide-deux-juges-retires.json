@@ -8,7 +8,7 @@
   "type_run": "mensuel",
   "statut": "invalide",
   "invalidation": {
-    "motif": "Tests de symétrie rouges constatés après le lancement : répartition des gabarits et des formulations hors tolérance (écart de 2 pour un seuil de 1). Run publié tel quel et réexécuté (§12)."
+    "motif": "Les deux juges dépassent 3 % de changement au test contrefactuel des noms de candidats : aucun juge n'est retenu (§7, D16 (3))."
   },
   "versions": {
     "protocole": "1.0",
@@ -235,32 +235,52 @@
       "famille_modele": "famille-x",
       "modele": "famille-x/modele-juge-1",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.01,
+      "taux_changement_contrefactuel": 0.04,
       "changements_contrefactuel": {
-        "numerateur": 2,
+        "numerateur": 8,
         "denominateur": 200
       },
       "kappa_juge_humain": 0.83,
-      "retire": false
+      "retire": true,
+      "motif_retrait": "Test contrefactuel des noms de candidats : 8 changements sur 200, au-delà de 3 % (§7)."
     },
     {
       "juge_id": "juge-2",
       "famille_modele": "famille-y",
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.02,
+      "taux_changement_contrefactuel": 0.055,
       "changements_contrefactuel": {
-        "numerateur": 4,
+        "numerateur": 11,
         "denominateur": 200
       },
       "kappa_juge_humain": 0.78,
-      "retire": false
+      "retire": true,
+      "motif_retrait": "Test contrefactuel des noms de candidats : 11 changements sur 200, au-delà de 3 % (§7)."
     }
   ],
-  "taux_echantillon_humain": 0.1,
+  "taux_echantillon_humain": 0.25,
+  "contrefactuel_candidats": {
+    "etat": "termine",
+    "eligibles": 480,
+    "taille_visee": 200,
+    "taille": 200,
+    "sous_effectif": false,
+    "correspondances": {
+      "cand-a": "cand-d",
+      "cand-b": "cand-a",
+      "cand-d": "cand-b"
+    },
+    "cle_graine": [
+      "contrefactuel",
+      "noms_candidats",
+      "sous_ensemble"
+    ],
+    "mentions_residuelles": 0
+  },
   "kappa_paire_juges": 0.81,
   "symetrie": {
-    "statut_global": "rouge",
+    "statut_global": "vert",
     "conditions": [
       {
         "code": "nombre_questions_par_candidat",
@@ -270,8 +290,8 @@
       },
       {
         "code": "repartition_gabarits_formulations",
-        "statut": "rouge",
-        "mesure": 2,
+        "statut": "vert",
+        "mesure": 1,
         "seuil": 1
       },
       {
@@ -319,6 +339,28 @@
     "nombre_questions": 402,
     "part_reprise": 0.8,
     "part_items_a_f": 0.23
+  },
+  "depot": {
+    "doi": "10.5281/zenodo.0000001",
+    "url": "https://zenodo.org/records/0000001",
+    "date": "2026-12-06T09:00:00+01:00",
+    "licence": "ODbL-1.0",
+    "archives": [
+      {
+        "nom": "reponses-brutes-2026-12-01.tar.zst",
+        "contenu": "reponses_brutes",
+        "sha256": "c246566657891dc7282178a368ac5ed6f069d3a35ba2233764291676684dad57",
+        "taille_octets": 412508160,
+        "nombre_entrees": 24120
+      },
+      {
+        "nom": "notations-individuelles-2026-12-01.tar.zst",
+        "contenu": "notations_individuelles",
+        "sha256": "1830348703de0481347d9f47b9b63f9285a1ff331ad963def613be2be05c1b66",
+        "taille_octets": 39845888,
+        "nombre_entrees": 48240
+      }
+    ]
   },
   "contestations_posterieures": [
     {

@@ -1,0 +1,200 @@
+/**
+ * Du résultat du test contrefactuel (`contrefactuel.ts`) aux champs publiés du run (lot notation,
+ * PR C, cas limite 12 du brief). Chaque sortie est fusionnée dans l'exemple valide de run et
+ * validée contre `schema/run.schema.json` : la fonction ne produit rien que le schéma refuse.
+ */
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { ulid } from "../analysis/fabriques.ts";
+import type { ResultatContrefactuel, ResultatJuge } from "../../pipeline/notation/contrefactuel.ts";
+import type { Derangement } from "../../pipeline/notation/derangement.ts";
+import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, type SousEnsembleContrefactuel } from "../../pipeline/notation/echantillons.ts";
+import {
+  ContrefactuelNonPubliable,
+  publierContrefactuel,
+  type PublicationContrefactuel,
+} from "../../pipeline/notation/publication-contrefactuel.ts";
+import { valider } from "../../outils/schemas/valider.ts";
+import { CANDIDATS_DU_RUN, runDeNotation } from "./fabriques.ts";
+
+const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "run", "valide-01-mensuel-publie.json");
+
+const [ALPHA, BETA, GAMMA] = CANDIDATS_DU_RUN as [(typeof CANDIDATS_DU_RUN)[number], (typeof CANDIDATS_DU_RUN)[number], (typeof CANDIDATS_DU_RUN)[number]];
+const CYCLE: Derangement = {
+  paires: [
+    { source: ALPHA, image: BETA },
+    { source: BETA, image: GAMMA },
+    { source: GAMMA, image: ALPHA },
+  ],
+};
+
+function sousEnsemble(taille: number, eligibles = taille): SousEnsembleContrefactuel {
+  return {
+    reponse_ids: Array.from({ length: taille }, (_, i) => ulid(`sous-ensemble-${i}`)),
+    eligibles,
+    taille_visee: 200,
+    sous_effectif: eligibles < 200,
+  };
+}
+
+function resultatJuge(juge_id: string, numerateur: number, retire: boolean, denominateur = 200): ResultatJuge {
+  const valeur = numerateur / denominateur;
+  return {
+    juge_id,
+    taux: { numerateur, denominateur, valeur },
+    taux_changement_contrefactuel: valeur,
+    retire,
+    ...(retire ? { motif_retrait: `Test contrefactuel des noms de candidats : ${numerateur} changements sur ${denominateur}, au-delà de 3 % (§7).` } : {}),
+  };
+}
+
+type RunBrut = Record<string, unknown> & { juges: Record<string, unknown>[] };
+
+/** L'exemple valide de run, les champs publiés fusionnés, juge par juge sur les identifiants. */
+function fusionner(publication: PublicationContrefactuel, ajuster: (run: RunBrut) => RunBrut = (r) => r): unknown {
+  const base = JSON.parse(readFileSync(EXEMPLE, "utf8")) as RunBrut;
+  const juges = ["j1", "j2"].map((juge_id, rang) => {
+    const { taux_changement_contrefactuel: _t, changements_contrefactuel: _c, retire: _r, motif_retrait: _m, ...reste } = base.juges[rang] as Record<string, unknown>;
+    const publie = publication.juges.find((j) => j.juge_id === juge_id);
+    return { ...reste, ...publie };
+  });
+  const { statut, invalidation, ...champs } = publication;
+  const run: RunBrut = {
+    ...base,
+    ...champs,
+    juges,
+    ...(statut === undefined ? {} : { statut }),
+    ...(invalidation === undefined ? {} : { invalidation }),
+  };
+  return ajuster(run);
+}
+
+describe("12. ResultatContrefactuel → champs du run", () => {
+  it("termine avec un retrait : taux 0.25, effectifs et motif publiés, bloc conforme au schéma", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "termine",
+      sous_effectif: false,
+      mentions_residuelles: 3,
+      juges: [resultatJuge("j1", 2, false), resultatJuge("j2", 9, true)],
+      taux_echantillon_humain: 0.25,
+    };
+    const publication = publierContrefactuel(resultat, sousEnsemble(200, 480), CYCLE, runDeNotation());
+    expect(publication.taux_echantillon_humain).toBe(0.25);
+    expect(publication.statut).toBeUndefined();
+    expect(publication.contrefactuel_candidats).toEqual({
+      etat: "termine",
+      eligibles: 480,
+      taille_visee: 200,
+      taille: 200,
+      sous_effectif: false,
+      correspondances: { "demo-alpha": "demo-beta", "demo-beta": "demo-gamma", "demo-gamma": "demo-alpha" },
+      cle_graine: [...CLE_SOUS_ENSEMBLE_CONTREFACTUEL],
+      mentions_residuelles: 3,
+    });
+    expect(publication.juges).toEqual([
+      { juge_id: "j1", retire: false, taux_changement_contrefactuel: 0.01, changements_contrefactuel: { numerateur: 2, denominateur: 200 } },
+      {
+        juge_id: "j2",
+        retire: true,
+        motif_retrait: "Test contrefactuel des noms de candidats : 9 changements sur 200, au-delà de 3 % (§7).",
+        taux_changement_contrefactuel: 0.045,
+        changements_contrefactuel: { numerateur: 9, denominateur: 200 },
+      },
+    ]);
+    expect(() => valider("run", fusionner(publication), "run fusionné")).not.toThrow();
+  });
+
+  it("indefini : aucun taux de juge, aucun retrait, 10 %, sous-ensemble vide", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "indefini",
+      motif: "aucune_reponse_eligible",
+      sous_effectif: true,
+      mentions_residuelles: 0,
+      taux_echantillon_humain: 0.1,
+    };
+    const publication = publierContrefactuel(resultat, sousEnsemble(0), CYCLE, runDeNotation());
+    expect(publication.contrefactuel_candidats).toMatchObject({ etat: "indefini", eligibles: 0, taille: 0, sous_effectif: true });
+    expect(publication.juges).toEqual([
+      { juge_id: "j1", retire: false },
+      { juge_id: "j2", retire: false },
+    ]);
+    expect(publication.taux_echantillon_humain).toBe(0.1);
+    expect(() => valider("run", fusionner(publication), "run fusionné")).not.toThrow();
+  });
+
+  it("run_invalide : les deux juges retirés, statut invalide et motif, sans nouveau champ (D16 (3))", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "run_invalide",
+      raison: "Les deux juges dépassent 3 % de changement au test contrefactuel des noms de candidats : aucun juge n'est retenu (§7, D16 (3)).",
+      sous_effectif: true,
+      mentions_residuelles: 0,
+      juges: [resultatJuge("j1", 1, true, 20), resultatJuge("j2", 2, true, 20)],
+    };
+    const publication = publierContrefactuel(resultat, sousEnsemble(20), CYCLE, runDeNotation());
+    expect(publication.statut).toBe("invalide");
+    expect(publication.invalidation).toEqual({ motif: resultat.raison });
+    expect(publication.taux_echantillon_humain).toBe(0.25);
+    expect(publication.juges.every((j) => j.retire)).toBe(true);
+    const sansGoNoGo = (run: RunBrut): RunBrut => {
+      const { go_no_go: _g, ...reste } = run;
+      return reste;
+    };
+    expect(() => valider("run", fusionner(publication, sansGoNoGo), "run fusionné")).not.toThrow();
+  });
+
+  it("en_attente : erreur, un test incomplet ne se publie pas", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "en_attente",
+      sous_effectif: false,
+      mentions_residuelles: 0,
+      paires_incompletes: [{ reponse_id: ulid("sous-ensemble-0"), juge_id: "j1", manque: ["permutee"] }],
+    };
+    expect(() => publierContrefactuel(resultat, sousEnsemble(200), CYCLE, runDeNotation())).toThrow(ContrefactuelNonPubliable);
+  });
+
+  it("un dénominateur de juge qui n'est pas la taille du sous-ensemble : erreur", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "termine",
+      sous_effectif: false,
+      mentions_residuelles: 0,
+      juges: [resultatJuge("j1", 2, false, 199), resultatJuge("j2", 2, false)],
+      taux_echantillon_humain: 0.1,
+    };
+    expect(() => publierContrefactuel(resultat, sousEnsemble(200), CYCLE, runDeNotation())).toThrow(ContrefactuelNonPubliable);
+  });
+
+  it("un sous-effectif qui diffère entre le résultat et le tirage : erreur", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "termine",
+      sous_effectif: true,
+      mentions_residuelles: 0,
+      juges: [resultatJuge("j1", 2, false), resultatJuge("j2", 2, false)],
+      taux_echantillon_humain: 0.1,
+    };
+    expect(() => publierContrefactuel(resultat, sousEnsemble(200, 480), CYCLE, runDeNotation())).toThrow(ContrefactuelNonPubliable);
+  });
+
+  it("des juges du résultat qui ne sont pas ceux du run : erreur", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "termine",
+      sous_effectif: false,
+      mentions_residuelles: 0,
+      juges: [resultatJuge("j1", 2, false), resultatJuge("j9", 2, false)],
+      taux_echantillon_humain: 0.1,
+    };
+    expect(() => publierContrefactuel(resultat, sousEnsemble(200), CYCLE, runDeNotation())).toThrow(ContrefactuelNonPubliable);
+  });
+
+  it("indefini avec un sous-ensemble non vide : erreur", () => {
+    const resultat: ResultatContrefactuel = {
+      statut: "indefini",
+      motif: "aucune_reponse_eligible",
+      sous_effectif: true,
+      mentions_residuelles: 0,
+      taux_echantillon_humain: 0.1,
+    };
+    expect(() => publierContrefactuel(resultat, sousEnsemble(3), CYCLE, runDeNotation())).toThrow(ContrefactuelNonPubliable);
+  });
+});
