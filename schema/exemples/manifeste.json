@@ -1300,6 +1300,20 @@
       "attendu": "invalide",
       "motif": "« sans destinataire connu » portant une adresse : contradiction, l'envoi aurait dû être tenté.",
       "regle_protocole": "§4, droit de réponse"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-09-fraicheur-sans-drapeau-obsolescence.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 portant obsolescence_fraiche sans le drapeau obsolescence. Décision D17 de l'auteur (2026-10-06) : la fraîcheur n'existe qu'avec ce drapeau ; ailleurs, aucune métrique ne la lit et l'accord des notations la comparerait.",
+      "regle_protocole": "§11, obsolescence fraîche ; §7, accord des notations (D17)"
+    },
+    {
+      "objet": "verdict",
+      "fichier": "verdict/invalide-07-fraicheur-sans-drapeau-obsolescence.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 portant obsolescence_fraiche sans le drapeau obsolescence. Décision D17 de l'auteur (2026-10-06) : la fraîcheur n'existe qu'avec ce drapeau ; ailleurs, aucune métrique ne la lit et l'accord des notations la comparerait.",
+      "regle_protocole": "§11, obsolescence fraîche ; §7, accord des notations (D17)"
     }
   ]
 }

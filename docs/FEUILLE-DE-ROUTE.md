@@ -40,6 +40,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-06 :** Option 1 sur les quatre points. À coder dans la PR B du lot notation. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
+### D17 — L'égalité des notations (notationsConcordent) est plus stricte que ce que lisent les métriques primaires : faut-il la restreindre ou amender le §7 ?
+
+**Décision du 2026-10-06 :** Option 1. Schémas de notation et de verdict : obsolescence_fraiche absente sans le drapeau obsolescence (PR #82). Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
+
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.

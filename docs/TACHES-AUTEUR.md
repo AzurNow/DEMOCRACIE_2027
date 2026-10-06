@@ -266,6 +266,20 @@ Mis à jour le 2026-10-02. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : le contrefactuel permute aussi la question ; un
   extrait invalide compte comme un changement ; le retrait des deux juges invalide le run. »
 
+- [ ] **Écrire aussi en 0.16 : D17 (§7, accord des notations)**, tranchée le 2026-10-06. Dans
+      le point de la « Règle de décision » sur l'échantillon aléatoire, remplacer « identiques sur
+      tout ce que lisent les métriques primaires : catégorie, drapeaux, fraîcheur de l'obsolescence
+      et, pour le sourçage, le seul sourçage valide (un même lien cité, existant et soutenant). »
+      par « identiques sur la catégorie, sur tous les drapeaux, sur la fraîcheur de l'obsolescence
+      et, pour le sourçage, sur le seul sourçage valide (un même lien cité, existant et
+      soutenant) ; c'est un peu plus que ce que lisent les métriques primaires, les drapeaux de
+      mauvaise attribution et de déformation n'étant lus que par la répartition des drapeaux. »
+      Au §11, après la définition de l'obsolescence fraîche : « La fraîcheur n'est portée que par
+      une note qui pose le drapeau obsolescence. »
+
+  Ligne de révision, à fusionner : « Section 7 : l'accord de deux notations porte sur tous les
+  drapeaux. Section 11 : la fraîcheur n'existe qu'avec le drapeau obsolescence. »
+
 - [ ] **Pour le premier `run:live` (lot interrogation)** : fournir, pour chaque outil, un corps
       d'erreur de modération authentique (documentation de l'éditeur ou appel d'essai archivé), qui
       servira de test à son adaptateur (`docs/DETTE.md`, 2026-10-02, lot interrogation, point 1).

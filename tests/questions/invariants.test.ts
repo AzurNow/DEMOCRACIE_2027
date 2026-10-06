@@ -346,8 +346,9 @@ describe("exemples de schema/exemples/", () => {
   // 179 → 188 : décisions de l'auteur du 2026-10-02 (lot interrogation), trois valides et six invalides de réponse (refus_api, motif_manquante).
   // 188 → 192 : décisions de l'auteur du 2026-10-02 (suite du lot interrogation), un valide et trois invalides de réponse (brut_texte, brut_octets_sha256, requete.entetes).
   // 192 → 194 : décision D15 de l'auteur (lot notation), une notation valide et une invalide sous le motif extrait_invalide.
-  it("charge les 194 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(194);
+  // 194 → 196 : décision D17 de l'auteur, une notation et un verdict invalides portant la fraîcheur sans le drapeau obsolescence.
+  it("charge les 196 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(196);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -383,7 +384,9 @@ describe("exemples de schema/exemples/", () => {
     // de valide-01 dont seul le sourçage change ; leur contexte suit toujours l'objet noté.
     // 20 → 22 : une notation valide et une invalide ajoutées (décision D15, motif extrait_invalide) ;
     // leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(22);
+    // 22 → 24 : une notation et un verdict invalides ajoutés (décision D17, fraîcheur sans drapeau
+    // obsolescence), copies de valide-01 ; leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(24);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 
