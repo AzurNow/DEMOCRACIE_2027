@@ -283,12 +283,13 @@
       "then": { "required": ["extrait_justificatif"] }
     },
     {
-      "$comment": "§11 : le comptage à part des obsolescences de moins de 14 jours n'est possible que si le drapeau porte sa fraîcheur.",
+      "$comment": "§11 : le comptage à part des obsolescences de moins de 14 jours n'est possible que si le drapeau porte sa fraîcheur. Décision D17 de l'auteur (2026-10-06) : sans le drapeau obsolescence, la fraîcheur est absente ; aucune métrique ne la lirait, et l'accord des notations (analysis/note-lue.ts) la comparerait.",
       "if": {
         "properties": { "drapeaux": { "contains": { "const": "obsolescence" } } },
         "required": ["drapeaux"]
       },
-      "then": { "required": ["obsolescence_fraiche"] }
+      "then": { "required": ["obsolescence_fraiche"] },
+      "else": { "not": { "required": ["obsolescence_fraiche"] } }
     },
     {
       "if": { "properties": { "gabarit": { "const": "Q-ATT" } }, "required": ["gabarit"] },

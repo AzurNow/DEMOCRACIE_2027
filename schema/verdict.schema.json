@@ -222,7 +222,8 @@
         "properties": { "drapeaux_retenus": { "contains": { "const": "obsolescence" } } },
         "required": ["drapeaux_retenus"]
       },
-      "then": { "required": ["obsolescence_fraiche"] }
+      "then": { "required": ["obsolescence_fraiche"] },
+      "else": { "not": { "required": ["obsolescence_fraiche"] } }
     }
   ]
 }

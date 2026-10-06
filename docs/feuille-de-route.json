@@ -251,6 +251,20 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. À coder dans la PR B du lot notation. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
       "date_decision": "2026-10-06"
+    },
+    {
+      "id": "D17",
+      "statut": "tranchee",
+      "question": "L'égalité des notations (notationsConcordent) est plus stricte que ce que lisent les métriques primaires : faut-il la restreindre ou amender le §7 ?",
+      "contexte": "Le garde écrit dans la PR B (DETTE 2026-10-05, point 1) montre que l'égalité distingue les drapeaux mauvaise_attribution et deformation, lus seulement par la répartition des drapeaux (métrique secondaire), et la fraîcheur posée sans drapeau obsolescence, que les schémas admettaient. Le §7 l'appelle « tout ce que lisent les métriques primaires ».",
+      "options": [
+        "Garder l'égalité stricte, écrire « tous les drapeaux » en 0.16, et interdire au schéma la fraîcheur sans drapeau obsolescence.",
+        "Garder l'égalité stricte sans toucher au schéma.",
+        "Restreindre l'égalité aux champs lus par les métriques primaires (changement de mesure)."
+      ],
+      "recommandation": "Option 1 : l'écart va dans le sens prudent (plus de changements contrefactuels, plus d'humains), et la mauvaise attribution, drapeau grave, reste dans l'accord.",
+      "retenu": "Option 1. Schémas de notation et de verdict : obsolescence_fraiche absente sans le drapeau obsolescence (PR #82). Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
+      "date_decision": "2026-10-06"
     }
   ],
   "lots": [
@@ -461,6 +475,7 @@
         "D14",
         "D15",
         "D16",
+        "D17",
         "D3"
       ],
       "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler())."

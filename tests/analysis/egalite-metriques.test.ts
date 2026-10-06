@@ -17,9 +17,12 @@
  * notations ne concordent pas. Aucune exception.
  *
  * Dans l'autre sens (les notations ne concordent pas, donc les métriques diffèrent), le test a
- * révélé le 2026-10-06 des écarts, que la consigne interdit de corriger ici : ils sont listés
- * nommément dans `ECARTS_CONSTATES`, rapportés à l'auteur (rapport de la PR B), et le test exige
- * que la liste reste exacte. Un écart qui disparaît, ou un nouveau, fait échouer le test.
+ * révélé le 2026-10-06 des écarts : l'égalité est plus stricte que les métriques primaires. La
+ * décision D17 de l'auteur (2026-10-06) les assume : l'égalité porte sur tous les drapeaux, et la 0.16
+ * l'écrit ; la fraîcheur sans le drapeau obsolescence, autre écart, est refusée par les schémas de
+ * notation et de verdict, donc ne figure plus parmi les cas. Les écarts assumés sont listés
+ * nommément dans `ECARTS_ASSUMES`, et le test exige que la liste reste exacte : un écart qui
+ * disparaît, ou un nouveau, le fait échouer.
  */
 
 import { describe, expect, it } from "vitest";
@@ -62,8 +65,6 @@ const CAS: readonly Cas[] = [
   { nom: "categorie indeterminee", temoin: TEMOIN, variante: { ...TEMOIN, categorie: "indeterminee" } },
   ...DRAPEAUX.map((drapeau) => ({ nom: `drapeau ${drapeau}`, temoin: TEMOIN, variante: { ...TEMOIN, drapeaux: [drapeau] } })),
   { nom: "motif_inexactitude", temoin: TEMOIN, variante: { ...TEMOIN, motif_inexactitude: "autre" } },
-  { nom: "obsolescence_fraiche vraie sans drapeau", temoin: TEMOIN, variante: { ...TEMOIN, obsolescence_fraiche: true } },
-  { nom: "obsolescence_fraiche fausse sans drapeau", temoin: TEMOIN, variante: { ...TEMOIN, obsolescence_fraiche: false } },
   { nom: "obsolescence_fraiche avec drapeau", temoin: TEMOIN_OBSOLESCENCE, variante: { ...TEMOIN_OBSOLESCENCE, obsolescence_fraiche: true } },
   { nom: "sourcage.cite", temoin: TEMOIN, variante: { ...TEMOIN, sourcage: { cite: false, liens: [] } } },
   { nom: "lien existant et soutenant", temoin: TEMOIN, variante: avecLiens([lien("existe", "soutient")]) },
@@ -75,16 +76,12 @@ const CAS: readonly Cas[] = [
 ];
 
 /**
- * Constatés le 2026-10-06 : `notationsConcordent` les distingue, aucune métrique primaire ne les
- * lit. Les drapeaux « mauvaise attribution » et « déformation » ne sont lus que par la répartition
- * des drapeaux, métrique secondaire du §8 ; la fraîcheur n'est lue qu'avec le drapeau obsolescence.
+ * Assumés par la décision D17 (2026-10-06) : `notationsConcordent` les distingue, aucune métrique
+ * primaire ne les lit. Les drapeaux « mauvaise attribution » et « déformation » ne sont lus que par
+ * la répartition des drapeaux, métrique secondaire du §8 ; « mauvaise attribution » est aussi un
+ * drapeau grave, qui impose la revue humaine (§7).
  */
-const ECARTS_CONSTATES: readonly string[] = [
-  "drapeau mauvaise_attribution",
-  "drapeau deformation",
-  "obsolescence_fraiche vraie sans drapeau",
-  "obsolescence_fraiche fausse sans drapeau",
-];
+const ECARTS_ASSUMES: readonly string[] = ["drapeau mauvaise_attribution", "drapeau deformation"];
 
 interface Contexte {
   readonly nom: string;
@@ -155,13 +152,13 @@ describe("notationsConcordent distingue ce que lisent les métriques primaires",
     });
   }
 
-  it("dans l'autre sens, seuls les écarts constatés font exception, et ils sont tous encore là", () => {
+  it("dans l'autre sens, seuls les écarts assumés par D17 font exception, et ils sont tous encore là", () => {
     const ecarts = CAS.filter((cas) => {
       const a = notation(cas.temoin);
       const b = notation(cas.variante);
       return !notationsConcordent(a, b) && !metriquesDifferent(a, b);
     }).map((cas) => cas.nom);
-    expect(ecarts).toEqual(ECARTS_CONSTATES);
+    expect(ecarts).toEqual(ECARTS_ASSUMES);
   });
 
   it("le jeu de cas couvre chaque champ qu'un verdict reprend d'une notation", () => {
