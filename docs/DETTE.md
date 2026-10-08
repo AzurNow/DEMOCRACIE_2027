@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-10-06 (soir) — Notation humaine, chaîne de notation simulée, D19 (PR #87 à #91 : `pipeline/notation/`, `notation-humaine/`, `outils/notation-humaine.ts`, `outils/notation-dry.ts`)
 
-### 1. L'écran de notation humaine affiche la vue champ par champ, et rien ne garde qu'il montre tout ce que voit le juge — *moyenne*
+### ~~1. L'écran de notation humaine affiche la vue champ par champ, et rien ne garde qu'il montre tout ce que voit le juge~~ — réglé le 2026-10-08 par la PR #94 (`tests/notation-humaine/completude-affichage.test.ts`, `notation-humaine/client/contenu-vue.ts`)
 
 `notation-humaine/client/affichage.ts` rend la `VueAnnotateur` champ par champ, sur des types
 recopiés à la main dans `notation-humaine/client/types.ts` : aucun type n'est partagé avec
