@@ -5,6 +5,8 @@
  * refuse (mort × soutient), rien de plus : un lien inaccessible ou non testable peut être noté
  * soutenant d'après une copie archivée, il n'est pas forcé. Chaque `describe` numéroté porte un
  * cas limite du brief ; le cas 7 (`pnpm notation:dry` de bout en bout) est dans `chaine.test.ts`.
+ * D21 : la règle reçoit l'existence entière ; les liens inaccessibles ou non testables d'ici portent
+ * leur copie archivée, le cas sans copie est dans `juge-copie-archivee.test.ts`.
  */
 
 import { describe, expect, it } from "vitest";
@@ -70,12 +72,17 @@ function soutiensDe(notation: NotationIndividuelle): readonly (readonly [string,
 
 const SOUTIENS_ADMIS_SUR_LIEN_MORT = VERDICTS_SOUTIEN.filter((s) => s !== "soutient");
 
+/** D21 : la règle reçoit l'existence entière ; avec sa copie archivée, seul D19 joue. */
+function avecCopie(verdict_existence: VerdictExistence): ExistenceEtablie {
+  return { url_citee: "https://x.invalid/", date_test: DATE_TEST, verdict_existence, sha256_contenu: SHA, archive_url: "https://archive.invalid/x" };
+}
+
 describe("D19, la règle : soutienApresTestHttp", () => {
   it("ne force que mort × soutient, et le force à non_applicable", () => {
     for (const existence of VERDICTS_EXISTENCE) {
       for (const soutien of VERDICTS_SOUTIEN) {
         const attendu: VerdictSoutien = existence === "mort" && soutien === "soutient" ? "non_applicable" : soutien;
-        expect(soutienApresTestHttp(soutien, existence), `${existence} × ${soutien}`).toBe(attendu);
+        expect(soutienApresTestHttp(soutien, avecCopie(existence)), `${existence} × ${soutien}`).toBe(attendu);
       }
     }
   });
@@ -93,7 +100,7 @@ describe("D19, la règle : soutienApresTestHttp", () => {
     for (const existence of VERDICTS_EXISTENCE) {
       for (const soutien of VERDICTS_SOUTIEN) {
         const brut = (): void => validerFragment("notation", fragment, lienDe(existence, soutien), `${existence} × ${soutien}`);
-        const force = (): void => validerFragment("notation", fragment, lienDe(existence, soutienApresTestHttp(soutien, existence)), `forcé ${existence} × ${soutien}`);
+        const force = (): void => validerFragment("notation", fragment, lienDe(existence, soutienApresTestHttp(soutien, avecCopie(existence))), `forcé ${existence} × ${soutien}`);
         expect(force, `forcé ${existence} × ${soutien}`).not.toThrow();
         if (existence === "mort" && soutien === "soutient") expect(brut).toThrow(/non conforme/);
         else expect(brut, `${existence} × ${soutien}`).not.toThrow();

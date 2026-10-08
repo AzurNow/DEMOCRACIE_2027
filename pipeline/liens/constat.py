@@ -23,7 +23,6 @@ ISSUES_SANS_REPONSE = frozenset(
         "robots_injoignable",
         "schema_non_http",
         "url_malformee",
-        "url_non_ascii",
         "redirections_excessives",
         "boucle_redirection",
         "redirection_sans_location",

@@ -1,7 +1,7 @@
 """Une tentative de test d'un lien : GET seul, robots.txt, redirections une à une, cadence par hôte.
 
-Cas limites 3, 4, 10, 11, 14 et 19 au niveau d'une tentative ; le verdict qui en découle est vérifié
-de bout en bout dans `test_passage.py`. Aucune requête réelle : `TransportFactice` lève une erreur
+Cas limites 3, 4, 10, 11, 14 et 19 de D20, 3 et 5 de D21, au niveau d'une tentative ; le verdict
+qui en découle est vérifié de bout en bout dans `test_passage.py`. Aucune requête réelle : `TransportFactice` lève une erreur
 pour toute URL qu'un test n'a pas prévue, ce qui prouve aussi qu'aucune requête n'est partie.
 """
 
@@ -11,6 +11,7 @@ from itertools import pairwise
 
 from pipeline.collecte.politesse import Cadence
 from pipeline.collecte.reseau import ConnexionRefusee, DelaiDepasse, ErreurReseau, NomIntrouvable
+from pipeline.liens.iri import iri_vers_uri
 from pipeline.liens.sonde import AGENT_LIENS, SondeLiens
 from tests.collecte.doubles import HorlogeFactice, Route, TransportFactice, reponse
 
@@ -21,7 +22,7 @@ A = "https://example.org/a"
 
 def _sonde(horloge: HorlogeFactice, routes: dict[str, Route]) -> tuple[SondeLiens, TransportFactice]:
     transport = TransportFactice(horloge, routes)
-    return SondeLiens(transport, Cadence(horloge, intervalle_s=1.0)), transport
+    return SondeLiens(transport, Cadence(horloge, intervalle_s=1.0), iri_vers_uri), transport
 
 
 def test_200_direct_rend_le_corps_tel_quel(horloge: HorlogeFactice) -> None:
@@ -169,14 +170,74 @@ def test_cas_11_schemas_non_http_et_chaine_non_url_sans_requete(horloge: Horloge
     assert transport.urls() == []
 
 
-def test_url_non_ascii_n_est_ni_envoyee_ni_reencodee(horloge: HorlogeFactice) -> None:
-    """La chaîne exacte n'est pas transformée (D20) ; D20 ne classe pas ce cas (question à l'auteur)."""
+def test_d21_cas_5_iri_accent_dans_le_chemin_envoyee_encodee(horloge: HorlogeFactice) -> None:
+    iri = "https://fr.wikipedia.org/wiki/Éducation"
+    robots, envoyee = "https://fr.wikipedia.org/robots.txt", "https://fr.wikipedia.org/wiki/%C3%89ducation"
+    sonde, transport = _sonde(horloge, {robots: ROBOTS_OUVERT, envoyee: reponse(200, b"page")})
+
+    constat = sonde.sonder(iri)
+
+    assert (constat.issue, constat.code_http, constat.url_finale) == ("reponse_http", 200, envoyee)
+    assert transport.urls() == [robots, envoyee]
+
+
+def test_d21_cas_5_hote_idn_envoye_en_xn(horloge: HorlogeFactice) -> None:
+    robots, envoyee = "https://xn--bcher-kva.example/robots.txt", "https://xn--bcher-kva.example/"
+    sonde, transport = _sonde(horloge, {robots: ROBOTS_OUVERT, envoyee: reponse(200, b"page")})
+
+    assert sonde.sonder("https://bücher.example/").code_http == 200
+    assert transport.urls() == [robots, envoyee]
+
+
+def test_d21_cas_5_pourcent_deja_encode_non_reencode(horloge: HorlogeFactice) -> None:
+    envoyee = "https://example.org/%C3%89cole/%C3%A9"
+    sonde, transport = _sonde(horloge, {ROBOTS: ROBOTS_OUVERT, envoyee: reponse(200, b"page")})
+
+    assert sonde.sonder("https://example.org/%C3%89cole/é").code_http == 200
+    assert transport.urls() == [ROBOTS, envoyee]
+
+
+def test_d21_cas_5_iri_inconvertible_url_malformee_sans_requete(horloge: HorlogeFactice) -> None:
     sonde, transport = _sonde(horloge, {})
 
-    constat = sonde.sonder("https://fr.wikipedia.org/wiki/Éducation")
+    constat = sonde.sonder("https://" + "ü" * 64 + ".example/")
 
-    assert (constat.issue, constat.code_http) == ("url_non_ascii", None)
+    assert (constat.issue, constat.code_http) == ("url_malformee", None)
     assert transport.urls() == []
+
+
+def test_d21_cible_de_redirection_non_ascii_convertie_a_l_envoi(horloge: HorlogeFactice) -> None:
+    envoyee = "https://example.org/%C3%A9t%C3%A9"
+    sonde, transport = _sonde(horloge, {ROBOTS: ROBOTS_OUVERT, A: reponse(301, location="/été"), envoyee: reponse(200, b"ok")})
+
+    constat = sonde.sonder(A)
+
+    assert (constat.code_http, constat.url_finale) == (200, envoyee)
+    assert transport.urls() == [ROBOTS, A, envoyee]
+
+
+def test_d21_cible_de_redirection_inconvertible_url_malformee(horloge: HorlogeFactice) -> None:
+    cible = "https://" + "ü" * 64 + ".example/"
+    sonde, transport = _sonde(horloge, {ROBOTS: ROBOTS_OUVERT, A: reponse(302, location=cible)})
+
+    assert (sonde.sonder(A).issue, sonde.sonder(A).code_http) == ("url_malformee", 302)
+    assert transport.urls() == [ROBOTS, A, A]
+
+
+def test_d21_cas_3_robots_en_echec_relu_a_la_tentative_suivante(horloge: HorlogeFactice) -> None:
+    sonde, transport = _sonde(horloge, {ROBOTS: [reponse(503), ROBOTS_OUVERT], A: reponse(200, b"ok")})
+
+    assert sonde.sonder(A).issue == "robots_injoignable"
+    assert sonde.sonder(A).code_http == 200
+    assert transport.urls() == [ROBOTS, ROBOTS, A]
+
+
+def test_d21_robots_lu_avec_succes_reste_en_cache_pour_le_passage(horloge: HorlogeFactice) -> None:
+    sonde, transport = _sonde(horloge, {ROBOTS: [ROBOTS_OUVERT], A: [reponse(503), reponse(200, b"ok")]})
+
+    assert sonde.sonder(A).code_http == 503
+    assert sonde.sonder(A).code_http == 200
+    assert transport.urls() == [ROBOTS, A, A]
 
 
 def test_cas_14_redirection_vers_un_schema_non_http(horloge: HorlogeFactice) -> None:

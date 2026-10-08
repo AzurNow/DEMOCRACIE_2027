@@ -96,21 +96,35 @@ tenir le plafond de trois tentatives du §6 après un arrêt brutal (`pipeline/i
 
 ## `volume/liens/` — `pnpm liens <repertoire_run>`
 
-Le test HTTP des liens du §7 (décision D20, `pipeline/liens`), un passage par run, après la fermeture
-de la fenêtre d'interrogation (refusé avant `fenetre.fin`) et avant la notation. Les URL de
+Le test HTTP des liens du §7 (décisions D20 et D21, `pipeline/liens`), un passage par run, après la
+fermeture de la fenêtre d'interrogation (refusé avant `fenetre.fin`) et avant la notation. Les URL de
 `normalise.liens` des réponses obtenues sont prises telles qu'écrites, dédoublonnées sur la chaîne
-exacte et testées en ordre trié ; la table résultat → verdict est `config/test-liens.toml`.
+exacte et testées en ordre trié ; la table résultat → verdict est `config/test-liens.toml`
+(`table-liens-v2`), qui fixe aussi le délai d'une requête (`delai_s`) et la conversion des IRI.
 
 - **Un fichier par URL**, `<sha256 de l'URL en UTF-8>.json`, écrit une fois (refus d'écraser), après
   contrôle de sa forme. Une URL que la table ne classe pas n'a pas de fichier : elle reste « en
-  attente du test des liens » pour la notation, et le passage sort avec le code 1.
+  attente du test des liens » pour la notation, et le passage sort avec le code 1 (la v2 classe
+  toute issue et toute classe de code : ce cas ne survient qu'avec une autre table).
+- **URL non ASCII.** Une IRI est convertie en URI pour l'envoi seulement (RFC 3987 §3.1 :
+  percent-encoding UTF-8 hors ASCII, hôte en IDNA ; `%XX` existants intacts). `url_citee` et le nom
+  du fichier gardent la chaîne exacte, `url_finale` est l'URI qui a répondu ; une IRI inconvertible
+  est `url_malformee` (non testable).
+- **`pages/`** garde, octets intacts et nommés par leur SHA-256, la page d'un lien qui existe et la
+  version brute (`https://web.archive.org/web/<14 chiffres>id_/<url>`) de l'instantané retenu d'un
+  lien inaccessible ou non testable. Un instantané n'est retenu que si l'API de disponibilité le dit
+  de statut 200 ; sinon il est écarté (`wayback.issue = "ecarte"`, statut consigné). Seul un
+  téléchargement réussi pose `archive_url` (l'URL d'instantané renvoyée par le service) et
+  `sha256_contenu` ; un échec est consigné dans `wayback.telechargement`, compté parmi les échecs
+  Wayback du bilan, sans changer le verdict.
 - **Relance.** Un fichier déjà présent est repris tel quel : l'URL n'est ni retestée ni réécrite, son
   verdict est compté « repris ». Un fichier présent mais illisible ou qui ne porte pas cette URL est
   refusé (code 1), jamais remplacé. Une page déjà conservée n'est pas réécrite (son nom est son
-  empreinte) ; une interruption entre la page et le résultat refait le test et Save Page Now.
+  empreinte) ; une interruption entre la page et le résultat refait le test et Save Page Now (ou la
+  recherche et le téléchargement de l'instantané).
 - **Lecture.** `pnpm notation:humaine` lit ce répertoire s'il existe
-  (`pipeline/notation/fournisseur-fichiers.ts`) ; un fichier invalide, mal nommé ou dont la page
-  manque empêche le démarrage. Le dossier `pages/` et les résultats sont les seules entrées admises.
+  (`pipeline/notation/fournisseur-fichiers.ts`) ; un fichier invalide, mal nommé ou dont la copie
+  conservée (page ou version brute de l'instantané) manque empêche le démarrage. Le dossier `pages/` et les résultats sont les seules entrées admises.
 
 ## Ce que l'analyse lira
 

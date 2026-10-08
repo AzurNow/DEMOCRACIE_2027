@@ -22,7 +22,11 @@ const DORE = resolve(import.meta.dirname, "../liens/dore");
 const EXISTE = "https://example.org/programme";
 const MORT = "https://example.org/retire";
 const INACCESSIBLE = "https://example.org/reserve";
+const ECARTE = "https://example.org/ferme";
+const ECHEC = "https://example.org/fragile";
 const PAGE = Buffer.from("<!DOCTYPE html>\r\n<p>Programme — « éducation »</p>\r\n", "utf8");
+/** D21 : la version brute de l'instantané de INACCESSIBLE, téléchargée par `pipeline/liens`. */
+const COPIE = Buffer.from("<!DOCTYPE html>\r\n<p>Réservé — copie archivée</p>\r\n", "utf8");
 
 let nettoyages: (() => void)[] = [];
 
@@ -46,14 +50,25 @@ function poser(run: string, url: string, contenu: Record<string, unknown>): void
   writeFileSync(join(repertoireLiens(run), nomResultat(url)), `${JSON.stringify(contenu, null, 2)}\n`, "utf8");
 }
 
-/** Un run dont le test des liens a tranché trois URL : existe (page conservée), mort, inaccessible. */
+function empreinte(octets: Buffer): string {
+  return createHash("sha256").update(octets).digest("hex");
+}
+
+/**
+ * Un run dont le test des liens a tranché cinq URL : existe (page conservée), mort, inaccessible avec
+ * copie archivée téléchargée, inaccessible à instantané écarté, inaccessible à téléchargement en échec.
+ */
 function runTeste(): string {
   const run = runVide();
-  const sha = createHash("sha256").update(PAGE).digest("hex");
-  writeFileSync(join(repertoireLiens(run), "pages", `${sha}.html`), PAGE);
-  for (const [url, dore] of [[EXISTE, "existe.json"], [MORT, "mort.json"], [INACCESSIBLE, "inaccessible-instantane.json"]] as const) {
-    copyFileSync(join(DORE, dore), join(repertoireLiens(run), nomResultat(url)));
-  }
+  for (const octets of [PAGE, COPIE]) writeFileSync(join(repertoireLiens(run), "pages", `${empreinte(octets)}.html`), octets);
+  const dores = [
+    [EXISTE, "existe.json"],
+    [MORT, "mort.json"],
+    [INACCESSIBLE, "inaccessible-instantane.json"],
+    [ECARTE, "inaccessible-instantane-ecarte.json"],
+    [ECHEC, "inaccessible-telechargement-echec.json"],
+  ] as const;
+  for (const [url, dore] of dores) copyFileSync(join(DORE, dore), join(repertoireLiens(run), nomResultat(url)));
   return run;
 }
 
@@ -67,14 +82,44 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
     expect(existences[0]).toEqual({
       url_citee: EXISTE,
       verdict_existence: "existe",
-      date_test: "2026-09-22T14:30:05+02:00",
+      date_test: "2026-09-22T14:30:08+02:00",
       code_http: 200,
       url_finale: EXISTE,
-      sha256_contenu: createHash("sha256").update(PAGE).digest("hex"),
+      sha256_contenu: empreinte(PAGE),
       archive_url: "https://web.archive.org/web/20260922123005/https://example.org/programme",
     });
-    expect(existences[1]).toEqual({ url_citee: MORT, verdict_existence: "mort", date_test: "2026-09-22T14:30:07+02:00", code_http: 404, url_finale: MORT });
+    expect(existences[1]).toEqual({ url_citee: MORT, verdict_existence: "mort", date_test: "2026-09-22T14:30:09+02:00", code_http: 404, url_finale: MORT });
     expect(fournisseur.existencesDe("r2", [])).toEqual([]);
+  });
+
+  it("D21 : la copie archivée téléchargée d'un lien inaccessible est rendue (archive_url et sha256_contenu)", () => {
+    const [existence] = fournisseurFichiers(runTeste()).existencesDe("r1", [INACCESSIBLE]);
+    expect(existence).toMatchObject({
+      verdict_existence: "inaccessible",
+      archive_url: "http://web.archive.org/web/20260918071500/https://example.org/reserve",
+      sha256_contenu: empreinte(COPIE),
+    });
+  });
+
+  it("D21 : instantané écarté ou téléchargement en échec, ni archive_url ni sha256_contenu", () => {
+    const existences = fournisseurFichiers(runTeste()).existencesDe("r1", [ECARTE, ECHEC]);
+    expect(existences.map((e) => e.verdict_existence)).toEqual(["inaccessible", "inaccessible"]);
+    for (const existence of existences) {
+      expect(existence.archive_url).toBeUndefined();
+      expect(existence.sha256_contenu).toBeUndefined();
+    }
+  });
+
+  it("D21 : la copie archivée absente, d'une autre taille ou mal nommée est refusée", () => {
+    const run = runTeste();
+    const chemin = join(repertoireLiens(run), "pages", `${empreinte(COPIE)}.html`);
+    writeFileSync(chemin, COPIE.subarray(1));
+    expect(() => fournisseurFichiers(run)).toThrow(/octets/);
+    rmSync(chemin);
+    expect(() => fournisseurFichiers(run)).toThrow(/absente/);
+    writeFileSync(chemin, COPIE);
+    poser(run, INACCESSIBLE, { ...lireDore("inaccessible-instantane.json"), sha256_contenu: "b".repeat(64) });
+    expect(() => fournisseurFichiers(run)).toThrow(/n'est pas nommée par l'empreinte/);
   });
 
   it("un lien sans fichier est absent du résultat : jamais supposé", () => {
@@ -119,7 +164,7 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
 
   it("la page d'un lien existant absente, ou d'une autre taille, est refusée", () => {
     const run = runTeste();
-    const sha = createHash("sha256").update(PAGE).digest("hex");
+    const sha = empreinte(PAGE);
     writeFileSync(join(repertoireLiens(run), "pages", `${sha}.html`), PAGE.subarray(1));
     expect(() => fournisseurFichiers(run)).toThrow(/octets/);
     rmSync(join(repertoireLiens(run), "pages", `${sha}.html`));

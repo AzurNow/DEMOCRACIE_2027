@@ -1384,13 +1384,25 @@
       "objet": "existence-lien",
       "fichier": "existence-lien/valide-03-inaccessible-instantane-trouve.json",
       "attendu": "valide",
-      "motif": "Lien en 403 : inaccessible ; l'instantané existant le plus proche de la réponse la plus ancienne qui le cite est cherché, jamais créé, et son URL renvoyée devient archive_url. Copie du fichier doré tests/liens/dore/inaccessible-instantane.json."
+      "motif": "Lien en 403 : inaccessible ; l'instantané existant le plus proche de la réponse la plus ancienne qui le cite est cherché, jamais créé. De statut 200, il est retenu et sa version brute (id_) téléchargée (D21) : son URL renvoyée devient archive_url, l'empreinte des octets téléchargés sha256_contenu. Copie du fichier doré tests/liens/dore/inaccessible-instantane.json."
     },
     {
       "objet": "existence-lien",
       "fichier": "existence-lien/valide-04-non-testable-robots.json",
       "attendu": "valide",
       "motif": "Lien interdit par robots.txt : non testable, aucune requête vers l'URL, code_http null (aucune réponse HTTP) ; l'API ne renvoie aucun instantané, donc pas d'archive_url. Copie du fichier doré tests/liens/dore/non-testable-robots.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-05-inaccessible-instantane-ecarte.json",
+      "attendu": "valide",
+      "motif": "Lien en 403 : inaccessible ; l'API renvoie un instantané de statut 404, écarté et consigné avec son statut (D21), ni archive_url ni sha256_contenu. Copie du fichier doré tests/liens/dore/inaccessible-instantane-ecarte.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-06-inaccessible-telechargement-echec.json",
+      "attendu": "valide",
+      "motif": "Lien en 403 : inaccessible ; instantané de statut 200 retenu, mais le téléchargement de sa version brute échoue (503) : l'échec est consigné dans le journal Wayback, ni archive_url ni sha256_contenu, verdict inchangé (D21). Copie du fichier doré tests/liens/dore/inaccessible-telechargement-echec.json."
     },
     {
       "objet": "existence-lien",
@@ -1419,6 +1431,41 @@
       "attendu": "invalide",
       "motif": "Verdict d'existence hors des quatre du schéma de notation (existe, mort, inaccessible, non_testable) : le verdict est lu dans la table publiée, jamais inventé.",
       "regle_protocole": "§7, sourçage ; décision D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-05-copie-archivee-sans-empreinte.json",
+      "attendu": "invalide",
+      "motif": "Lien inaccessible dont la version brute de l'instantané a été téléchargée, archive_url posée, mais sans sha256_contenu. D21 : la copie archivée porte les deux ensemble, sans quoi rien ne dit quels octets un soutien aurait lus.",
+      "regle_protocole": "§7, sourçage (copie archivée) ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-06-instantane-ecarte-recopie-en-archive-url.json",
+      "attendu": "invalide",
+      "motif": "Instantané écarté (statut 404) dont l'URL est pourtant recopiée en archive_url avec une empreinte. D21 : un instantané de statut autre que 200 est consigné, jamais retenu.",
+      "regle_protocole": "§7, sourçage ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-07-telechargement-en-echec-avec-archive-url.json",
+      "attendu": "invalide",
+      "motif": "Téléchargement de la version brute en échec, mais archive_url et sha256_contenu posés. D21 : sans octets téléchargés, ni l'une ni l'autre.",
+      "regle_protocole": "§7, sourçage ; CLAUDE.md règle 2 ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-08-instantane-retenu-de-statut-302.json",
+      "attendu": "invalide",
+      "motif": "Instantané retenu (trouve) alors que l'API le dit de statut 302. D21 : seul un instantané de statut 200 est retenu.",
+      "regle_protocole": "§7, sourçage ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-09-issue-url-non-ascii-retiree.json",
+      "attendu": "invalide",
+      "motif": "Tentative close sur l'issue url_non_ascii. D21 : une IRI est convertie en URI pour l'envoi (RFC 3987 §3.1), ou refusée comme url_malformee ; l'issue url_non_ascii n'existe plus.",
+      "regle_protocole": "§7, sourçage ; décision D21"
     }
   ]
 }

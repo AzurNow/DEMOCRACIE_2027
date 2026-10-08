@@ -1,8 +1,10 @@
-"""La table résultat → verdict (D20), lue dans `config/test-liens.toml`, jamais écrite dans le code.
+"""La table résultat → verdict (D20, D21), lue dans `config/test-liens.toml`, jamais écrite dans le code.
 
-Cas limite 15 : une table ambiguë (un code dans deux verdicts), incomplète (clé manquante, version
-absente) ou inconnue (clé, issue ou verdict que le code ne connaît pas) est refusée au chargement,
-par une erreur nommée. Puis la table réelle est confrontée, ligne à ligne, au texte de D20.
+Cas limite 15 de D20 : une table ambiguë (un code dans deux verdicts), incomplète (clé manquante,
+version absente) ou inconnue (clé, issue ou verdict que le code ne connaît pas) est refusée au
+chargement, par une erreur nommée. Cas limite 4 de D21 : `delai_s` et `conversion_iri` sont lus dans
+la table, une table sans `delai_s` ou avec une conversion inconnue est refusée. Puis la table réelle
+(table-liens-v2) est confrontée, ligne à ligne, au texte de D20 et de D21.
 """
 
 from __future__ import annotations
@@ -11,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.liens.constat import Constat
+from pipeline.liens.constat import ISSUES_SANS_REPONSE, Constat
 from pipeline.liens.table import (
     CHEMIN_TABLE,
     TableAmbigue,
@@ -24,6 +26,8 @@ from pipeline.liens.table import (
 
 TABLE_MINIMALE = """
 version = "table-liens-v9"
+conversion_iri = "rfc3987-3.1"
+delai_s = 12
 
 [tentatives]
 maximum = 3
@@ -70,6 +74,32 @@ def test_la_table_minimale_se_charge(tmp_path: Path) -> None:
     table = charger_table(_ecrire(tmp_path, TABLE_MINIMALE))
     assert table.version == "table-liens-v9"
     assert table.verdict(_http(404)) == "mort"
+
+
+def test_d21_cas_4_delai_s_lu_dans_la_table(tmp_path: Path) -> None:
+    assert charger_table(_ecrire(tmp_path, TABLE_MINIMALE)).delai_s == 12.0
+
+
+def test_d21_cas_4_table_sans_delai_s_est_incomplete(tmp_path: Path) -> None:
+    with pytest.raises(TableIncomplete, match="delai_s"):
+        charger_table(_ecrire(tmp_path, TABLE_MINIMALE.replace("delai_s = 12\n", "")))
+
+
+@pytest.mark.parametrize("valeur", ["0", "-1", '"30"', "true"])
+def test_d21_cas_4_delai_s_non_positif_ou_non_numerique_refuse(tmp_path: Path, valeur: str) -> None:
+    with pytest.raises(TableInconnue, match="delai_s"):
+        charger_table(_ecrire(tmp_path, TABLE_MINIMALE.replace("delai_s = 12", f"delai_s = {valeur}")))
+
+
+def test_d21_cas_4_conversion_iri_inconnue_est_refusee(tmp_path: Path) -> None:
+    contenu = TABLE_MINIMALE.replace('conversion_iri = "rfc3987-3.1"', 'conversion_iri = "whatwg-url"')
+    with pytest.raises(TableInconnue, match="whatwg-url"):
+        charger_table(_ecrire(tmp_path, contenu))
+
+
+def test_d21_table_sans_conversion_iri_est_incomplete(tmp_path: Path) -> None:
+    with pytest.raises(TableIncomplete, match="conversion_iri"):
+        charger_table(_ecrire(tmp_path, TABLE_MINIMALE.replace('conversion_iri = "rfc3987-3.1"\n', "")))
 
 
 def test_cas_15_code_present_dans_deux_verdicts_est_ambigu(tmp_path: Path) -> None:
@@ -179,24 +209,42 @@ def test_d20_issues(table: TableLiens, issue: str, verdict: str) -> None:
 @pytest.mark.parametrize(
     "constat",
     [
-        Constat(issue="reponse_http", code_http=304),
-        Constat(issue="reponse_http", code_http=100),
         Constat(issue="erreur_reseau", code_http=None),
         Constat(issue="redirection_sans_location", code_http=302),
-        Constat(issue="url_non_ascii", code_http=None),
+        Constat(issue="reponse_http", code_http=100),
+        Constat(issue="reponse_http", code_http=103),
+        Constat(issue="reponse_http", code_http=300),
+        Constat(issue="reponse_http", code_http=304),
+        Constat(issue="reponse_http", code_http=305),
     ],
 )
-def test_d20_ne_dit_rien_de_ces_issues_donc_aucun_verdict(table: TableLiens, constat: Constat) -> None:
-    """Jamais supposé : une issue que D20 ne classe pas n'a pas de verdict (question à l'auteur)."""
-    assert table.verdict(constat) is None
+def test_d21_cas_1_nouvelles_issues_inaccessibles(table: TableLiens, constat: Constat) -> None:
+    assert table.verdict(constat) == "inaccessible"
 
 
-def test_d20_tentatives_et_transitoires(table: TableLiens) -> None:
-    assert table.version == "table-liens-v1"
+def test_d21_url_non_ascii_n_est_plus_une_issue() -> None:
+    with pytest.raises(ValueError, match="url_non_ascii"):
+        Constat(issue="url_non_ascii", code_http=None)
+
+
+def test_d21_la_table_v2_classe_toute_issue_et_toute_classe(table: TableLiens) -> None:
+    """Plus aucun résultat sans verdict avec la table réelle : chaque issue et chaque classe a le sien."""
+    for issue in ISSUES_SANS_REPONSE:
+        assert table.verdict(Constat(issue=issue, code_http=None)) is not None, issue
+    for code in range(100, 600):
+        assert table.verdict(_http(code)) is not None, code
+
+
+def test_d21_tentatives_transitoires_delai_et_conversion(table: TableLiens) -> None:
+    assert table.version == "table-liens-v2"
+    assert table.conversion_iri == "rfc3987-3.1"
+    assert table.delai_s == 30.0
     assert (table.tentatives_max, table.espacement_s) == (3, 60.0)
     transitoires = [_http(429), _http(500), _http(503), Constat(issue="delai_depasse", code_http=None),
-                    Constat(issue="connexion_refusee", code_http=None)]
-    definitifs = [_http(404), _http(410), _http(403), _http(200), Constat(issue="erreur_tls", code_http=None),
-                  Constat(issue="domaine_inexistant", code_http=None)]
+                    Constat(issue="connexion_refusee", code_http=None), Constat(issue="erreur_reseau", code_http=None),
+                    Constat(issue="robots_injoignable", code_http=None)]
+    definitifs = [_http(404), _http(410), _http(403), _http(200), _http(304), Constat(issue="erreur_tls", code_http=None),
+                  Constat(issue="domaine_inexistant", code_http=None),
+                  Constat(issue="redirection_sans_location", code_http=302)]
     assert all(table.est_transitoire(c) for c in transitoires)
     assert not any(table.est_transitoire(c) for c in definitifs)

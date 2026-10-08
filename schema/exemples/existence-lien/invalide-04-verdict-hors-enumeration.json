@@ -5,7 +5,7 @@
   "url_finale": "https://example.org/reserve",
   "code_http": 403,
   "archive_url": "http://web.archive.org/web/20260918071500/https://example.org/reserve",
-  "version_table": "table-liens-v1",
+  "version_table": "table-liens-v2",
   "tentatives": [
     {
       "numero": 1,

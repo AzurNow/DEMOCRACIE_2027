@@ -1,9 +1,13 @@
-"""Chargement strict de la table résultat → verdict (`config/test-liens.toml`, décision D20).
+"""Chargement strict de la table résultat → verdict (`config/test-liens.toml`, décisions D20 et D21).
 
 La table est une donnée : aucun code HTTP, aucune issue n'est rangé sous un verdict dans le code.
 Le chargeur refuse, par une erreur nommée, une table illisible, incomplète (clé ou verdict manquant,
 version absente), inconnue (clé, verdict, issue, classe ou code que le code ne connaît pas) ou
 ambiguë (un même code, une même classe ou une même issue sous deux verdicts).
+
+D21 : la table porte aussi le délai d'une requête (`delai_s`, nombre > 0) et la règle de conversion
+IRI → URI pour l'envoi (`conversion_iri`, une clé de `pipeline.liens.iri.CONVERSIONS_IRI`). Le code
+lit les deux ici ; aucune constante ne les double.
 
 Lecture : un code listé l'emporte sur sa classe ; un résultat que la table ne classe pas n'a pas de
 verdict (`None`), jamais un verdict voisin.
@@ -20,11 +24,12 @@ from typing import Any
 
 from pipeline.collecte.sources import RACINE_DEPOT
 from pipeline.liens.constat import CLASSES_HTTP, ISSUES_SANS_REPONSE, REPONSE_HTTP, Constat, classe_http
+from pipeline.liens.iri import CONVERSIONS_IRI
 from pipeline.liens.schemas import verdicts_existence
 
 CHEMIN_TABLE = RACINE_DEPOT / "config" / "test-liens.toml"
 MOTIF_VERSION = re.compile(r"table-liens-v[0-9]+")
-CLES_RACINE = frozenset({"version", "tentatives", "transitoire", "verdicts"})
+CLES_RACINE = frozenset({"version", "conversion_iri", "delai_s", "tentatives", "transitoire", "verdicts"})
 CLES_TENTATIVES = frozenset({"maximum", "espacement_s"})
 CLES_REGLES = frozenset({"codes_http", "classes_http", "issues"})
 
@@ -65,6 +70,10 @@ class Regles:
 @dataclass(frozen=True)
 class TableLiens:
     version: str
+    conversion_iri: str
+    """Clé de `CONVERSIONS_IRI` : la règle qui rend une IRI envoyable (D21)."""
+    delai_s: float
+    """Délai d'une requête du test des liens, en secondes (D21)."""
     tentatives_max: int
     espacement_s: float
     transitoire: Regles
@@ -110,6 +119,8 @@ def charger_table(chemin: Path) -> TableLiens:
     _refuser_ambiguites(verdicts)
     return TableLiens(
         version=version,
+        conversion_iri=_conversion_iri(brute["conversion_iri"]),
+        delai_s=_delai(brute["delai_s"]),
         tentatives_max=maximum,
         espacement_s=espacement,
         transitoire=_regles(_section(brute, "transitoire"), "transitoire"),
@@ -137,6 +148,18 @@ def _version(valeur: object) -> str:
     if not isinstance(valeur, str) or not MOTIF_VERSION.fullmatch(valeur):
         raise TableInconnue(f"version {valeur!r} hors du motif {MOTIF_VERSION.pattern}")
     return valeur
+
+
+def _conversion_iri(valeur: object) -> str:
+    if not isinstance(valeur, str) or valeur not in CONVERSIONS_IRI:
+        raise TableInconnue(f"conversion_iri {valeur!r} inconnue ; connues : {sorted(CONVERSIONS_IRI)}")
+    return valeur
+
+
+def _delai(valeur: object) -> float:
+    if isinstance(valeur, bool) or not isinstance(valeur, (int, float)) or valeur <= 0:
+        raise TableInconnue(f"delai_s doit être un nombre > 0, pas {valeur!r}")
+    return float(valeur)
 
 
 def _tentatives(section: Mapping[str, Any]) -> tuple[int, float]:

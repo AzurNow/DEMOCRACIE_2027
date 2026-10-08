@@ -1,7 +1,9 @@
 """Le passage de bout en bout : tentatives, verdict lu dans la table, copie conservée, écriture unique.
 
-Cas limites 1, 2, 5, 6, 7, 8, 9, 12, 13, 16 et 17 de la décision D20. La sonde réelle parle à
-`TransportFactice` ; l'archiveur et le chercheur d'instantanés sont des doubles (`doubles_liens.py`).
+Cas limites 1, 2, 5, 6, 7, 8, 9, 12, 13, 16 et 17 de la décision D20 ; 1, 2, 3, 5 à 9 de D21 (tests
+`test_d21_*`). La sonde réelle parle à `TransportFactice`, y compris pour télécharger la version
+brute d'un instantané ; l'archiveur et le chercheur d'instantanés sont des doubles
+(`doubles_liens.py`).
 """
 
 from __future__ import annotations
@@ -13,11 +15,12 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.collecte.reseau import ConnexionRefusee, DelaiDepasse, NomIntrouvable
+from pipeline.collecte.reseau import ConnexionRefusee, DelaiDepasse, ErreurReseau, NomIntrouvable
 from pipeline.liens.entree import EntreeRefusee, liens_cites, lire_run
-from pipeline.liens.instantanes import InstantaneAbsent, InstantaneTrouve, RechercheEchouee
+from pipeline.liens.instantanes import InstantaneAbsent, InstantaneEcarte, InstantaneTrouve, RechercheEchouee
 from pipeline.liens.passage import code_de_sortie, formater_bilan, passer
 from pipeline.liens.sortie import nom_resultat
+from pipeline.liens.table import CHEMIN_TABLE
 from tests.collecte.doubles import Route, reponse
 from tests.liens.doubles_liens import (
     ArchiveurFactice,
@@ -35,6 +38,10 @@ ROBOTS_OUVERT = reponse(200, b"User-agent: *\nAllow: /\n")
 A = "https://example.org/a"
 PARIS = timezone(timedelta(hours=2))
 REFERENCE = datetime(2026, 9, 21, 10, 0, 0, tzinfo=PARIS)
+ROBOTS_WAYBACK = "https://web.archive.org/robots.txt"
+INSTANTANE_A = f"http://web.archive.org/web/20260920101010/{A}"
+BRUTE_A = f"https://web.archive.org/web/20260920101010id_/{A}"
+TROUVE_A = InstantaneTrouve(INSTANTANE_A, "20260920101010", BRUTE_A)
 
 
 def _passer(b: Banc, tmp_path: Path, *urls: str) -> tuple[list, Path]:
@@ -172,8 +179,9 @@ def test_cas_6_503_503_200_existe_a_la_troisieme_tentative(tmp_path: Path) -> No
 
 
 def test_cas_7_503_trois_fois_inaccessible_instantane_cherche(tmp_path: Path) -> None:
-    instantane = InstantaneTrouve(f"http://web.archive.org/web/20260920101010/{A}", "20260920101010", "200")
-    b = banc({ROBOTS: ROBOTS_OUVERT, A: [reponse(503), reponse(503), reponse(503)]}, chercheur=ChercheurFactice(instantane))
+    archive = b"<html>copie archivee</html>"
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: [reponse(503), reponse(503), reponse(503)], ROBOTS_WAYBACK: ROBOTS_OUVERT,
+              BRUTE_A: reponse(200, archive, content_type="text/html")}, chercheur=ChercheurFactice(TROUVE_A))
 
     _bilans, repertoire = _passer(b, tmp_path, A)
 
@@ -182,11 +190,8 @@ def test_cas_7_503_trois_fois_inaccessible_instantane_cherche(tmp_path: Path) ->
     assert len(resultat["tentatives"]) == 3
     assert b.chercheur.demandes == [(A, REFERENCE)]
     assert b.archiveur.urls == []
-    assert resultat["archive_url"] == instantane.archive_url
-    assert resultat["wayback"] == {
-        "operation": "recherche_instantane", "instant_reference": "2026-09-21T10:00:00+02:00", "issue": "trouve",
-        "archive_url": instantane.archive_url, "horodatage_instantane": "20260920101010", "statut_instantane": "200"}
-    assert "sha256_contenu" not in resultat
+    assert resultat["archive_url"] == INSTANTANE_A
+    assert resultat["sha256_contenu"] == hashlib.sha256(archive).hexdigest()
 
 
 def test_cas_8_delai_depasse_trois_fois_inaccessible_sans_code(tmp_path: Path) -> None:
@@ -237,14 +242,15 @@ def test_cas_10_robots_interdit_non_testable_sans_requete_vers_l_url(tmp_path: P
 
 
 def test_cas_10_robots_injoignable_inaccessible(tmp_path: Path) -> None:
+    """D21 : robots.txt injoignable est transitoire ; relu à chaque tentative, puis inaccessible."""
     b = banc({ROBOTS: reponse(503)})
 
     _bilans, repertoire = _passer(b, tmp_path, A)
 
     resultat = _resultat(repertoire, A)
     assert resultat["verdict_existence"] == "inaccessible"
-    assert resultat["tentatives"][0]["issue"] == "robots_injoignable"
-    assert b.transport.urls() == [ROBOTS]
+    assert [t["issue"] for t in resultat["tentatives"]] == ["robots_injoignable"] * 3
+    assert b.transport.urls() == [ROBOTS] * 3
 
 
 @pytest.mark.parametrize("url", ["ftp://example.org/f.pdf", "javascript:alert(1)", "pas une url"])
@@ -403,7 +409,10 @@ def test_cas_17_resultat_present_mais_incoherent_refuse(tmp_path: Path) -> None:
 
 
 def test_resultat_hors_table_sans_verdict_aucun_fichier_code_1(tmp_path: Path) -> None:
-    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(304)})
+    """La table v2 classe tout ; une table qui ne classe pas 3xx laisse 304 sans verdict, jamais supposé."""
+    table = tmp_path / "table.toml"
+    table.write_text(CHEMIN_TABLE.read_text(encoding="utf-8").replace('"1xx", "3xx", ', '"1xx", '), encoding="utf-8")
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(304)}, chemin_table=table)
 
     bilans, repertoire = _passer(b, tmp_path, A)
 
@@ -411,7 +420,7 @@ def test_resultat_hors_table_sans_verdict_aucun_fichier_code_1(tmp_path: Path) -
     assert "304" in (bilans[0].motif or "")
     assert not (repertoire / nom_resultat(A)).exists()
     assert code_de_sortie(bilans) == 1
-    assert "Sans verdict (en attente du test des liens) : 1" in formater_bilan(bilans, "table-liens-v1")
+    assert "Sans verdict (en attente du test des liens) : 1" in formater_bilan(bilans, "table-liens-v2")
 
 
 def test_bilan_compte_par_verdict(tmp_path: Path) -> None:
@@ -419,7 +428,190 @@ def test_bilan_compte_par_verdict(tmp_path: Path) -> None:
     b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(404), b2: reponse(200, b"x")})
     bilans, _repertoire = _passer(b, tmp_path, A, b2)
 
-    texte = formater_bilan(bilans, "table-liens-v1")
+    texte = formater_bilan(bilans, "table-liens-v2")
 
     assert "teste : 2 (existe 1, mort 1)" in texte
     assert "Échecs Wayback (consignés, verdict inchangé) : 1" in texte
+
+
+# ------------------------------------------------------------------------------ D21
+
+
+@pytest.mark.parametrize(
+    ("route", "issue", "code"),
+    [
+        ([ErreurReseau("connexion réinitialisée")] * 3, "erreur_reseau", None),
+        ([reponse(302)], "redirection_sans_location", 302),
+        ([reponse(100)], "reponse_http", 100),
+        ([reponse(300)], "reponse_http", 300),
+        ([reponse(304)], "reponse_http", 304),
+    ],
+)
+def test_d21_cas_1_nouvelle_issue_inaccessible(tmp_path: Path, route: list, issue: str, code: int | None) -> None:
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: list(route)})
+
+    bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert (resultat["verdict_existence"], resultat["code_http"]) == ("inaccessible", code)
+    assert {t["issue"] for t in resultat["tentatives"]} == {issue}
+    assert len(resultat["tentatives"]) == len(route)
+    assert resultat["version_table"] == "table-liens-v2"
+    assert bilans[0].etat == "teste"
+
+
+def test_d21_cas_2_erreur_reseau_puis_200_existe_a_la_deuxieme_tentative(tmp_path: Path) -> None:
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: [ErreurReseau("EAI_AGAIN"), reponse(200, b"ok")]})
+
+    _bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert resultat["verdict_existence"] == "existe"
+    assert [(t["numero"], t["issue"]) for t in resultat["tentatives"]] == [(1, "erreur_reseau"), (2, "reponse_http")]
+    assert b.horloge.sommeils == [1.0, 60.0]  # cadence robots.txt → URL, puis une seule attente de 60 s
+
+
+def test_d21_cas_3_robots_503_puis_200_relu_url_testee_existe(tmp_path: Path) -> None:
+    b = banc({ROBOTS: [reponse(503), ROBOTS_OUVERT], A: [reponse(200, b"ok")]})
+
+    _bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert resultat["verdict_existence"] == "existe"
+    assert [t["issue"] for t in resultat["tentatives"]] == ["robots_injoignable", "reponse_http"]
+    assert b.transport.urls() == [ROBOTS, ROBOTS, A]
+
+
+def test_d21_cas_5_iri_envoyee_encodee_url_citee_et_nom_de_fichier_intacts(tmp_path: Path) -> None:
+    iri = "https://example.org/programme/éducation"
+    envoyee = "https://example.org/programme/%C3%A9ducation"
+    b = banc({ROBOTS: ROBOTS_OUVERT, envoyee: reponse(200, b"page")}, archiveur=ArchiveurFactice(reussite(iri)))
+
+    _bilans, repertoire = _passer(b, tmp_path, iri)
+
+    chemin = repertoire / f"{hashlib.sha256(iri.encode('utf-8')).hexdigest()}.json"
+    resultat = json.loads(chemin.read_text(encoding="utf-8"))
+    assert resultat["url_citee"] == iri
+    assert resultat["url_finale"] == envoyee
+    assert resultat["verdict_existence"] == "existe"
+    assert b.transport.urls() == [ROBOTS, envoyee]
+    assert b.archiveur.urls == [iri]
+
+
+def test_d21_cas_5_iri_inconvertible_non_testable(tmp_path: Path) -> None:
+    iri = "https://" + "ü" * 64 + ".example/"
+    b = banc({})
+
+    _bilans, repertoire = _passer(b, tmp_path, iri)
+
+    resultat = _resultat(repertoire, iri)
+    assert resultat["verdict_existence"] == "non_testable"
+    assert resultat["tentatives"][0]["issue"] == "url_malformee"
+    assert b.transport.urls() == []
+
+
+def test_d21_cas_6_deux_iri_qui_s_encodent_identiquement_deux_resultats(tmp_path: Path) -> None:
+    brute, encodee = "https://example.org/É", "https://example.org/%C3%89"
+    b = banc({ROBOTS: ROBOTS_OUVERT, encodee: reponse(200, b"page")})
+
+    bilans, repertoire = _passer(b, tmp_path, brute, encodee)
+
+    assert [x.etat for x in bilans] == ["teste", "teste"]
+    assert _resultat(repertoire, brute)["url_citee"] == brute
+    assert _resultat(repertoire, encodee)["url_citee"] == encodee
+    assert nom_resultat(brute) != nom_resultat(encodee)
+    assert len(list(repertoire.glob("*.json"))) == 2
+    assert b.transport.urls() == [ROBOTS, encodee, encodee]
+
+
+def test_d21_cas_7_instantane_200_telecharge_en_id_sha256_exact(tmp_path: Path) -> None:
+    archive = b"\xef\xbb\xbf<html>copie\r\narchiv\xc3\xa9e</html>"
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403), ROBOTS_WAYBACK: ROBOTS_OUVERT,
+              BRUTE_A: reponse(200, archive, content_type="text/html; charset=utf-8")}, chercheur=ChercheurFactice(TROUVE_A))
+
+    bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    sha256 = hashlib.sha256(archive).hexdigest()
+    assert resultat["verdict_existence"] == "inaccessible"
+    assert resultat["archive_url"] == INSTANTANE_A
+    assert resultat["sha256_contenu"] == sha256
+    assert "page" not in resultat
+    assert (repertoire / "pages" / f"{sha256}.html").read_bytes() == archive
+    assert resultat["wayback"] == {
+        "operation": "recherche_instantane", "instant_reference": "2026-09-21T10:00:00+02:00", "issue": "trouve",
+        "archive_url": INSTANTANE_A, "horodatage_instantane": "20260920101010", "statut_instantane": "200",
+        "telechargement": {"issue": "reussi", "url_brute": BRUTE_A, "url_finale": BRUTE_A, "chemin": f"pages/{sha256}.html",
+                           "type_contenu_recu": "text/html; charset=utf-8", "taille_octets": len(archive)}}
+    assert b.transport.urls() == [ROBOTS, A, ROBOTS_WAYBACK, BRUTE_A]
+    assert len({en_tetes["User-Agent"] for _u, _t, en_tetes in b.transport.requetes}) == 1
+    assert bilans[0].echec_wayback is None
+
+
+def test_d21_cas_7_non_testable_instantane_telecharge(tmp_path: Path) -> None:
+    url = "https://example.org/prive/x"
+    instantane = InstantaneTrouve(f"https://web.archive.org/web/20260920101010/{url}", "20260920101010",
+                                  f"https://web.archive.org/web/20260920101010id_/{url}")
+    b = banc({ROBOTS: reponse(200, b"User-agent: *\nDisallow: /prive/\n"), ROBOTS_WAYBACK: ROBOTS_OUVERT,
+              instantane.url_brute: reponse(200, b"copie")}, chercheur=ChercheurFactice(instantane))
+
+    _bilans, repertoire = _passer(b, tmp_path, url)
+
+    resultat = _resultat(repertoire, url)
+    assert resultat["verdict_existence"] == "non_testable"
+    assert resultat["archive_url"] == instantane.archive_url
+    assert resultat["sha256_contenu"] == hashlib.sha256(b"copie").hexdigest()
+
+
+def test_d21_cas_8_instantane_404_ecarte_statut_consigne_sans_archive_url(tmp_path: Path) -> None:
+    ecarte = InstantaneEcarte(INSTANTANE_A, "20260920101010", "404")
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403)}, chercheur=ChercheurFactice(ecarte))
+
+    bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert resultat["verdict_existence"] == "inaccessible"
+    assert "archive_url" not in resultat and "sha256_contenu" not in resultat
+    assert resultat["wayback"] == {
+        "operation": "recherche_instantane", "instant_reference": "2026-09-21T10:00:00+02:00", "issue": "ecarte",
+        "url_instantane": INSTANTANE_A, "horodatage_instantane": "20260920101010", "statut_instantane": "404"}
+    assert b.transport.urls() == [ROBOTS, A]
+    assert bilans[0].echec_wayback is None
+
+
+def test_d21_instantane_sans_statut_ecarte_statut_absent_du_journal(tmp_path: Path) -> None:
+    ecarte = InstantaneEcarte(INSTANTANE_A, "20260920101010", None)
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403)}, chercheur=ChercheurFactice(ecarte))
+
+    _bilans, repertoire = _passer(b, tmp_path, A)
+
+    wayback = _resultat(repertoire, A)["wayback"]
+    assert wayback["issue"] == "ecarte"
+    assert "statut_instantane" not in wayback
+
+
+@pytest.mark.parametrize(
+    ("routes", "motif"),
+    [
+        ({ROBOTS_WAYBACK: ROBOTS_OUVERT, BRUTE_A: reponse(503)}, "reponse_http, code HTTP 503"),
+        ({ROBOTS_WAYBACK: ROBOTS_OUVERT, BRUTE_A: DelaiDepasse("délai dépassé (30 s)")}, "delai_depasse"),
+        ({ROBOTS_WAYBACK: reponse(200, b"User-agent: *\nDisallow: /web/\n")}, "robots_interdit"),
+    ],
+)
+def test_d21_cas_9_telechargement_en_echec_ni_archive_url_ni_sha256_verdict_inchange(
+    tmp_path: Path, routes: dict[str, Route], motif: str
+) -> None:
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403), **routes}, chercheur=ChercheurFactice(TROUVE_A))
+
+    bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert resultat["verdict_existence"] == "inaccessible"
+    assert "archive_url" not in resultat and "sha256_contenu" not in resultat
+    assert (resultat["wayback"]["issue"], resultat["wayback"]["archive_url"]) == ("trouve", INSTANTANE_A)
+    telechargement = resultat["wayback"]["telechargement"]
+    assert (telechargement["issue"], telechargement["url_brute"]) == ("echec", BRUTE_A)
+    assert motif in telechargement["motif"]
+    assert not (repertoire / "pages").exists()
+    assert bilans[0].echec_wayback is not None and motif in bilans[0].echec_wayback
+    assert code_de_sortie(bilans) == 0

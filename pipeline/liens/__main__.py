@@ -1,7 +1,8 @@
 """`uv run python -m pipeline.liens <repertoire_du_run>` (ou `pnpm liens <repertoire_du_run>`).
 
-Un passage par run, après la fermeture de la fenêtre d'interrogation, avant la notation (D20).
-Écrit `volume/liens/<sha256 de l'URL>.json` et `volume/liens/pages/`. Une relance reprend les
+Un passage par run, après la fermeture de la fenêtre d'interrogation, avant la notation (D20, D21).
+Écrit `volume/liens/<sha256 de l'URL>.json` et `volume/liens/pages/` (pages des liens qui existent,
+versions brutes des instantanés téléchargés). Une relance reprend les
 résultats déjà écrits sans les retester ni les réécrire, et teste les autres.
 
 Codes de sortie : 0 si chaque URL a son verdict (un échec Wayback est consigné, il ne compte pas) ;
@@ -19,16 +20,15 @@ from pathlib import Path
 
 from pipeline.collecte.horloge import HorlogeSysteme
 from pipeline.collecte.politesse import Cadence
-from pipeline.collecte.reseau import TransportUrllib
+from pipeline.collecte.reseau import Transport, TransportUrllib
 from pipeline.collecte.wayback import ArchiveurWayback
 from pipeline.liens.entree import EntreeRefusee, liens_cites, lire_run
 from pipeline.liens.instantanes import ChercheurInstantanes
+from pipeline.liens.iri import CONVERSIONS_IRI
 from pipeline.liens.passage import Dependances, code_de_sortie, formater_bilan, passer
 from pipeline.liens.sonde import AGENT_LIENS, SondeLiens
 from pipeline.liens.table import CHEMIN_TABLE, TableInvalide, TableLiens, charger_table
 
-DELAI_LIENS_S = 30.0
-"""Délai d'une requête : celui de la collecte (`pipeline/collecte/__main__.py`). D20 ne le fixe pas."""
 DELAI_WAYBACK_S = 120.0  # Save Page Now capture la page avant de répondre : c'est lent.
 CODE_PASSAGE_REFUSE = 2
 
@@ -37,15 +37,16 @@ class FenetreOuverte(Exception):
     """La fenêtre d'interrogation n'est pas fermée : le test des liens passe après, jamais pendant."""
 
 
-def dependances_reelles(table: TableLiens) -> Dependances:
+def dependances_reelles(table: TableLiens, transport: Callable[[float], Transport] = TransportUrllib) -> Dependances:
+    """D21 : le délai d'une requête (`table.delai_s`) et la conversion IRI → URI (`table.conversion_iri`)
+    viennent de la table. La sonde sert aussi à télécharger la version brute des instantanés. Save
+    Page Now garde son propre délai. `transport` fabrique un transport à partir d'un délai."""
     horloge = HorlogeSysteme()
     cadence = Cadence(horloge)
     return Dependances(
-        sonde=SondeLiens(TransportUrllib(delai_s=DELAI_LIENS_S), cadence),
-        archiveur=ArchiveurWayback(
-            TransportUrllib(delai_s=DELAI_WAYBACK_S), cadence, horloge, agent_utilisateur=AGENT_LIENS
-        ),
-        chercheur=ChercheurInstantanes(TransportUrllib(delai_s=DELAI_LIENS_S), cadence),
+        sonde=SondeLiens(transport(table.delai_s), cadence, CONVERSIONS_IRI[table.conversion_iri]),
+        archiveur=ArchiveurWayback(transport(DELAI_WAYBACK_S), cadence, horloge, agent_utilisateur=AGENT_LIENS),
+        chercheur=ChercheurInstantanes(transport(table.delai_s), cadence),
         horloge=horloge,
         table=table,
     )

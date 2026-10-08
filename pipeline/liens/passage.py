@@ -5,7 +5,11 @@ quel, ni retesté ni réécrit. Sinon, jusqu'à `tentatives.maximum` tentatives 
 est transitoire (table), espacées de `tentatives.espacement_s` sur l'horloge injectée ; le dernier
 résultat est traduit en verdict par la table. Puis la copie : page et Save Page Now pour `existe`,
 recherche d'instantané existant pour `inaccessible` et `non_testable`, rien pour `mort` (D19 : un
-lien mort ne soutient jamais rien). Enfin le résultat est contrôlé et écrit une fois.
+lien mort ne soutient jamais rien). D21 : un instantané de statut 200 est téléchargé en version
+brute (`id_`) par la même sonde, octets intacts sous `pages/` ; seul ce téléchargement réussi pose
+`archive_url` et `sha256_contenu`. Un instantané d'un autre statut est écarté, un téléchargement en
+échec est consigné : ni l'un ni l'autre ne change le verdict. Enfin le résultat est contrôlé et
+écrit une fois.
 
 Un résultat que la table ne classe pas n'a pas de verdict : aucun fichier n'est écrit, le lien
 reste « en attente du test des liens » pour la notation, et le bilan le signale.
@@ -21,8 +25,15 @@ from typing import Protocol
 
 from pipeline.collecte.horloge import Horloge, instant_iso
 from pipeline.collecte.wayback import SERVICE, ArchivageReussi, Archiveur
-from pipeline.liens.constat import Constat
-from pipeline.liens.instantanes import InstantaneAbsent, InstantaneTrouve, Recherche
+from pipeline.liens.constat import REPONSE_HTTP, Constat
+from pipeline.liens.instantanes import (
+    STATUT_RETENU,
+    InstantaneAbsent,
+    InstantaneEcarte,
+    InstantaneTrouve,
+    Recherche,
+    RechercheEchouee,
+)
 from pipeline.liens.schemas import ResultatNonConforme
 from pipeline.liens.sortie import (
     Copie,
@@ -34,6 +45,9 @@ from pipeline.liens.sortie import (
     nom_resultat,
 )
 from pipeline.liens.table import TableLiens
+
+STATUT_TELECHARGEMENT = 200
+"""Le téléchargement de la version brute d'un instantané ne réussit que sur une réponse finale 200."""
 
 
 class Sonde(Protocol):
@@ -106,20 +120,54 @@ def _copie_mort(_ctx: _Contexte) -> Copie:
     return Copie(wayback={"operation": "aucune"})
 
 
+def _motif_d_echec(constat: Constat) -> str:
+    detail = f" : {constat.motif}" if constat.motif is not None else ""
+    return f"{constat.issue}, code HTTP {constat.code_http}{detail}"
+
+
+def _trouve(ctx: _Contexte, recherche: InstantaneTrouve, wayback: dict[str, object]) -> Copie:
+    """D21 : la version brute (`id_`) de l'instantané est téléchargée, même politesse, même agent
+    (la sonde du passage), une fois. Octets intacts sous `pages/` ; `archive_url` (l'URL renvoyée
+    par le service) et `sha256_contenu` ne sont posés que si le téléchargement réussit (200)."""
+    wayback |= {
+        "issue": "trouve",
+        "archive_url": recherche.archive_url,
+        "horodatage_instantane": recherche.horodatage,
+        "statut_instantane": STATUT_RETENU,
+    }
+    constat = ctx.deps.sonde.sonder(recherche.url_brute)
+    if constat.issue != REPONSE_HTTP or constat.code_http != STATUT_TELECHARGEMENT:
+        echec = {"issue": "echec", "url_brute": recherche.url_brute, "motif": _motif_d_echec(constat)}
+        return Copie(wayback=wayback | {"telechargement": echec})
+    sha256, page = conserver_page(ctx.repertoire, constat)
+    reussi = {"issue": "reussi", "url_brute": recherche.url_brute, "url_finale": constat.url_finale, **page}
+    return Copie(wayback=wayback | {"telechargement": reussi}, sha256_contenu=sha256, archive_url=recherche.archive_url)
+
+
+def _ecarte(recherche: InstantaneEcarte, wayback: dict[str, object]) -> Copie:
+    """D21 : instantané de statut autre que 200 consigné avec son statut (s'il est renvoyé), jamais retenu."""
+    wayback |= {"issue": "ecarte", "url_instantane": recherche.url_instantane, "horodatage_instantane": recherche.horodatage}
+    if recherche.statut is not None:
+        wayback["statut_instantane"] = recherche.statut
+    return Copie(wayback=wayback)
+
+
 def _copie_recherche(ctx: _Contexte) -> Copie:
     recherche = ctx.deps.chercheur.chercher(ctx.url, ctx.instant_reference)
     wayback: dict[str, object] = {
         "operation": "recherche_instantane",
         "instant_reference": instant_iso(ctx.instant_reference),
     }
-    if isinstance(recherche, InstantaneTrouve):
-        wayback |= {"issue": "trouve", "archive_url": recherche.archive_url, "horodatage_instantane": recherche.horodatage}
-        if recherche.statut is not None:
-            wayback["statut_instantane"] = recherche.statut
-        return Copie(wayback=wayback, archive_url=recherche.archive_url)
-    if isinstance(recherche, InstantaneAbsent):
-        return Copie(wayback=wayback | {"issue": "absent"})
-    return Copie(wayback=wayback | {"issue": "echec", "motif": recherche.motif})
+    match recherche:
+        case InstantaneTrouve():
+            return _trouve(ctx, recherche, wayback)
+        case InstantaneEcarte():
+            return _ecarte(recherche, wayback)
+        case InstantaneAbsent():
+            return Copie(wayback=wayback | {"issue": "absent"})
+        case RechercheEchouee():
+            return Copie(wayback=wayback | {"issue": "echec", "motif": recherche.motif})
+    raise TypeError(f"issue de recherche inconnue : {recherche!r}")
 
 
 COPIES: dict[str, Callable[[_Contexte], Copie]] = {
@@ -135,7 +183,14 @@ COPIES: dict[str, Callable[[_Contexte], Copie]] = {
 
 
 def _echec_wayback(wayback: Mapping[str, object]) -> str | None:
-    return f"{wayback['operation']} : {wayback['motif']}" if wayback.get("issue") == "echec" else None
+    """L'échec à signaler au bilan : Save Page Now ou recherche en échec, ou téléchargement de
+    l'instantané en échec (D21) ; `None` sinon."""
+    if wayback.get("issue") == "echec":
+        return f"{wayback['operation']} : {wayback['motif']}"
+    telechargement = wayback.get("telechargement")
+    if isinstance(telechargement, dict) and telechargement["issue"] == "echec":
+        return f"telechargement_instantane : {telechargement['motif']}"
+    return None
 
 
 def _reprendre(chemin: Path, url: str) -> Bilan:

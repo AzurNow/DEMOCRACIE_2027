@@ -13,6 +13,7 @@ from pathlib import Path
 
 from pipeline.collecte.politesse import Cadence
 from pipeline.collecte.wayback import ArchivageEchoue, ArchivageReussi, Resultat
+from pipeline.liens.iri import CONVERSIONS_IRI
 from pipeline.liens.instantanes import InstantaneAbsent, Recherche
 from pipeline.liens.passage import Dependances
 from pipeline.liens.sonde import SondeLiens
@@ -64,17 +65,23 @@ class Banc:
     deps: Dependances
 
 
-def banc(routes: dict[str, Route], archiveur: ArchiveurFactice | None = None, chercheur: ChercheurFactice | None = None) -> Banc:
+def banc(
+    routes: dict[str, Route],
+    archiveur: ArchiveurFactice | None = None,
+    chercheur: ChercheurFactice | None = None,
+    chemin_table: Path = CHEMIN_TABLE,
+) -> Banc:
     horloge = HorlogeQuiAvance(instant=INSTANT_FIXE)
     transport = TransportFactice(horloge, routes)
     archiveur = archiveur if archiveur is not None else ArchiveurFactice()
     chercheur = chercheur if chercheur is not None else ChercheurFactice()
+    table = charger_table(chemin_table)
     deps = Dependances(
-        sonde=SondeLiens(transport, Cadence(horloge, intervalle_s=1.0)),
+        sonde=SondeLiens(transport, Cadence(horloge, intervalle_s=1.0), CONVERSIONS_IRI[table.conversion_iri]),
         archiveur=archiveur,
         chercheur=chercheur,
         horloge=horloge,
-        table=charger_table(CHEMIN_TABLE),
+        table=table,
     )
     return Banc(horloge, transport, archiveur, chercheur, deps)
 

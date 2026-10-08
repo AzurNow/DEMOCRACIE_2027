@@ -1,0 +1,31 @@
+{
+  "url_citee": "https://example.org/fragile",
+  "verdict_existence": "inaccessible",
+  "date_test": "2026-09-22T14:30:06+02:00",
+  "url_finale": "https://example.org/fragile",
+  "code_http": 403,
+  "archive_url": "http://web.archive.org/web/20260916090000/https://example.org/fragile",
+  "sha256_contenu": "783e79c7583c4c47cc65a5a105ca00055d30b686bcff2f2405c57f774c7f59d5",
+  "version_table": "table-liens-v2",
+  "tentatives": [
+    {
+      "numero": 1,
+      "horodatage": "2026-09-22T14:30:06+02:00",
+      "issue": "reponse_http",
+      "code_http": 403
+    }
+  ],
+  "wayback": {
+    "operation": "recherche_instantane",
+    "instant_reference": "2026-09-21T08:00:00+02:00",
+    "issue": "trouve",
+    "archive_url": "http://web.archive.org/web/20260916090000/https://example.org/fragile",
+    "horodatage_instantane": "20260916090000",
+    "statut_instantane": "200",
+    "telechargement": {
+      "issue": "echec",
+      "url_brute": "https://web.archive.org/web/20260916090000id_/https://example.org/fragile",
+      "motif": "reponse_http, code HTTP 503"
+    }
+  }
+}

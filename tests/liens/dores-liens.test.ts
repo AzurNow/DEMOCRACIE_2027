@@ -21,6 +21,8 @@ const PAIRES: readonly { readonly dore: string; readonly exemple: string }[] = [
   { dore: "mort.json", exemple: "valide-02-mort-404.json" },
   { dore: "inaccessible-instantane.json", exemple: "valide-03-inaccessible-instantane-trouve.json" },
   { dore: "non-testable-robots.json", exemple: "valide-04-non-testable-robots.json" },
+  { dore: "inaccessible-instantane-ecarte.json", exemple: "valide-05-inaccessible-instantane-ecarte.json" },
+  { dore: "inaccessible-telechargement-echec.json", exemple: "valide-06-inaccessible-telechargement-echec.json" },
 ];
 
 describe("fichiers dorés produits par pipeline/liens", () => {

@@ -5,7 +5,7 @@
   "url_finale": "https://example.org/programme",
   "code_http": 200,
   "archive_url": "https://web.archive.org/web/20260922123005/https://example.org/programme",
-  "version_table": "table-liens-v1",
+  "version_table": "table-liens-v2",
   "tentatives": [
     {
       "numero": 1,

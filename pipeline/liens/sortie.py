@@ -32,7 +32,8 @@ class Tentative:
 
 @dataclass(frozen=True)
 class Copie:
-    """Ce qui est conservé d'un lien : la page (pour `existe`) et l'issue Wayback."""
+    """Ce qui est conservé d'un lien : la page (pour `existe`), l'issue Wayback, et l'empreinte de
+    la copie conservée (page, ou version brute de l'instantané téléchargée, D21)."""
 
     wayback: dict[str, object]
     page: dict[str, object] | None = None

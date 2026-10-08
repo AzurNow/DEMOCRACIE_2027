@@ -1,6 +1,7 @@
 # Table résultat → verdict du test HTTP des liens (§7 : « le lien cité existe (test HTTP
-# déterministe) »), décision D20 de l'auteur du 2026-10-08. Lue par `pipeline/liens/table.py` ;
-# jamais recopiée dans le code (schema/notation.schema.json, description de `verdict_existence`).
+# déterministe) »), décisions D20 (2026-10-08) et D21 (2026-10-08) de l'auteur. Lue par
+# `pipeline/liens/table.py` ; jamais recopiée dans le code (schema/notation.schema.json, description
+# de `verdict_existence`).
 #
 # TOML et non YAML : Python n'a pas de lecteur YAML dans ses dépendances, et aucune ne s'ajoute
 # (tomllib est dans la bibliothèque standard). D20 disait « config/test-liens.yaml ».
@@ -9,23 +10,41 @@
 # avec lui. Elle est recopiée dans chaque résultat (`version_table`).
 #
 # Lecture de la table, pour un résultat de la DERNIÈRE tentative :
-# - réponse HTTP finale, après les redirections suivies une à une : un code listé dans `codes_http`
-#   l'emporte sur sa classe (`classes_http`, « 4xx ») ; 404 est donc « mort » bien que 4xx soit
-#   « inaccessible » ;
+# - réponse HTTP finale, après les redirections suivies une à une (301, 302, 303, 307, 308) : un code
+#   listé dans `codes_http` l'emporte sur sa classe (`classes_http`, « 4xx ») ; 404 est donc « mort »
+#   bien que 4xx soit « inaccessible » ;
 # - pas de réponse HTTP finale : l'issue nommée (`issues`) décide.
 # Un code, une classe ou une issue présent sous deux verdicts rend la table ambiguë : elle est
 # refusée au chargement. Un résultat que la table ne classe pas n'a PAS de verdict : le lien reste
-# sans verdict, le passage le signale et sort en erreur ; rien n'est supposé.
+# sans verdict, le passage le signale et sort en erreur ; rien n'est supposé. Depuis la v2, toute
+# issue et toute classe de code sont classées.
 #
 # Issues que le code sait produire : delai_depasse, connexion_refusee, erreur_tls,
 # domaine_inexistant (le résolveur dit que le nom n'existe pas), erreur_reseau (autre panne sans
-# réponse HTTP : connexion réinitialisée, panne du résolveur), robots_interdit, robots_injoignable
-# (erreur réseau ou code hors 2xx/4xx en lisant robots.txt), schema_non_http (l'URL ou une cible de
-# redirection), url_malformee, url_non_ascii, redirections_excessives (plus de 5), boucle_redirection,
-# redirection_sans_location. D20 ne classe ni erreur_reseau, ni url_non_ascii, ni
-# redirection_sans_location, ni les codes 1xx et 3xx finaux : ils sont laissés hors de la table.
+# réponse HTTP : connexion réinitialisée, panne du résolveur EAI_AGAIN ou EAI_FAIL, corps tronqué),
+# robots_interdit, robots_injoignable (erreur réseau ou code hors 2xx/4xx en lisant robots.txt),
+# schema_non_http (l'URL ou une cible de redirection), url_malformee (y compris une IRI que la
+# conversion ci-dessous ne sait pas convertir), redirections_excessives (plus de 5),
+# boucle_redirection, redirection_sans_location.
+#
+# v1 → v2 (D21) : erreur_reseau, redirection_sans_location, codes 1xx et 3xx non suivis (300, 304…)
+# ⇒ inaccessible ; erreur_reseau et robots_injoignable deviennent transitoires (robots.txt est relu à
+# chaque tentative après un échec de lecture ; lu avec succès, il reste valable pour le passage) ;
+# le délai par requête et la conversion IRI → URI entrent dans la table ; l'issue url_non_ascii
+# disparaît.
 
-version = "table-liens-v1"
+version = "table-liens-v2"
+
+# D21 : une URL citée non ASCII (IRI) est convertie en URI pour l'envoi seulement, selon RFC 3987
+# §3.1 : percent-encoding UTF-8 des caractères non ASCII du chemin, de la requête et du fragment,
+# hôte en IDNA ; les `%XX` déjà présents et tous les caractères ASCII restent tels qu'écrits.
+# `url_citee`, le dédoublonnage et le nom du fichier de résultat gardent la chaîne exacte. Une IRI
+# inconvertible ⇒ url_malformee. Seule valeur connue du code : "rfc3987-3.1".
+conversion_iri = "rfc3987-3.1"
+
+# D21 : délai d'une requête du test des liens, en secondes (URL citée, robots.txt, API de
+# disponibilité Wayback, téléchargement d'un instantané). Save Page Now garde le sien.
+delai_s = 30
 
 # D20 : « 3 tentatives au plus, espacées de 60 s » pour un échec transitoire ; 404 et 410 sont
 # définitifs dès la première réponse. Le dernier résultat obtenu est lu dans `verdicts`.
@@ -34,10 +53,11 @@ maximum = 3
 espacement_s = 60
 
 # D20 : échecs transitoires, retentés : délai dépassé, connexion refusée, 429, 5xx.
+# D21 : erreur réseau et robots.txt injoignable aussi.
 [transitoire]
 codes_http = [429]
 classes_http = ["5xx"]
-issues = ["delai_depasse", "connexion_refusee"]
+issues = ["delai_depasse", "connexion_refusee", "erreur_reseau", "robots_injoignable"]
 
 # D20 : « 2xx après redirections ⇒ existe ». Une page « introuvable » servie en 200 existe : le test
 # est déterministe, le juge dira « ne soutient pas ».
@@ -55,10 +75,11 @@ issues = ["domaine_inexistant"]
 # D20 : « 401, 403, 429, 451, tout autre 4xx, 5xx, délai dépassé, connexion refusée, erreur TLS ⇒
 # inaccessible ». Précision de la session principale : robots.txt injoignable (erreur réseau ou
 # 5xx) ⇒ inaccessible, jamais une autorisation implicite.
+# D21 : erreur réseau, redirection sans Location, codes 1xx et 3xx non suivis ⇒ inaccessible.
 [verdicts.inaccessible]
 codes_http = [401, 403, 429, 451]
-classes_http = ["4xx", "5xx"]
-issues = ["delai_depasse", "connexion_refusee", "erreur_tls", "robots_injoignable"]
+classes_http = ["1xx", "3xx", "4xx", "5xx"]
+issues = ["delai_depasse", "connexion_refusee", "erreur_tls", "erreur_reseau", "robots_injoignable", "redirection_sans_location"]
 
 # D20 : « robots.txt interdit, schéma non http(s), URL malformée, plus de 5 redirections ou boucle ⇒
 # non_testable ». Un lien interdit par robots.txt n'est jamais contourné.

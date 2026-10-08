@@ -1,5 +1,5 @@
 {
-  "url_citee": "https://example.org/prive/note",
+  "url_citee": "https://example.org/prive/éducation",
   "verdict_existence": "non_testable",
   "date_test": "2026-09-22T14:30:08+02:00",
   "code_http": null,
@@ -8,9 +8,9 @@
     {
       "numero": 1,
       "horodatage": "2026-09-22T14:30:08+02:00",
-      "issue": "robots_interdit",
+      "issue": "url_non_ascii",
       "code_http": null,
-      "motif": "https://example.org/prive/note"
+      "motif": "https://example.org/prive/éducation"
     }
   ],
   "wayback": {

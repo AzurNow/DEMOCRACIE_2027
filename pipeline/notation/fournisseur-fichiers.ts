@@ -8,9 +8,13 @@
  * ignoré. Contrôles en plus du schéma :
  * - le nom du fichier est le SHA-256 (UTF-8) de `url_citee` : un fichier par URL, sans doublon ;
  * - tentatives numérotées 1, 2, 3… sans trou ; `date_test` et `code_http` sont ceux de la dernière ;
- * - `archive_url` est exactement celle que l'issue Wayback a renvoyée ;
- * - la page d'un lien qui existe est présente sous `volume/liens/`, nommée par son empreinte, de la
- *   taille annoncée (l'empreinte elle-même n'est pas recalculée à chaque ouverture de l'écran).
+ * - `archive_url`, quand elle est présente, est exactement celle que l'issue Wayback a renvoyée (sa
+ *   présence ou son absence est réglée par le schéma : D21, un instantané écarté ou un téléchargement
+ *   en échec n'en donnent pas) ;
+ * - la copie conservée — page d'un lien qui existe, ou version brute de l'instantané téléchargée
+ *   pour un lien inaccessible ou non testable (D21) — est présente sous `volume/liens/`, nommée par
+ *   son empreinte (`sha256_contenu`), de la taille annoncée (l'empreinte elle-même n'est pas
+ *   recalculée à chaque ouverture de l'écran).
  * Une entrée du répertoire qui n'est ni un résultat `.json` ni le dossier `pages/` est refusée.
  *
  * Contrat de `FournisseurExistences` inchangé : `existencesDe` rend un verdict par lien distinct
@@ -40,13 +44,16 @@ interface PageConservee {
   readonly taille_octets: number;
 }
 
+/** D21 : téléchargement de la version brute d'un instantané retenu (`wayback.telechargement`). */
+type TelechargementInstantane = ({ readonly issue: "reussi" } & PageConservee) | { readonly issue: "echec" };
+
 /** Un fichier de `volume/liens/`, tel que le décrit `schema/existence-lien.schema.json`. */
 interface ResultatTestLien extends ExistenceEtablie {
   readonly code_http: number | null;
   readonly version_table: string;
   readonly tentatives: readonly TentativeEcrite[];
   readonly page?: PageConservee;
-  readonly wayback: { readonly operation: string; readonly archive_url?: string };
+  readonly wayback: { readonly operation: string; readonly archive_url?: string; readonly telechargement?: TelechargementInstantane };
 }
 
 export class FichierExistenceRefuse extends Error {
@@ -87,22 +94,30 @@ function incoherencesDesTentatives(r: ResultatTestLien): readonly string[] {
   return constats;
 }
 
-function incoherencesDeLaPage(repertoire: string, r: ResultatTestLien): readonly string[] {
-  if (r.page === undefined) return [];
-  if (r.sha256_contenu === undefined || !r.page.chemin.startsWith(`${REPERTOIRE_PAGES}/${r.sha256_contenu}.`)) {
-    return [`la page ${r.page.chemin} n'est pas nommée par l'empreinte ${String(r.sha256_contenu)}.`];
+/** La copie conservée : la page d'un lien qui existe, ou la version brute téléchargée d'un instantané (D21). */
+function copieConservee(r: ResultatTestLien): PageConservee | undefined {
+  if (r.page !== undefined) return r.page;
+  const telechargement = r.wayback.telechargement;
+  return telechargement?.issue === "reussi" ? telechargement : undefined;
+}
+
+function incoherencesDeLaCopie(repertoire: string, r: ResultatTestLien): readonly string[] {
+  const copie = copieConservee(r);
+  if (copie === undefined) return [];
+  if (r.sha256_contenu === undefined || !copie.chemin.startsWith(`${REPERTOIRE_PAGES}/${r.sha256_contenu}.`)) {
+    return [`la copie ${copie.chemin} n'est pas nommée par l'empreinte ${String(r.sha256_contenu)}.`];
   }
-  const chemin = join(repertoire, r.page.chemin);
-  if (!existsSync(chemin)) return [`la page conservée ${r.page.chemin} est absente.`];
+  const chemin = join(repertoire, copie.chemin);
+  if (!existsSync(chemin)) return [`la copie conservée ${copie.chemin} est absente.`];
   const taille = statSync(chemin).size;
-  return taille === r.page.taille_octets ? [] : [`la page ${r.page.chemin} fait ${taille} octets, ${r.page.taille_octets} annoncés.`];
+  return taille === copie.taille_octets ? [] : [`la copie ${copie.chemin} fait ${taille} octets, ${copie.taille_octets} annoncés.`];
 }
 
 function incoherences(repertoire: string, nom: string, r: ResultatTestLien): readonly string[] {
   const constats: string[] = [];
   if (nom !== nomResultat(r.url_citee)) constats.push(`le nom n'est pas le SHA-256 de l'URL citée (${nomResultat(r.url_citee)} attendu).`);
-  if (r.archive_url !== r.wayback.archive_url) constats.push("archive_url diffère de celle que l'issue Wayback a renvoyée.");
-  return [...constats, ...incoherencesDesTentatives(r), ...incoherencesDeLaPage(repertoire, r)];
+  if (r.archive_url !== undefined && r.archive_url !== r.wayback.archive_url) constats.push("archive_url diffère de celle que l'issue Wayback a renvoyée.");
+  return [...constats, ...incoherencesDesTentatives(r), ...incoherencesDeLaCopie(repertoire, r)];
 }
 
 /** Recopie champ par champ : seuls les champs d'un lien de notation sortent du fichier. */
