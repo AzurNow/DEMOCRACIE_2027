@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-06",
+  "date_maj": "2026-10-08",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -291,6 +291,19 @@
       "recommandation": "Option 1 sur les deux points : un refus n'a pas de note qui puisse changer avec le nom ; le §7 dit déjà qu'un lien mort ne soutient jamais rien.",
       "retenu": "Option 1 sur les deux points. Exclusion des refus déjà codée (#89) ; forçage de non_applicable à coder au lot notation. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
       "date_decision": "2026-10-06"
+    },
+    {
+      "id": "D20",
+      "statut": "tranchee",
+      "question": "Comment le lot test-liens établit-il l'existence d'un lien cité (§7, « test HTTP déterministe ») : méthode, table résultat → verdict, moment et tentatives, copie conservée ?",
+      "contexte": "Le §7 exige un test HTTP déterministe de l'existence des liens cités sans en écrire les règles ; aucun code ne le fait, et sans lui ni juge ni humain ne note une réponse qui cite un lien (fournisseur-existences.ts). C'est un appel réseau nouveau. Le schéma de notation veut la table code HTTP → verdict dans config/, versionnée. La collecte a déjà la pile réseau du §6 (politesse.py, reseau.py, wayback.py).",
+      "options": [
+        "Pile Python de la collecte en GET seul, robots.txt respecté (interdit ⇒ non_testable) ; table stricte dans config/test-liens.yaml ; un passage par run après la fenêtre de 48 h, URL exacte dédoublonnée, 3 tentatives espacées de 60 s pour le transitoire ; corps et SHA-256 gardés hors Git, Save Page Now pour existe, instantané existant cherché par l'API de disponibilité Wayback pour inaccessible et non_testable.",
+        "Variantes écartées : HEAD puis GET ; sans robots.txt ; mort élargi à tout 4xx ou restreint à 404/410 ; test à la réception ou en deux passages ; Save Page Now seul ; empreinte seule."
+      ],
+      "recommandation": "Option 1 sur les quatre points : norme du §6 inchangée, test identique pour tous les outils au même moment, aucun verdict ni archive fabriqué, page conservée pour l'audit du soutien (§9).",
+      "retenu": "Option 1 sur les quatre points. Table : 2xx après redirections ⇒ existe ; 404, 410, domaine inexistant ⇒ mort ; 401, 403, 429, 451, autres 4xx, 5xx, délai, connexion refusée, erreur TLS ⇒ inaccessible ; robots interdit, schéma non http(s), URL malformée, plus de 5 redirections ou boucle ⇒ non_testable ; une page « introuvable » servie en 200 ⇒ existe. À coder au lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
+      "date_decision": "2026-10-08"
     }
   ],
   "lots": [
@@ -551,8 +564,10 @@
           "type": "informe"
         }
       ],
-      "decisions": [],
-      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité)."
+      "decisions": [
+        "D20"
+      ],
+      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion."
     },
     {
       "id": "analyse",
