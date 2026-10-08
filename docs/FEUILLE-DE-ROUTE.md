@@ -64,6 +64,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-08 :** Option 1 sur les quatre points. À coder dans la PR #95 du lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
+### D22 — Quatre points laissés ouverts par D21 dans la PR #95 : saisie humaine d'un soutien impossible, instantané Wayback servi à une autre date, instantané sans statut, encodage d'une URL non ASCII pour la recherche Wayback.
+
+**Décision du 2026-10-08 :** Option 1 sur les quatre points. Points 2 à 4 dans la PR #95 ; point 1 (formulaire) dans une PR de notation-humaine. Seul le point 2 touche au texte proposé pour la 0.16 (docs/TACHES-AUTEUR.md).
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
