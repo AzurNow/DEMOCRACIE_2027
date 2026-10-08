@@ -97,6 +97,10 @@ h3 {
   padding-top: 0.5rem;
 }
 
+.liens li {
+  overflow-wrap: anywhere;
+}
+
 .etat ul {
   margin: 0.25rem 0;
 }

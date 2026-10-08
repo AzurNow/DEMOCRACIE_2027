@@ -29,6 +29,8 @@ export interface Existence {
   readonly date_test: string;
   readonly url_finale?: string;
   readonly code_http?: number | null;
+  readonly sha256_contenu?: string;
+  readonly archive_url?: string;
 }
 
 export interface Citation {
@@ -45,6 +47,8 @@ export interface EtatItem {
 
 export interface ItemSoumis {
   readonly item_id: string;
+  readonly item_version: number;
+  readonly item_empreinte: string;
   readonly role: string;
   readonly type: string;
   readonly candidat_id: string;
@@ -55,6 +59,7 @@ export interface ItemSoumis {
 }
 
 export interface Vue {
+  readonly version_vue: string;
   readonly version_grille: string;
   readonly date_run: string;
   readonly reponse_id: string;
@@ -65,8 +70,10 @@ export interface Vue {
     readonly citations?: readonly Citation[];
     readonly troncature: boolean;
     readonly refus_api: boolean;
+    readonly normalisation: { readonly fonction: string; readonly version: string };
   };
   readonly references: readonly ItemSoumis[];
+  readonly version_normalisation_verbatim: string;
 }
 
 export interface MotifRefus {
