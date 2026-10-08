@@ -75,9 +75,10 @@ def _cible_de_redirection(courante: str, reponse: ReponseHttp) -> str:
     return cible
 
 
-def _interpreter_robots(reponse: ReponseHttp) -> RobotFileParser:
+def interpreter_robots(reponse: ReponseHttp) -> RobotFileParser:
     """2xx : règles lues. 401/403 : tout est interdit. Autre 4xx : pas de robots.txt, tout est
-    permis. Tout le reste (5xx, 1xx) : erreur."""
+    permis. Tout le reste (5xx, 1xx) : erreur. Public pour le test des liens (`pipeline/liens`),
+    qui lit robots.txt selon les mêmes règles."""
     regles = RobotFileParser()
     if 200 <= reponse.statut < 300:
         regles.parse(_decoder_robots(reponse.corps).splitlines())
@@ -155,6 +156,6 @@ class ClientPoli:
         pas resollicité à chaque URL."""
         try:
             reponse, _url_finale = self._suivre(f"{origine}/robots.txt", verifier_robots=False)
-            return _interpreter_robots(reponse)
+            return interpreter_robots(reponse)
         except EchecCollecte as echec:
             return EchecCollecte(f"robots.txt injoignable ({origine}) : {echec.motif}")

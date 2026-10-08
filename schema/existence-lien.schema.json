@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:existence-lien",
+  "title": "Résultat du test HTTP d'un lien cité",
+  "description": "§7 : « le lien cité existe (test HTTP déterministe) » ; règles de la décision D20 de l'auteur (2026-10-08). Un fichier par URL citée, runs/<date>/volume/liens/<sha256 de url_citee>.json, écrit une fois par pipeline/liens (Python) et lu par la notation (pipeline/notation/fournisseur-fichiers.ts). Les sept premiers champs sont ceux d'un lien de notation (ExistenceEtablie) et renvoient à notation.schema.json, pour que motifs et énumérations ne vivent qu'une fois. Suivent ce qui rend le verdict auditable : la version de la table résultat → verdict (config/test-liens.toml), le journal des tentatives, la page conservée et l'issue Wayback.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url_citee", "verdict_existence", "date_test", "code_http", "version_table", "tentatives", "wayback"],
+
+  "properties": {
+    "url_citee": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/url_citee",
+      "description": "Telle qu'écrite dans normalise.liens, sans aucune normalisation (D20 : dédoublonnage sur la chaîne exacte)."
+    },
+    "verdict_existence": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/verdict_existence"
+    },
+    "date_test": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/date_test",
+      "description": "D20 : instant de la dernière tentative, égal à tentatives[-1].horodatage."
+    },
+    "url_finale": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/url_finale",
+      "description": "URL qui a rendu la réponse HTTP finale de la dernière tentative, après les redirections suivies. Absente si la dernière tentative n'a pas fini sur une réponse."
+    },
+    "code_http": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/code_http",
+      "description": "Code de la dernière réponse HTTP reçue dans la chaîne de la dernière tentative ; null : aucune réponse HTTP (délai, robots.txt, URL refusée avant requête). Toujours présent : une absence de réponse est une donnée."
+    },
+    "sha256_contenu": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/sha256_contenu",
+      "description": "SHA-256 des octets reçus, tels quels (règle 7). Présent si et seulement si le lien existe."
+    },
+    "archive_url": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/archive_url",
+      "description": "Recopie de wayback.archive_url : renvoyée par le service, jamais fabriquée. Absente quand le service n'en a renvoyé aucune."
+    },
+
+    "version_table": {
+      "type": "string",
+      "pattern": "^table-liens-v[0-9]+$",
+      "description": "Version de config/test-liens.toml qui a traduit le résultat en verdict."
+    },
+
+    "tentatives": {
+      "type": "array",
+      "minItems": 1,
+      "description": "D20 : chaque tentative est journalisée (numéro, horodatage, code HTTP ou classe d'erreur). Numérotées 1, 2, 3… sans trou (contrôlé à la lecture). Le nombre maximal est celui de la table, pas du schéma.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["numero", "horodatage", "issue", "code_http"],
+        "properties": {
+          "numero": { "type": "integer", "minimum": 1 },
+          "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+          "issue": {
+            "type": "string",
+            "enum": [
+              "reponse_http",
+              "delai_depasse",
+              "connexion_refusee",
+              "erreur_tls",
+              "domaine_inexistant",
+              "erreur_reseau",
+              "robots_interdit",
+              "robots_injoignable",
+              "schema_non_http",
+              "url_malformee",
+              "url_non_ascii",
+              "redirections_excessives",
+              "boucle_redirection",
+              "redirection_sans_location"
+            ],
+            "description": "Comment la tentative a fini : reponse_http (le code décide) ou une issue nommée sans réponse finale. Vocabulaire fermé de pipeline/liens/constat.py."
+          },
+          "code_http": { "type": ["integer", "null"], "minimum": 100, "maximum": 599 },
+          "motif": { "type": "string", "minLength": 1, "description": "Détail lisible (message réseau, cible refusée). Jamais lu par la table." }
+        },
+        "if": { "properties": { "issue": { "const": "reponse_http" } }, "required": ["issue"] },
+        "then": { "properties": { "code_http": { "type": "integer" } } }
+      }
+    },
+
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chemin", "type_contenu_recu", "taille_octets"],
+      "description": "D20 : la page d'un lien existant est conservée, hors Git, octets intacts.",
+      "properties": {
+        "chemin": {
+          "type": "string",
+          "pattern": "^pages/[0-9a-f]{64}\\.[a-z0-9]+$",
+          "description": "Relatif à volume/liens/ : pages/<sha256_contenu><extension>."
+        },
+        "type_contenu_recu": { "type": ["string", "null"], "description": "En-tête Content-Type tel que reçu ; null s'il était absent, jamais deviné." },
+        "taille_octets": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "wayback": {
+      "description": "D20, copie conservée : Save Page Now pour un lien qui existe ; instantané existant le plus proche, cherché et jamais créé, pour un lien inaccessible ou non testable ; rien pour un lien mort. Un échec est consigné, il ne change pas le verdict.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "issue", "archive_url"],
+          "properties": {
+            "operation": { "const": "wayback_save_page_now" },
+            "issue": { "const": "reussi" },
+            "archive_url": { "$ref": "#/$defs/instantane_date" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "issue", "motif", "tentatives"],
+          "properties": {
+            "operation": { "const": "wayback_save_page_now" },
+            "issue": { "const": "echec" },
+            "motif": { "type": "string", "minLength": 1 },
+            "tentatives": { "type": "integer", "minimum": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue", "archive_url", "horodatage_instantane"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": {
+              "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+              "description": "horodatage_reponse le plus ancien parmi les réponses qui citent le lien."
+            },
+            "issue": { "const": "trouve" },
+            "archive_url": { "$ref": "#/$defs/instantane_date" },
+            "horodatage_instantane": { "type": "string", "pattern": "^[0-9]{14}$" },
+            "statut_instantane": { "type": "string", "minLength": 1, "description": "Code capturé par la Wayback Machine, tel que renvoyé ; absent s'il n'est pas renvoyé." }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "issue": { "const": "absent" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue", "motif"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "issue": { "const": "echec" },
+            "motif": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation"],
+          "properties": { "operation": { "const": "aucune" } }
+        }
+      ]
+    }
+  },
+
+  "$defs": {
+    "instantane_date": {
+      "type": "string",
+      "pattern": "^https?://web\\.archive\\.org/web/[0-9]{14}/.+",
+      "description": "Instantané daté renvoyé par le service, jamais fabriqué."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "D20 : un lien qui existe a sa page conservée (empreinte, chemin) et sa demande Save Page Now ; il a fini sur une réponse 2xx, donc a une url_finale.",
+      "if": { "properties": { "verdict_existence": { "const": "existe" } }, "required": ["verdict_existence"] },
+      "then": {
+        "required": ["sha256_contenu", "page", "url_finale"],
+        "properties": {
+          "code_http": { "type": "integer" },
+          "wayback": { "properties": { "operation": { "const": "wayback_save_page_now" } } }
+        }
+      },
+      "else": { "not": { "anyOf": [{ "required": ["sha256_contenu"] }, { "required": ["page"] }] } }
+    },
+    {
+      "$comment": "D20 et D19 : rien n'est conservé ni cherché pour un lien mort, qui ne soutient jamais rien.",
+      "if": { "properties": { "verdict_existence": { "const": "mort" } }, "required": ["verdict_existence"] },
+      "then": { "properties": { "wayback": { "properties": { "operation": { "const": "aucune" } } } } }
+    },
+    {
+      "$comment": "D20 : pour un lien inaccessible ou non testable, l'instantané existant le plus proche est cherché, jamais créé.",
+      "if": { "properties": { "verdict_existence": { "enum": ["inaccessible", "non_testable"] } }, "required": ["verdict_existence"] },
+      "then": { "properties": { "wayback": { "properties": { "operation": { "const": "recherche_instantane" } } } } }
+    },
+    {
+      "$comment": "archive_url n'existe que si le service l'a renvoyée (wayback.issue reussi ou trouve) ; l'égalité des deux valeurs est contrôlée à la lecture.",
+      "if": { "properties": { "wayback": { "properties": { "issue": { "enum": ["reussi", "trouve"] } }, "required": ["issue"] } } },
+      "then": { "required": ["archive_url"] },
+      "else": { "not": { "required": ["archive_url"] } }
+    }
+  ]
+}

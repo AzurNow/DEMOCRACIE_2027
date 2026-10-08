@@ -1,5 +1,5 @@
 /**
- * Les vingt-trois schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
+ * Les vingt-quatre schémas de `schema/` (voir `schema/README.md`, « Les dix-huit fichiers » : douze avec
  * `commun` et `lecture-comparateur`, treize avec `gabarits`, quatorze avec `collecte`, seize avec
  * `fiche-source` et `reprise-archivage`, dix-sept avec `extraction-texte`, dix-huit avec
  * `transcription`).
@@ -45,6 +45,11 @@
  * `perimetre` décrit `config/perimetre.yaml` tel que l'auteur le saisit (conformité 2026-09-29, n° 23
  * et 25) : lu et validé par `pipeline/questions/charger-perimetre.ts`, qui en tire l'instantané
  * `run.perimetre` et les paramètres du tirage. Le vingt-troisième.
+ *
+ * `existence-lien` décrit le résultat du test HTTP d'un lien cité (§7, décision D20), écrit par
+ * `pipeline/liens` (Python) dans `runs/<date>/volume/liens/` et lu par la notation
+ * (`pipeline/notation/fournisseur-fichiers.ts`). Vérifié comme les fichiers de la collecte : fichiers
+ * dorés de `tests/liens/dore/`, validés par `tests/liens/dores-liens.test.ts`. Le vingt-quatrième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -70,6 +75,7 @@ export const NOMS_SCHEMAS = [
   "notification-due",
   "envoi-notification",
   "perimetre",
+  "existence-lien",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

@@ -52,9 +52,12 @@ class ArchiveurWayback:
         base: str = BASE_WAYBACK,
         tentatives: int = TENTATIVES,
         espacement_s: float = ESPACEMENT_S,
+        agent_utilisateur: str = AGENT_UTILISATEUR,
     ) -> None:
+        """`agent_utilisateur` : celui de la collecte ; le test des liens passe le sien (D20)."""
         if tentatives < 1:
             raise ValueError("au moins une tentative")
+        self._agent = agent_utilisateur
         self._transport = transport
         self._cadence = cadence
         self._horloge = horloge
@@ -78,7 +81,7 @@ class ArchiveurWayback:
         demande = f"{self._base}/save/{url}"
         self._cadence.attendre(hote(demande))
         try:
-            reponse = self._transport.envoyer(demande, {"User-Agent": AGENT_UTILISATEUR})
+            reponse = self._transport.envoyer(demande, {"User-Agent": self._agent})
         except ErreurReseau as erreur:
             return str(erreur)
         instantane = self._instantane(reponse)

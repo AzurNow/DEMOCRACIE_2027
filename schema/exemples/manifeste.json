@@ -1367,6 +1367,58 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 portant obsolescence_fraiche sans le drapeau obsolescence. Décision D17 de l'auteur (2026-10-06) : la fraîcheur n'existe qu'avec ce drapeau ; ailleurs, aucune métrique ne la lit et l'accord des notations la comparerait.",
       "regle_protocole": "§11, obsolescence fraîche ; §7, accord des notations (D17)"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-01-existe-page-conservee.json",
+      "attendu": "valide",
+      "motif": "Lien servi en 200 du premier coup : page conservée hors Git (chemin, type reçu, taille), SHA-256 des octets reçus, Save Page Now réussi, archive_url recopiée de l'instantané renvoyé. Copie du fichier doré tests/liens/dore/existe.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-02-mort-404.json",
+      "attendu": "valide",
+      "motif": "Lien en 404, définitif dès la première tentative : rien n'est conservé ni cherché (D19, D20). Copie du fichier doré tests/liens/dore/mort.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-03-inaccessible-instantane-trouve.json",
+      "attendu": "valide",
+      "motif": "Lien en 403 : inaccessible ; l'instantané existant le plus proche de la réponse la plus ancienne qui le cite est cherché, jamais créé, et son URL renvoyée devient archive_url. Copie du fichier doré tests/liens/dore/inaccessible-instantane.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-04-non-testable-robots.json",
+      "attendu": "valide",
+      "motif": "Lien interdit par robots.txt : non testable, aucune requête vers l'URL, code_http null (aucune réponse HTTP) ; l'API ne renvoie aucun instantané, donc pas d'archive_url. Copie du fichier doré tests/liens/dore/non-testable-robots.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-01-mort-avec-page-conservee.json",
+      "attendu": "invalide",
+      "motif": "Lien mort portant une page conservée et son empreinte. Une page n'est conservée que pour un lien qui existe : un lien mort ne soutient jamais rien.",
+      "regle_protocole": "§7, sourçage ; décisions D19 et D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-02-existe-sans-page.json",
+      "attendu": "invalide",
+      "motif": "Lien qui existe sans page conservée ni empreinte. D20 : la page d'un lien existant est conservée avec son empreinte ; sans elle, l'audit humain du soutien n'a rien à relire.",
+      "regle_protocole": "§7, sourçage ; §9, reproductibilité ; décision D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-03-archive-url-sans-instantane-renvoye.json",
+      "attendu": "invalide",
+      "motif": "archive_url présente alors que la recherche d'instantané n'a rien renvoyé. Un lien d'archive n'est jamais fabriqué : il n'existe que si le service l'a renvoyé.",
+      "regle_protocole": "CLAUDE.md règle 2 ; décision D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-04-verdict-hors-enumeration.json",
+      "attendu": "invalide",
+      "motif": "Verdict d'existence hors des quatre du schéma de notation (existe, mort, inaccessible, non_testable) : le verdict est lu dans la table publiée, jamais inventé.",
+      "regle_protocole": "§7, sourçage ; décision D20"
     }
   ]
 }

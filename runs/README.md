@@ -26,6 +26,8 @@ runs/<date>/
     notations/<id>.json             une notation individuelle par fichier (schema/notation.schema.json)
     reponses-contrefactuelles/<id>.json
                                     les réponses permutées du test contrefactuel (§7), contexte ≠ run
+    liens/<sha256 de l'URL>.json    le test HTTP d'un lien cité (schema/existence-lien.schema.json)
+    liens/pages/<sha256><ext>       la page d'un lien qui existe, octets reçus tels quels
 ```
 
 L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
@@ -91,6 +93,24 @@ tenir le plafond de trois tentatives du §6 après un arrêt brutal (`pipeline/i
 - **Journal abîmé.** Une ligne illisible, hors séquence ou tronquée (dernière ligne sans fin de
   ligne, écriture interrompue) arrête la relance avec `JournalIllisible`, qui nomme le fichier et la
   ligne. Il n'y a pas de quarantaine automatique : un humain examine le fichier et décide.
+
+## `volume/liens/` — `pnpm liens <repertoire_run>`
+
+Le test HTTP des liens du §7 (décision D20, `pipeline/liens`), un passage par run, après la fermeture
+de la fenêtre d'interrogation (refusé avant `fenetre.fin`) et avant la notation. Les URL de
+`normalise.liens` des réponses obtenues sont prises telles qu'écrites, dédoublonnées sur la chaîne
+exacte et testées en ordre trié ; la table résultat → verdict est `config/test-liens.toml`.
+
+- **Un fichier par URL**, `<sha256 de l'URL en UTF-8>.json`, écrit une fois (refus d'écraser), après
+  contrôle de sa forme. Une URL que la table ne classe pas n'a pas de fichier : elle reste « en
+  attente du test des liens » pour la notation, et le passage sort avec le code 1.
+- **Relance.** Un fichier déjà présent est repris tel quel : l'URL n'est ni retestée ni réécrite, son
+  verdict est compté « repris ». Un fichier présent mais illisible ou qui ne porte pas cette URL est
+  refusé (code 1), jamais remplacé. Une page déjà conservée n'est pas réécrite (son nom est son
+  empreinte) ; une interruption entre la page et le résultat refait le test et Save Page Now.
+- **Lecture.** `pnpm notation:humaine` lit ce répertoire s'il existe
+  (`pipeline/notation/fournisseur-fichiers.ts`) ; un fichier invalide, mal nommé ou dont la page
+  manque empêche le démarrage. Le dossier `pages/` et les résultats sont les seules entrées admises.
 
 ## Ce que l'analyse lira
 

@@ -7,14 +7,25 @@
  * et l'écran la compte « en attente du test des liens ». Aucun verdict n'est jamais supposé.
  */
 
+import { existsSync } from "node:fs";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
+import { fournisseurFichiers, repertoireLiens } from "../../pipeline/notation/fournisseur-fichiers.ts";
 
 export type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
 
 /**
- * La seule implémentation de production de cette PR : aucun verdict d'existence n'est connu. Une
+ * Aucun verdict d'existence n'est connu : le test des liens n'est pas encore passé sur ce run. Une
  * réponse sans lien reste notable ; une réponse qui en cite est comptée en attente.
  */
 export const FOURNISSEUR_SANS_EXISTENCE: FournisseurExistences = {
   existencesDe: () => [],
 };
+
+/**
+ * Le fournisseur de production d'un run : les fichiers de `volume/liens/` (`pnpm liens`, D20) s'il
+ * existe, sinon aucun verdict. Un fichier invalide ou incohérent lève à la construction
+ * (`ErreurSchema`, `FichierExistenceRefuse`) : l'écran ne démarre pas sur des verdicts douteux.
+ */
+export function fournisseurDuRun(repertoire_run: string): FournisseurExistences {
+  return existsSync(repertoireLiens(repertoire_run)) ? fournisseurFichiers(repertoire_run) : FOURNISSEUR_SANS_EXISTENCE;
+}

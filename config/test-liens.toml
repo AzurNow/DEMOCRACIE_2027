@@ -1,0 +1,68 @@
+# Table résultat → verdict du test HTTP des liens (§7 : « le lien cité existe (test HTTP
+# déterministe) »), décision D20 de l'auteur du 2026-10-08. Lue par `pipeline/liens/table.py` ;
+# jamais recopiée dans le code (schema/notation.schema.json, description de `verdict_existence`).
+#
+# TOML et non YAML : Python n'a pas de lecteur YAML dans ses dépendances, et aucune ne s'ajoute
+# (tomllib est dans la bibliothèque standard). D20 disait « config/test-liens.yaml ».
+#
+# Changer une ligne de ce fichier change une mesure : c'est un amendement (§9), et `version` change
+# avec lui. Elle est recopiée dans chaque résultat (`version_table`).
+#
+# Lecture de la table, pour un résultat de la DERNIÈRE tentative :
+# - réponse HTTP finale, après les redirections suivies une à une : un code listé dans `codes_http`
+#   l'emporte sur sa classe (`classes_http`, « 4xx ») ; 404 est donc « mort » bien que 4xx soit
+#   « inaccessible » ;
+# - pas de réponse HTTP finale : l'issue nommée (`issues`) décide.
+# Un code, une classe ou une issue présent sous deux verdicts rend la table ambiguë : elle est
+# refusée au chargement. Un résultat que la table ne classe pas n'a PAS de verdict : le lien reste
+# sans verdict, le passage le signale et sort en erreur ; rien n'est supposé.
+#
+# Issues que le code sait produire : delai_depasse, connexion_refusee, erreur_tls,
+# domaine_inexistant (le résolveur dit que le nom n'existe pas), erreur_reseau (autre panne sans
+# réponse HTTP : connexion réinitialisée, panne du résolveur), robots_interdit, robots_injoignable
+# (erreur réseau ou code hors 2xx/4xx en lisant robots.txt), schema_non_http (l'URL ou une cible de
+# redirection), url_malformee, url_non_ascii, redirections_excessives (plus de 5), boucle_redirection,
+# redirection_sans_location. D20 ne classe ni erreur_reseau, ni url_non_ascii, ni
+# redirection_sans_location, ni les codes 1xx et 3xx finaux : ils sont laissés hors de la table.
+
+version = "table-liens-v1"
+
+# D20 : « 3 tentatives au plus, espacées de 60 s » pour un échec transitoire ; 404 et 410 sont
+# définitifs dès la première réponse. Le dernier résultat obtenu est lu dans `verdicts`.
+[tentatives]
+maximum = 3
+espacement_s = 60
+
+# D20 : échecs transitoires, retentés : délai dépassé, connexion refusée, 429, 5xx.
+[transitoire]
+codes_http = [429]
+classes_http = ["5xx"]
+issues = ["delai_depasse", "connexion_refusee"]
+
+# D20 : « 2xx après redirections ⇒ existe ». Une page « introuvable » servie en 200 existe : le test
+# est déterministe, le juge dira « ne soutient pas ».
+[verdicts.existe]
+codes_http = []
+classes_http = ["2xx"]
+issues = []
+
+# D20 : « 404, 410, domaine inexistant ⇒ mort ».
+[verdicts.mort]
+codes_http = [404, 410]
+classes_http = []
+issues = ["domaine_inexistant"]
+
+# D20 : « 401, 403, 429, 451, tout autre 4xx, 5xx, délai dépassé, connexion refusée, erreur TLS ⇒
+# inaccessible ». Précision de la session principale : robots.txt injoignable (erreur réseau ou
+# 5xx) ⇒ inaccessible, jamais une autorisation implicite.
+[verdicts.inaccessible]
+codes_http = [401, 403, 429, 451]
+classes_http = ["4xx", "5xx"]
+issues = ["delai_depasse", "connexion_refusee", "erreur_tls", "robots_injoignable"]
+
+# D20 : « robots.txt interdit, schéma non http(s), URL malformée, plus de 5 redirections ou boucle ⇒
+# non_testable ». Un lien interdit par robots.txt n'est jamais contourné.
+[verdicts.non_testable]
+codes_http = []
+classes_http = []
+issues = ["robots_interdit", "schema_non_http", "url_malformee", "redirections_excessives", "boucle_redirection"]

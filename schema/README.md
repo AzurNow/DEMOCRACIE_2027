@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les vingt-trois fichiers
+## Les vingt-quatre fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -33,6 +33,7 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `notification-due.schema.json` | notification due à une campagne | §4, droit de réponse (protocole 0.10) : une ligne de `validation/notifications/dues.jsonl`, file en ajout seul écrite au même `--ecrire` que l'item par `pnpm promote` (création), `pnpm contester` (contestation) et `pnpm panel` (décision du panel). Aucune adresse : le destinataire est résolu à l'envoi |
 | `envoi-notification.schema.json` | envoi d'une notification | §4 : « chaque envoi, réussi ou non, est journalisé et publié ». Une ligne de `validation/notifications/envois.jsonl`, écrite par `pnpm notifier` (Python) seul : un courriel par campagne et par exécution, ligne `en_cours` synchronisée avant l'envoi, puis issue ; destinataire générique publié, empreinte du message, Message-ID, code SMTP. Remplace `item.notifications[]`, retiré du schéma d'item |
 | `perimetre.schema.json` | périmètre saisi d'un run | §3, §5, §6, §10 : `config/perimetre.yaml`, écrit à la main par l'auteur seul, aux noms de `run.perimetre` (décision de l'auteur du 2026-10-02). Valide le brouillon (clés à null, listes vides) comme le périmètre complet ; `pipeline/questions/charger-perimetre.ts` refuse un brouillon pour un run, applique la règle d'inclusion du §3, compte les items P au gel et rend l'instantané `run.perimetre`, revalidé contre `run.schema.json`, et les `ParametresTirage`. Aucune clé calculée au gel n'y est admise. Pas d'exemples au manifeste : ses cas limites sont dans `tests/questions/charger-perimetre.test.ts` |
+| `existence-lien.schema.json` | résultat du test HTTP d'un lien cité | §7, « le lien cité existe (test HTTP déterministe) », décision D20 : `runs/<date>/volume/liens/<sha256 de l'URL>.json`, un par URL citée, écrit une fois par `pipeline/liens` (Python) et lu par la notation (`pipeline/notation/fournisseur-fichiers.ts`). Les champs d'un lien de notation (verdict, date du test, URL finale, code HTTP, empreinte, lien d'archive) renvoient à `notation.schema.json` ; s'y ajoutent la version de la table `config/test-liens.toml`, le journal des tentatives, la page conservée et l'issue Wayback (Save Page Now, recherche d'instantané ou rien). Vérifié comme la collecte : fichiers dorés de `tests/liens/dore/` |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
 sans `mesure`, la réponse attendue d'une Q-ATT n'est pas calculable ; sans `run`, les cinq graines et
@@ -137,7 +138,7 @@ exactement un `principal` — au plus un pour une question d'attribution, aucun 
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 204 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les 212 exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
@@ -161,9 +162,10 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | extraction-texte | fiche pymupdf portant un `encodage` · fiche html.parser sans `encodage` · fiche webvtt sans `vtt_sha256` |
 | transcription | température de décodage non nulle · révision des poids qui n'est pas un hash de commit |
 | diagnostic-lot | kappa indéfini remplacé par 0 à côté de son motif · diagnostic sans `supersede_par` · lot de réannotation sans date de calibration |
+| existence-lien | lien mort portant une page conservée · lien existant sans page · `archive_url` sans instantané renvoyé · verdict hors des quatre du schéma de notation |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 22 schémas au registre, 204/204 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout : 24 schémas au registre, 212/212 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 
