@@ -322,7 +322,24 @@ Mis à jour le 2026-10-06. Sources relues : `docs/feuille-de-route.json`, `docs/
       `questions.json` pour un vrai run, et personne n'inscrit un run invalide (D16 (3)), dont le
       schéma exige `publication` et `depot`. Dire quel outil gèle un run et quand il est invalidé.
 
-- [ ] **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
+- [ ] **Écrire aussi en 0.16 : D20 (§7, test des liens)**, tranchée le 2026-10-08. Texte proposé,
+      dans « Sourçage », après « le lien cité existe (test HTTP déterministe) » : « Le test passe une
+      fois par run, après la fermeture de la fenêtre d'interrogation et avant la notation, sur chaque
+      URL citée prise telle qu'écrite, en requête GET, selon la norme de collecte de la section 6
+      (robots.txt, une requête par seconde et par hôte, cinq redirections au plus). Un lien
+      qu'interdit robots.txt est non testable. Une erreur passagère (délai dépassé, connexion
+      refusée, code 429 ou 5xx) est retentée deux fois au plus, à soixante secondes d'intervalle ;
+      un code 404 ou 410 est définitif. La table qui fait passer du résultat au verdict (existe, mort,
+      inaccessible, non testable) est publiée et versionnée ; un domaine inexistant est un lien
+      mort, une page servie avec succès existe quel que soit son contenu. La page d'un lien existant
+      est conservée avec son empreinte et sauvegardée sur la Wayback Machine ; pour un lien
+      inaccessible ou non testable, l'instantané existant le plus proche de la réponse est
+      recherché, jamais créé. »
+
+  Ligne de révision, à fusionner : « Section 7 : règles du test HTTP des liens (moment, méthode,
+  tentatives, table des verdicts publiée, copie conservée). »
+
+- [x] (2026-10-08, D20) **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
       HTTP déterministe de l'existence des liens cités, et aucun code ne le fait. C'est un appel
       réseau nouveau, à autoriser, avec ses règles (redirections, délais, « inaccessible »).
 

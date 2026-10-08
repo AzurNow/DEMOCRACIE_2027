@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-06.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-08.
 
 ## Décisions en attente
 
@@ -55,6 +55,10 @@ Aucune décision en attente.
 ### D2 — Quelles dépendances autoriser pour la collecte et l'archivage (lot collecte) ?
 
 **Décision du 2026-09-20 :** yt-dlp, faster-whisper en local, pymupdf et appel HTTP direct à l'API Wayback. Tout tourne sur la machine, aucune clé, transcription rejouable hors ligne par un tiers.
+
+### D20 — Comment le lot test-liens établit-il l'existence d'un lien cité (§7, « test HTTP déterministe ») : méthode, table résultat → verdict, moment et tentatives, copie conservée ?
+
+**Décision du 2026-10-08 :** Option 1 sur les quatre points. Table : 2xx après redirections ⇒ existe ; 404, 410, domaine inexistant ⇒ mort ; 401, 403, 429, 451, autres 4xx, 5xx, délai, connexion refusée, erreur TLS ⇒ inaccessible ; robots interdit, schéma non http(s), URL malformée, plus de 5 redirections ou boucle ⇒ non_testable ; une page « introuvable » servie en 200 ⇒ existe. À coder au lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
