@@ -96,9 +96,48 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
     const [existence] = fournisseurFichiers(runTeste()).existencesDe("r1", [INACCESSIBLE]);
     expect(existence).toMatchObject({
       verdict_existence: "inaccessible",
-      archive_url: "http://web.archive.org/web/20260918071500/https://example.org/reserve",
+      archive_url: "https://web.archive.org/web/20260918071500/https://example.org/reserve",
       sha256_contenu: empreinte(COPIE),
     });
+  });
+
+  /** Le doré de INACCESSIBLE, dont le téléchargement `id_` a été servi depuis `url_finale`. */
+  function serviDepuis(url_finale: string, archive_url: string): Record<string, unknown> {
+    const dore = lireDore("inaccessible-instantane.json");
+    const wayback = dore["wayback"] as Record<string, unknown>;
+    const telechargement = wayback["telechargement"] as Record<string, unknown>;
+    return { ...dore, archive_url, wayback: { ...wayback, telechargement: { ...telechargement, url_finale } } };
+  }
+
+  const SERVI_T2 = "https://web.archive.org/web/20260915080000id_/https://example.org/reserve";
+
+  it("D22 : archive_url désignant l'instantané servi, autre que l'instantané demandé, est acceptée", () => {
+    const run = runTeste();
+    poser(run, INACCESSIBLE, serviDepuis(SERVI_T2, "https://web.archive.org/web/20260915080000/https://example.org/reserve"));
+
+    const [existence] = fournisseurFichiers(run).existencesDe("r1", [INACCESSIBLE]);
+
+    expect(existence?.archive_url).toBe("https://web.archive.org/web/20260915080000/https://example.org/reserve");
+  });
+
+  it("D22 : archive_url incohérente avec l'URL finale du téléchargement est refusée", () => {
+    const run = runTeste();
+    const incoherentes = [
+      "http://web.archive.org/web/20260918071500/https://example.org/reserve", // l'instantané demandé, pas le servi
+      SERVI_T2, // la forme id_ elle-même
+      "https://web.archive.org/web/20260915080000/https://example.org/autre",
+    ];
+    for (const archive_url of incoherentes) {
+      poser(run, INACCESSIBLE, serviDepuis(SERVI_T2, archive_url));
+      expect(() => fournisseurFichiers(run), archive_url).toThrow(FichierExistenceRefuse);
+      expect(() => fournisseurFichiers(run), archive_url).toThrow(/archive_url n'est pas l'instantané/);
+    }
+  });
+
+  it("D22 : un téléchargement réussi dont l'URL finale n'a pas la forme /web/<14 chiffres>id_/ est invalide au schéma", () => {
+    const run = runTeste();
+    poser(run, INACCESSIBLE, serviDepuis("https://web.archive.org/erreur", "https://web.archive.org/web/20260918071500/https://example.org/reserve"));
+    expect(() => fournisseurFichiers(run)).toThrow(ErreurSchema);
   });
 
   it("D21 : instantané écarté ou téléchargement en échec, ni archive_url ni sha256_contenu", () => {
@@ -144,10 +183,12 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
     expect(() => fournisseurFichiers(run)).toThrow(/n'est pas le SHA-256 de l'URL citée/);
   });
 
-  it("une archive_url qui n'est pas celle renvoyée par Wayback est refusée", () => {
+  it("une archive_url qui n'est pas celle renvoyée (Save Page Now) ou servie (instantané) par Wayback est refusée", () => {
     const run = runTeste();
     poser(run, INACCESSIBLE, { ...lireDore("inaccessible-instantane.json"), archive_url: "https://web.archive.org/web/20200101000000/https://example.org/reserve" });
-    expect(() => fournisseurFichiers(run)).toThrow(/archive_url diffère/);
+    expect(() => fournisseurFichiers(run)).toThrow(/archive_url n'est pas l'instantané/);
+    poser(run, EXISTE, { ...lireDore("existe.json"), archive_url: "https://web.archive.org/web/20200101000000/https://example.org/programme" });
+    expect(() => fournisseurFichiers(run)).toThrow(/archive_url n'est pas l'instantané/);
   });
 
   it("des tentatives incohérentes (trou, date_test ou code d'une autre tentative) sont refusées", () => {

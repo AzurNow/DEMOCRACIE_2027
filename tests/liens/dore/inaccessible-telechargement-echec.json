@@ -17,7 +17,7 @@
     "operation": "recherche_instantane",
     "instant_reference": "2026-09-21T08:00:00+02:00",
     "issue": "trouve",
-    "archive_url": "http://web.archive.org/web/20260916090000/https://example.org/fragile",
+    "url_instantane": "http://web.archive.org/web/20260916090000/https://example.org/fragile",
     "horodatage_instantane": "20260916090000",
     "statut_instantane": "200",
     "telechargement": {

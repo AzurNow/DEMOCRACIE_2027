@@ -107,16 +107,21 @@ exacte et testées en ordre trié ; la table résultat → verdict est `config/t
   attente du test des liens » pour la notation, et le passage sort avec le code 1 (la v2 classe
   toute issue et toute classe de code : ce cas ne survient qu'avec une autre table).
 - **URL non ASCII.** Une IRI est convertie en URI pour l'envoi seulement (RFC 3987 §3.1 :
-  percent-encoding UTF-8 hors ASCII, hôte en IDNA ; `%XX` existants intacts). `url_citee` et le nom
-  du fichier gardent la chaîne exacte, `url_finale` est l'URI qui a répondu ; une IRI inconvertible
-  est `url_malformee` (non testable).
+  percent-encoding UTF-8 hors ASCII, hôte en IDNA ; `%XX` existants intacts), au site comme à la
+  Wayback Machine (D22 : requête de l'API de disponibilité et URL `id_`). `url_citee` et le nom du
+  fichier gardent la chaîne exacte, `url_finale` est l'URI qui a répondu ; une IRI inconvertible
+  est `url_malformee` (non testable), et sa recherche d'instantané est consignée en échec sans
+  requête.
 - **`pages/`** garde, octets intacts et nommés par leur SHA-256, la page d'un lien qui existe et la
-  version brute (`https://web.archive.org/web/<14 chiffres>id_/<url>`) de l'instantané retenu d'un
+  version brute (`https://web.archive.org/web/<14 chiffres>id_/<uri>`) de l'instantané retenu d'un
   lien inaccessible ou non testable. Un instantané n'est retenu que si l'API de disponibilité le dit
   de statut 200 ; sinon il est écarté (`wayback.issue = "ecarte"`, statut consigné). Seul un
-  téléchargement réussi pose `archive_url` (l'URL d'instantané renvoyée par le service) et
-  `sha256_contenu` ; un échec est consigné dans `wayback.telechargement`, compté parmi les échecs
-  Wayback du bilan, sans changer le verdict.
+  téléchargement réussi pose `archive_url` et `sha256_contenu`. D22 : le téléchargement suit les
+  redirections, et Wayback sert souvent une capture voisine ; `archive_url` est l'instantané
+  réellement servi, forme publique sans `id_` de l'URL finale, l'instantané demandé restant dans
+  `wayback.url_instantane`. Une URL finale hors de la forme `/web/<14 chiffres>id_/…` de
+  web.archive.org est un téléchargement en échec. Un échec est consigné dans
+  `wayback.telechargement`, compté parmi les échecs Wayback du bilan, sans changer le verdict.
 - **Relance.** Un fichier déjà présent est repris tel quel : l'URL n'est ni retestée ni réécrite, son
   verdict est compté « repris ». Un fichier présent mais illisible ou qui ne porte pas cette URL est
   refusé (code 1), jamais remplacé. Une page déjà conservée n'est pas réécrite (son nom est son

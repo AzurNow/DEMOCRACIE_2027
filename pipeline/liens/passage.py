@@ -8,8 +8,10 @@ recherche d'instantané existant pour `inaccessible` et `non_testable`, rien pou
 lien mort ne soutient jamais rien). D21 : un instantané de statut 200 est téléchargé en version
 brute (`id_`) par la même sonde, octets intacts sous `pages/` ; seul ce téléchargement réussi pose
 `archive_url` et `sha256_contenu`. Un instantané d'un autre statut est écarté, un téléchargement en
-échec est consigné : ni l'un ni l'autre ne change le verdict. Enfin le résultat est contrôlé et
-écrit une fois.
+échec est consigné : ni l'un ni l'autre ne change le verdict. D22 : la recherche et le
+téléchargement portent l'URI convertie par la règle `conversion_iri` de la table ; `archive_url` est
+l'instantané réellement servi, lu dans l'URL finale du téléchargement, l'instantané demandé reste
+dans le journal Wayback. Enfin le résultat est contrôlé et écrit une fois.
 
 Un résultat que la table ne classe pas n'a pas de verdict : aucun fichier n'est écrit, le lien
 reste « en attente du test des liens » pour la notation, et le bilan le signale.
@@ -33,7 +35,9 @@ from pipeline.liens.instantanes import (
     InstantaneTrouve,
     Recherche,
     RechercheEchouee,
+    instantane_servi,
 )
+from pipeline.liens.iri import CONVERSIONS_IRI, IriInconvertible
 from pipeline.liens.schemas import ResultatNonConforme
 from pipeline.liens.sortie import (
     Copie,
@@ -55,7 +59,7 @@ class Sonde(Protocol):
 
 
 class Chercheur(Protocol):
-    def chercher(self, url: str, instant: datetime) -> Recherche: ...
+    def chercher(self, uri: str, instant: datetime) -> Recherche: ...
 
 
 @dataclass(frozen=True)
@@ -125,23 +129,37 @@ def _motif_d_echec(constat: Constat) -> str:
     return f"{constat.issue}, code HTTP {constat.code_http}{detail}"
 
 
+def _servi(constat: Constat) -> str | tuple[str, str]:
+    """D21, D22 : `(url_finale, instantané servi)` d'un téléchargement réussi, ou le motif de son échec :
+    réponse finale autre que 200, ou URL finale hors de la forme `/web/<14 chiffres>id_/…`."""
+    if constat.issue != REPONSE_HTTP or constat.code_http != STATUT_TELECHARGEMENT or constat.url_finale is None:
+        return _motif_d_echec(constat)
+    servi = instantane_servi(constat.url_finale)
+    if servi is None:
+        return f"URL finale hors de la forme /web/<14 chiffres>id_/ sur web.archive.org : {constat.url_finale}"
+    return constat.url_finale, servi
+
+
 def _trouve(ctx: _Contexte, recherche: InstantaneTrouve, wayback: dict[str, object]) -> Copie:
     """D21 : la version brute (`id_`) de l'instantané est téléchargée, même politesse, même agent
-    (la sonde du passage), une fois. Octets intacts sous `pages/` ; `archive_url` (l'URL renvoyée
-    par le service) et `sha256_contenu` ne sont posés que si le téléchargement réussit (200)."""
+    (la sonde du passage), une fois. Octets intacts sous `pages/` ; `archive_url` et `sha256_contenu`
+    ne sont posés que si le téléchargement réussit. D22 : `archive_url` est l'instantané réellement
+    servi (forme publique de l'URL finale, sans `id_`) ; l'instantané demandé reste `url_instantane`."""
     wayback |= {
         "issue": "trouve",
-        "archive_url": recherche.archive_url,
+        "url_instantane": recherche.url_instantane,
         "horodatage_instantane": recherche.horodatage,
         "statut_instantane": STATUT_RETENU,
     }
     constat = ctx.deps.sonde.sonder(recherche.url_brute)
-    if constat.issue != REPONSE_HTTP or constat.code_http != STATUT_TELECHARGEMENT:
-        echec = {"issue": "echec", "url_brute": recherche.url_brute, "motif": _motif_d_echec(constat)}
+    servi = _servi(constat)
+    if isinstance(servi, str):
+        echec = {"issue": "echec", "url_brute": recherche.url_brute, "motif": servi}
         return Copie(wayback=wayback | {"telechargement": echec})
+    url_finale, archive_url = servi
     sha256, page = conserver_page(ctx.repertoire, constat)
-    reussi = {"issue": "reussi", "url_brute": recherche.url_brute, "url_finale": constat.url_finale, **page}
-    return Copie(wayback=wayback | {"telechargement": reussi}, sha256_contenu=sha256, archive_url=recherche.archive_url)
+    reussi = {"issue": "reussi", "url_brute": recherche.url_brute, "url_finale": url_finale, **page}
+    return Copie(wayback=wayback | {"telechargement": reussi}, sha256_contenu=sha256, archive_url=archive_url)
 
 
 def _ecarte(recherche: InstantaneEcarte, wayback: dict[str, object]) -> Copie:
@@ -153,11 +171,17 @@ def _ecarte(recherche: InstantaneEcarte, wayback: dict[str, object]) -> Copie:
 
 
 def _copie_recherche(ctx: _Contexte) -> Copie:
-    recherche = ctx.deps.chercheur.chercher(ctx.url, ctx.instant_reference)
+    """D22 : la recherche porte l'URI convertie par la règle de la table. Une IRI inconvertible
+    (`url_malformee`, donc non testable) n'a pas d'URI : aucune requête, l'échec est consigné."""
     wayback: dict[str, object] = {
         "operation": "recherche_instantane",
         "instant_reference": instant_iso(ctx.instant_reference),
     }
+    try:
+        uri = CONVERSIONS_IRI[ctx.deps.table.conversion_iri](ctx.url)
+    except IriInconvertible as erreur:
+        return Copie(wayback=wayback | {"issue": "echec", "motif": f"IRI inconvertible, aucune recherche : {erreur}"})
+    recherche = ctx.deps.chercheur.chercher(uri, ctx.instant_reference)
     match recherche:
         case InstantaneTrouve():
             return _trouve(ctx, recherche, wayback)

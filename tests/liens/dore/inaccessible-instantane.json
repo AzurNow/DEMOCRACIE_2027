@@ -5,7 +5,7 @@
   "url_finale": "https://example.org/reserve",
   "code_http": 403,
   "sha256_contenu": "783e79c7583c4c47cc65a5a105ca00055d30b686bcff2f2405c57f774c7f59d5",
-  "archive_url": "http://web.archive.org/web/20260918071500/https://example.org/reserve",
+  "archive_url": "https://web.archive.org/web/20260918071500/https://example.org/reserve",
   "version_table": "table-liens-v2",
   "tentatives": [
     {
@@ -19,7 +19,7 @@
     "operation": "recherche_instantane",
     "instant_reference": "2026-09-20T18:40:12+02:00",
     "issue": "trouve",
-    "archive_url": "http://web.archive.org/web/20260918071500/https://example.org/reserve",
+    "url_instantane": "http://web.archive.org/web/20260918071500/https://example.org/reserve",
     "horodatage_instantane": "20260918071500",
     "statut_instantane": "200",
     "telechargement": {

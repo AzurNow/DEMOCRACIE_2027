@@ -1384,7 +1384,7 @@
       "objet": "existence-lien",
       "fichier": "existence-lien/valide-03-inaccessible-instantane-trouve.json",
       "attendu": "valide",
-      "motif": "Lien en 403 : inaccessible ; l'instantané existant le plus proche de la réponse la plus ancienne qui le cite est cherché, jamais créé. De statut 200, il est retenu et sa version brute (id_) téléchargée (D21) : son URL renvoyée devient archive_url, l'empreinte des octets téléchargés sha256_contenu. Copie du fichier doré tests/liens/dore/inaccessible-instantane.json."
+      "motif": "Lien en 403 : inaccessible ; l'instantané existant le plus proche de la réponse la plus ancienne qui le cite est cherché, jamais créé. De statut 200, il est retenu et sa version brute (id_) téléchargée (D21) : son URL renvoyée devient archive_url, l'empreinte des octets téléchargés sha256_contenu. Copie du fichier doré tests/liens/dore/inaccessible-instantane.json. Modifié ouvertement (D22) : l'instantané demandé est consigné sous wayback.url_instantane, et archive_url est l'instantané réellement servi, forme publique sans id_ de l'URL finale du téléchargement (ici servi à la date demandée, en https)."
     },
     {
       "objet": "existence-lien",
@@ -1402,7 +1402,7 @@
       "objet": "existence-lien",
       "fichier": "existence-lien/valide-06-inaccessible-telechargement-echec.json",
       "attendu": "valide",
-      "motif": "Lien en 403 : inaccessible ; instantané de statut 200 retenu, mais le téléchargement de sa version brute échoue (503) : l'échec est consigné dans le journal Wayback, ni archive_url ni sha256_contenu, verdict inchangé (D21). Copie du fichier doré tests/liens/dore/inaccessible-telechargement-echec.json."
+      "motif": "Lien en 403 : inaccessible ; instantané de statut 200 retenu, mais le téléchargement de sa version brute échoue (503) : l'échec est consigné dans le journal Wayback, ni archive_url ni sha256_contenu, verdict inchangé (D21). Copie du fichier doré tests/liens/dore/inaccessible-telechargement-echec.json. Modifié ouvertement (D22) : l'instantané demandé est consigné sous wayback.url_instantane (anciennement wayback.archive_url) ; rien d'autre ne change."
     },
     {
       "objet": "existence-lien",
@@ -1450,14 +1450,14 @@
       "objet": "existence-lien",
       "fichier": "existence-lien/invalide-07-telechargement-en-echec-avec-archive-url.json",
       "attendu": "invalide",
-      "motif": "Téléchargement de la version brute en échec, mais archive_url et sha256_contenu posés. D21 : sans octets téléchargés, ni l'une ni l'autre.",
+      "motif": "Téléchargement de la version brute en échec, mais archive_url et sha256_contenu posés. D21 : sans octets téléchargés, ni l'une ni l'autre. Modifié ouvertement (D22) : l'instantané demandé sous wayback.url_instantane ; le motif d'invalidité ne change pas.",
       "regle_protocole": "§7, sourçage ; CLAUDE.md règle 2 ; décision D21"
     },
     {
       "objet": "existence-lien",
       "fichier": "existence-lien/invalide-08-instantane-retenu-de-statut-302.json",
       "attendu": "invalide",
-      "motif": "Instantané retenu (trouve) alors que l'API le dit de statut 302. D21 : seul un instantané de statut 200 est retenu.",
+      "motif": "Instantané retenu (trouve) alors que l'API le dit de statut 302. D21 : seul un instantané de statut 200 est retenu. Modifié ouvertement (D22) : l'instantané demandé sous wayback.url_instantane, archive_url en forme servie ; le motif d'invalidité ne change pas.",
       "regle_protocole": "§7, sourçage ; décision D21"
     },
     {
@@ -1466,6 +1466,13 @@
       "attendu": "invalide",
       "motif": "Tentative close sur l'issue url_non_ascii. D21 : une IRI est convertie en URI pour l'envoi (RFC 3987 §3.1), ou refusée comme url_malformee ; l'issue url_non_ascii n'existe plus.",
       "regle_protocole": "§7, sourçage ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-10-telechargement-servi-hors-forme-id.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-03 dont le téléchargement réussi a fini sur une page d'erreur de web.archive.org, hors de la forme /web/<14 chiffres>id_/. D22 : une telle URL finale ne désigne aucun instantané servi, le téléchargement est en échec, ni archive_url ni sha256_contenu.",
+      "regle_protocole": "§7, sourçage ; CLAUDE.md règle 2 ; décision D22"
     }
   ]
 }

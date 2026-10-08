@@ -1,7 +1,7 @@
 """Le passage de bout en bout : tentatives, verdict lu dans la table, copie conservée, écriture unique.
 
 Cas limites 1, 2, 5, 6, 7, 8, 9, 12, 13, 16 et 17 de la décision D20 ; 1, 2, 3, 5 à 9 de D21 (tests
-`test_d21_*`). La sonde réelle parle à `TransportFactice`, y compris pour télécharger la version
+`test_d21_*`) ; 1, 2, 3 et 5 de D22 (tests `test_d22_*`). La sonde réelle parle à `TransportFactice`, y compris pour télécharger la version
 brute d'un instantané ; l'archiveur et le chercheur d'instantanés sont des doubles
 (`doubles_liens.py`).
 """
@@ -10,14 +10,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
+from pipeline.collecte.politesse import Cadence
 from pipeline.collecte.reseau import ConnexionRefusee, DelaiDepasse, ErreurReseau, NomIntrouvable
 from pipeline.liens.entree import EntreeRefusee, liens_cites, lire_run
-from pipeline.liens.instantanes import InstantaneAbsent, InstantaneEcarte, InstantaneTrouve, RechercheEchouee
+from pipeline.liens.instantanes import (
+    ChercheurInstantanes,
+    InstantaneAbsent,
+    InstantaneEcarte,
+    InstantaneTrouve,
+    RechercheEchouee,
+)
 from pipeline.liens.passage import code_de_sortie, formater_bilan, passer
 from pipeline.liens.sortie import nom_resultat
 from pipeline.liens.table import CHEMIN_TABLE
@@ -42,6 +50,8 @@ ROBOTS_WAYBACK = "https://web.archive.org/robots.txt"
 INSTANTANE_A = f"http://web.archive.org/web/20260920101010/{A}"
 BRUTE_A = f"https://web.archive.org/web/20260920101010id_/{A}"
 TROUVE_A = InstantaneTrouve(INSTANTANE_A, "20260920101010", BRUTE_A)
+SERVI_A = f"https://web.archive.org/web/20260920101010/{A}"
+"""D22 : l'instantané servi, forme publique (sans `id_`) de l'URL finale du téléchargement."""
 
 
 def _passer(b: Banc, tmp_path: Path, *urls: str) -> tuple[list, Path]:
@@ -190,7 +200,7 @@ def test_cas_7_503_trois_fois_inaccessible_instantane_cherche(tmp_path: Path) ->
     assert len(resultat["tentatives"]) == 3
     assert b.chercheur.demandes == [(A, REFERENCE)]
     assert b.archiveur.urls == []
-    assert resultat["archive_url"] == INSTANTANE_A
+    assert resultat["archive_url"] == SERVI_A
     assert resultat["sha256_contenu"] == hashlib.sha256(archive).hexdigest()
 
 
@@ -534,13 +544,13 @@ def test_d21_cas_7_instantane_200_telecharge_en_id_sha256_exact(tmp_path: Path) 
     resultat = _resultat(repertoire, A)
     sha256 = hashlib.sha256(archive).hexdigest()
     assert resultat["verdict_existence"] == "inaccessible"
-    assert resultat["archive_url"] == INSTANTANE_A
+    assert resultat["archive_url"] == SERVI_A
     assert resultat["sha256_contenu"] == sha256
     assert "page" not in resultat
     assert (repertoire / "pages" / f"{sha256}.html").read_bytes() == archive
     assert resultat["wayback"] == {
         "operation": "recherche_instantane", "instant_reference": "2026-09-21T10:00:00+02:00", "issue": "trouve",
-        "archive_url": INSTANTANE_A, "horodatage_instantane": "20260920101010", "statut_instantane": "200",
+        "url_instantane": INSTANTANE_A, "horodatage_instantane": "20260920101010", "statut_instantane": "200",
         "telechargement": {"issue": "reussi", "url_brute": BRUTE_A, "url_finale": BRUTE_A, "chemin": f"pages/{sha256}.html",
                            "type_contenu_recu": "text/html; charset=utf-8", "taille_octets": len(archive)}}
     assert b.transport.urls() == [ROBOTS, A, ROBOTS_WAYBACK, BRUTE_A]
@@ -559,7 +569,7 @@ def test_d21_cas_7_non_testable_instantane_telecharge(tmp_path: Path) -> None:
 
     resultat = _resultat(repertoire, url)
     assert resultat["verdict_existence"] == "non_testable"
-    assert resultat["archive_url"] == instantane.archive_url
+    assert resultat["archive_url"] == instantane.url_instantane
     assert resultat["sha256_contenu"] == hashlib.sha256(b"copie").hexdigest()
 
 
@@ -608,10 +618,115 @@ def test_d21_cas_9_telechargement_en_echec_ni_archive_url_ni_sha256_verdict_inch
     resultat = _resultat(repertoire, A)
     assert resultat["verdict_existence"] == "inaccessible"
     assert "archive_url" not in resultat and "sha256_contenu" not in resultat
-    assert (resultat["wayback"]["issue"], resultat["wayback"]["archive_url"]) == ("trouve", INSTANTANE_A)
+    assert (resultat["wayback"]["issue"], resultat["wayback"]["url_instantane"]) == ("trouve", INSTANTANE_A)
     telechargement = resultat["wayback"]["telechargement"]
     assert (telechargement["issue"], telechargement["url_brute"]) == ("echec", BRUTE_A)
     assert motif in telechargement["motif"]
     assert not (repertoire / "pages").exists()
     assert bilans[0].echec_wayback is not None and motif in bilans[0].echec_wayback
     assert code_de_sortie(bilans) == 0
+
+
+# ------------------------------------------------------------------------------ D22
+
+
+BRUTE_T2 = f"https://web.archive.org/web/20260915080000id_/{A}"
+
+
+def test_d22_cas_1_servi_a_une_autre_date_copie_gardee_archive_url_instantane_servi(tmp_path: Path) -> None:
+    """`id_` demandé à T1, Wayback redirige vers la capture voisine T2 : la copie est acceptée,
+    `archive_url` est l'instantané T2 sans `id_`, T1 reste consigné dans le journal Wayback."""
+    archive = b"<html>capture voisine</html>"
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403), ROBOTS_WAYBACK: ROBOTS_OUVERT,
+              BRUTE_A: reponse(302, location=BRUTE_T2), BRUTE_T2: reponse(200, archive, content_type="text/html")},
+             chercheur=ChercheurFactice(TROUVE_A))
+
+    bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    sha256 = hashlib.sha256(archive).hexdigest()
+    assert resultat["archive_url"] == f"https://web.archive.org/web/20260915080000/{A}"
+    assert resultat["sha256_contenu"] == sha256
+    wayback = resultat["wayback"]
+    assert (wayback["url_instantane"], wayback["horodatage_instantane"]) == (INSTANTANE_A, "20260920101010")
+    assert (wayback["telechargement"]["url_brute"], wayback["telechargement"]["url_finale"]) == (BRUTE_A, BRUTE_T2)
+    assert (repertoire / "pages" / f"{sha256}.html").read_bytes() == archive
+    assert bilans[0].echec_wayback is None
+
+
+def test_d22_cas_2_servi_a_la_date_demandee_archive_url_instantane_demande(tmp_path: Path) -> None:
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403), ROBOTS_WAYBACK: ROBOTS_OUVERT, BRUTE_A: reponse(200, b"copie")},
+             chercheur=ChercheurFactice(TROUVE_A))
+
+    _bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert resultat["archive_url"] == SERVI_A == f"https://web.archive.org/web/{TROUVE_A.horodatage}/{A}"
+    assert resultat["wayback"]["telechargement"]["url_finale"] == BRUTE_A
+
+
+@pytest.mark.parametrize(
+    "finale",
+    [
+        "https://web.archive.org/erreur/capture-introuvable",
+        f"https://web.archive.org/web/20260915080000/{A}",
+        "https://ailleurs.example/page",
+    ],
+)
+def test_d22_cas_3_url_finale_hors_forme_id_telechargement_en_echec(tmp_path: Path, finale: str) -> None:
+    autre_robots = "https://ailleurs.example/robots.txt"
+    b = banc({ROBOTS: ROBOTS_OUVERT, A: reponse(403), ROBOTS_WAYBACK: ROBOTS_OUVERT, autre_robots: ROBOTS_OUVERT,
+              BRUTE_A: reponse(302, location=finale), finale: reponse(200, b"<html>autre chose</html>")},
+             chercheur=ChercheurFactice(TROUVE_A))
+
+    bilans, repertoire = _passer(b, tmp_path, A)
+
+    resultat = _resultat(repertoire, A)
+    assert resultat["verdict_existence"] == "inaccessible"
+    assert "archive_url" not in resultat and "sha256_contenu" not in resultat
+    telechargement = resultat["wayback"]["telechargement"]
+    assert (telechargement["issue"], telechargement["url_brute"]) == ("echec", BRUTE_A)
+    assert finale in telechargement["motif"]
+    assert not (repertoire / "pages").exists()
+    assert bilans[0].echec_wayback is not None and finale in bilans[0].echec_wayback
+    assert code_de_sortie(bilans) == 0
+
+
+def test_d22_cas_5_iri_recherche_et_telechargement_sur_l_uri_convertie(tmp_path: Path) -> None:
+    """IRI à chemin accentué et hôte IDN : la requête de disponibilité et l'URL `id_` portent l'URI
+    convertie par la règle de la table ; `url_citee` et le nom du fichier gardent la chaîne citée."""
+    iri = "https://bücher.example/programme/éducation"
+    uri = "https://xn--bcher-kva.example/programme/%C3%A9ducation"
+    demande = ("https://archive.org/wayback/available?url=https%3A%2F%2Fxn--bcher-kva.example%2Fprogramme%2F%25C3%25A9ducation"
+               "&timestamp=20260921080000")
+    renvoyee = f"http://web.archive.org/web/20260920101010/{uri}"
+    brute = f"https://web.archive.org/web/20260920101010id_/{uri}"
+    api = json.dumps({"archived_snapshots": {"closest": {"available": True, "url": renvoyee, "status": "200"}}}).encode()
+    b = banc({"https://xn--bcher-kva.example/robots.txt": ROBOTS_OUVERT, uri: reponse(403), demande: reponse(200, api),
+              ROBOTS_WAYBACK: ROBOTS_OUVERT, brute: reponse(200, b"copie")})
+    deps = replace(b.deps, chercheur=ChercheurInstantanes(b.transport, Cadence(b.horloge, intervalle_s=1.0)))
+
+    passer({iri: REFERENCE}, tmp_path / "liens", deps)
+
+    resultat = json.loads((tmp_path / "liens" / f"{hashlib.sha256(iri.encode('utf-8')).hexdigest()}.json").read_text("utf-8"))
+    assert resultat["url_citee"] == iri
+    assert b.transport.urls()[-3:] == [demande, ROBOTS_WAYBACK, brute]
+    assert resultat["wayback"]["telechargement"]["url_brute"] == brute
+    assert resultat["archive_url"] == f"https://web.archive.org/web/20260920101010/{uri}"
+
+
+def test_d22_cas_5_iri_inconvertible_non_testable_aucune_requete_wayback(tmp_path: Path) -> None:
+    """Une IRI inconvertible est `url_malformee`, donc non testable, ce qui appelle la recherche
+    d'instantané : sans URI convertie, aucune requête Wayback n'est envoyée, l'échec est consigné."""
+    iri = "https://" + "ü" * 64 + ".example/"
+    b = banc({})
+
+    bilans, repertoire = _passer(b, tmp_path, iri)
+
+    resultat = _resultat(repertoire, iri)
+    assert resultat["verdict_existence"] == "non_testable"
+    assert b.chercheur.demandes == [] and b.transport.urls() == []
+    assert resultat["wayback"]["issue"] == "echec"
+    assert "IRI inconvertible" in resultat["wayback"]["motif"]
+    assert "archive_url" not in resultat
+    assert bilans[0].echec_wayback is not None

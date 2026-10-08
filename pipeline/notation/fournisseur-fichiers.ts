@@ -8,9 +8,11 @@
  * ignoré. Contrôles en plus du schéma :
  * - le nom du fichier est le SHA-256 (UTF-8) de `url_citee` : un fichier par URL, sans doublon ;
  * - tentatives numérotées 1, 2, 3… sans trou ; `date_test` et `code_http` sont ceux de la dernière ;
- * - `archive_url`, quand elle est présente, est exactement celle que l'issue Wayback a renvoyée (sa
- *   présence ou son absence est réglée par le schéma : D21, un instantané écarté ou un téléchargement
- *   en échec n'en donnent pas) ;
+ * - `archive_url`, quand elle est présente, est exactement l'instantané que Wayback a renvoyé (Save
+ *   Page Now : `wayback.archive_url`) ou servi (D22 : forme publique, sans `id_`, de l'URL finale du
+ *   téléchargement de la version brute, qui peut différer de l'instantané demandé) ; sa présence ou
+ *   son absence est réglée par le schéma (D21 : un instantané écarté ou un téléchargement en échec
+ *   n'en donnent pas) ;
  * - la copie conservée — page d'un lien qui existe, ou version brute de l'instantané téléchargée
  *   pour un lien inaccessible ou non testable (D21) — est présente sous `volume/liens/`, nommée par
  *   son empreinte (`sha256_contenu`), de la taille annoncée (l'empreinte elle-même n'est pas
@@ -45,7 +47,10 @@ interface PageConservee {
 }
 
 /** D21 : téléchargement de la version brute d'un instantané retenu (`wayback.telechargement`). */
-type TelechargementInstantane = ({ readonly issue: "reussi" } & PageConservee) | { readonly issue: "echec" };
+type TelechargementInstantane = ({ readonly issue: "reussi"; readonly url_finale: string } & PageConservee) | { readonly issue: "echec" };
+
+/** D22 : URL finale d'une version brute servie ; même forme que `$defs/instantane_brut_servi` du schéma. */
+const BRUT_SERVI = /^(https?):\/\/web\.archive\.org\/web\/([0-9]{14})id_\/(.+)$/u;
 
 /** Un fichier de `volume/liens/`, tel que le décrit `schema/existence-lien.schema.json`. */
 interface ResultatTestLien extends ExistenceEtablie {
@@ -113,10 +118,30 @@ function incoherencesDeLaCopie(repertoire: string, r: ResultatTestLien): readonl
   return taille === copie.taille_octets ? [] : [`la copie ${copie.chemin} fait ${taille} octets, ${copie.taille_octets} annoncés.`];
 }
 
+/** D22 : l'instantané servi, forme publique sans `id_` de l'URL finale ; `undefined` hors de cette forme. */
+function instantaneServi(url_finale: string): string | undefined {
+  const correspondance = BRUT_SERVI.exec(url_finale);
+  if (correspondance === null) return undefined;
+  const [, schema, horodatage, cible] = correspondance;
+  return `${String(schema)}://web.archive.org/web/${String(horodatage)}/${String(cible)}`;
+}
+
+/** L'archive_url que l'issue Wayback autorise : renvoyée par Save Page Now, ou servie au téléchargement (D22). */
+function archiveUrlAttendue(r: ResultatTestLien): string | undefined {
+  const telechargement = r.wayback.telechargement;
+  return telechargement?.issue === "reussi" ? instantaneServi(telechargement.url_finale) : r.wayback.archive_url;
+}
+
+function incoherenceDArchive(r: ResultatTestLien): readonly string[] {
+  if (r.archive_url === undefined) return [];
+  const attendue = archiveUrlAttendue(r);
+  return r.archive_url === attendue ? [] : [`archive_url n'est pas l'instantané que Wayback a renvoyé ou servi (${String(attendue)} attendu).`];
+}
+
 function incoherences(repertoire: string, nom: string, r: ResultatTestLien): readonly string[] {
   const constats: string[] = [];
   if (nom !== nomResultat(r.url_citee)) constats.push(`le nom n'est pas le SHA-256 de l'URL citée (${nomResultat(r.url_citee)} attendu).`);
-  if (r.archive_url !== undefined && r.archive_url !== r.wayback.archive_url) constats.push("archive_url diffère de celle que l'issue Wayback a renvoyée.");
+  constats.push(...incoherenceDArchive(r));
   return [...constats, ...incoherencesDesTentatives(r), ...incoherencesDeLaCopie(repertoire, r)];
 }
 

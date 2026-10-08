@@ -107,12 +107,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 202 → 204 : décision D15 de l'auteur (« accord partiel → humain »), une notation valide et une invalide sous le motif accord_partiel_juges.
   // 204 → 212 : décision D20 de l'auteur (lot test-liens), quatre valides et quatre invalides du nouveau schéma existence-lien.
   // 212 → 219 : décision D21 de l'auteur (lot test-liens), deux valides et cinq invalides d'existence-lien (instantané écarté, téléchargement de la copie archivée, url_non_ascii retirée).
-  it("1. les 219 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
+  it("1. les 220 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(219);
+    expect(manifeste.exemples).toHaveLength(220);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -239,7 +240,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 202 → 204 : décision D15 de l'auteur (« accord partiel → humain »), une notation valide et une invalide sous le motif accord_partiel_juges.
   // 204 → 212 : décision D20 de l'auteur (lot test-liens), quatre valides et quatre invalides du nouveau schéma existence-lien.
   // 212 → 219 : décision D21 de l'auteur (lot test-liens), deux valides et cinq invalides d'existence-lien (instantané écarté, téléchargement de la copie archivée, url_non_ascii retirée).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 219 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(219);
+  // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 220 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(220);
   });
 });
