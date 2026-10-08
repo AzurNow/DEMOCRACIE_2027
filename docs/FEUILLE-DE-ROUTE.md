@@ -60,6 +60,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-08 :** Option 1 sur les quatre points. Table : 2xx après redirections ⇒ existe ; 404, 410, domaine inexistant ⇒ mort ; 401, 403, 429, 451, autres 4xx, 5xx, délai, connexion refusée, erreur TLS ⇒ inaccessible ; robots interdit, schéma non http(s), URL malformée, plus de 5 redirections ou boucle ⇒ non_testable ; une page « introuvable » servie en 200 ⇒ existe. À coder au lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
 
+### D21 — Quatre points laissés ouverts par le lot test-liens (PR #95) : cas que la table de D20 ne classe pas, URL non ASCII, soutien d'après copie archivée sans empreinte, instantané Wayback d'une page d'erreur.
+
+**Décision du 2026-10-08 :** Option 1 sur les quatre points. À coder dans la PR #95 du lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
