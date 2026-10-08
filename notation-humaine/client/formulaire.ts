@@ -6,7 +6,8 @@
  */
 
 import { champ, el, liste, separerParVirgules } from "./dom.ts";
-import type { Grille, Saisie, Vue } from "./types.ts";
+import { motifSansSoutien, soutiensAdmis } from "./soutiens.ts";
+import type { Existence, Grille, Saisie, Vue } from "./types.ts";
 
 export type LectureFormulaire =
   | { readonly ok: true; readonly saisie: Saisie }
@@ -66,9 +67,20 @@ function blocAttribution(): { readonly noeud: HTMLElement; readonly champs: NonN
   return { noeud, champs: [attendus, cites, hors] };
 }
 
+function ligneLien(lien: Existence, soutien: HTMLSelectElement): HTMLElement {
+  const motif = motifSansSoutien(lien);
+  return el(
+    "div",
+    { class: "lien-a-noter" },
+    champ(`Soutien de ${lien.url_citee} (existence : ${lien.verdict_existence})`, soutien),
+    ...(lien.archive_url === undefined ? [] : [el("p", { class: "archive" }, `Copie archivée : ${lien.archive_url}`)]),
+    ...(motif === null ? [] : [el("p", { class: "motif-soutien" }, motif)]),
+  );
+}
+
 function blocLiens(vue: Vue, grille: Grille): { readonly noeud: HTMLElement; readonly soutiens: readonly HTMLSelectElement[] } {
-  const soutiens = vue.reponse.liens.map(() => selection(grille.verdicts_soutien));
-  const lignes = vue.reponse.liens.map((lien, rang) => champ(`Soutien de ${lien.url_citee} (existence : ${lien.verdict_existence})`, soutiens[rang] as HTMLSelectElement));
+  const soutiens = vue.reponse.liens.map((lien) => selection(soutiensAdmis(lien, grille.verdicts_soutien)));
+  const lignes = vue.reponse.liens.map((lien, rang) => ligneLien(lien, soutiens[rang] as HTMLSelectElement));
   return { noeud: el("fieldset", {}, el("legend", {}, "Liens : la page citée contient-elle l'affirmation ?"), ...lignes), soutiens };
 }
 
