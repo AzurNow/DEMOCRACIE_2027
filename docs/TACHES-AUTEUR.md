@@ -345,7 +345,8 @@ Mis à jour le 2026-10-06. Sources relues : `docs/feuille-de-route.json`, `docs/
       sont retentés comme les autres erreurs passagères. Une URL écrite avec des caractères non
       ASCII est envoyée sous sa forme encodée standard, et reste identifiée par la chaîne citée.
       L'instantané archivé retenu pour un lien inaccessible ou non testable est une capture réussie
-      de la page ; il est téléchargé et conservé avec son empreinte. Sans cette copie, le soutien
+      de la page ; il est téléchargé et conservé avec son empreinte, et le lien d'archive publié est
+      celui de la capture effectivement téléchargée (D22). Sans cette copie, le soutien
       d'un tel lien est noté non applicable, quelle que soit la note du juge. » Écrire aussi, à
       l'endroit qui nomme les fichiers de configuration, que la table des verdicts vit dans
       `config/test-liens.toml` (TOML : aucune dépendance Python ajoutée).
