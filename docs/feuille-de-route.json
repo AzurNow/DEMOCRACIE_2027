@@ -304,6 +304,19 @@
       "recommandation": "Option 1 sur les quatre points : norme du §6 inchangée, test identique pour tous les outils au même moment, aucun verdict ni archive fabriqué, page conservée pour l'audit du soutien (§9).",
       "retenu": "Option 1 sur les quatre points. Table : 2xx après redirections ⇒ existe ; 404, 410, domaine inexistant ⇒ mort ; 401, 403, 429, 451, autres 4xx, 5xx, délai, connexion refusée, erreur TLS ⇒ inaccessible ; robots interdit, schéma non http(s), URL malformée, plus de 5 redirections ou boucle ⇒ non_testable ; une page « introuvable » servie en 200 ⇒ existe. À coder au lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
       "date_decision": "2026-10-08"
+    },
+    {
+      "id": "D21",
+      "statut": "tranchee",
+      "question": "Quatre points laissés ouverts par le lot test-liens (PR #95) : cas que la table de D20 ne classe pas, URL non ASCII, soutien d'après copie archivée sans empreinte, instantané Wayback d'une page d'erreur.",
+      "contexte": "La table table-liens-v1 laisse sans verdict une erreur réseau générique, une redirection sans Location et les codes 1xx/3xx non suivis : la réponse reste en attente et bloque sa notation ; le délai de requête (30 s) est en dur et un robots.txt injoignable n'est jamais retenté. Une URL non ASCII ne peut pas partir telle qu'écrite. notation.schema.json exige archive_url et sha256_contenu pour un soutien d'après copie archivée, alors que D20 ne télécharge pas l'instantané : un « soutient » de juge sur un lien inaccessible fait échouer l'écriture, comme avant D19. L'instantané le plus proche peut être une capture d'erreur.",
+      "options": [
+        "table-liens-v2 : cas non classés ⇒ inaccessible, erreur réseau générique et robots.txt injoignable transitoires (robots.txt relu à chaque tentative), delai_s dans la table ; conversion IRI → URI (RFC 3987 §3.1) pour l'envoi seulement ; instantané téléchargé en version brute et gardé avec son SHA-256, soutien forcé à non_applicable sur un lien inaccessible ou non testable sans copie ; instantané retenu seulement s'il est de statut 200.",
+        "Variantes écartées : non_testable ou sans verdict pour les cas non classés ; URL non ASCII malformée ; amender le schéma (archive_url seule) ou forcer sans télécharger ; garder tout instantané."
+      ],
+      "recommandation": "Option 1 sur les quatre points : aucune réponse bloquée sans verdict, aucun lien valide rendu non testable par son encodage, clause « copie archivée » du §7 rendue praticable et auditable (§9), aucune page d'erreur présentée comme copie.",
+      "retenu": "Option 1 sur les quatre points. À coder dans la PR #95 du lot test-liens. Texte proposé pour la 0.16 dans docs/TACHES-AUTEUR.md.",
+      "date_decision": "2026-10-08"
     }
   ],
   "lots": [
@@ -565,9 +578,10 @@
         }
       ],
       "decisions": [
-        "D20"
+        "D20",
+        "D21"
       ],
-      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion."
+      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion. Le 2026-10-08 : PR #95 (brouillon) livre le lot sur table-liens-v1 ; D21 tranchée sur ses quatre points ouverts, à coder dans la même PR avant relecture de config/test-liens.toml (TOML, aucune dépendance Python ajoutée)."
     },
     {
       "id": "analyse",

@@ -339,6 +339,23 @@ Mis à jour le 2026-10-06. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : règles du test HTTP des liens (moment, méthode,
   tentatives, table des verdicts publiée, copie conservée). »
 
+- [ ] **Écrire aussi en 0.16 : D21 (§7, test des liens, suite)**, tranchée le 2026-10-08. Texte
+      proposé, à la suite du texte de D20 : « Une erreur qui n'est ni un code HTTP classé ni un
+      refus de robots.txt rend le lien inaccessible ; une erreur réseau et un robots.txt injoignable
+      sont retentés comme les autres erreurs passagères. Une URL écrite avec des caractères non
+      ASCII est envoyée sous sa forme encodée standard, et reste identifiée par la chaîne citée.
+      L'instantané archivé retenu pour un lien inaccessible ou non testable est une capture réussie
+      de la page ; il est téléchargé et conservé avec son empreinte. Sans cette copie, le soutien
+      d'un tel lien est noté non applicable, quelle que soit la note du juge. » Écrire aussi, à
+      l'endroit qui nomme les fichiers de configuration, que la table des verdicts vit dans
+      `config/test-liens.toml` (TOML : aucune dépendance Python ajoutée).
+
+  Ligne de révision, à fusionner : « Section 7 : cas non classés du test des liens, URL non ASCII,
+  copie archivée téléchargée, soutien sans copie non applicable. »
+
+- [ ] **Relire `config/test-liens.toml`** (PR #95) avant sa fusion : c'est la table de mesure de D20
+      et D21.
+
 - [x] (2026-10-08, D20) **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
       HTTP déterministe de l'existence des liens cités, et aucun code ne le fait. C'est un appel
       réseau nouveau, à autoriser, avec ses règles (redirections, délais, « inaccessible »).
