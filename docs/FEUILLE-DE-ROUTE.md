@@ -68,6 +68,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-08 :** Option 1 sur les quatre points. Points 2 à 4 dans la PR #95 ; point 1 (formulaire) dans une PR de notation-humaine. Seul le point 2 touche au texte proposé pour la 0.16 (docs/TACHES-AUTEUR.md).
 
+### D23 — Deux points laissés ouverts par D22 dans la PR #95 : recherche Wayback pour une IRI inconvertible ; instantané servi après une redirection rejouée par Wayback.
+
+**Décision du 2026-10-08 :** Option 1 sur les deux points, déjà le comportement de la PR #95.
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
