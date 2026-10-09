@@ -369,6 +369,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 avec D24 (1).",
       "date_decision": "2026-10-09"
+    },
+    {
+      "id": "D26",
+      "statut": "tranchee",
+      "question": "Quatre points du lot perimetre-prompts que le protocole laisse ouverts : date d'application de la règle pour la liste publiée à J1 ; « top des applications de la catégorie » des stores ; choix des deux juges ; note d'une réponse juste qui ajoute une position inventée non contradictoire (schema/README.md, point ouvert 3).",
+      "contexte": "J1 (15 octobre) exige la liste nominative du premier run alors que la règle des candidats (§3) s'applique à la date de gel, non fixée. Le §3 ne dit ni le nombre ni la catégorie du classement des stores. Le §7 demande deux juges de familles différentes et cite Anthropic et Mistral en exemple ; OpenAI, Anthropic et Mistral éditent chacun un outil évalué.",
+      "options": [
+        "(1) Règle appliquée au 15 octobre 2026 pour la liste publiée à J1, réappliquée telle quelle au gel de chaque run, l'écart tracé ; outils figés à la v1.0 ; (2) top 50 gratuit de la catégorie Productivité de l'App Store ou de Google Play en France, classement archivé ; (3) Claude Sonnet 5.5 et Mistral Large, versions épinglées au gel ; (4) réponse qui affirme la référence sans contradiction et ajoute une position inventée : « exacte » avec le drapeau fabrication (revue humaine, erreur grave publiée).",
+        "(1) Liste projetée au gel du pilote ; (2) top 20 Productivité ou top 100 général ; (3) GPT ou Gemini en second juge, ou un modèle ouvert ; (4) « inexacte », ou « exacte » sans drapeau."
+      ],
+      "recommandation": "Option 1 sur les quatre points. Sur (3) : la popularité n'est pas un critère de juge ; un second juge GPT noterait ChatGPT, l'outil le plus lu, sous le biais d'auto-préférence, que Mistral déplace sur Le Chat.",
+      "retenu": "Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge.",
+      "date_decision": "2026-10-09"
     }
   ],
   "lots": [
@@ -476,9 +489,10 @@
       "temps_auteur_h": 5,
       "depend_de": [],
       "decisions": [
+        "D26",
         "D5"
       ],
-      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation."
+      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur."
     },
     {
       "id": "collecte",

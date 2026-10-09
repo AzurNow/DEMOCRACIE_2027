@@ -80,6 +80,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-09 :** Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 avec D24 (1).
 
+### D26 — Quatre points du lot perimetre-prompts que le protocole laisse ouverts : date d'application de la règle pour la liste publiée à J1 ; « top des applications de la catégorie » des stores ; choix des deux juges ; note d'une réponse juste qui ajoute une position inventée non contradictoire (schema/README.md, point ouvert 3).
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge.
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).

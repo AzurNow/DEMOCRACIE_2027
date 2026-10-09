@@ -415,6 +415,19 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
         l'API d'un comparateur quand il en offre une (n° 52 et 62).
 - [x] `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min` retirés (#73).
 
+- [ ] **Écrire aussi en 0.16 : D26 (§3 et §7)**, tranchée le 2026-10-09. Texte proposé au §3,
+      après la règle des candidats : « La liste publiée avec la version 1.0 applique ces règles au
+      15 octobre 2026 ; elles sont réappliquées telles quelles au gel de chaque run, et tout écart
+      avec la liste publiée est rapporté. » Dans le tableau des outils, « figurant dans le top des
+      applications de la catégorie » devient « figurant dans les 50 premières applications gratuites
+      de la catégorie Productivité de l'App Store ou de Google Play en France, classement archivé ».
+      Au §7 : « Une réponse qui affirme la référence sans contradiction et y ajoute une position que
+      rien ne source est exacte et porte le drapeau fabrication. » Juges : Claude Sonnet 5.5 et
+      Mistral Large, versions épinglées au gel (l'exemple du §7 reste exact).
+
+  Ligne de révision, à fusionner : « Section 3 : date d'application de la liste publiée, classement
+  des stores précisé. Section 7 : ajout inventé à une réponse exacte. »
+
 ### Prompts (`prompts/`)
 
 - [ ] **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
