@@ -45,3 +45,7 @@ __pycache__/
 # Hors Git par décision (CLAUDE.md, « Ce que Git stocke ») : il part dans l'archive Zenodo, référencée
 # depuis runs/<date>/run.json par son DOI et son empreinte SHA-256.
 /runs/*/volume/
+
+# Copies locales des preuves du périmètre (pnpm preuve) : octets téléchargés, jamais versionnés ;
+# la preuve publiée est le bloc url + sha256 + archive_url de config/perimetre.yaml.
+/scratch/perimetre/preuves/

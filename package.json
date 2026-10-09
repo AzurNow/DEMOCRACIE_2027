@@ -36,6 +36,7 @@
     "fixtures": "node --experimental-strip-types validation/fixtures/engendrer.ts",
     "collecte": "uv run python -m pipeline.collecte",
     "liens": "uv run python -m pipeline.liens",
+    "preuve": "uv run python -m pipeline.preuve",
     "textes": "uv run python -m pipeline.collecte.textes",
     "transcriptions": "uv run python -m pipeline.collecte.transcription",
     "notifier": "node --experimental-strip-types outils/contacts.ts | uv run python -m pipeline.notification",
