@@ -692,6 +692,15 @@
           "motif_indefini_kappa_juge_humain": {
             "$ref": "#/$defs/motif_kappa_indefini"
           },
+          "kappa_echantillon_humain": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "description": "§7 (« À chaque run, l'accord juges-humains sur l'échantillon de 10 % est publié ») et §12, décision D24 (1) de l'auteur du 2026-10-09 : kappa de Cohen non pondéré entre la catégorie primaire (exacte, inexacte, non_reponse) de ce juge et celle de la note humaine retenue de chaque réponse de l'échantillon (accord des deux humains, sinon arbitre). Écrit par pnpm go-no-go (pipeline/go-no-go/kappa-echantillon.ts). Distinct de kappa_juge_humain, qui est celui du jeu d'or. Absent quand il n'est pas défini, jamais remplacé par 0, par 1 ni par null : c'est alors `motif_indefini_kappa_echantillon_humain` qui est présent (D24 (2)). Un juge retiré n'en porte aucun (D13)."
+          },
+          "motif_indefini_kappa_echantillon_humain": {
+            "$ref": "#/$defs/motif_kappa_echantillon_indefini"
+          },
           "retire": {
             "type": "boolean"
           },
@@ -711,6 +720,15 @@
             }
           },
           {
+            "$comment": "D24 (2) : un kappa d'échantillon indéfini est publié absent avec son motif ; un kappa défini n'en porte pas.",
+            "not": {
+              "required": [
+                "kappa_echantillon_humain",
+                "motif_indefini_kappa_echantillon_humain"
+              ]
+            }
+          },
+          {
             "if": {
               "properties": {
                 "retire": {
@@ -724,7 +742,12 @@
             "then": {
               "required": [
                 "motif_retrait"
-              ]
+              ],
+              "$comment": "D13 et D24 (1) : les notations d'un juge retiré sont écartées ; il n'a pas de kappa d'échantillon.",
+              "properties": {
+                "kappa_echantillon_humain": false,
+                "motif_indefini_kappa_echantillon_humain": false
+              }
             }
           }
         ],
@@ -745,6 +768,11 @@
         0.25
       ],
       "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
+    },
+    "indeterminees_echantillon_humain": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Décision D25 (1) de l'auteur (2026-10-09) : nombre de réponses de l'échantillon humain dont la note humaine retenue (accord des deux humains, sinon arbitre) est « indeterminee ». Elles sont écartées du kappa de l'échantillon de chaque juge (juges[].kappa_echantillon_humain), et leur nombre est publié ici, une fois pour le run, puisque la référence humaine est commune aux juges. Écrit par pnpm go-no-go ; exigé d'un run qui porte un go/no-go."
     },
     "contrefactuel_candidats": {
       "type": "object",
@@ -1452,6 +1480,90 @@
       }
     },
     {
+      "$comment": "D24 (3) de l'auteur (2026-10-09) : la décision découle des critères, dans les deux sens. La règle précédente interdit « publie » avec un critère rouge ; celle-ci interdit « publie_provisoire » avec sept critères verts : un provisoire sans critère rouge serait une décision humaine que rien dans les chiffres ne justifie.",
+      "if": {
+        "properties": {
+          "go_no_go": {
+            "properties": {
+              "decision": {
+                "const": "publie_provisoire"
+              }
+            },
+            "required": [
+              "decision"
+            ]
+          }
+        },
+        "required": [
+          "go_no_go"
+        ]
+      },
+      "then": {
+        "properties": {
+          "go_no_go": {
+            "properties": {
+              "criteres": {
+                "contains": {
+                  "properties": {
+                    "statut": {
+                      "const": "rouge"
+                    }
+                  },
+                  "required": [
+                    "statut"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "§7 et D24 (1), (2) : un run qui porte un go/no-go publie, pour chaque juge retenu, le kappa de l'échantillon humain ou le motif de son indéfinition. Ni l'un ni l'autre serait un kappa passé sous silence, comme pour kappa_juge_humain.",
+      "if": {
+        "required": [
+          "go_no_go"
+        ]
+      },
+      "then": {
+        "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui.",
+        "required": [
+          "indeterminees_echantillon_humain"
+        ],
+        "properties": {
+          "juges": {
+            "items": {
+              "if": {
+                "properties": {
+                  "retire": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "retire"
+                ]
+              },
+              "then": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "kappa_echantillon_humain"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "motif_indefini_kappa_echantillon_humain"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "$comment": "§7 (protocole 0.11) : un kappa de la paire indéfini est publié absent avec son motif ; un kappa défini n'en porte pas.",
       "not": {
         "required": [
@@ -1675,6 +1787,14 @@
         "accord_attendu_maximal"
       ],
       "description": "§7 (protocole 0.11) : « Un kappa indéfini (accord attendu maximal) est publié absent avec son motif, jamais comme une valeur, comme au §4. » Même représentation que diagnostic-lot.motif_indefini ; seul le motif que le §7 nomme est admis."
+    },
+    "motif_kappa_echantillon_indefini": {
+      "type": "string",
+      "enum": [
+        "accord_attendu_maximal",
+        "aucune_reponse_comparable"
+      ],
+      "description": "D24 (2) de l'auteur (2026-10-09) : le kappa juges-humains de l'échantillon humain est indéfini quand l'accord attendu est maximal, ou quand aucune réponse n'est comparable (échantillon vide). Publié absent avec ce motif, jamais 0, 1 ni null ; le critère kappa_juges_humains est alors rouge. Séparé de motif_kappa_indefini, qui reste celui du jeu d'or : le second motif n'y est pas admis."
     },
     "seuil_mode": {
       "type": "object",

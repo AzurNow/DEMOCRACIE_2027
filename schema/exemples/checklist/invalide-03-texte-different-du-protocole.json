@@ -1,0 +1,87 @@
+{
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "cases": [
+    {
+      "rang": 1,
+      "texte": "Périmètre candidats et outils conforme aux règles de la section 3 à la date de gel",
+      "nature": "declaree"
+    },
+    {
+      "rang": 2,
+      "texte": "Items d'absence revérifiés ; aucun item contesté ou en attente dans le tirage",
+      "nature": "calculee",
+      "appuis": [
+        "items_absence_reverifies",
+        "aucun_item_conteste_dans_le_tirage"
+      ],
+      "etat": "non_faite",
+      "motif": "revérification des items d'absence : aucun fichier du run ne la porte encore (lot extraction)."
+    },
+    {
+      "rang": 3,
+      "texte": "Tests de symétrie verts ; graine du tirage enregistrée",
+      "nature": "calculee",
+      "appuis": [
+        "tests_symetrie",
+        "graine_du_tirage_enregistree"
+      ],
+      "etat": "faite"
+    },
+    {
+      "rang": 4,
+      "texte": "Interrogation dans la fenêtre de 48 h ; réponses manquantes ≤ 20 % par outil et par mode, sur le canal API",
+      "nature": "calculee",
+      "appuis": [
+        "interrogation_dans_la_fenetre",
+        "reponses_manquantes"
+      ],
+      "etat": "faite"
+    },
+    {
+      "rang": 5,
+      "texte": "Notation par les deux juges ; désaccords, échantillon de 10 % et erreurs graves notés par des humains",
+      "nature": "calculee",
+      "appuis": [
+        "notation_complete",
+        "erreurs_graves_revues"
+      ],
+      "etat": "faite"
+    },
+    {
+      "rang": 6,
+      "texte": "Kappa juges-humains ≥ 0,70 ; test contrefactuel ≤ 3 %",
+      "nature": "calculee",
+      "appuis": [
+        "kappa_juges_humains",
+        "test_contrefactuel"
+      ],
+      "etat": "faite"
+    },
+    {
+      "rang": 7,
+      "texte": "Analyses préenregistrées exécutées avec la graine publiée ; robustesse calculée",
+      "nature": "calculee",
+      "appuis": [
+        "analyses_preenregistrees_executees",
+        "robustesse_calculee"
+      ],
+      "etat": "non_faite",
+      "motif": "critère analyses_preenregistrees_executees au rouge ; robustesse : aucun format de runs/<date>/metriques/ ne la porte encore."
+    },
+    {
+      "rang": 8,
+      "texte": "Note éditoriale rédigée ; phrase d'avertissement de la section 8 en tête",
+      "nature": "declaree"
+    },
+    {
+      "rang": 9,
+      "texte": "Données, réponses brutes, notations, code et rapport publiés ensemble ; DOI émis",
+      "nature": "declaree"
+    },
+    {
+      "rang": 10,
+      "texte": "Éditeurs et campagnes notifiés après publication",
+      "nature": "declaree"
+    }
+  ]
+}

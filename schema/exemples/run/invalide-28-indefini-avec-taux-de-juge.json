@@ -6,7 +6,8 @@
     "fin": "2026-12-03T06:00:00+01:00"
   },
   "type_run": "mensuel",
-  "statut": "publie",
+  "statut": "publie_provisoire",
+  "motif_provisoire": "Critère(s) go/no-go du §12 au rouge : test_contrefactuel.",
   "versions": {
     "protocole": "1.0",
     "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
@@ -238,6 +239,7 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.83,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     },
     {
@@ -246,6 +248,7 @@
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
       "kappa_juge_humain": 0.78,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     }
   ],
@@ -364,6 +367,7 @@
       "date_reception": "2026-12-02T15:20:00+01:00"
     }
   ],
+  "indeterminees_echantillon_humain": 0,
   "go_no_go": {
     "criteres": [
       {
@@ -374,8 +378,8 @@
       },
       {
         "code": "test_contrefactuel",
-        "statut": "vert",
-        "valeur": 0.012,
+        "statut": "rouge",
+        "valeur": "effectifs du test contrefactuel absents : juge-1, juge-2",
         "seuil": 0.03
       },
       {
@@ -409,7 +413,8 @@
         "seuil": "oui"
       }
     ],
-    "decision": "publie"
+    "decision": "publie_provisoire",
+    "motif": "Critère(s) go/no-go du §12 au rouge : test_contrefactuel."
   },
   "publication": {
     "date": "2026-12-06T09:00:00+01:00",

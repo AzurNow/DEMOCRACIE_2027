@@ -238,6 +238,7 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.83,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     },
     {
@@ -251,6 +252,7 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.78,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     }
   ],
@@ -346,6 +348,7 @@
       "date_reception": "2026-12-02T15:20:00+01:00"
     }
   ],
+  "indeterminees_echantillon_humain": 0,
   "go_no_go": {
     "criteres": [
       {

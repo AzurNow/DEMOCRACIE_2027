@@ -32,6 +32,13 @@ function runValide(): Objet {
   return JSON.parse(readFileSync(EXEMPLE, "utf8")) as Objet;
 }
 
+/** Le go/no-go de l'exemple valide, décidé provisoire avec le critère `rouge` au rouge (D24 (3)). */
+function goNoGoProvisoire(rouge: string): Objet {
+  const go = runValide()["go_no_go"] as { criteres: Objet[] };
+  const criteres = go.criteres.map((critere) => (critere["code"] === rouge ? { ...critere, statut: "rouge" } : critere));
+  return { criteres, decision: "publie_provisoire", motif: `Critère(s) go/no-go du §12 au rouge : ${rouge}.` };
+}
+
 function perimetre(run: Objet): Objet {
   return run["perimetre"] as Objet;
 }
@@ -93,7 +100,9 @@ describe("conformité n° 21 : symétrie rouge ⇒ planifié ou invalide", () =>
   it("refuse un run publié provisoire dont la symétrie est rouge (ancienne lecture, avant 0.11)", () => {
     const run = rougeAvecStatut("publie_provisoire");
     run["motif_provisoire"] = "Tests de symétrie rouges.";
-    run["go_no_go"] = { ...(runValide()["go_no_go"] as Objet), decision: "publie_provisoire" };
+    // Modifié ouvertement (lot go-no-go, D24 (3)) : un provisoire porte au moins un critère rouge,
+    // ici celui de la symétrie, pour que la seule erreur reste le statut.
+    run["go_no_go"] = { ...goNoGoProvisoire("tests_symetrie") };
     expect(chemins(run)).toSatisfy(toutesSous("/statut"));
   });
 
@@ -271,8 +280,9 @@ describe("par_mode obligatoire pour un assistant inclus d'un run publié", () =>
     const run = sansParMode("publie_provisoire");
     run["motif_provisoire"] = "Erreurs graves pas toutes revues.";
     // Modifié ouvertement (conformité 2026-09-29, n° 15) : la décision du go/no-go suit le statut,
-    // pour que la seule erreur reste l'absence de par_mode.
-    run["go_no_go"] = { ...(runValide()["go_no_go"] as Objet), decision: "publie_provisoire" };
+    // pour que la seule erreur reste l'absence de par_mode. Modifié ouvertement (lot go-no-go,
+    // D24 (3)) : un provisoire porte au moins un critère rouge, celui que dit motif_provisoire.
+    run["go_no_go"] = goNoGoProvisoire("erreurs_graves_revues");
     expect(chemins(run)).toSatisfy(toutesSous("/perimetre/outils/0"));
   });
 
