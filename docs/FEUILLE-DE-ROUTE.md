@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-08.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-09.
 
 ## Décisions en attente
 
@@ -72,6 +72,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-08 :** Option 1 sur les deux points, déjà le comportement de la PR #95.
 
+### D24 — Quatre points que le §12 laisse ouverts pour le lot go-no-go : kappa juges-humains de l'échantillon de 10 % ; critère d'un kappa indéfini ; run tout vert déclaré provisoire ; enregistrement du contreseing de l'annexe F.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 (§7 et §12).
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
@@ -130,7 +134,7 @@ flowchart LR
     lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo<br/>T3"]:::T3
     lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T3"]:::T3
     lot_notation_humaine["notation-humaine<br/>Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or<br/>T2"]:::T2
-    lot_test_liens["test-liens<br/>Test HTTP déterministe de l'existence des liens cités (§7, sourçage)<br/>T0"]:::T0
+    lot_test_liens["test-liens<br/>Test HTTP déterministe de l'existence des liens cités (§7, sourçage)<br/>T3"]:::T3
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
     lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
@@ -184,8 +188,8 @@ flowchart LR
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T3 | atteint | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T3 | atteint | opus | L | 2 | interrogation (informe), perimetre-prompts, test-liens |
-| notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T2 | bloqué par test-liens | sonnet | L | 2 | notation, test-liens, validation-interface (informe) |
-| test-liens | Test HTTP déterministe de l'existence des liens cités (§7, sourçage) | J4 | T0 | débloqué | opus | M | 1 | interrogation (informe) |
+| notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T2 | débloqué | sonnet | L | 2 | notation, test-liens, validation-interface (informe) |
+| test-liens | Test HTTP déterministe de l'existence des liens cités (§7, sourçage) | J4 | T3 | atteint | opus | M | 1 | interrogation (informe) |
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
 | go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T0 | bloqué par analyse | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
 | site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse, go-no-go | sonnet | M | 2 | analyse, go-no-go |
@@ -228,7 +232,7 @@ flowchart LR
 - interrogation (T3)
 - notation (T3)
 - notation-humaine (T2)
-- test-liens (T0)
+- test-liens (T3)
 
 ### J5
 

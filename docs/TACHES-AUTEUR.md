@@ -4,7 +4,7 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-10-06. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+Mis à jour le 2026-10-09. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
 `docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
@@ -354,8 +354,18 @@ Mis à jour le 2026-10-06. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : cas non classés du test des liens, URL non ASCII,
   copie archivée téléchargée, soutien sans copie non applicable. »
 
-- [ ] **Relire `config/test-liens.toml`** (PR #95) avant sa fusion : c'est la table de mesure de D20
-      et D21.
+- [x] (2026-10-09, PR #95 fusionnée) **Relire `config/test-liens.toml`** (PR #95) avant sa fusion :
+      c'est la table de mesure de D20 et D21.
+
+- [ ] **Écrire aussi en 0.16 : D24 (§7 et §12, go/no-go)**, tranchée le 2026-10-09. Texte proposé,
+      au §12, après « le kappa juges-humains de l'échantillon de 10 % est ≥ 0,75 » : « pour chaque
+      juge retenu, sur la catégorie primaire, entre sa note et la note humaine retenue de la réponse
+      (section 7) ; un kappa indéfini ne satisfait pas ce critère ». Et, à la fin du paragraphe :
+      « Un run dont tous les critères sont satisfaits est publié sans la mention. La checklist de
+      l'annexe F est enregistrée avec le run et contresignée par l'auteur, nom et date. »
+
+  Ligne de révision, à fusionner : « Section 12 : kappa de l'échantillon par juge retenu, kappa
+  indéfini non satisfaisant, décision de publication déduite des critères, contreseing enregistré. »
 
 - [x] (2026-10-08, D20) **Cadrer le lot « test des liens »** (feuille de route, `test-liens`) : le §7 exige un test
       HTTP déterministe de l'existence des liens cités, et aucun code ne le fait. C'est un appel
@@ -445,7 +455,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 ## 5. Décisions à prendre seulement si le cas se présente
 
-- [ ] **Run `publie_provisoire` dont les sept critères go/no-go sont verts** : le schéma l'accepte
+- [x] (2026-10-09, D24 (3) : décision dérivée, codée au lot `go-no-go`) **Run `publie_provisoire` dont les sept critères go/no-go sont verts** : le schéma l'accepte
       (#61), alors que le §12 (« Sinon, le run est publié … avec la mention provisoire ») suggère
       qu'un run tout vert est publié sans la mention. À trancher au plus tard au lot `go-no-go`.
 - [ ] **PDF servi sans `Content-Type` exact** : exception déclarée par source dans
