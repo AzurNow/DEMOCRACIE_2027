@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-08",
+  "date_maj": "2026-10-09",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -343,6 +343,19 @@
       "recommandation": "Option 1 : aucune chaîne non encodée n'est envoyée ; la copie montre ce que le lien montrait à l'époque, comme une redirection suivie en direct, et empreinte et lien restent cohérents.",
       "retenu": "Option 1 sur les deux points, déjà le comportement de la PR #95.",
       "date_decision": "2026-10-08"
+    },
+    {
+      "id": "D24",
+      "statut": "tranchee",
+      "question": "Quatre points que le §12 laisse ouverts pour le lot go-no-go : kappa juges-humains de l'échantillon de 10 % ; critère d'un kappa indéfini ; run tout vert déclaré provisoire ; enregistrement du contreseing de l'annexe F.",
+      "contexte": "Le schéma ne porte que les kappas du jeu d'or (kappa_juge_humain par juge, kappa_paire_juges) ; rien ne dit qui est comparé à qui sur l'échantillon de 10 %, ni si un kappa indéfini passe. Le schéma accepte publie_provisoire avec sept critères verts (TACHES-AUTEUR §5). L'annexe F est « exécutée par le pipeline, puis contresignée par l'auteur » et n'a aucune place dans le schéma.",
+      "options": [
+        "(1) Un kappa par juge retenu, catégorie primaire (exacte, inexacte, non_reponse) du juge contre la note humaine retenue de l'échantillon (accord des deux humains, sinon arbitre), vert si chacun ≥ 0,75 ; (2) kappa indéfini ⇒ rouge, publié absent avec son motif ; (3) décision dérivée : sept verts ⇒ publie, un rouge ⇒ publie_provisoire avec les codes rouges en motif, imposé par le schéma dans les deux sens ; (4) runs/<date>/checklist.json à son propre schéma, cases calculables remplies par le pipeline, contreseing (nom, date) ajouté par une commande lancée par l'auteur.",
+        "(1) Kappa de la paire ou juge × chaque humain ; (2) indéfini ⇒ vert ; (3) provisoire volontaire avec motif ; (4) bloc dans run.json, ou contreseing hors du lot."
+      ],
+      "recommandation": "Option 1 sur les quatre points : toujours défini malgré un désaccord des juges et cohérent avec D13 (juge retiré écarté) ; une absence de mesure n'est jamais un succès ; la décision découle des chiffres ; la signature humaine reste un acte séparé, un commit à part, sans réécrire le manifeste produit par le pipeline.",
+      "retenu": "Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 (§7 et §12).",
+      "date_decision": "2026-10-09"
     }
   ],
   "lots": [
@@ -594,7 +607,7 @@
       "id": "test-liens",
       "titre": "Test HTTP déterministe de l'existence des liens cités (§7, sourçage)",
       "jalon": "J4",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "opus",
       "taille": "M",
       "temps_auteur_h": 1,
@@ -610,7 +623,7 @@
         "D22",
         "D23"
       ],
-      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion. Le 2026-10-08 : PR #95 (brouillon) livre le lot sur table-liens-v1 ; D21 tranchée sur ses quatre points ouverts, à coder dans la même PR avant relecture de config/test-liens.toml (TOML, aucune dépendance Python ajoutée). Le 2026-10-08 : D21 codée dans la PR #95 (table-liens-v2) ; D22 tranchée, points 2 à 4 à coder dans la même PR. Le 2026-10-08 : D22 (points 2 à 4) codée dans la PR #95, D23 tranchée (comportement déjà codé). Reste la relecture de config/test-liens.toml par l'auteur avant fusion."
+      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion. Le 2026-10-08 : PR #95 (brouillon) livre le lot sur table-liens-v1 ; D21 tranchée sur ses quatre points ouverts, à coder dans la même PR avant relecture de config/test-liens.toml (TOML, aucune dépendance Python ajoutée). Le 2026-10-08 : D21 codée dans la PR #95 (table-liens-v2) ; D22 tranchée, points 2 à 4 à coder dans la même PR. Le 2026-10-08 : D22 (points 2 à 4) codée dans la PR #95, D23 tranchée (comportement déjà codé). Reste la relecture de config/test-liens.toml par l'auteur avant fusion. Le 2026-10-09 : config/test-liens.toml relu par l'auteur, PR #95 fusionnée (passage de bout en bout sur doubles et fichiers dorés, aucune requête réseau réelle)."
     },
     {
       "id": "analyse",
@@ -684,8 +697,10 @@
           "type": "informe"
         }
       ],
-      "decisions": [],
-      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas."
+      "decisions": [
+        "D24"
+      ],
+      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas. Le 2026-10-09 : D24 tranchée (kappa de l'échantillon par juge retenu, indéfini ⇒ rouge, décision dérivée, runs/<date>/checklist.json contresigné par l'auteur) ; le lot est lançable."
     },
     {
       "id": "site",
