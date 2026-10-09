@@ -438,6 +438,30 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
   Ligne de révision, à fusionner : « Section 7 et annexe D : contenu de la charge du juge. »
 
+- [ ] **Écrire aussi en 0.16 : D28 (§3, §8)**, tranchée le 2026-10-09. Au §3, après la phrase sur
+      les primaires : « Un candidat éliminé à un tour de primaire est retiré dès la proclamation du
+      résultat. Une candidature est déclarée par une déclaration explicite de l'intéressé ou une
+      investiture de son parti ; une intention ou une réflexion annoncée ne suffit pas. » Au §8,
+      après « Les deux modes sont toujours publiés côte à côte » : « sauf pour un outil dont l'API
+      n'offre pas la recherche web : il est mesuré dans le seul mode sans recherche, l'autre est
+      publié sans objet, et aucune comparaison des modes n'est faite pour lui. »
+
+  Ligne de révision, à fusionner : « Section 3 : élimination à une primaire, déclaration de
+  candidature explicite. Section 8 : outil sans recherche web par API. »
+
+- [ ] **Ajouter à la relecture de l'avocat (J1) : conditions de l'API Gemini en mode web** (D28, 4).
+      Elles interdisent d'« analyser » les résultats ancrés, limitent leur conservation à deux ans
+      et en réservent l'affichage à l'utilisateur (citations exactes : `scratch/perimetre/dossier-2026-10-15.md`,
+      §2.3). Question : le projet peut-il mesurer et publier ces réponses (règle 7, §8, §10) ? En
+      attendant, le mode web de Gemini est suspendu ; avis défavorable ⇒ publié « non mesurable ».
+
+- [ ] **Refaire les relevés du périmètre le 15 octobre** (D26, 1) : sondages publiés du 10 au 15
+      (Commission des sondages), résultat du premier tour de la primaire PS–Place publique–GRS
+      (D28, 1), primaire de la gauche unitaire du 11, déclaration éventuelle de Le Maire,
+      classements Productivité des stores (Perplexity, DeepSeek, Grok Bot proches du rang 50) ;
+      preuve d'adhésion de YouGov et Cluster17. Puis archiver (`pnpm preuve --fichier
+      scratch/perimetre/urls-a-archiver.txt`) et remplir `config/perimetre.yaml`.
+
 ### Prompts (`prompts/`)
 
 - [ ] **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),

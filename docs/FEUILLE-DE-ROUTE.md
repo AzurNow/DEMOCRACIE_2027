@@ -88,6 +88,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-09 :** Option 1, les cinq points. Le §7 doit énumérer en 0.16 ce que reçoit le juge (réponse attendue, prémisse, texte de la page citée), et l'annexe D s'aligner sur la charge.
 
+### D28 — Quatre trous du §3, du §6 et du §10 relevés par le dossier de recherche du périmètre au 15 octobre (scratch/perimetre/dossier-2026-10-15.md) : candidat éliminé au premier tour d'une primaire ; intention de candidature ; outil sans recherche web par API ; clause restrictive de l'API Gemini en mode web.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 à 3 à écrire en 0.16 (§3 et §8) ; point 4 : question ajoutée à la relecture de l'avocat.
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
