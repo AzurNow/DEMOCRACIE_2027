@@ -76,6 +76,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-09 :** Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 (§7 et §12).
 
+### D25 — Points laissés ouverts par D24 dans la PR #100 : note humaine retenue « indéterminée » dans le kappa de l'échantillon ; test contrefactuel indéfini ; cases de l'annexe F vérifiées en partie ; trois choix déduits.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 avec D24 (1).
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).

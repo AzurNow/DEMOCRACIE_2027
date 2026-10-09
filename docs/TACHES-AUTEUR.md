@@ -364,6 +364,10 @@ Mis à jour le 2026-10-09. Sources relues : `docs/feuille-de-route.json`, `docs/
       « Un run dont tous les critères sont satisfaits est publié sans la mention. La checklist de
       l'annexe F est enregistrée avec le run et contresignée par l'auteur, nom et date. »
 
+  D25 (2026-10-09), à la suite : « Une réponse dont la note humaine retenue est indéterminée n'entre
+  pas dans ce kappa ; leur nombre est publié. Un test contrefactuel indéfini ne satisfait pas son
+  critère. »
+
   Ligne de révision, à fusionner : « Section 12 : kappa de l'échantillon par juge retenu, kappa
   indéfini non satisfaisant, décision de publication déduite des critères, contreseing enregistré. »
 

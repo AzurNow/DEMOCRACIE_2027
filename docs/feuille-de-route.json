@@ -356,6 +356,19 @@
       "recommandation": "Option 1 sur les quatre points : toujours défini malgré un désaccord des juges et cohérent avec D13 (juge retiré écarté) ; une absence de mesure n'est jamais un succès ; la décision découle des chiffres ; la signature humaine reste un acte séparé, un commit à part, sans réécrire le manifeste produit par le pipeline.",
       "retenu": "Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 (§7 et §12).",
       "date_decision": "2026-10-09"
+    },
+    {
+      "id": "D25",
+      "statut": "tranchee",
+      "question": "Points laissés ouverts par D24 dans la PR #100 : note humaine retenue « indéterminée » dans le kappa de l'échantillon ; test contrefactuel indéfini ; cases de l'annexe F vérifiées en partie ; trois choix déduits.",
+      "contexte": "D24 fixe trois catégories et un humain peut rendre « indéterminée » ; un sous-ensemble contrefactuel vide ne publie aucun taux (exemple run/valide-05, publié avec ce critère vert) ; les cases 2 (items d'absence revérifiés), 4 (fenêtre de 48 h) et 7 (robustesse) ne reposaient que sur les critères du §12.",
+      "options": [
+        "(1) Réponse dont la note humaine retenue est indéterminée écartée du kappa, leur nombre publié ; (2) contrefactuel indéfini ⇒ critère rouge, valide-05 corrigé ouvertement ; (3) constats calculés là où les fichiers le permettent (fenêtre de 48 h depuis run.json#/fenetre), cases 2 et 7 non faites avec motif tant que rien ne les produit ; (4) confirmés : aucun juge retenu ⇒ rouge, symétrie ecart_tolere verte, notation de juge à extrait invalide comptée dans le kappa.",
+        "(1) 4e catégorie ou kappa indéfini ; (2) vert ; (3) cases 2, 4 et 7 déclarées par l'auteur ; (4) l'un des trois choix inversé."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 avec D24 (1).",
+      "date_decision": "2026-10-09"
     }
   ],
   "lots": [
@@ -698,9 +711,10 @@
         }
       ],
       "decisions": [
-        "D24"
+        "D24",
+        "D25"
       ],
-      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas. Le 2026-10-09 : D24 tranchée (kappa de l'échantillon par juge retenu, indéfini ⇒ rouge, décision dérivée, runs/<date>/checklist.json contresigné par l'auteur) ; le lot est lançable."
+      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas. Le 2026-10-09 : D24 tranchée (kappa de l'échantillon par juge retenu, indéfini ⇒ rouge, décision dérivée, runs/<date>/checklist.json contresigné par l'auteur) ; le lot est lançable. Le 2026-10-09 : PR #100 (brouillon) livre le lot ; D25 tranchée sur ses points ouverts, à coder dans la même PR."
     },
     {
       "id": "site",
