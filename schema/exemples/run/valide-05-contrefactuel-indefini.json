@@ -233,6 +233,7 @@
       "modele": "famille-x/modele-juge-1",
       "version_prompt": "prompts/judge-primaire-1.0.0",
       "kappa_juge_humain": 0.83,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     },
     {
@@ -241,6 +242,7 @@
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
       "kappa_juge_humain": 0.78,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     }
   ],

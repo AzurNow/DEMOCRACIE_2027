@@ -56,9 +56,11 @@ type RunBrut = Record<string, unknown> & { juges: Record<string, unknown>[] };
 function fusionner(publication: PublicationContrefactuel, ajuster: (run: RunBrut) => RunBrut = (r) => r): unknown {
   const base = JSON.parse(readFileSync(EXEMPLE, "utf8")) as RunBrut;
   const juges = ["j1", "j2"].map((juge_id, rang) => {
-    const { taux_changement_contrefactuel: _t, changements_contrefactuel: _c, retire: _r, motif_retrait: _m, ...reste } = base.juges[rang] as Record<string, unknown>;
+    const { taux_changement_contrefactuel: _t, changements_contrefactuel: _c, retire: _r, motif_retrait: _m, kappa_echantillon_humain: kappa, ...reste } = base.juges[rang] as Record<string, unknown>;
     const publie = publication.juges.find((j) => j.juge_id === juge_id);
-    return { ...reste, ...publie };
+    // Modifié ouvertement (lot go-no-go, D24 (1)) : l'exemple porte le kappa de l'échantillon de
+    // chaque juge retenu ; un juge que le test retire n'en a pas (D13), un juge retenu le garde.
+    return { ...reste, ...(publie?.retire === true ? {} : { kappa_echantillon_humain: kappa }), ...publie };
   });
   const { statut, invalidation, ...champs } = publication;
   const run: RunBrut = {

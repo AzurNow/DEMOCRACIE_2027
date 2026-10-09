@@ -50,6 +50,10 @@
  * `pipeline/liens` (Python) dans `runs/<date>/volume/liens/` et lu par la notation
  * (`pipeline/notation/fournisseur-fichiers.ts`). Vérifié comme les fichiers de la collecte : fichiers
  * dorés de `tests/liens/dore/`, validés par `tests/liens/dores-liens.test.ts`. Le vingt-quatrième.
+ *
+ * `checklist` décrit `runs/<date>/checklist.json`, la checklist de run de l'annexe F, écrite par
+ * `pnpm go-no-go` et contresignée par `pnpm go-no-go:contresigner` (décision D24 (4) de l'auteur) :
+ * le vingt-cinquième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -76,6 +80,7 @@ export const NOMS_SCHEMAS = [
   "envoi-notification",
   "perimetre",
   "existence-lien",
+  "checklist",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

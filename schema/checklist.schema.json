@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:checklist",
+  "title": "Checklist de run (annexe F)",
+  "description": "runs/<date>/checklist.json (décision D24 (4) de l'auteur, 2026-10-09) : la checklist de l'annexe F, « exécutée par le pipeline, puis contresignée par l'auteur ». pnpm go-no-go l'écrit sans contreseing (pipeline/go-no-go/checklist.ts) : chaque case calculée porte son état, chaque case déclarée n'en porte aucun. pnpm go-no-go:contresigner ajoute l'état des cases déclarées et le contreseing (nom, date), dans ce fichier seulement : run.json n'est jamais réécrit par la signature.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "cases"],
+  "properties": {
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "cases": {
+      "type": "array",
+      "description": "Les dix cases de l'annexe F, dans l'ordre, texte recopié mot pour mot du protocole. La nature de chaque case est fixée ici : calculée quand ses appuis se lisent dans les fichiers du run, déclarée sinon.",
+      "minItems": 10,
+      "items": false,
+      "prefixItems": [
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 1 }, "texte": { "const": "Périmètre candidats et outils conforme aux règles de la section 3 à la date de gel" }, "nature": { "const": "declaree" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 2 }, "texte": { "const": "Items d'absence revérifiés ; aucun item contesté ou en attente dans le tirage" }, "nature": { "const": "calculee" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 3 }, "texte": { "const": "Tests de symétrie verts ; graine du tirage enregistrée" }, "nature": { "const": "calculee" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 4 }, "texte": { "const": "Interrogation dans la fenêtre de 48 h ; réponses manquantes ≤ 20 % par outil et par mode, sur le canal API" }, "nature": { "const": "calculee" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 5 }, "texte": { "const": "Notation par les deux juges ; désaccords, échantillon de 10 % et erreurs graves notés par des humains" }, "nature": { "const": "calculee" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 6 }, "texte": { "const": "Kappa juges-humains ≥ 0,75 ; test contrefactuel ≤ 3 %" }, "nature": { "const": "calculee" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 7 }, "texte": { "const": "Analyses préenregistrées exécutées avec la graine publiée ; robustesse calculée" }, "nature": { "const": "calculee" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 8 }, "texte": { "const": "Note éditoriale rédigée ; phrase d'avertissement de la section 8 en tête" }, "nature": { "const": "declaree" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 9 }, "texte": { "const": "Données, réponses brutes, notations, code et rapport publiés ensemble ; DOI émis" }, "nature": { "const": "declaree" } } },
+        { "$ref": "#/$defs/case", "properties": { "rang": { "const": 10 }, "texte": { "const": "Éditeurs et campagnes notifiés après publication" }, "nature": { "const": "declaree" } } }
+      ]
+    },
+    "contreseing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nom", "date"],
+      "description": "Annexe F : « contresignée par l'auteur ». Ajouté par pnpm go-no-go:contresigner, une seule fois.",
+      "properties": {
+        "nom": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Une checklist contresignée porte l'état de chaque case : l'auteur a déclaré toutes les cases déclarées.",
+      "if": { "required": ["contreseing"] },
+      "then": { "properties": { "cases": { "not": { "contains": { "not": { "required": ["etat"] } } } } } }
+    }
+  ],
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rang", "texte", "nature"],
+      "properties": {
+        "rang": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "texte": { "type": "string", "minLength": 1 },
+        "nature": { "type": "string", "enum": ["calculee", "declaree"] },
+        "appuis": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Ce dont l'état d'une case calculée découle : des codes de critères du §12 (run.json#/go_no_go/criteres) et deux constats lus sur les fichiers du run.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "kappa_juges_humains",
+              "test_contrefactuel",
+              "aucun_item_conteste_dans_le_tirage",
+              "tests_symetrie",
+              "reponses_manquantes",
+              "erreurs_graves_revues",
+              "analyses_preenregistrees_executees",
+              "graine_du_tirage_enregistree",
+              "notation_complete"
+            ]
+          }
+        },
+        "etat": { "type": "string", "enum": ["faite", "non_faite"] },
+        "motif": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "Ce qui manque : présent si et seulement si la case n'est pas faite." }
+      },
+      "allOf": [
+        {
+          "$comment": "Une case calculée porte toujours son état et ses appuis ; une case déclarée n'a pas d'appui.",
+          "if": { "properties": { "nature": { "const": "calculee" } }, "required": ["nature"] },
+          "then": { "required": ["etat", "appuis"] },
+          "else": { "not": { "required": ["appuis"] } }
+        },
+        {
+          "if": { "properties": { "etat": { "const": "non_faite" } }, "required": ["etat"] },
+          "then": { "required": ["motif"] },
+          "else": { "not": { "required": ["motif"] } }
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "id": "G0YTMV5YPHSTN7S8RYF1F7AB4W",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
@@ -151,7 +151,7 @@
           "PATNHZ71XA1B8BPNKNTTE466ES",
           "WD2XW4Z9QXN6T6512GGFZNNMBM"
         ],
-        "sous_seuil": false,
+        "sous_seuil": true,
         "interroge": true
       },
       {
@@ -238,7 +238,6 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.83,
-      "kappa_echantillon_humain": 0.8,
       "retire": false
     },
     {

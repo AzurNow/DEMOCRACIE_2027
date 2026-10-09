@@ -207,6 +207,10 @@ describe("conformité n° 66 : la version des données figure dans tout run, pub
     // Modifié ouvertement (conformité 2026-09-29, n° 15) : la décision du go/no-go suit le statut,
     // pour que la seule erreur reste l'absence de donnees_commit.
     (objet["go_no_go"] as Objet)["decision"] = "publie_provisoire";
+    // Modifié ouvertement (lot go-no-go, D24 (3)) : un provisoire porte au moins un critère rouge,
+    // celui que dit motif_provisoire.
+    const go = objet["go_no_go"] as { criteres: Objet[] };
+    go.criteres = go.criteres.map((critere) => (critere["code"] === "kappa_juges_humains" ? { ...critere, statut: "rouge" } : critere));
     expect(chemins("run", objet)).toSatisfy(toutesSous("/versions"));
   });
 

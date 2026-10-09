@@ -231,6 +231,7 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.83,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     },
     {
@@ -244,6 +245,7 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.78,
+      "kappa_echantillon_humain": 0.8,
       "retire": false
     }
   ],

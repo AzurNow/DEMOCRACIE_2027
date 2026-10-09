@@ -1,12 +1,12 @@
 {
-  "id": "G0YTMV5YPHSTN7S8RYF1F7AB4W",
+  "id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
     "fin": "2026-12-03T06:00:00+01:00"
   },
   "type_run": "mensuel",
-  "statut": "publie",
+  "statut": "publie_provisoire",
   "versions": {
     "protocole": "1.0",
     "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
@@ -151,7 +151,7 @@
           "PATNHZ71XA1B8BPNKNTTE466ES",
           "WD2XW4Z9QXN6T6512GGFZNNMBM"
         ],
-        "sous_seuil": false,
+        "sous_seuil": true,
         "interroge": true
       },
       {
@@ -252,7 +252,7 @@
         "denominateur": 200
       },
       "kappa_juge_humain": 0.78,
-      "kappa_echantillon_humain": 0.8,
+      "motif_indefini_kappa_echantillon_humain": "accord_attendu_maximal",
       "retire": false
     }
   ],
@@ -375,8 +375,8 @@
     "criteres": [
       {
         "code": "kappa_juges_humains",
-        "statut": "vert",
-        "valeur": 0.81,
+        "statut": "rouge",
+        "valeur": "kappa indéfini pour juge-2 : accord_attendu_maximal",
         "seuil": 0.75
       },
       {
@@ -416,11 +416,13 @@
         "seuil": "oui"
       }
     ],
-    "decision": "publie"
+    "decision": "publie_provisoire",
+    "motif": "Critère(s) go/no-go du §12 au rouge : kappa_juges_humains."
   },
   "publication": {
     "date": "2026-12-06T09:00:00+01:00",
     "doi": "10.5281/zenodo.0000000",
     "suspension_veille_electorale": false
-  }
+  },
+  "motif_provisoire": "Critère(s) go/no-go du §12 au rouge : kappa_juges_humains."
 }

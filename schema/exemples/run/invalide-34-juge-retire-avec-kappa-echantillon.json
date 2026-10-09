@@ -1,12 +1,12 @@
 {
-  "id": "G0YTMV5YPHSTN7S8RYF1F7AB4W",
+  "id": "DJHPN7947S1JMQ0RQ5KTT59K6Z",
   "date_gel": "2026-12-01T06:00:00+01:00",
   "fenetre": {
     "debut": "2026-12-01T06:00:00+01:00",
     "fin": "2026-12-03T06:00:00+01:00"
   },
-  "type_run": "mensuel",
-  "statut": "publie",
+  "type_run": "hebdomadaire",
+  "statut": "publie_provisoire",
   "versions": {
     "protocole": "1.0",
     "protocole_sha256": "05029e4833305aa8f8ebd91bb37d4a4fd9401eb88a560adb9f37294349dc1f45",
@@ -151,7 +151,7 @@
           "PATNHZ71XA1B8BPNKNTTE466ES",
           "WD2XW4Z9QXN6T6512GGFZNNMBM"
         ],
-        "sous_seuil": false,
+        "sous_seuil": true,
         "interroge": true
       },
       {
@@ -246,17 +246,18 @@
       "famille_modele": "famille-y",
       "modele": "famille-y/modele-juge-2",
       "version_prompt": "prompts/judge-primaire-1.0.0",
-      "taux_changement_contrefactuel": 0.02,
+      "taux_changement_contrefactuel": 0.045,
       "changements_contrefactuel": {
-        "numerateur": 4,
+        "numerateur": 9,
         "denominateur": 200
       },
       "kappa_juge_humain": 0.78,
-      "kappa_echantillon_humain": 0.8,
-      "retire": false
+      "kappa_echantillon_humain": 0.7,
+      "retire": true,
+      "motif_retrait": "Taux de changement contrefactuel de 4,7 %, au-delà du seuil de 3 % (§7)."
     }
   ],
-  "taux_echantillon_humain": 0.1,
+  "taux_echantillon_humain": 0.25,
   "contrefactuel_candidats": {
     "etat": "termine",
     "eligibles": 480,
@@ -405,8 +406,8 @@
       },
       {
         "code": "erreurs_graves_revues",
-        "statut": "vert",
-        "valeur": 1,
+        "statut": "rouge",
+        "valeur": 0.94,
         "seuil": 1
       },
       {
@@ -416,11 +417,13 @@
         "seuil": "oui"
       }
     ],
-    "decision": "publie"
+    "decision": "publie_provisoire",
+    "motif": "Erreurs graves revues par un humain à 94 % au lieu de 100 %."
   },
   "publication": {
     "date": "2026-12-06T09:00:00+01:00",
     "doi": "10.5281/zenodo.0000000",
     "suspension_veille_electorale": false
-  }
+  },
+  "motif_provisoire": "Toutes les erreurs graves n'ont pas été revues par un humain (94 %) ; publié en intégralité avec la raison (§12)."
 }
