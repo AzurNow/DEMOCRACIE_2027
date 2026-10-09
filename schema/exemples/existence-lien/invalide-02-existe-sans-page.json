@@ -1,0 +1,22 @@
+{
+  "url_citee": "https://example.org/programme",
+  "verdict_existence": "existe",
+  "date_test": "2026-09-22T14:30:05+02:00",
+  "url_finale": "https://example.org/programme",
+  "code_http": 200,
+  "archive_url": "https://web.archive.org/web/20260922123005/https://example.org/programme",
+  "version_table": "table-liens-v2",
+  "tentatives": [
+    {
+      "numero": 1,
+      "horodatage": "2026-09-22T14:30:05+02:00",
+      "issue": "reponse_http",
+      "code_http": 200
+    }
+  ],
+  "wayback": {
+    "operation": "wayback_save_page_now",
+    "issue": "reussi",
+    "archive_url": "https://web.archive.org/web/20260922123005/https://example.org/programme"
+  }
+}

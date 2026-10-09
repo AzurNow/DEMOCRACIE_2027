@@ -11,8 +11,10 @@
  * `--items` désigne `data/items/` dans le dépôt Git qui porte le commit du gel du run (par défaut
  * `data/items` sous la racine du dépôt) : les items sont lus à ce commit, comme pour l'analyse.
  *
- * Le test des liens (§7) n'existe pas encore : aucun verdict d'existence n'est connu, donc les
- * réponses qui citent un lien sont comptées « en attente du test des liens » et non proposées.
+ * Les verdicts d'existence des liens (§7, D20) sont lus dans `volume/liens/`, écrit par `pnpm liens`
+ * (`notation-humaine/serveur/fournisseur.ts:fournisseurDuRun`). Tant que ce passage n'a pas eu lieu,
+ * ou pour un lien qu'il n'a pas pu trancher, la réponse qui le cite est comptée « en attente du test
+ * des liens » et non proposée. Un fichier de résultat invalide ou incohérent empêche le démarrage.
  *
  * Codes de sortie : 2 si le run ne peut pas être lu ou si la commande est mal appelée (le nom de
  * l'erreur est imprimé) ; sinon le serveur reste en écoute.
@@ -21,7 +23,7 @@
 import { resolve } from "node:path";
 import { demarrer } from "../notation-humaine/serveur/principal.ts";
 import { pseudonymeDepuisEnvironnement } from "../notation-humaine/serveur/contexte.ts";
-import { FOURNISSEUR_SANS_EXISTENCE } from "../notation-humaine/serveur/fournisseur.ts";
+import { fournisseurDuRun } from "../notation-humaine/serveur/fournisseur.ts";
 import { analyserArguments, entier, texte } from "./arguments.ts";
 
 const USAGE = "usage : ANNOTATEUR_ID=<pseudonyme> pnpm notation:humaine <repertoire_run> [--items=<data/items>] [--port=<n>]";
@@ -53,7 +55,8 @@ function demandeDe(bruts: readonly string[]): Demande {
 function lancer(bruts: readonly string[]): Error | null {
   try {
     const demande = demandeDe(bruts);
-    demarrer({ ...demande, annotateur_id: pseudonymeDepuisEnvironnement(process.env), existences: FOURNISSEUR_SANS_EXISTENCE });
+    const annotateur_id = pseudonymeDepuisEnvironnement(process.env);
+    demarrer({ ...demande, annotateur_id, existences: fournisseurDuRun(demande.repertoire_run) });
     return null;
   } catch (erreur) {
     if (erreur instanceof Error) return erreur;

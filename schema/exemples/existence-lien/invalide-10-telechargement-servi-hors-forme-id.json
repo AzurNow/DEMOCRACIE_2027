@@ -1,0 +1,34 @@
+{
+  "url_citee": "https://example.org/reserve",
+  "verdict_existence": "inaccessible",
+  "date_test": "2026-09-22T14:30:08+02:00",
+  "url_finale": "https://example.org/reserve",
+  "code_http": 403,
+  "sha256_contenu": "783e79c7583c4c47cc65a5a105ca00055d30b686bcff2f2405c57f774c7f59d5",
+  "archive_url": "https://web.archive.org/web/20260918071500/https://example.org/reserve",
+  "version_table": "table-liens-v2",
+  "tentatives": [
+    {
+      "numero": 1,
+      "horodatage": "2026-09-22T14:30:08+02:00",
+      "issue": "reponse_http",
+      "code_http": 403
+    }
+  ],
+  "wayback": {
+    "operation": "recherche_instantane",
+    "instant_reference": "2026-09-20T18:40:12+02:00",
+    "issue": "trouve",
+    "url_instantane": "http://web.archive.org/web/20260918071500/https://example.org/reserve",
+    "horodatage_instantane": "20260918071500",
+    "statut_instantane": "200",
+    "telechargement": {
+      "issue": "reussi",
+      "url_brute": "https://web.archive.org/web/20260918071500id_/https://example.org/reserve",
+      "url_finale": "https://web.archive.org/erreur/capture-introuvable",
+      "chemin": "pages/783e79c7583c4c47cc65a5a105ca00055d30b686bcff2f2405c57f774c7f59d5.html",
+      "type_contenu_recu": "text/html; charset=utf-8",
+      "taille_octets": 55
+    }
+  }
+}

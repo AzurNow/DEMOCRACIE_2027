@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import http.client
 import socket
+import ssl
 import urllib.error
 import urllib.request
 from collections.abc import Mapping
@@ -24,7 +25,33 @@ class ReponseHttp:
 
 
 class ErreurReseau(Exception):
-    """Aucune réponse HTTP exploitable : délai dépassé, connexion refusée, corps tronqué."""
+    """Aucune réponse HTTP exploitable : délai dépassé, connexion refusée, corps tronqué.
+
+    Les sous-classes ci-dessous classent la cause quand le transport la reconnaît. La collecte n'en
+    lit que le message, inchangé ; le test des liens (`pipeline/liens`, décision D20) en a besoin
+    parce que sa table distingue un domaine inexistant (mort) d'un délai dépassé (inaccessible).
+    Une cause non reconnue reste une `ErreurReseau` générale, jamais rangée dans une classe voisine.
+    """
+
+
+class DelaiDepasse(ErreurReseau):
+    """Le serveur n'a pas répondu dans le délai."""
+
+
+class ConnexionRefusee(ErreurReseau):
+    """La connexion TCP a été refusée par l'hôte."""
+
+
+class ErreurTls(ErreurReseau):
+    """La négociation TLS a échoué (certificat invalide, protocole refusé)."""
+
+
+class NomIntrouvable(ErreurReseau):
+    """Le résolveur affirme que le nom n'existe pas (EAI_NONAME, EAI_NODATA). Une panne du
+    résolveur (EAI_AGAIN, EAI_FAIL) n'en est pas une : elle reste une `ErreurReseau` générale."""
+
+
+CODES_NOM_INTROUVABLE = frozenset({socket.EAI_NONAME, socket.EAI_NODATA})
 
 
 class Transport(Protocol):
@@ -55,9 +82,9 @@ class TransportUrllib:
         except urllib.error.HTTPError as erreur:
             return self._reponse_d_erreur(erreur)
         except (TimeoutError, socket.timeout) as erreur:
-            raise ErreurReseau(f"délai dépassé ({self._delai_s:g} s)") from erreur
+            raise DelaiDepasse(f"délai dépassé ({self._delai_s:g} s)") from erreur
         except (OSError, http.client.HTTPException) as erreur:
-            raise ErreurReseau(_motif_reseau(erreur, self._delai_s)) from erreur
+            raise classe_d_erreur_reseau(erreur)(_motif_reseau(erreur, self._delai_s)) from erreur
 
     def _reponse_d_erreur(self, erreur: urllib.error.HTTPError) -> ReponseHttp:
         """4xx, 5xx et 3xx non suivis : ce sont des réponses, pas des pannes du réseau."""
@@ -66,6 +93,26 @@ class TransportUrllib:
         except (OSError, http.client.HTTPException) as lecture:
             raise ErreurReseau(f"HTTP {erreur.code}, corps illisible : {lecture}") from lecture
         return ReponseHttp(erreur.code, _en_tetes(erreur.headers), corps)
+
+
+def _cause(erreur: BaseException) -> BaseException:
+    """`URLError` enveloppe la cause dans `reason` ; les autres erreurs sont leur propre cause."""
+    raison = erreur.reason if isinstance(erreur, urllib.error.URLError) else None
+    return raison if isinstance(raison, BaseException) else erreur
+
+
+def classe_d_erreur_reseau(erreur: BaseException) -> type[ErreurReseau]:
+    """La classe de l'erreur levée par le transport, d'après sa cause. Le message n'en dépend pas."""
+    cause = _cause(erreur)
+    if isinstance(cause, (TimeoutError, socket.timeout)):
+        return DelaiDepasse
+    if isinstance(cause, ConnectionRefusedError):
+        return ConnexionRefusee
+    if isinstance(cause, ssl.SSLError):
+        return ErreurTls
+    if isinstance(cause, socket.gaierror) and cause.errno in CODES_NOM_INTROUVABLE:
+        return NomIntrouvable
+    return ErreurReseau
 
 
 def _motif_reseau(erreur: BaseException, delai_s: float) -> str:

@@ -349,8 +349,11 @@ describe("exemples de schema/exemples/", () => {
   // 194 → 196 : décision D17 de l'auteur, une notation et un verdict invalides portant la fraîcheur sans le drapeau obsolescence.
   // 196 → 202 : lot notation (entrées-sorties, §7), deux valides et quatre invalides de run (test contrefactuel publié : bloc, taux et effectifs des juges).
   // 202 → 204 : décision D15 de l'auteur (« accord partiel → humain »), une notation valide et une invalide sous le motif accord_partiel_juges.
-  it("charge les 204 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(204);
+  // 204 → 212 : décision D20 de l'auteur (lot test-liens), quatre valides et quatre invalides du nouveau schéma existence-lien.
+  // 212 → 219 : décision D21 de l'auteur (lot test-liens), deux valides et cinq invalides d'existence-lien.
+  // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
+  it("charge les 220 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(220);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

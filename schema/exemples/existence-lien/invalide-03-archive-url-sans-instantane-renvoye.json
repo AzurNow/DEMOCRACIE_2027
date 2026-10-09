@@ -1,0 +1,22 @@
+{
+  "url_citee": "https://example.org/prive/note",
+  "verdict_existence": "non_testable",
+  "date_test": "2026-09-22T14:30:05+02:00",
+  "code_http": null,
+  "archive_url": "https://web.archive.org/web/20260920000000/https://example.org/prive/note",
+  "version_table": "table-liens-v2",
+  "tentatives": [
+    {
+      "numero": 1,
+      "horodatage": "2026-09-22T14:30:05+02:00",
+      "issue": "robots_interdit",
+      "code_http": null,
+      "motif": "https://example.org/prive/note"
+    }
+  ],
+  "wayback": {
+    "operation": "recherche_instantane",
+    "instant_reference": "2026-09-20T18:40:12+02:00",
+    "issue": "absent"
+  }
+}

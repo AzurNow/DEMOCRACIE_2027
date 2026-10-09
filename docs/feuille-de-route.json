@@ -330,6 +330,19 @@
       "recommandation": "Option 1 sur les quatre points : l'humain voit l'existence et peut corriger, l'empreinte et le lien publiés désignent la même page, rien n'est supposé, et une page accentuée reste retrouvable.",
       "retenu": "Option 1 sur les quatre points. Points 2 à 4 dans la PR #95 ; point 1 (formulaire) dans une PR de notation-humaine. Seul le point 2 touche au texte proposé pour la 0.16 (docs/TACHES-AUTEUR.md).",
       "date_decision": "2026-10-08"
+    },
+    {
+      "id": "D23",
+      "statut": "tranchee",
+      "question": "Deux points laissés ouverts par D22 dans la PR #95 : recherche Wayback pour une IRI inconvertible ; instantané servi après une redirection rejouée par Wayback.",
+      "contexte": "Une IRI inconvertible est url_malformee, donc non_testable, ce qui déclencherait la recherche d'instantané ; D22 veut cette recherche sur la forme encodée, qui n'existe pas. Le téléchargement id_ peut servir l'instantané d'une autre adresse quand Wayback rejoue une redirection capturée.",
+      "options": [
+        "Aucune requête Wayback pour une IRI inconvertible, échec consigné ; instantané servi après redirection rejouée accepté, archive_url et journal sur l'adresse servie.",
+        "Chercher la chaîne brute (exception à D22) ; exiger que l'instantané servi porte l'URL demandée."
+      ],
+      "recommandation": "Option 1 : aucune chaîne non encodée n'est envoyée ; la copie montre ce que le lien montrait à l'époque, comme une redirection suivie en direct, et empreinte et lien restent cohérents.",
+      "retenu": "Option 1 sur les deux points, déjà le comportement de la PR #95.",
+      "date_decision": "2026-10-08"
     }
   ],
   "lots": [
@@ -594,9 +607,10 @@
       "decisions": [
         "D20",
         "D21",
-        "D22"
+        "D22",
+        "D23"
       ],
-      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion. Le 2026-10-08 : PR #95 (brouillon) livre le lot sur table-liens-v1 ; D21 tranchée sur ses quatre points ouverts, à coder dans la même PR avant relecture de config/test-liens.toml (TOML, aucune dépendance Python ajoutée). Le 2026-10-08 : D21 codée dans la PR #95 (table-liens-v2) ; D22 tranchée, points 2 à 4 à coder dans la même PR."
+      "note": "Ajouté le 2026-10-06 : le §7 exige que l'existence d'un lien cité soit établie par un test HTTP déterministe, et aucun code ne le fait ; sans lui, ni un juge ni un humain ne produit de notation complète (verdict_existence). Appel réseau nouveau : décision de l'auteur avant tout code (redirections, délais, statut « inaccessible », copie archivée, rejouabilité). Le 2026-10-08 : D20 tranchée (méthode, table, moment, copie) ; le lot est lançable. config/test-liens.yaml, écrit dans la PR du lot d'après D20, est relu par l'auteur avant fusion. Le 2026-10-08 : PR #95 (brouillon) livre le lot sur table-liens-v1 ; D21 tranchée sur ses quatre points ouverts, à coder dans la même PR avant relecture de config/test-liens.toml (TOML, aucune dépendance Python ajoutée). Le 2026-10-08 : D21 codée dans la PR #95 (table-liens-v2) ; D22 tranchée, points 2 à 4 à coder dans la même PR. Le 2026-10-08 : D22 (points 2 à 4) codée dans la PR #95, D23 tranchée (comportement déjà codé). Reste la relecture de config/test-liens.toml par l'auteur avant fusion."
     },
     {
       "id": "analyse",

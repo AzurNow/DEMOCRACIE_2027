@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:existence-lien",
+  "title": "Résultat du test HTTP d'un lien cité",
+  "description": "§7 : « le lien cité existe (test HTTP déterministe) » ; règles des décisions D20, D21 et D22 de l'auteur (2026-10-08). Un fichier par URL citée, runs/<date>/volume/liens/<sha256 de url_citee>.json, écrit une fois par pipeline/liens (Python) et lu par la notation (pipeline/notation/fournisseur-fichiers.ts). Les sept premiers champs sont ceux d'un lien de notation (ExistenceEtablie) et renvoient à notation.schema.json, pour que motifs et énumérations ne vivent qu'une fois. Suivent ce qui rend le verdict auditable : la version de la table résultat → verdict (config/test-liens.toml), le journal des tentatives, la page conservée et l'issue Wayback (avec, pour un instantané retenu, son téléchargement en version brute).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url_citee", "verdict_existence", "date_test", "code_http", "version_table", "tentatives", "wayback"],
+
+  "properties": {
+    "url_citee": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/url_citee",
+      "description": "Telle qu'écrite dans normalise.liens, sans aucune normalisation (D20 : dédoublonnage sur la chaîne exacte). Une IRI reste une IRI ici : la conversion en URI (D21, RFC 3987 §3.1) ne sert qu'à l'envoi."
+    },
+    "verdict_existence": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/verdict_existence"
+    },
+    "date_test": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/date_test",
+      "description": "D20 : instant de la dernière tentative, égal à tentatives[-1].horodatage."
+    },
+    "url_finale": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/url_finale",
+      "description": "URL qui a rendu la réponse HTTP finale de la dernière tentative, après les redirections suivies, telle qu'envoyée (une IRI citée y apparaît convertie en URI, D21). Absente si la dernière tentative n'a pas fini sur une réponse."
+    },
+    "code_http": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/code_http",
+      "description": "Code de la dernière réponse HTTP reçue dans la chaîne de la dernière tentative ; null : aucune réponse HTTP (délai, robots.txt, URL refusée avant requête). Toujours présent : une absence de réponse est une donnée."
+    },
+    "sha256_contenu": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/sha256_contenu",
+      "description": "SHA-256 des octets conservés, tels quels (règle 7) : la page reçue pour un lien qui existe ; pour un lien inaccessible ou non testable, la version brute de l'instantané téléchargé (D21), présente si et seulement si archive_url l'est. Jamais pour un lien mort."
+    },
+    "archive_url": {
+      "$ref": "urn:banc-essai-2027:schema:notation#/properties/sourcage/properties/liens/items/properties/archive_url",
+      "description": "Jamais fabriquée. Après un Save Page Now réussi : recopie de wayback.archive_url, renvoyée par le service. Après un instantané de statut 200 dont la version brute a été téléchargée (D21) : l'instantané réellement servi (D22), forme publique sans id_ de wayback.telechargement.url_finale (https://web.archive.org/web/<14 chiffres servis>/<url>), qui peut différer de l'instantané demandé (wayback.url_instantane) quand le service sert une capture voisine. Absente sinon (aucun instantané, instantané écarté, téléchargement en échec)."
+    },
+
+    "version_table": {
+      "type": "string",
+      "pattern": "^table-liens-v[0-9]+$",
+      "description": "Version de config/test-liens.toml qui a traduit le résultat en verdict."
+    },
+
+    "tentatives": {
+      "type": "array",
+      "minItems": 1,
+      "description": "D20 : chaque tentative est journalisée (numéro, horodatage, code HTTP ou classe d'erreur). Numérotées 1, 2, 3… sans trou (contrôlé à la lecture). Le nombre maximal est celui de la table, pas du schéma.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["numero", "horodatage", "issue", "code_http"],
+        "properties": {
+          "numero": { "type": "integer", "minimum": 1 },
+          "horodatage": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+          "issue": {
+            "type": "string",
+            "enum": [
+              "reponse_http",
+              "delai_depasse",
+              "connexion_refusee",
+              "erreur_tls",
+              "domaine_inexistant",
+              "erreur_reseau",
+              "robots_interdit",
+              "robots_injoignable",
+              "schema_non_http",
+              "url_malformee",
+              "redirections_excessives",
+              "boucle_redirection",
+              "redirection_sans_location"
+            ],
+            "description": "Comment la tentative a fini : reponse_http (le code décide) ou une issue nommée sans réponse finale. Vocabulaire fermé de pipeline/liens/constat.py."
+          },
+          "code_http": { "type": ["integer", "null"], "minimum": 100, "maximum": 599 },
+          "motif": { "type": "string", "minLength": 1, "description": "Détail lisible (message réseau, cible refusée). Jamais lu par la table." }
+        },
+        "if": { "properties": { "issue": { "const": "reponse_http" } }, "required": ["issue"] },
+        "then": { "properties": { "code_http": { "type": "integer" } } }
+      }
+    },
+
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chemin", "type_contenu_recu", "taille_octets"],
+      "description": "D20 : la page d'un lien existant est conservée, hors Git, octets intacts.",
+      "properties": {
+        "chemin": {
+          "type": "string",
+          "pattern": "^pages/[0-9a-f]{64}\\.[a-z0-9]+$",
+          "description": "Relatif à volume/liens/ : pages/<sha256_contenu><extension>."
+        },
+        "type_contenu_recu": { "type": ["string", "null"], "description": "En-tête Content-Type tel que reçu ; null s'il était absent, jamais deviné." },
+        "taille_octets": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "wayback": {
+      "description": "D20, copie conservée : Save Page Now pour un lien qui existe ; instantané existant le plus proche, cherché et jamais créé, pour un lien inaccessible ou non testable ; rien pour un lien mort. D21 : un instantané n'est retenu (trouve) que si l'API renvoie le statut 200, et sa version brute (id_) est alors téléchargée (telechargement) ; un instantané d'un autre statut est écarté (ecarte). D22 : la recherche et le téléchargement portent l'URI convertie par la règle conversion_iri de la table ; une IRI inconvertible n'a pas d'URI, la recherche est consignée en échec sans requête. Un échec est consigné, il ne change pas le verdict.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "issue", "archive_url"],
+          "properties": {
+            "operation": { "const": "wayback_save_page_now" },
+            "issue": { "const": "reussi" },
+            "archive_url": { "$ref": "#/$defs/instantane_date" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "issue", "motif", "tentatives"],
+          "properties": {
+            "operation": { "const": "wayback_save_page_now" },
+            "issue": { "const": "echec" },
+            "motif": { "type": "string", "minLength": 1 },
+            "tentatives": { "type": "integer", "minimum": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue", "url_instantane", "horodatage_instantane", "statut_instantane", "telechargement"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": {
+              "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+              "description": "horodatage_reponse le plus ancien parmi les réponses qui citent le lien."
+            },
+            "issue": { "const": "trouve" },
+            "url_instantane": { "$ref": "#/$defs/instantane_date", "description": "D22 : l'instantané demandé, tel que l'API de disponibilité l'a renvoyé. L'instantané réellement servi peut en différer : c'est lui qui devient archive_url." },
+            "horodatage_instantane": { "type": "string", "pattern": "^[0-9]{14}$" },
+            "statut_instantane": { "const": "200", "description": "D21 : seul un instantané de statut 200, tel que renvoyé par l'API, est retenu." },
+            "telechargement": { "$ref": "#/$defs/telechargement" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue", "url_instantane", "horodatage_instantane"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "issue": { "const": "ecarte" },
+            "url_instantane": { "$ref": "#/$defs/instantane_date", "description": "L'instantané renvoyé par le service et écarté : jamais recopié en archive_url." },
+            "horodatage_instantane": { "type": "string", "pattern": "^[0-9]{14}$" },
+            "statut_instantane": {
+              "type": "string",
+              "minLength": 1,
+              "not": { "const": "200" },
+              "description": "D21 : code capturé, tel que renvoyé, autre que 200 ; absent s'il n'est pas renvoyé (un statut absent n'est pas 200)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "issue": { "const": "absent" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation", "instant_reference", "issue", "motif"],
+          "properties": {
+            "operation": { "const": "recherche_instantane" },
+            "instant_reference": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+            "issue": { "const": "echec" },
+            "motif": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation"],
+          "properties": { "operation": { "const": "aucune" } }
+        }
+      ]
+    }
+  },
+
+  "$defs": {
+    "instantane_date": {
+      "type": "string",
+      "pattern": "^https?://web\\.archive\\.org/web/[0-9]{14}/.+",
+      "description": "Instantané daté renvoyé par le service, jamais fabriqué."
+    },
+    "telechargement": {
+      "description": "D21 : téléchargement de la version brute d'un instantané retenu, une fois, par la même pile de politesse et le même agent que le test des liens. Réussi : réponse finale 200 sur une URL de la forme /web/<14 chiffres>id_/… de web.archive.org (D22), octets intacts sous volume/liens/pages/, nommés par leur SHA-256 (= sha256_contenu). En échec (autre réponse, ou URL finale d'une autre forme) : consigné, ni archive_url ni sha256_contenu.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["issue", "url_brute", "url_finale", "chemin", "type_contenu_recu", "taille_octets"],
+          "properties": {
+            "issue": { "const": "reussi" },
+            "url_brute": { "$ref": "#/$defs/instantane_brut" },
+            "url_finale": { "$ref": "#/$defs/instantane_brut_servi", "description": "URL qui a rendu la réponse 200, après les redirections suivies (le service peut rediriger vers un instantané voisin). D22 : elle désigne l'instantané servi en version brute, d'où archive_url est dérivée ; une URL finale d'une autre forme est un téléchargement en échec." },
+            "chemin": { "type": "string", "pattern": "^pages/[0-9a-f]{64}\\.[a-z0-9]+$", "description": "Relatif à volume/liens/ : pages/<sha256_contenu><extension>." },
+            "type_contenu_recu": { "type": ["string", "null"], "description": "En-tête Content-Type tel que reçu ; null s'il était absent, jamais deviné." },
+            "taille_octets": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["issue", "url_brute", "motif"],
+          "properties": {
+            "issue": { "const": "echec" },
+            "url_brute": { "$ref": "#/$defs/instantane_brut" },
+            "motif": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "instantane_brut": {
+      "type": "string",
+      "pattern": "^https://web\\.archive\\.org/web/[0-9]{14}id_/.+",
+      "description": "Version brute d'un instantané (D21) : https://web.archive.org/web/<14 chiffres>id_/<uri>, construite sur l'horodatage renvoyé par le service et l'URI demandée (D22 : l'URL citée convertie par la règle conversion_iri de la table)."
+    },
+    "instantane_brut_servi": {
+      "type": "string",
+      "pattern": "^https?://web\\.archive\\.org/web/[0-9]{14}id_/.+",
+      "description": "D22 : URL finale d'un téléchargement de version brute réussi, telle que le service l'a servie (horodatage servi, éventuellement voisin de celui demandé)."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "D20 : un lien qui existe a sa page conservée (empreinte, chemin) et sa demande Save Page Now ; il a fini sur une réponse 2xx, donc a une url_finale.",
+      "if": { "properties": { "verdict_existence": { "const": "existe" } }, "required": ["verdict_existence"] },
+      "then": {
+        "required": ["sha256_contenu", "page", "url_finale"],
+        "properties": {
+          "code_http": { "type": "integer" },
+          "wayback": { "properties": { "operation": { "const": "wayback_save_page_now" } } }
+        }
+      },
+      "else": { "not": { "required": ["page"] } }
+    },
+    {
+      "$comment": "D20 et D19 : rien n'est conservé ni cherché pour un lien mort, qui ne soutient jamais rien.",
+      "if": { "properties": { "verdict_existence": { "const": "mort" } }, "required": ["verdict_existence"] },
+      "then": {
+        "properties": { "wayback": { "properties": { "operation": { "const": "aucune" } } } },
+        "not": { "required": ["sha256_contenu"] }
+      }
+    },
+    {
+      "$comment": "D20 : pour un lien inaccessible ou non testable, l'instantané existant le plus proche est cherché, jamais créé. D21 : sha256_contenu (la version brute téléchargée) et archive_url vont ensemble, comme notation.schema.json les exige ensemble pour un soutien.",
+      "if": { "properties": { "verdict_existence": { "enum": ["inaccessible", "non_testable"] } }, "required": ["verdict_existence"] },
+      "then": {
+        "properties": { "wayback": { "properties": { "operation": { "const": "recherche_instantane" } } } },
+        "dependentRequired": { "sha256_contenu": ["archive_url"], "archive_url": ["sha256_contenu"] }
+      }
+    },
+    {
+      "$comment": "archive_url n'existe que si le service l'a renvoyée ou servie et qu'elle est retenue : Save Page Now réussi, ou (D21) instantané de statut 200 dont la version brute a été téléchargée. Un instantané écarté ou un téléchargement en échec n'en donne pas. Contrôlé à la lecture (fournisseur-fichiers.ts) : égalité avec wayback.archive_url après Save Page Now, avec la forme publique sans id_ de wayback.telechargement.url_finale après un téléchargement (D22).",
+      "if": {
+        "properties": {
+          "wayback": {
+            "anyOf": [
+              { "properties": { "issue": { "const": "reussi" } }, "required": ["issue"] },
+              {
+                "properties": { "issue": { "const": "trouve" }, "telechargement": { "properties": { "issue": { "const": "reussi" } }, "required": ["issue"] } },
+                "required": ["issue", "telechargement"]
+              }
+            ]
+          }
+        }
+      },
+      "then": { "required": ["archive_url"] },
+      "else": { "not": { "required": ["archive_url"] } }
+    }
+  ]
+}

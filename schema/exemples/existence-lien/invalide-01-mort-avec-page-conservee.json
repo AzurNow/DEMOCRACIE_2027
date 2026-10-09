@@ -1,0 +1,25 @@
+{
+  "url_citee": "https://example.org/retire",
+  "verdict_existence": "mort",
+  "date_test": "2026-09-22T14:30:07+02:00",
+  "url_finale": "https://example.org/retire",
+  "code_http": 404,
+  "sha256_contenu": "406bbe74580ca319508710f5a388d1961f95b23e34d1e3d22b69fcfb1be317f2",
+  "version_table": "table-liens-v2",
+  "tentatives": [
+    {
+      "numero": 1,
+      "horodatage": "2026-09-22T14:30:07+02:00",
+      "issue": "reponse_http",
+      "code_http": 404
+    }
+  ],
+  "page": {
+    "chemin": "pages/406bbe74580ca319508710f5a388d1961f95b23e34d1e3d22b69fcfb1be317f2.html",
+    "type_contenu_recu": "text/html; charset=utf-8",
+    "taille_octets": 56
+  },
+  "wayback": {
+    "operation": "aucune"
+  }
+}

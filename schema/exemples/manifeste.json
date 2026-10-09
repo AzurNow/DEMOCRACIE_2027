@@ -1367,6 +1367,112 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 portant obsolescence_fraiche sans le drapeau obsolescence. Décision D17 de l'auteur (2026-10-06) : la fraîcheur n'existe qu'avec ce drapeau ; ailleurs, aucune métrique ne la lit et l'accord des notations la comparerait.",
       "regle_protocole": "§11, obsolescence fraîche ; §7, accord des notations (D17)"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-01-existe-page-conservee.json",
+      "attendu": "valide",
+      "motif": "Lien servi en 200 du premier coup : page conservée hors Git (chemin, type reçu, taille), SHA-256 des octets reçus, Save Page Now réussi, archive_url recopiée de l'instantané renvoyé. Copie du fichier doré tests/liens/dore/existe.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-02-mort-404.json",
+      "attendu": "valide",
+      "motif": "Lien en 404, définitif dès la première tentative : rien n'est conservé ni cherché (D19, D20). Copie du fichier doré tests/liens/dore/mort.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-03-inaccessible-instantane-trouve.json",
+      "attendu": "valide",
+      "motif": "Lien en 403 : inaccessible ; l'instantané existant le plus proche de la réponse la plus ancienne qui le cite est cherché, jamais créé. De statut 200, il est retenu et sa version brute (id_) téléchargée (D21) : son URL renvoyée devient archive_url, l'empreinte des octets téléchargés sha256_contenu. Copie du fichier doré tests/liens/dore/inaccessible-instantane.json. Modifié ouvertement (D22) : l'instantané demandé est consigné sous wayback.url_instantane, et archive_url est l'instantané réellement servi, forme publique sans id_ de l'URL finale du téléchargement (ici servi à la date demandée, en https)."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-04-non-testable-robots.json",
+      "attendu": "valide",
+      "motif": "Lien interdit par robots.txt : non testable, aucune requête vers l'URL, code_http null (aucune réponse HTTP) ; l'API ne renvoie aucun instantané, donc pas d'archive_url. Copie du fichier doré tests/liens/dore/non-testable-robots.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-05-inaccessible-instantane-ecarte.json",
+      "attendu": "valide",
+      "motif": "Lien en 403 : inaccessible ; l'API renvoie un instantané de statut 404, écarté et consigné avec son statut (D21), ni archive_url ni sha256_contenu. Copie du fichier doré tests/liens/dore/inaccessible-instantane-ecarte.json."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/valide-06-inaccessible-telechargement-echec.json",
+      "attendu": "valide",
+      "motif": "Lien en 403 : inaccessible ; instantané de statut 200 retenu, mais le téléchargement de sa version brute échoue (503) : l'échec est consigné dans le journal Wayback, ni archive_url ni sha256_contenu, verdict inchangé (D21). Copie du fichier doré tests/liens/dore/inaccessible-telechargement-echec.json. Modifié ouvertement (D22) : l'instantané demandé est consigné sous wayback.url_instantane (anciennement wayback.archive_url) ; rien d'autre ne change."
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-01-mort-avec-page-conservee.json",
+      "attendu": "invalide",
+      "motif": "Lien mort portant une page conservée et son empreinte. Une page n'est conservée que pour un lien qui existe : un lien mort ne soutient jamais rien.",
+      "regle_protocole": "§7, sourçage ; décisions D19 et D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-02-existe-sans-page.json",
+      "attendu": "invalide",
+      "motif": "Lien qui existe sans page conservée ni empreinte. D20 : la page d'un lien existant est conservée avec son empreinte ; sans elle, l'audit humain du soutien n'a rien à relire.",
+      "regle_protocole": "§7, sourçage ; §9, reproductibilité ; décision D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-03-archive-url-sans-instantane-renvoye.json",
+      "attendu": "invalide",
+      "motif": "archive_url présente alors que la recherche d'instantané n'a rien renvoyé. Un lien d'archive n'est jamais fabriqué : il n'existe que si le service l'a renvoyé.",
+      "regle_protocole": "CLAUDE.md règle 2 ; décision D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-04-verdict-hors-enumeration.json",
+      "attendu": "invalide",
+      "motif": "Verdict d'existence hors des quatre du schéma de notation (existe, mort, inaccessible, non_testable) : le verdict est lu dans la table publiée, jamais inventé.",
+      "regle_protocole": "§7, sourçage ; décision D20"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-05-copie-archivee-sans-empreinte.json",
+      "attendu": "invalide",
+      "motif": "Lien inaccessible dont la version brute de l'instantané a été téléchargée, archive_url posée, mais sans sha256_contenu. D21 : la copie archivée porte les deux ensemble, sans quoi rien ne dit quels octets un soutien aurait lus.",
+      "regle_protocole": "§7, sourçage (copie archivée) ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-06-instantane-ecarte-recopie-en-archive-url.json",
+      "attendu": "invalide",
+      "motif": "Instantané écarté (statut 404) dont l'URL est pourtant recopiée en archive_url avec une empreinte. D21 : un instantané de statut autre que 200 est consigné, jamais retenu.",
+      "regle_protocole": "§7, sourçage ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-07-telechargement-en-echec-avec-archive-url.json",
+      "attendu": "invalide",
+      "motif": "Téléchargement de la version brute en échec, mais archive_url et sha256_contenu posés. D21 : sans octets téléchargés, ni l'une ni l'autre. Modifié ouvertement (D22) : l'instantané demandé sous wayback.url_instantane ; le motif d'invalidité ne change pas.",
+      "regle_protocole": "§7, sourçage ; CLAUDE.md règle 2 ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-08-instantane-retenu-de-statut-302.json",
+      "attendu": "invalide",
+      "motif": "Instantané retenu (trouve) alors que l'API le dit de statut 302. D21 : seul un instantané de statut 200 est retenu. Modifié ouvertement (D22) : l'instantané demandé sous wayback.url_instantane, archive_url en forme servie ; le motif d'invalidité ne change pas.",
+      "regle_protocole": "§7, sourçage ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-09-issue-url-non-ascii-retiree.json",
+      "attendu": "invalide",
+      "motif": "Tentative close sur l'issue url_non_ascii. D21 : une IRI est convertie en URI pour l'envoi (RFC 3987 §3.1), ou refusée comme url_malformee ; l'issue url_non_ascii n'existe plus.",
+      "regle_protocole": "§7, sourçage ; décision D21"
+    },
+    {
+      "objet": "existence-lien",
+      "fichier": "existence-lien/invalide-10-telechargement-servi-hors-forme-id.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-03 dont le téléchargement réussi a fini sur une page d'erreur de web.archive.org, hors de la forme /web/<14 chiffres>id_/. D22 : une telle URL finale ne désigne aucun instantané servi, le téléchargement est en échec, ni archive_url ni sha256_contenu.",
+      "regle_protocole": "§7, sourçage ; CLAUDE.md règle 2 ; décision D22"
     }
   ]
 }
