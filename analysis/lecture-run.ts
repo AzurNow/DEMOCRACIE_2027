@@ -185,9 +185,11 @@ export interface RunLu extends Run {
   readonly contrefactuel_candidats?: { readonly taille: number };
 }
 
-interface TirageLu {
+export interface TirageLu {
   readonly run_id: string;
   readonly date_gel: string;
+  /** Recopiée de `run.graines.tirage` (`tirage.schema.json`) : lue par la checklist de l'annexe F. */
+  readonly graine_tirage: GraineTirage;
   readonly entrees: readonly EntreeTirage[];
 }
 
@@ -324,7 +326,7 @@ function sha256Fichier(chemin: string): string {
 }
 
 /** `run.json#/tirage/chemin` : `runs/<date>/<fichier>`, un fichier du répertoire du run, et lui seul. */
-function cheminDuTirage(repertoire_run: string, run: RunLu): string {
+export function cheminDuTirage(repertoire_run: string, run: RunLu): string {
   const prefixe = `runs/${basename(repertoire_run)}/`;
   const fichier = run.tirage.chemin.slice(prefixe.length);
   if (!run.tirage.chemin.startsWith(prefixe) || fichier.length === 0 || fichier.includes("/")) {
@@ -333,7 +335,7 @@ function cheminDuTirage(repertoire_run: string, run: RunLu): string {
   return join(repertoire_run, fichier);
 }
 
-function lireTirage(repertoire_run: string, run: RunLu): TirageLu {
+export function lireTirage(repertoire_run: string, run: RunLu): TirageLu {
   const chemin = cheminDuTirage(repertoire_run, run);
   const octets = readFileSync(chemin);
   const calculee = createHash("sha256").update(octets).digest("hex");

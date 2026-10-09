@@ -20,6 +20,8 @@ runs/<date>/
   mesures.json                Git   les mesures au gel, un tableau (lu par pnpm symmetry)
   verdicts/<id>.json          Git   un verdict par objet noté (schema/verdict.schema.json)
   metriques/…                 Git   les sorties d'analysis/ (§8)
+  checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
+                                    par pnpm go-no-go, contresignée par pnpm go-no-go:contresigner
   volume/                     hors Git (ligne /runs/*/volume/ de .gitignore) — archive Zenodo
     reponses/<id>.json              une réponse par requête (schema/reponse.schema.json)
     tentatives/<empreinte>.jsonl    le journal des tentatives d'une requête
@@ -170,6 +172,22 @@ robustesse §8(a).
 Le contrôle croisé n° 18 (§7 ; D13) sur un run enregistré : lit `run.json`, `volume/reponses/`,
 `volume/notations/` (et `volume/reponses-contrefactuelles/`) et `verdicts/`, imprime chaque violation.
 Sortie 0 sans violation, 1 avec au moins une, 2 si le run n'a pas pu être lu. N'écrit rien.
+
+## `pnpm go-no-go <repertoire_run>` et `pnpm go-no-go:contresigner`
+
+Les sept critères du §12 et la décision qui en découle (D24, `pipeline/go-no-go/`). Lit `run.json`,
+`volume/reponses/`, `volume/notations/`, `verdicts/`, `tirage.json` s'il est là, et l'existence de
+`metriques/`. Écrit dans `run.json` `go_no_go`, le kappa de l'échantillon humain de chaque juge
+retenu (`kappa_echantillon_humain`, ou son motif d'indéfinition) et `motif_provisoire` si la décision
+est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `statut`. Refuse un run
+`invalide`, `planifie` ou à symétrie rouge ; un go/no-go déjà écrit et différent du recalcul est une
+erreur, identique un no-op. `metriques/` présent arrête la commande : aucun format n'y est encore
+défini. Sortie 0 ou 2.
+
+`pnpm go-no-go:contresigner <repertoire_run> --nom="<nom>" --case=<rang>:faite --case=<rang>:non_faite:<motif>`
+déclare chaque case `declaree` de la checklist et ajoute `contreseing: { nom, date }`. Refuse une case
+déclarée sans état, une case non faite sans motif, une checklist déjà contresignée. N'écrit que
+`checklist.json`.
 
 ## `pnpm run:dry`
 

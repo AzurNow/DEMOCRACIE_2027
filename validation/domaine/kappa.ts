@@ -55,14 +55,10 @@ export function kappaCohen<T extends string>(
   paires: readonly PaireCategories<T>[],
   categories: readonly T[],
 ): ResultatKappa {
-  const n = paires.length;
+  const { n, accords, attendus } = comptesKappa(paires, categories);
   if (n === 0) {
     return { kappa: null, motif_indefini: "aucun_item_commun", accord_observe: null, accord_attendu: null, n: 0 };
   }
-
-  const matrice = matriceConfusion(paires, categories);
-  const accords = sommeDiagonale(matrice);
-  const attendus = sommeProduitsMarginaux(matrice, categories.length);
 
   const denominateur = n * n - attendus;
   const accordObserve = accords / n;
@@ -85,6 +81,28 @@ export function kappaCohen<T extends string>(
     accord_attendu: accordAttendu,
     n,
   };
+}
+
+/**
+ * Les trois entiers du kappa : `κ = (accords·n − attendus) / (n² − attendus)`. Noyau partagé :
+ * `kappaCohen` en tire le kappa publié, et un appelant qui doit comparer le kappa à un seuil
+ * rationnel (go/no-go du §12, `pipeline/go-no-go/`) le fait en entiers, sans passer par le flottant.
+ * Mêmes catégories fixées a priori, même erreur pour une catégorie hors du jeu.
+ */
+export interface ComptesKappa {
+  readonly n: number;
+  /** Somme de la diagonale de la matrice de confusion (A). */
+  readonly accords: number;
+  /** Somme des produits des marges (B) : l'accord attendu vaut B / n². */
+  readonly attendus: number;
+}
+
+export function comptesKappa<T extends string>(
+  paires: readonly PaireCategories<T>[],
+  categories: readonly T[],
+): ComptesKappa {
+  const matrice = matriceConfusion(paires, categories);
+  return { n: paires.length, accords: sommeDiagonale(matrice), attendus: sommeProduitsMarginaux(matrice, categories.length) };
 }
 
 function matriceConfusion<T extends string>(
