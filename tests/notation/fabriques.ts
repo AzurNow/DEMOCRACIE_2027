@@ -7,7 +7,7 @@ import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
 import type { CandidatDuRun, LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
-import type { ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
+import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import type { PageCitee } from "../../pipeline/notation/pages-citees.ts";
 
 export const RUN_ID = ulid("run-notation");
@@ -35,6 +35,7 @@ export function notationJuge(juge_id: string, surcharges: Surcharges = {}): Nota
       version_prompt: "prompts/judge-primaire-1.0.0",
       a_vu_identite_outil: false,
     },
+    version_charge: VERSION_CHARGE_JUGE,
     gabarit: "Q-DIR",
     references_item: [ITEM_REF],
     categorie: "exacte",
@@ -57,6 +58,7 @@ export function notationHumaine(
     contexte: "run",
     objet_note: { type: "reponse", id: REPONSE_ID },
     notateur: { type: "humain", id: annotateur, sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false },
+    version_charge: VERSION_CHARGE_JUGE,
     gabarit: "Q-DIR",
     references_item: [ITEM_REF],
     categorie: "exacte",
@@ -109,7 +111,16 @@ export function pagesSansTexte(liens: readonly string[], raison: "lien_mort" | "
 }
 
 /** Ce que la chaîne pose dans le cadre d'une notation de juge pour la charge v3 (D27 (C), (D)). */
-export const CADRE_V3 = { date_gel: GEL_DES_TESTS, items: [], reponse_attendue: RESOLU_POSITION_POUR.reponse_attendue, candidats: CANDIDATS_DU_RUN } as const;
+export const CADRE_V3 = {
+  date_gel: GEL_DES_TESTS,
+  items: [],
+  reponse_attendue: RESOLU_POSITION_POUR.reponse_attendue,
+  candidats: CANDIDATS_DU_RUN,
+  interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id),
+  registre: "neutre",
+  premisse_fausse: false,
+  version_charge: VERSION_CHARGE_JUGE,
+} as const;
 
 export function runDeNotation(retires: readonly string[] = [], surcharges: Partial<RunDeNotation> = {}): RunDeNotation {
   return {

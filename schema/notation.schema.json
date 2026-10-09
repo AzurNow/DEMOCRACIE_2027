@@ -11,6 +11,7 @@
     "contexte",
     "objet_note",
     "notateur",
+    "version_charge",
     "gabarit",
     "references_item",
     "categorie",
@@ -22,6 +23,12 @@
   "properties": {
     "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+
+    "version_charge": {
+      "type": "string",
+      "pattern": "^charge-juge-v[0-9]+$",
+      "description": "Décision D29 (4) de l'auteur : la version du format de ce que le notateur a reçu (pipeline/notation/charge-juge.ts, VERSION_CHARGE_JUGE), enregistrée dans chaque notation, de juge comme d'humain (D18 : l'humain voit le contenu de la charge, sans le prompt). Deux notations de versions différentes n'ont pas lu les mêmes champs."
+    },
 
     "contexte": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/contexte_mesure",

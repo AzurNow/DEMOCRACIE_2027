@@ -159,6 +159,8 @@ export interface Notation {
   readonly notateur: { readonly type: TypeNotateur; readonly id: IdentifiantCourt };
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
+  /** Présent sur une note inexacte (schéma) ; lu par le seul test contrefactuel (D29 (2)). */
+  readonly motif_inexactitude?: string;
   /** §11 : présent uniquement avec le drapeau obsolescence. */
   readonly obsolescence_fraiche?: boolean;
   readonly sourcage: { readonly cite: boolean; readonly liens: readonly LienNote[] };

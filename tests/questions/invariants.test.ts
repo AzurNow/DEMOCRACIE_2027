@@ -355,8 +355,9 @@ describe("exemples de schema/exemples/", () => {
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
   // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
   // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
-  it("charge les 240 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(240);
+  // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
+  it("charge les 241 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(241);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -398,7 +399,8 @@ describe("exemples de schema/exemples/", () => {
     // leur contexte suit toujours l'objet noté.
     // 26 → 27 : une notation valide ajoutée (décision D27, Q-ATT à nom ambigu), copie de valide-01 ;
     // son contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(27);
+    // 27 → 28 : une notation invalide ajoutée (décision D29 (4), sans version_charge), copie de valide-01.
+    expect(notants).toHaveLength(28);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

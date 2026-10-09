@@ -56,7 +56,8 @@ export function rattacherNoms(noms: readonly string[], candidats: readonly Candi
   return { cites: [...cites].sort(comparerChaines), hors_perimetre, ambigus };
 }
 
-function candidatsDe(nom: string, candidats: readonly CandidatDuRun[]): readonly string[] {
+/** Les identifiants des candidats que ce nom désigne, par la règle de ce module (zéro, un ou plusieurs). */
+export function candidatsDe(nom: string, candidats: readonly CandidatDuRun[]): readonly string[] {
   return candidats.filter((candidat) => memesMots(nom, candidat.libelle) || memesMots(nom, candidat.nom)).map((candidat) => candidat.candidat_id);
 }
 

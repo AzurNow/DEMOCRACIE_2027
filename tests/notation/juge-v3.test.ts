@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge } from "../../pipeline/notation/juge.ts";
+import { AttributionIndecidable, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -96,39 +96,75 @@ describe("(C) fraîcheur de l'obsolescence : calculée depuis les dates, jamais 
   });
 });
 
-describe("(D) question d'attribution : noms relevés par le juge, rattachés par le code", () => {
+describe("(D) et D29 (1) : question d'attribution, le juge relève les noms, le code calcule la note", () => {
   const LISTE: ReponseAttendue = { nature: "liste_candidats", candidats_attendus: ["demo-alpha", "demo-beta"], resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } };
   const FICTIVE: ReponseAttendue = { nature: "aucun_candidat", candidats_attendus: [], resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } };
   const HOMONYMES = [...CANDIDATS_DU_RUN, { candidat_id: "demo-delta", libelle: "Hélène Ollivier", nom: "Ollivier" }];
-  const qatt = (noms_cites: readonly string[] | undefined, reponse_attendue: ReponseAttendue = LISTE): NotationIndividuelle =>
-    noter({ ...EXACTE, ...(noms_cites === undefined ? {} : { noms_cites }) }, { gabarit: "Q-ATT", reponse_attendue, candidats: HOMONYMES });
+  const INTERROGES = HOMONYMES.map((c) => c.candidat_id);
+  const releve = (noms_cites: readonly string[], non_reponse = false): SortieJuge => ({
+    noms_cites,
+    non_reponse,
+    sourcage: { cite: false, soutiens: [] },
+    extrait_justificatif: { provenance: "reponse", texte: REPONSE_PROJETEE },
+  });
+  const qatt = (sortie: SortieJuge, reponse_attendue: ReponseAttendue = LISTE, surcharges: Partial<CadreNotationJuge> = {}): NotationIndividuelle =>
+    noter(sortie, { gabarit: "Q-ATT", reponse_attendue, candidats: HOMONYMES, interroges: INTERROGES, ...surcharges });
 
-  it("nom seul et prénom + nom : rattachés ; attendus lus dans la réponse attendue du tirage", () => {
-    expect(qatt(["Martinez", "Maxime Le Brun"]).attribution).toEqual({ attendus: ["demo-alpha", "demo-beta"], cites: ["demo-alpha", "demo-beta"] });
+  it("liste exacte (nom seul, prénom + nom) : exacte, attendus lus dans le tirage", () => {
+    const n = qatt(releve(["Martinez", "Maxime Le Brun"]));
+    expect(n).toMatchObject({ categorie: "exacte", drapeaux: [] });
+    expect(n.attribution).toEqual({ attendus: ["demo-alpha", "demo-beta"], cites: ["demo-alpha", "demo-beta"] });
+    expect("motif_inexactitude" in n).toBe(false);
   });
 
-  it("nom hors périmètre : conservé tel qu'écrit dans hors_perimetre_cites", () => {
-    expect(qatt(["Martinez", "Jean Dupont"]).attribution).toEqual({ attendus: ["demo-alpha", "demo-beta"], cites: ["demo-alpha"], hors_perimetre_cites: ["Jean Dupont"] });
+  it("un attendu manque : inexacte, liste_incomplete", () => {
+    expect(qatt(releve(["Martinez", "Jean Dupont"]))).toMatchObject({ categorie: "inexacte", motif_inexactitude: "liste_incomplete", drapeaux: [], attribution: { hors_perimetre_cites: ["Jean Dupont"] } });
   });
 
-  it("nom ambigu (deux candidats du même nom) : conservé dans ambigus_cites, rattaché à aucun", () => {
-    expect(qatt(["Ollivier"]).attribution).toEqual({ attendus: ["demo-alpha", "demo-beta"], cites: [], ambigus_cites: ["Ollivier"] });
+  it("un candidat interrogé en trop : candidat_confondu, mauvaise_attribution", () => {
+    expect(qatt(releve(["Martinez", "Le Brun", "Camille Ollivier"]))).toMatchObject({ categorie: "inexacte", motif_inexactitude: "candidat_confondu", drapeaux: ["mauvaise_attribution"] });
+  });
+
+  it("nom ambigu dont les deux candidats sont en trop : conservé dans ambigus_cites, candidat_confondu", () => {
+    expect(qatt(releve(["Martinez", "Le Brun", "Ollivier"]))).toMatchObject({ motif_inexactitude: "candidat_confondu", attribution: { cites: ["demo-alpha", "demo-beta"], ambigus_cites: ["Ollivier"] } });
   });
 
   it("casse et accents différents : rattachés par la normalisation de la barrière du §5", () => {
-    expect(qatt(["MARTINEZ", "helene ollivier"]).attribution?.cites).toEqual(["demo-alpha", "demo-delta"]);
+    expect(qatt(releve(["MARTINEZ", "helene ollivier"])).attribution?.cites).toEqual(["demo-alpha", "demo-delta"]);
   });
 
-  it("aucun nom cité : cites vide et présent (une absence de citation est une donnée)", () => {
-    expect(qatt([]).attribution).toEqual({ attendus: ["demo-alpha", "demo-beta"], cites: [] });
+  it("mesure fictive : aucun nom, exacte ; un nom du périmètre, fabrication", () => {
+    expect(qatt(releve([]), FICTIVE)).toMatchObject({ categorie: "exacte", attribution: { attendus: [], cites: [] } });
+    expect(qatt(releve(["Martinez"]), FICTIVE)).toMatchObject({ categorie: "inexacte", motif_inexactitude: "position_inventee", drapeaux: ["fabrication"] });
   });
 
-  it("mesure fictive : attendus vide", () => {
-    expect(qatt(["Martinez"], FICTIVE).attribution).toEqual({ attendus: [], cites: ["demo-alpha"] });
+  it("non-réponse explicite : non_reponse ; une liste vide sans elle n'en est pas une", () => {
+    expect(qatt(releve([], true)).categorie).toBe("non_reponse");
+    expect(qatt(releve([])).categorie).toBe("inexacte");
   });
 
-  it("Q-ATT sans noms_cites : sortie incohérente", () => {
-    expect(() => qatt(undefined)).toThrow(/noms_cites/);
+  it("un juge qui rend une catégorie, des drapeaux ou un motif sur une Q-ATT voit sa sortie refusée", () => {
+    for (const ajout of [{ categorie: "exacte" }, { drapeaux: [] }, { motif_inexactitude: "omission" }]) {
+      expect(() => qatt({ ...releve(["Martinez", "Le Brun"]), ...ajout } as SortieJuge)).toThrow(SortieJugeIncoherente);
+    }
+  });
+
+  it("Q-ATT sans noms_cites ou sans non_reponse : sortie incohérente", () => {
+    expect(() => qatt({ sourcage: { cite: false, soutiens: [] }, non_reponse: false } as unknown as SortieJuge)).toThrow(/noms_cites/);
+    expect(() => qatt({ sourcage: { cite: false, soutiens: [] }, noms_cites: [] } as unknown as SortieJuge)).toThrow(/non_reponse/);
+  });
+
+  it("non-réponse déclarée avec des noms : sortie incohérente", () => {
+    expect(() => qatt(releve(["Martinez"], true))).toThrow(SortieJugeIncoherente);
+  });
+
+  it("note calculée inexacte sans extrait : sortie incohérente", () => {
+    const { extrait_justificatif: _e, ...sansExtrait } = releve(["Martinez"]) as SortieJugeAttribution;
+    expect(() => qatt(sansExtrait)).toThrow(/extrait/);
+  });
+
+  it("cas indécidable (candidat du périmètre non interrogé cité) : AttributionIndecidable, aucune note", () => {
+    expect(() => qatt(releve(["Martinez", "Le Brun", "Ollivier"]), LISTE, { interroges: ["demo-alpha", "demo-beta", "demo-gamma"] })).toThrow(AttributionIndecidable);
   });
 
   it("noms_cites hors Q-ATT : sortie incohérente", () => {
@@ -136,10 +172,14 @@ describe("(D) question d'attribution : noms relevés par le juge, rattachés par
   });
 
   it("un nom sans aucun mot : sortie incohérente, jamais classé hors périmètre", () => {
-    expect(() => qatt(["  "])).toThrow(SortieJugeIncoherente);
+    expect(() => qatt(releve(["  "]))).toThrow(SortieJugeIncoherente);
   });
 
   it("Q-ATT dont le tirage n'a pas de liste attendue : erreur, jamais une liste supposée", () => {
-    expect(() => qatt(["Martinez"], { nature: "oui", resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } })).toThrow(/sans liste de candidats/);
+    expect(() => qatt(releve(["Martinez"]), { nature: "oui", resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } })).toThrow(/sans liste de candidats/);
+  });
+
+  it("D29 (4) : la version de la charge est enregistrée dans la notation", () => {
+    expect(qatt(releve(["Martinez", "Le Brun"])).version_charge).toBe("charge-juge-v3");
   });
 });

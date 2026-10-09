@@ -111,12 +111,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
   // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
   // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide (Q-ATT, nom ambigu), trois valides et trois invalides du nouveau schéma extraction-page-lien.
-  it("1. les 240 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
+  it("1. les 241 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(240);
+    expect(manifeste.exemples).toHaveLength(241);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -249,7 +250,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
   // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
   // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 240 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(240);
+  // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 241 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(241);
   });
 });

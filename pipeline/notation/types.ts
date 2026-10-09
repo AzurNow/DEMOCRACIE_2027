@@ -93,6 +93,8 @@ export interface NotationIndividuelle {
   readonly contexte: ContexteMesure;
   readonly objet_note: ObjetNote;
   readonly notateur: Notateur;
+  /** D29 (4) : la version du format de ce que le notateur a reçu (`VERSION_CHARGE_JUGE`). */
+  readonly version_charge: string;
   readonly gabarit: Gabarit;
   readonly references_item: readonly ReferenceItem[];
   readonly categorie: CategorieRetenue;

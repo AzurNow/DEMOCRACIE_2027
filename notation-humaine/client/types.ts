@@ -112,12 +112,23 @@ export interface Soutien {
   readonly verdict_soutien: string;
 }
 
-export interface Saisie {
-  readonly categorie: string;
-  readonly drapeaux: readonly string[];
+interface SaisieCommune {
   readonly cite: boolean;
   readonly soutiens: readonly Soutien[];
-  readonly motif_inexactitude?: string;
-  readonly attribution?: { readonly attendus: readonly string[]; readonly cites: readonly string[]; readonly hors_perimetre_cites?: readonly string[] };
   readonly extrait?: { readonly texte: string; readonly provenance: string };
 }
+
+/** Hors question d'attribution : la grille du §7. */
+export interface SaisieOrdinaire extends SaisieCommune {
+  readonly categorie: string;
+  readonly drapeaux: readonly string[];
+  readonly motif_inexactitude?: string;
+}
+
+/** Question d'attribution (D29) : les noms cités, tels qu'écrits, et la non-réponse ; la note se calcule. */
+export interface SaisieAttribution extends SaisieCommune {
+  readonly noms_cites: readonly string[];
+  readonly non_reponse: boolean;
+}
+
+export type Saisie = SaisieOrdinaire | SaisieAttribution;

@@ -151,6 +151,8 @@ interface Etat {
   readonly run: RunLu;
   /** Les candidats du périmètre du run : les noms cités sur une Q-ATT s'y rattachent (D27 (D)). */
   readonly candidats: readonly CandidatDuRun[];
+  /** Les candidats interrogés au run : la note d'une Q-ATT les distingue (D29 (1)). */
+  readonly interroges: readonly string[];
   readonly depot: DepotNotation;
   /** Rangées par identifiant croissant. */
   readonly reponses: readonly Preparee[];
@@ -199,6 +201,7 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     env,
     run,
     candidats: runDeNotationDe(run).candidats,
+    interroges: run.perimetre.candidats.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id),
     depot,
     reponses: preparees,
     parId: indexerReponses(preparees, run.id),
@@ -310,6 +313,10 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
       items: cible.demande.references.map(({ item }) => item),
       reponse_attendue: cible.demande.resolu_au_gel.reponse_attendue,
       candidats: etat.candidats,
+      interroges: etat.interroges,
+      registre: cible.demande.question.registre,
+      premisse_fausse: cible.demande.resolu_au_gel.premisse_fausse,
+      version_charge: charge.version_charge,
     });
     etat.depot.ecrireNotation(notation);
     etat.notations.push(notation);

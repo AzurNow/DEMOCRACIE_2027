@@ -35,11 +35,12 @@ import type { VerdictExistence } from "../../analysis/types.ts";
 import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
 
 /**
- * Borne du texte d'une page transmis au juge, en points de code (l'unité des offsets du dépôt). Choix
- * du lot charge-juge-v3, à confirmer par l'auteur : environ 5 000 mots, de quoi tenir une page
- * d'article ou les premières pages d'un programme. Changer la borne change ce que voit le juge.
+ * Borne du texte d'une page transmis au juge, en points de code (l'unité des offsets du dépôt).
+ * Décision D29 (3) de l'auteur : 50 000 points de code, troncature signalée ; le prompt dit
+ * « indéterminé » quand l'affirmation peut se trouver après la borne. Changer la borne change ce que
+ * voit le juge.
  */
-export const LONGUEUR_MAX_TEXTE_PAGE = 20_000;
+export const LONGUEUR_MAX_TEXTE_PAGE = 50_000;
 
 /** Ce que le fournisseur sait du texte d'une copie conservée, par son empreinte (`sha256_contenu`). */
 export type TexteDeCopie =

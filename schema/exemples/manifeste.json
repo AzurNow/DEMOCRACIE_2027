@@ -336,99 +336,99 @@
       "objet": "notation",
       "fichier": "notation/valide-01-juge-exacte.json",
       "attendu": "valide",
-      "motif": "Notation par un juge automatique : famille de modèle et version de prompt tracées, aveuglement enregistré, aucun drapeau puisque la catégorie n'est pas « inexacte »."
+      "motif": "Notation par un juge automatique : famille de modèle et version de prompt tracées, aveuglement enregistré, aucun drapeau puisque la catégorie n'est pas « inexacte ». Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/valide-02-humain-inexacte-fabrication.json",
       "attendu": "valide",
-      "motif": "Notation humaine d'une fabrication : motif d'inexactitude enregistré, extrait justificatif vérifié de façon déterministe, défaut de sourçage distinct de l'inexactitude."
+      "motif": "Notation humaine d'une fabrication : motif d'inexactitude enregistré, extrait justificatif vérifié de façon déterministe, défaut de sourçage distinct de l'inexactitude. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-01-juge-indeterminee.json",
       "attendu": "invalide",
-      "motif": "Un juge automatique attribue « indéterminée ». §7 la réserve aux humains ; l'annexe D le demande au juge en langage naturel, ce qu'un modèle finira par ignorer. Interdit ici par le schéma, sinon la catégorie entre dans les dénominateurs du §8 sans que personne ne le voie.",
+      "motif": "Un juge automatique attribue « indéterminée ». §7 la réserve aux humains ; l'annexe D le demande au juge en langage naturel, ce qu'un modèle finira par ignorer. Interdit ici par le schéma, sinon la catégorie entre dans les dénominateurs du §8 sans que personne ne le voie. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, catégorie primaire"
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-02-drapeaux-sur-reponse-exacte.json",
       "attendu": "invalide",
-      "motif": "Drapeau secondaire porté par une réponse exacte. §7 : les drapeaux ne s'appliquent qu'aux réponses inexactes ; sinon le taux d'obsolescence du §8 compte des réponses justes.",
+      "motif": "Drapeau secondaire porté par une réponse exacte. §7 : les drapeaux ne s'appliquent qu'aux réponses inexactes ; sinon le taux d'obsolescence du §8 compte des réponses justes. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, drapeaux secondaires"
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-03-inexacte-sans-extrait.json",
       "attendu": "invalide",
-      "motif": "Note autre qu'exacte sans extrait justificatif. Annexe C le rend obligatoire : sans lui, une erreur grave serait publiée in extenso (§8) sans ce qui la motive.",
+      "motif": "Note autre qu'exacte sans extrait justificatif. Annexe C le rend obligatoire : sans lui, une erreur grave serait publiée in extenso (§8) sans ce qui la motive. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "annexe C, grille de notation"
     },
     {
       "objet": "notation",
       "fichier": "notation/valide-03-humain-arbitrage-echantillon.json",
       "attendu": "valide",
-      "motif": "Troisième humain arbitrant une réponse de l'échantillon de 10 % dont les deux notations divergent (§7) : motif arbitrage_echantillon_10, distinct de l'arbitrage du panel des contestations. C'est cette note que retient le recalcul (a) du §8."
+      "motif": "Troisième humain arbitrant une réponse de l'échantillon de 10 % dont les deux notations divergent (§7) : motif arbitrage_echantillon_10, distinct de l'arbitrage du panel des contestations. C'est cette note que retient le recalcul (a) du §8. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-04-arbitrage-echantillon-par-un-juge.json",
       "attendu": "invalide",
-      "motif": "Arbitrage de l'échantillon humain confié à un juge automatique. §7 : la divergence des deux humains est arbitrée par un troisième HUMAIN ; une note de juge entrerait sinon dans le recalcul (a), qui doit rester sur la seule notation humaine.",
+      "motif": "Arbitrage de l'échantillon humain confié à un juge automatique. §7 : la divergence des deux humains est arbitrée par un troisième HUMAIN ; une note de juge entrerait sinon dans le recalcul (a), qui doit rester sur la seule notation humaine. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, règle de décision ; §8, robustesse (a)"
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-05-echantillon-note-par-un-juge.json",
       "attendu": "invalide",
-      "motif": "Notation de l'échantillon aléatoire de 10 % portée par un juge automatique. §7 : double notation HUMAINE à l'aveugle ; une note de juge sous ce motif entrerait dans le recalcul (a) du §8, qui doit rester sur la seule notation humaine.",
+      "motif": "Notation de l'échantillon aléatoire de 10 % portée par un juge automatique. §7 : double notation HUMAINE à l'aveugle ; une note de juge sous ce motif entrerait dans le recalcul (a) du §8, qui doit rester sur la seule notation humaine. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, règle de décision ; §8, robustesse (a)"
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-06-lien-mort-soutenant.json",
       "attendu": "invalide",
-      "motif": "Lien cité dont le test HTTP dit « mort » et que la notation déclare « soutient » (copie de valide-01 dont seul le sourçage change). Une page qui n'existe plus ne contient pas l'affirmation : un lien mort ne soutient rien (conformité n° 64).",
+      "motif": "Lien cité dont le test HTTP dit « mort » et que la notation déclare « soutient » (copie de valide-01 dont seul le sourçage change). Une page qui n'existe plus ne contient pas l'affirmation : un lien mort ne soutient rien (conformité n° 64). Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, sourçage"
     },
     {
       "objet": "notation",
       "fichier": "notation/valide-04-lien-inaccessible-soutenant-copie-archivee.json",
       "attendu": "valide",
-      "motif": "Copie de valide-01 dont seul le sourçage change : un lien inaccessible au test HTTP (403), noté « soutient » d'après sa copie archivée, qui porte son lien d'archive et l'empreinte de son contenu. §7 : cas permis, que la règle du n° 29 ne doit pas rejeter. Il ne fait pas pour autant un sourçage valide, réservé au lien existant et soutenant."
+      "motif": "Copie de valide-01 dont seul le sourçage change : un lien inaccessible au test HTTP (403), noté « soutient » d'après sa copie archivée, qui porte son lien d'archive et l'empreinte de son contenu. §7 : cas permis, que la règle du n° 29 ne doit pas rejeter. Il ne fait pas pour autant un sourçage valide, réservé au lien existant et soutenant. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-07-lien-inaccessible-soutenant-sans-copie.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-04 privée de archive_url et de sha256_contenu. §7 : un lien inaccessible ou non testable peut être noté soutenant « d'après une copie archivée » ; sans copie conservée, le soutien n'a été jugé sur rien de vérifiable, et l'audit humain n'a rien à relire. Conformité 2026-09-29, n° 29.",
+      "motif": "Copie de valide-04 privée de archive_url et de sha256_contenu. §7 : un lien inaccessible ou non testable peut être noté soutenant « d'après une copie archivée » ; sans copie conservée, le soutien n'a été jugé sur rien de vérifiable, et l'audit humain n'a rien à relire. Conformité 2026-09-29, n° 29. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, sourçage"
     },
     {
       "objet": "notation",
       "fichier": "notation/valide-05-humain-extrait-invalide.json",
       "attendu": "valide",
-      "motif": "Humain appelé hors échantillon parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : la notation du juge est invalidée et la réponse est notée par un humain). Motif extrait_invalide, décision D15 de l'auteur."
+      "motif": "Humain appelé hors échantillon parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : la notation du juge est invalidée et la réponse est notée par un humain). Motif extrait_invalide, décision D15 de l'auteur. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-08-extrait-invalide-par-un-juge.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-05 portée par un juge automatique. §7 : un extrait invalide renvoie la réponse à un HUMAIN ; un juge sous le motif extrait_invalide noterait à sa place (D15).",
+      "motif": "Copie de valide-05 portée par un juge automatique. §7 : un extrait invalide renvoie la réponse à un HUMAIN ; un juge sous le motif extrait_invalide noterait à sa place (D15). Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, règle de décision"
     },
     {
       "objet": "notation",
       "fichier": "notation/valide-06-humain-accord-partiel-juges.json",
       "attendu": "valide",
-      "motif": "Humain appelé hors échantillon parce que les deux juges s'accordent sur ce que lisent les métriques primaires mais diffèrent sur un champ que porte la note retenue. Motif accord_partiel_juges, décision D15 de l'auteur (« accord partiel → humain »)."
+      "motif": "Humain appelé hors échantillon parce que les deux juges s'accordent sur ce que lisent les métriques primaires mais diffèrent sur un champ que porte la note retenue. Motif accord_partiel_juges, décision D15 de l'auteur (« accord partiel → humain »). Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-10-accord-partiel-par-un-juge.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-06 portée par un juge automatique. D15 : un accord partiel des juges renvoie la réponse à un HUMAIN ; un juge sous le motif accord_partiel_juges noterait à sa place.",
+      "motif": "Copie de valide-06 portée par un juge automatique. D15 : un accord partiel des juges renvoie la réponse à un HUMAIN ; un juge sous le motif accord_partiel_juges noterait à sa place. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§7, règle de décision"
     },
     {
@@ -1358,7 +1358,7 @@
       "objet": "notation",
       "fichier": "notation/invalide-09-fraicheur-sans-drapeau-obsolescence.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-01 portant obsolescence_fraiche sans le drapeau obsolescence. Décision D17 de l'auteur (2026-10-06) : la fraîcheur n'existe qu'avec ce drapeau ; ailleurs, aucune métrique ne la lit et l'accord des notations la comparerait.",
+      "motif": "Copie de valide-01 portant obsolescence_fraiche sans le drapeau obsolescence. Décision D17 de l'auteur (2026-10-06) : la fraîcheur n'existe qu'avec ce drapeau ; ailleurs, aucune métrique ne la lit et l'accord des notations la comparerait. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change.",
       "regle_protocole": "§11, obsolescence fraîche ; §7, accord des notations (D17)"
     },
     {
@@ -1569,7 +1569,7 @@
       "objet": "notation",
       "fichier": "notation/valide-07-juge-attribution-nom-ambigu.json",
       "attendu": "valide",
-      "motif": "Copie de valide-01 sur une Q-ATT. D27 (D), charge-juge-v3 : le bloc d'attribution d'un juge est calculé par le code (pipeline/notation/juge.ts) ; un nom cité qui correspond à deux candidats du périmètre est conservé dans ambigus_cites, rattaché à aucun, à côté d'un nom hors périmètre."
+      "motif": "Copie de valide-01 sur une Q-ATT. D27 (D), charge-juge-v3 : le bloc d'attribution d'un juge est calculé par le code (pipeline/notation/juge.ts) ; un nom cité qui correspond à deux candidats du périmètre est conservé dans ambigus_cites, rattaché à aucun, à côté d'un nom hors périmètre. Modifié ouvertement (lot charge-juge-v3, D29 (4)) : version_charge ajoutée, exigée de toute notation ; rien d'autre ne change."
     },
     {
       "objet": "extraction-page-lien",
@@ -1609,6 +1609,13 @@
       "attendu": "invalide",
       "motif": "Extracteur webvtt sur une page citée : une page citée est un HTML ou un PDF, aucun média n'y est transcrit.",
       "regle_protocole": "Décision D27 (E)"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-11-sans-version-charge.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 sans version_charge. D29 (4) : la version du format de ce que le notateur a reçu est enregistrée dans chaque notation ; sans elle, deux notations qui n'ont pas lu les mêmes champs ne se distinguent pas.",
+      "regle_protocole": "§7, §9 (reproductibilité) ; décision D29 (4) de l'auteur"
     }
   ]
 }

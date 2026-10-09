@@ -63,6 +63,19 @@ export function notationsConcordent(a: Notation, b: Notation): boolean {
   return memeNote(lireNote(a), lireNote(b));
 }
 
+/**
+ * « La note change » du test contrefactuel des noms de candidats (décision D29 (2) de l'auteur,
+ * 2026-10-09, qui remplace D14 (3) pour ce seul test) : catégorie, drapeaux et motif d'inexactitude.
+ * Le soutien des liens n'y entre pas : le texte des pages citées n'est pas permuté (§7 ne permute que
+ * la réponse et l'item), un soutien qui change avec lui ne dit rien d'un biais sur le nom. La
+ * fraîcheur n'y entre pas non plus : elle se calcule depuis les dates (D27 (C)), identiques des deux
+ * côtés. Seconde égalité du dépôt, à côté de `notationsConcordent`, qui garde l'accord des juges et
+ * des humains.
+ */
+export function notesContrefactuellesConcordent(a: Notation, b: Notation): boolean {
+  return a.categorie === b.categorie && memesDrapeaux(a.drapeaux, b.drapeaux) && a.motif_inexactitude === b.motif_inexactitude;
+}
+
 /** Les drapeaux sont un ensemble (`uniqueItems` au schéma) : l'ordre ne compte pas. */
 function memesDrapeaux(a: readonly Drapeau[], b: readonly Drapeau[]): boolean {
   return a.length === b.length && a.every((drapeau) => b.includes(drapeau));

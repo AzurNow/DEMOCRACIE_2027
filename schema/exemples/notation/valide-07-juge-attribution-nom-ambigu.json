@@ -14,6 +14,7 @@
     "version_prompt": "prompts/judge-primaire-1.0.0",
     "a_vu_identite_outil": false
   },
+  "version_charge": "charge-juge-v3",
   "gabarit": "Q-ATT",
   "references_item": [
     {

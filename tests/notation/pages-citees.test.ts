@@ -108,7 +108,7 @@ describe("pagesCitees", () => {
     expect(() => pagesCitees(R, [EXISTE.url_citee], new Map(), lire)).toThrow(LienSansVerdictExistence);
   });
 
-  it("la borne est déclarée : 20 000 points de code", () => {
-    expect(LONGUEUR_MAX_TEXTE_PAGE).toBe(20_000);
+  it("la borne est déclarée : 50 000 points de code (D29 (3))", () => {
+    expect(LONGUEUR_MAX_TEXTE_PAGE).toBe(50_000);
   });
 });

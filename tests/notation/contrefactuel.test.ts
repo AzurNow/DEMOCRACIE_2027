@@ -17,7 +17,7 @@ import type { TextesDeVerification } from "../../pipeline/notation/extrait.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { inexacte, notationHumaine, notationJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, lien, notationHumaine, notationJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 
 const TEXTES: TextesDeVerification = { reponse: REPONSE_PROJETEE, citations_reference: [] };
 
@@ -167,14 +167,28 @@ describe("issue du test", () => {
 });
 
 describe("ce qu'est un changement", () => {
-  it("D14 (3) : notes concordantes mais motifs d'inexactitude différents, pas un changement", () => {
+  // Modifié ouvertement (D29 (2), qui remplace D14 (3) pour le seul test contrefactuel) : le motif
+  // d'inexactitude entre dans la comparaison ; ce test affirmait auparavant le contraire.
+  it("D29 (2) : même catégorie et mêmes drapeaux mais motifs d'inexactitude différents, c'est un changement", () => {
     const notations = [
       surOrigine("j1", 0, inexacte()),
       surPermutee("j1", 0, { ...inexacte(), motif_inexactitude: "ajout_fabrique" }),
       surOrigine("j2", 0),
       surPermutee("j2", 0),
     ];
+    expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(1);
+  });
+
+  it("D29 (2) : seul le soutien d'un lien diffère (sourçage valide d'un côté, pas de l'autre) : pas un changement", () => {
+    const soutient = { sourcage: { cite: true, liens: [lien("existe", "soutient")] } };
+    const neSoutientPas = { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } };
+    const notations = [surOrigine("j1", 0, soutient), surPermutee("j1", 0, neSoutientPas), surOrigine("j2", 0), surPermutee("j2", 0)];
     expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(0);
+  });
+
+  it("D29 (2) : un drapeau différent reste un changement", () => {
+    const notations = [surOrigine("j1", 0, inexacte()), surPermutee("j1", 0, inexacte(["deformation"])), surOrigine("j2", 0), surPermutee("j2", 0)];
+    expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(1);
   });
 
   it("D16 (2) : un extrait invalide du côté permuté est un changement, même à note égale", () => {
