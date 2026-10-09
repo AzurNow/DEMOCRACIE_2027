@@ -438,8 +438,11 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
   D29 (2026-10-09), à la suite : « Sur une question d'attribution, la catégorie, le motif et les
   drapeaux se calculent en comparant les candidats cités, que relève le juge, à la liste attendue. Le
-  taux de changement du test contrefactuel compare la catégorie, les drapeaux et le motif, pas le
-  soutien des pages citées, qui ne sont pas permutées. »
+  taux de changement du test contrefactuel ne compte pas le soutien des pages citées, qui ne sont
+  pas permutées. » (D30 (1) : un changement reste « tout ce que lisent les métriques primaires »,
+  sourçage excepté ; le motif n'en fait pas partie.) D30 (2) : « Quand la règle ne détermine pas
+  la note d'une question d'attribution, la réponse est notée par un humain ; leur nombre est
+  publié. »
 
   Ligne de révision, à fusionner : « Section 7 et annexe D : contenu de la charge du juge, note
   d'une question d'attribution calculée, sourçage hors du test contrefactuel. »

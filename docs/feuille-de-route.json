@@ -406,7 +406,20 @@
         "(1) Libellés transmis au juge, ou rien changé ; (2) permuter aussi les pages ; (3) 20 000 ou sans borne ; (4) seulement le rattachement et ambigus_cites."
       ],
       "recommandation": "Option 1 sur les quatre points : déterministe là où un fichier sait la réponse ; une page réelle ne se falsifie pas ; une borne qui couvre la plupart des pages en entier ; l'humain voit et saisit ce que voit et rend le juge (D18).",
-      "retenu": "Option 1 sur les quatre points. Points 1 et 2 à écrire au §7 en 0.16.",
+      "retenu": "Option 1 sur les quatre points. Points 1 et 2 à écrire au §7 en 0.16. Point 2 précisé par D30 (1) : la formulation « catégorie, drapeaux et motif » ajoutait par erreur le motif, contre D14 (3).",
+      "date_decision": "2026-10-09"
+    },
+    {
+      "id": "D30",
+      "statut": "tranchee",
+      "question": "Points ouverts par le codage de D29 dans la PR #106 : définition d'un changement contrefactuel ; trois cas de Q-ATT qu'aucun texte ne tranche ; « indéterminée » humaine sur une Q-ATT ; version de la charge d'une lecture de comparateur.",
+      "contexte": "D29 (2) disait « catégorie, drapeaux et motif », alors que D14 (3) définit un changement par ce que lisent les métriques primaires, que le motif n'est pas. Trois cas Q-ATT arrêtaient la chaîne (AttributionIndecidable) : candidat du périmètre non interrogé cité, nom ambigu dont un candidat possible est attendu, Q-ATT orientée à prémisse fausse avec un nom cité. La saisie humaine par noms ne permettait plus « indéterminée ». version_charge était exigée d'une notation de comparateur, qui n'a pas de charge.",
+      "options": [
+        "(1) Changement contrefactuel = D14 (3) sans le sourçage : catégorie, drapeaux, fraîcheur ; motif non compté ; (2) les trois cas partent en notation humaine avec un motif « indécidable par la règle », nombre publié, au lieu d'arrêter la chaîne ; l'humain y décide catégorie, motif et drapeaux ; (3) case explicite « réponse contradictoire, indéterminée » pour l'humain sur une Q-ATT ; (4) version_charge exigée d'une notation de réponse, interdite pour une lecture de comparateur.",
+        "(1) Avec le motif ; (2) trois règles fixes ; (3) pas d'indéterminée ; (4) exigée partout."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points.",
       "date_decision": "2026-10-09"
     }
   ],
@@ -626,9 +639,10 @@
         "D17",
         "D27",
         "D29",
-        "D3"
+        "D3",
+        "D30"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*. Le 2026-10-09 : PR #106 (brouillon) livre charge-juge-v3 ; D29 tranchée sur ses points ouverts, à coder dans la même PR."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*. Le 2026-10-09 : PR #106 (brouillon) livre charge-juge-v3 ; D29 tranchée sur ses points ouverts, à coder dans la même PR. Le 2026-10-09 : D29 codée dans la PR #106 ; D30 tranchée sur les points ouverts restants, à coder dans la même PR."
     },
     {
       "id": "notation-humaine",

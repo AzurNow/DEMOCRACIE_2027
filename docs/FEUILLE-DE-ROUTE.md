@@ -90,11 +90,15 @@ Aucune décision en attente.
 
 ### D29 — Points ouverts par la PR #106 (charge-juge-v3) : qui décide la note d'une Q-ATT ; pages citées dans le test contrefactuel ; borne du texte d'une page ; rattachement des noms, ambigus, saisie humaine d'une Q-ATT, version de la charge enregistrée.
 
-**Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 et 2 à écrire au §7 en 0.16.
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 et 2 à écrire au §7 en 0.16. Point 2 précisé par D30 (1) : la formulation « catégorie, drapeaux et motif » ajoutait par erreur le motif, contre D14 (3).
 
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
+
+### D30 — Points ouverts par le codage de D29 dans la PR #106 : définition d'un changement contrefactuel ; trois cas de Q-ATT qu'aucun texte ne tranche ; « indéterminée » humaine sur une Q-ATT ; version de la charge d'une lecture de comparateur.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points.
 
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
