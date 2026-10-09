@@ -380,7 +380,20 @@
         "(1) Liste projetée au gel du pilote ; (2) top 20 Productivité ou top 100 général ; (3) GPT ou Gemini en second juge, ou un modèle ouvert ; (4) « inexacte », ou « exacte » sans drapeau."
       ],
       "recommandation": "Option 1 sur les quatre points. Sur (3) : la popularité n'est pas un critère de juge ; un second juge GPT noterait ChatGPT, l'outil le plus lu, sous le biais d'auto-préférence, que Mistral déplace sur Le Chat.",
-      "retenu": "Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge.",
+      "retenu": "Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge. Point 4 RÉVISÉ par l'auteur le 2026-10-09 : « exacte » avec drapeau fabrication contredisait le §7 (drapeaux sur les seules réponses inexactes, fabrication réservée aux items A et F) et schema/notation.schema.json ; retenu : « inexacte », motif d'inexactitude ajout_fabrique, que le schéma prévoyait déjà. Aucun texte du §7 à écrire pour ce point.",
+      "date_decision": "2026-10-09"
+    },
+    {
+      "id": "D27",
+      "statut": "tranchee",
+      "question": "Ce que la charge du juge doit transmettre et ce que le code calcule à sa place, pour que le prompt juge ne fasse rien deviner de ce qu'un fichier sait déjà.",
+      "contexte": "Relecture de la proposition de prompt juge (lot perimetre-prompts) : le juge rend obsolescence_fraiche (arithmétique de dates) ; ne voit que des candidat_id opaques sur une Q-ATT et ne peut pas remplir cites ; ne reçoit pas le contenu des pages citées (soutien indéterminé partout) ; doit deviner la prémisse fausse et la réponse attendue. L'annexe D diffère de charge-juge.ts et juge.ts (noms de variables, une seule référence, forme du sourçage et de l'extrait).",
+      "options": [
+        "charge-juge-v3 : (C) fraîcheur de l'obsolescence calculée par le code depuis les dates, jamais lue du juge ; (D) sur une Q-ATT, le juge rend les noms cités tels quels et le code les rattache aux candidats ; (E) la charge transmet le texte de la page citée, conservée ou copie archivée (D21) ; (F) la charge transmet premisse_fausse résolue au gel ; (G) la charge transmet la réponse attendue du tirage. Annexe D alignée en 0.16.",
+        "Sans (E) : soutien laissé à l'humain ; ou tout reporter au lot notation avant J4."
+      ],
+      "recommandation": "Option 1 : chaque point retire au juge une inférence qu'un fichier du run porte déjà ; (E) évite de renvoyer tout le sourçage aux humains.",
+      "retenu": "Option 1, les cinq points. Le §7 doit énumérer en 0.16 ce que reçoit le juge (réponse attendue, prémisse, texte de la page citée), et l'annexe D s'aligner sur la charge.",
       "date_decision": "2026-10-09"
     }
   ],
@@ -598,9 +611,10 @@
         "D15",
         "D16",
         "D17",
+        "D27",
         "D3"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*."
     },
     {
       "id": "notation-humaine",
