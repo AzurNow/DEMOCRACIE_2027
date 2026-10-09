@@ -226,3 +226,32 @@ Ce que la commande ajoute sous `<sortie>/<date>/` :
 Les réponses qui attendent un humain ne reçoivent aucun verdict : le bilan imprimé, relu du disque,
 les compte par motif. Relancer sur la même sortie ne réécrit aucun fichier.
 `pnpm notation:controle <sortie>/<date>` passe sur le répertoire produit.
+
+## `pnpm preuve <url> [<url>…]`
+
+Commande de l'auteur, jamais d'un agent contre le réseau réel (`pipeline/preuve`) : archive une preuve
+du périmètre (déclaration de candidature, sondage, classement de store, CGU, page de contact) et
+imprime le bloc YAML à coller dans `config/perimetre.yaml`. Elle n'écrit ni dans `config/`, ni dans
+`data/`, ni dans `runs/`.
+
+```bash
+pnpm preuve https://exemple.fr/declaration --cle-date date
+pnpm preuve --sondage https://institut.fr/sondage-12
+pnpm preuve --fichier scratch/perimetre/urls-a-archiver.txt
+```
+
+Pour chaque URL : GET selon la norme de la collecte (robots.txt, une requête par seconde et par hôte,
+cinq redirections au plus), SHA-256 des octets reçus tels quels, copie sous
+`scratch/perimetre/preuves/<sha256><extension>` (`--dossier` pour changer), Save Page Now.
+
+- **Bloc** : `url` exacte telle que donnée, `sha256`, `archive_url` (l'instantané renvoyé par Wayback) ;
+  en commentaire, l'instant de capture, l'URL finale si elle diffère, le code HTTP, le type de contenu,
+  la copie locale et, dans un fichier d'URL, les lignes `#` qui précèdent l'URL (sans ligne vide entre).
+- **Jamais devinés** : `date_publication:` (ou `date:` avec `--cle-date date`) et, avec `--sondage`,
+  `institut:` sont imprimés vides avec `# à lire sur la page`. L'auteur les lit sur la page.
+- **Échec** (robots.txt, 4xx/5xx, réseau, URL non http(s), IRI inconvertible) : pas de bloc, la cause
+  sur stderr, code de sortie 1 ; les autres URL sont traitées. Si Wayback échoue après le
+  téléchargement, le bloc est imprimé avec `archive_url:` vide et un commentaire, et le code est 1 :
+  refaire l'URL avant de coller. Code 2 : ligne de commande ou fichier d'URL refusés, aucune requête.
+- Une URL non ASCII est envoyée en URI (conversion de `pipeline/liens/iri.py`) ; le bloc garde la
+  chaîne exacte.
