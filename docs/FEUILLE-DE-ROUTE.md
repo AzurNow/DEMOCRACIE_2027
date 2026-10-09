@@ -82,7 +82,11 @@ Aucune décision en attente.
 
 ### D26 — Quatre points du lot perimetre-prompts que le protocole laisse ouverts : date d'application de la règle pour la liste publiée à J1 ; « top des applications de la catégorie » des stores ; choix des deux juges ; note d'une réponse juste qui ajoute une position inventée non contradictoire (schema/README.md, point ouvert 3).
 
-**Décision du 2026-10-09 :** Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge.
+**Décision du 2026-10-09 :** Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge. Point 4 RÉVISÉ par l'auteur le 2026-10-09 : « exacte » avec drapeau fabrication contredisait le §7 (drapeaux sur les seules réponses inexactes, fabrication réservée aux items A et F) et schema/notation.schema.json ; retenu : « inexacte », motif d'inexactitude ajout_fabrique, que le schéma prévoyait déjà. Aucun texte du §7 à écrire pour ce point.
+
+### D27 — Ce que la charge du juge doit transmettre et ce que le code calcule à sa place, pour que le prompt juge ne fasse rien deviner de ce qu'un fichier sait déjà.
+
+**Décision du 2026-10-09 :** Option 1, les cinq points. Le §7 doit énumérer en 0.16 ce que reçoit le juge (réponse attendue, prémisse, texte de la page citée), et l'annexe D s'aligner sur la charge.
 
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 

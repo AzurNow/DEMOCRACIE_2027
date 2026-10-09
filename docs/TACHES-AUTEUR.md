@@ -421,12 +421,22 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       avec la liste publiée est rapporté. » Dans le tableau des outils, « figurant dans le top des
       applications de la catégorie » devient « figurant dans les 50 premières applications gratuites
       de la catégorie Productivité de l'App Store ou de Google Play en France, classement archivé ».
-      Au §7 : « Une réponse qui affirme la référence sans contradiction et y ajoute une position que
-      rien ne source est exacte et porte le drapeau fabrication. » Juges : Claude Sonnet 5.5 et
+      (Point 4 révisé le 2026-10-09 : une telle réponse est « inexacte », motif `ajout_fabrique`,
+      déjà prévu par le schéma ; rien à écrire au §7 pour ce point.) Juges : Claude Sonnet 5.5 et
       Mistral Large, versions épinglées au gel (l'exemple du §7 reste exact).
 
   Ligne de révision, à fusionner : « Section 3 : date d'application de la liste publiée, classement
-  des stores précisé. Section 7 : ajout inventé à une réponse exacte. »
+  des stores précisé. »
+
+- [ ] **Écrire aussi en 0.16 : D27 (§7 et annexe D, charge du juge)**, tranchée le 2026-10-09. Au §7,
+      la liste de ce que reçoit chaque juge s'allonge : « … la date du run, la réponse attendue, la
+      prémisse de la formulation lorsqu'elle est fausse, le texte de chaque page citée tel que conservé
+      ou archivé, et la grille ». Et : « La fraîcheur d'une obsolescence se calcule depuis les dates ;
+      sur une question d'attribution, le juge relève les noms cités, que le code rattache aux
+      candidats. » L'annexe D s'aligne sur `charge-juge-v3` (noms des variables, plusieurs références,
+      forme du sourçage et de l'extrait).
+
+  Ligne de révision, à fusionner : « Section 7 et annexe D : contenu de la charge du juge. »
 
 ### Prompts (`prompts/`)
 
