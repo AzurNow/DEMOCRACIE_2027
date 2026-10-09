@@ -688,7 +688,7 @@
       "id": "go-no-go",
       "titre": "Critères go/no-go du §12 et contreseing de la checklist de l'annexe F",
       "jalon": "J5",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "opus",
       "taille": "M",
       "temps_auteur_h": 1,
@@ -714,7 +714,7 @@
         "D24",
         "D25"
       ],
-      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas. Le 2026-10-09 : D24 tranchée (kappa de l'échantillon par juge retenu, indéfini ⇒ rouge, décision dérivée, runs/<date>/checklist.json contresigné par l'auteur) ; le lot est lançable. Le 2026-10-09 : PR #100 (brouillon) livre le lot ; D25 tranchée sur ses points ouverts, à coder dans la même PR."
+      "note": "Inscrit le 2026-10-02 (conformité 2026-09-29, n° 35). Calcule les sept critères du §12 depuis les fichiers du run (kappa juges-humains ≥ 0,75, contrefactuel ≤ 3 % par juge, aucun item contesté au tirage, symétrie restée verte, au plus 20 % de réponses manquantes par outil et par mode sur le canal API, erreurs graves revues, analyses exécutées avec la graine publiée) et écrit run.go_no_go, que le schéma lie déjà à publie_provisoire (#61). Le kappa des lots se lit sur les seuls lots non supersédés (supersediteurDe, DETTE 2026-09-25) et ne se recalcule jamais hors de diagnostiquerLot. Le contreseing de la checklist de l'annexe F reste un acte humain : le lot l'enregistre, il ne le produit pas. Le 2026-10-09 : D24 tranchée (kappa de l'échantillon par juge retenu, indéfini ⇒ rouge, décision dérivée, runs/<date>/checklist.json contresigné par l'auteur) ; le lot est lançable. Le 2026-10-09 : PR #100 (brouillon) livre le lot ; D25 tranchée sur ses points ouverts, à coder dans la même PR. Le 2026-10-09 : D25 codée dans la PR #100 (2363 tests, bout en bout sur run simulé). Restent sans fichier qui les porte : revérification des items d'absence (lot extraction) et robustesse, donc cases 2 et 7 de l'annexe F non faites ; format de metriques/ à définir au lot analyse (critère analyses_preenregistrees_executees)."
     },
     {
       "id": "site",

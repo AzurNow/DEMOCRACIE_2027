@@ -142,7 +142,7 @@ flowchart LR
   end
   subgraph jalon_J5["J5 · 1 déc. 2026"]
     lot_analyse["analyse<br/>Métriques §8, bootstrap en grappes, permutation, Holm, robustesse<br/>T2"]:::T2
-    lot_go_no_go["go-no-go<br/>Critères go/no-go du §12 et contreseing de la checklist de l'annexe F<br/>T0"]:::T0
+    lot_go_no_go["go-no-go<br/>Critères go/no-go du §12 et contreseing de la checklist de l'annexe F<br/>T3"]:::T3
     lot_site["site<br/>Site statique généré depuis runs/<br/>T0"]:::T0
   end
   lot_validation_interface --> lot_contestation_notification
@@ -195,8 +195,8 @@ flowchart LR
 | notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T2 | débloqué | sonnet | L | 2 | notation, test-liens, validation-interface (informe) |
 | test-liens | Test HTTP déterministe de l'existence des liens cités (§7, sourçage) | J4 | T3 | atteint | opus | M | 1 | interrogation (informe) |
 | analyse | Métriques §8, bootstrap en grappes, permutation, Holm, robustesse | J5 | T2 | débloqué | opus | L | 1 | — |
-| go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T0 | bloqué par analyse | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
-| site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse, go-no-go | sonnet | M | 2 | analyse, go-no-go |
+| go-no-go | Critères go/no-go du §12 et contreseing de la checklist de l'annexe F | J5 | T3 | atteint | opus | M | 1 | analyse, interrogation, notation, validation-interface (informe) |
+| site | Site statique généré depuis runs/ | J5 | T0 | bloqué par analyse | sonnet | M | 2 | analyse, go-no-go |
 
 ## Jalons
 
@@ -241,7 +241,7 @@ flowchart LR
 ### J5
 
 - analyse (T2)
-- go-no-go (T0)
+- go-no-go (T3)
 - site (T0)
 
 ## Échelle de preuve
