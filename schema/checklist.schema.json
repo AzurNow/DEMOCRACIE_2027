@@ -57,7 +57,7 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "description": "Ce dont l'état d'une case calculée découle : des codes de critères du §12 (run.json#/go_no_go/criteres) et deux constats lus sur les fichiers du run.",
+          "description": "Ce dont l'état d'une case calculée découle : des codes de critères du §12 (run.json#/go_no_go/criteres) et des constats lus sur les fichiers du run (D25 (3) : un constat qu'aucun fichier ne porte encore, items d'absence revérifiés ou robustesse, est non fait et le dit).",
           "items": {
             "type": "string",
             "enum": [
@@ -68,8 +68,11 @@
               "reponses_manquantes",
               "erreurs_graves_revues",
               "analyses_preenregistrees_executees",
+              "items_absence_reverifies",
               "graine_du_tirage_enregistree",
-              "notation_complete"
+              "interrogation_dans_la_fenetre",
+              "notation_complete",
+              "robustesse_calculee"
             ]
           }
         },

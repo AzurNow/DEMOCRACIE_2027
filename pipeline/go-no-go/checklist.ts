@@ -9,20 +9,27 @@
  * pour les cases déclarées : il ne déclare rien à la place de l'auteur.
  *
  * Une case calculée est `faite` si tous ses appuis le sont ; sinon `non_faite`, avec un motif qui
- * nomme chaque appui manquant. Une case dont une partie du texte n'a aucun appui calculable (par
- * exemple « Items d'absence revérifiés », « robustesse calculée ») ne la vérifie pas : c'est signalé
- * à l'auteur, pas comblé ici.
+ * nomme chaque appui manquant. D25 (3) : chaque partie du texte d'une case calculée a son appui ;
+ * celles qu'aucun fichier ne porte encore (« Items d'absence revérifiés », « robustesse calculée »)
+ * ont un constat non fait qui le dit, jamais un constat fait par défaut.
  */
 
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Ulid } from "../../analysis/types.ts";
+import { FenetreRefusee, ouvrirFenetre, tentativePeutDemarrer, type Fenetre } from "../interrogation/fenetre.ts";
+import { lireInstant } from "../interrogation/heure-paris.ts";
 import type { CodeCritere, Critere } from "./types.ts";
 
 export type NatureCase = "calculee" | "declaree";
 export type EtatCase = "faite" | "non_faite";
 
 /** Ce qu'une case calculée lit hors des sept critères. */
-export type NomConstat = "graine_du_tirage_enregistree" | "notation_complete";
+export type NomConstat =
+  | "items_absence_reverifies"
+  | "graine_du_tirage_enregistree"
+  | "interrogation_dans_la_fenetre"
+  | "notation_complete"
+  | "robustesse_calculee";
 export type Appui = CodeCritere | NomConstat;
 
 export interface Constat {
@@ -61,12 +68,16 @@ interface ModeleCase {
 /** Annexe F, mot pour mot, dans l'ordre (tests/go-no-go/checklist.test.ts le relit dans le protocole). */
 export const CASES_ANNEXE_F: readonly ModeleCase[] = [
   { texte: "Périmètre candidats et outils conforme aux règles de la section 3 à la date de gel", nature: "declaree", appuis: [] },
-  { texte: "Items d'absence revérifiés ; aucun item contesté ou en attente dans le tirage", nature: "calculee", appuis: ["aucun_item_conteste_dans_le_tirage"] },
+  {
+    texte: "Items d'absence revérifiés ; aucun item contesté ou en attente dans le tirage",
+    nature: "calculee",
+    appuis: ["items_absence_reverifies", "aucun_item_conteste_dans_le_tirage"],
+  },
   { texte: "Tests de symétrie verts ; graine du tirage enregistrée", nature: "calculee", appuis: ["tests_symetrie", "graine_du_tirage_enregistree"] },
   {
     texte: "Interrogation dans la fenêtre de 48 h ; réponses manquantes ≤ 20 % par outil et par mode, sur le canal API",
     nature: "calculee",
-    appuis: ["reponses_manquantes"],
+    appuis: ["interrogation_dans_la_fenetre", "reponses_manquantes"],
   },
   {
     texte: "Notation par les deux juges ; désaccords, échantillon de 10 % et erreurs graves notés par des humains",
@@ -74,7 +85,11 @@ export const CASES_ANNEXE_F: readonly ModeleCase[] = [
     appuis: ["notation_complete", "erreurs_graves_revues"],
   },
   { texte: "Kappa juges-humains ≥ 0,75 ; test contrefactuel ≤ 3 %", nature: "calculee", appuis: ["kappa_juges_humains", "test_contrefactuel"] },
-  { texte: "Analyses préenregistrées exécutées avec la graine publiée ; robustesse calculée", nature: "calculee", appuis: ["analyses_preenregistrees_executees"] },
+  {
+    texte: "Analyses préenregistrées exécutées avec la graine publiée ; robustesse calculée",
+    nature: "calculee",
+    appuis: ["analyses_preenregistrees_executees", "robustesse_calculee"],
+  },
   { texte: "Note éditoriale rédigée ; phrase d'avertissement de la section 8 en tête", nature: "declaree", appuis: [] },
   { texte: "Données, réponses brutes, notations, code et rapport publiés ensemble ; DOI émis", nature: "declaree", appuis: [] },
   { texte: "Éditeurs et campagnes notifiés après publication", nature: "declaree", appuis: [] },
@@ -89,6 +104,82 @@ export function constatGraineDuTirage(graine_du_run: unknown, graine_du_fichier:
   if (canoniser(graine_du_fichier) !== canoniser(graine_du_run)) {
     return { nom, fait: false, detail: "la graine de tirage.json diffère de run.json#/graines/tirage" };
   }
+  return { nom, fait: true, detail: "" };
+}
+
+/**
+ * « Items d'absence revérifiés » (D25 (3)) : aucun fichier du run ne porte encore cette
+ * revérification (lot extraction). Non faite, et dite comme telle, tant que rien ne la produit.
+ */
+export function constatItemsAbsenceReverifies(): Constat {
+  return {
+    nom: "items_absence_reverifies",
+    fait: false,
+    detail: "revérification des items d'absence : aucun fichier du run ne la porte encore (lot extraction)",
+  };
+}
+
+/**
+ * « robustesse calculée » (D25 (3)) : les recalculs de robustesse du §8 n'ont pas encore de fichier
+ * (aucun format de `metriques/`). Non faite tant que rien ne les porte.
+ */
+export function constatRobustesseCalculee(): Constat {
+  return {
+    nom: "robustesse_calculee",
+    fait: false,
+    detail: "robustesse : aucun format de runs/<date>/metriques/ ne la porte encore",
+  };
+}
+
+/** Ce que le constat de la fenêtre lit d'une réponse : où elle a été obtenue, et quand chaque tentative a démarré. */
+export interface DemarragesDeReponse {
+  readonly contexte: string;
+  readonly canal: string;
+  readonly statut_reponse: string;
+  /** Les tentatives en échec, horodatées à leur démarrage (`pipeline/interrogation/executer.ts`). */
+  readonly tentatives?: readonly { readonly horodatage: string }[];
+  /** Le démarrage de la tentative qui a abouti, pour une réponse obtenue. */
+  readonly metadonnees?: { readonly horodatage_requete: string };
+}
+
+/** Le défaut de `run.json#/fenetre` au regard du §6, ou `null` : ouverte un mardi à 6 h, durée 48 h. */
+function defautDeFenetre(fenetre: { readonly debut: string; readonly fin: string }): string | null {
+  let ouverte: Fenetre;
+  try {
+    ouverte = ouvrirFenetre(fenetre.debut);
+  } catch (erreur) {
+    if (erreur instanceof FenetreRefusee) return erreur.message;
+    throw erreur;
+  }
+  if (lireInstant(fenetre.fin, "run.json#/fenetre/fin") !== ouverte.fin_ms) return "run.json#/fenetre/fin n'est pas debut + 48 h (§6)";
+  return null;
+}
+
+function demarrages(reponse: DemarragesDeReponse): readonly string[] {
+  const echecs = reponse.tentatives === undefined ? [] : reponse.tentatives.map((t) => t.horodatage);
+  return reponse.metadonnees === undefined ? echecs : [...echecs, reponse.metadonnees.horodatage_requete];
+}
+
+/**
+ * « Interrogation dans la fenêtre de 48 h » (§6) : la fenêtre du run est celle du §6, et chaque
+ * tentative d'une réponse API du run a démarré dans [debut, fin) — bornes de
+ * `pipeline/interrogation/fenetre.ts:tentativePeutDemarrer` (décision de l'auteur du 2026-10-02 :
+ * aucune tentative ne démarre à fin ou après). Une manquante hors fenêtre sans tentative n'a rien
+ * démarré ; une réponse qui arrive après fin, démarrée avant, est dans la fenêtre.
+ */
+export function constatInterrogationDansLaFenetre(
+  fenetre: { readonly debut: string; readonly fin: string },
+  reponses: readonly DemarragesDeReponse[],
+): Constat {
+  const nom = "interrogation_dans_la_fenetre";
+  const defaut = defautDeFenetre(fenetre);
+  if (defaut !== null) return { nom, fait: false, detail: defaut };
+  const ouverte = ouvrirFenetre(fenetre.debut);
+  const hors = reponses
+    .filter((r) => r.contexte === "run" && r.canal === "api")
+    .flatMap(demarrages)
+    .filter((horodatage) => !tentativePeutDemarrer(ouverte, lireInstant(horodatage, "démarrage d'une tentative"))).length;
+  if (hors > 0) return { nom, fait: false, detail: `${hors} tentative(s) démarrée(s) hors de la fenêtre [debut, fin)` };
   return { nom, fait: true, detail: "" };
 }
 

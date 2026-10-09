@@ -11,7 +11,11 @@ import { valider } from "../../outils/schemas/valider.ts";
 import {
   CASES_ANNEXE_F,
   constatGraineDuTirage,
+  constatInterrogationDansLaFenetre,
+  constatItemsAbsenceReverifies,
   constatNotationComplete,
+  constatRobustesseCalculee,
+  type DemarragesDeReponse,
   construireChecklist,
   partDuPipeline,
   type Checklist,
@@ -32,7 +36,24 @@ function criteres(rouges: readonly string[] = []): Critere[] {
 const CONSTATS_FAITS: readonly Constat[] = [
   { nom: "graine_du_tirage_enregistree", fait: true, detail: "" },
   { nom: "notation_complete", fait: true, detail: "" },
+  { nom: "interrogation_dans_la_fenetre", fait: true, detail: "" },
+  { nom: "items_absence_reverifies", fait: true, detail: "" },
+  { nom: "robustesse_calculee", fait: true, detail: "" },
 ];
+
+/** Mardi 1er décembre 2026, 6 h, heure de Paris : la fenêtre du §6, semi-ouverte [debut, fin). */
+const FENETRE = { debut: "2026-12-01T06:00:00+01:00", fin: "2026-12-03T06:00:00+01:00" };
+
+function demarree(...horodatages: string[]): DemarragesDeReponse {
+  const [reussie, ...echecs] = horodatages;
+  return {
+    contexte: "run",
+    canal: "api",
+    statut_reponse: "obtenue",
+    metadonnees: { horodatage_requete: String(reussie) },
+    ...(echecs.length === 0 ? {} : { tentatives: echecs.map((horodatage) => ({ horodatage })) }),
+  };
+}
 
 const TOUT_DECLARE: readonly Declaration[] = [
   { rang: 1, etat: "faite" },
@@ -72,7 +93,11 @@ describe("les dix cases de l'annexe F", () => {
   });
 
   it("une case calculée dont un appui manque est non faite, avec un motif qui le nomme", () => {
-    const constats = [constatGraineDuTirage({ valeur: 1 }, undefined), constatNotationComplete([ulid("a"), ulid("b")], new Set([ulid("a")]))];
+    const constats = [
+      constatGraineDuTirage({ valeur: 1 }, undefined),
+      constatNotationComplete([ulid("a"), ulid("b")], new Set([ulid("a")])),
+      ...CONSTATS_FAITS.filter((c) => c.nom !== "graine_du_tirage_enregistree" && c.nom !== "notation_complete"),
+    ];
     const checklist = construireChecklist(RUN_ID, criteres(["kappa_juges_humains", "analyses_preenregistrees_executees"]), constats);
     const parRang = new Map(checklist.cases.map((c) => [c.rang, c]));
     expect(parRang.get(3)).toMatchObject({ etat: "non_faite", motif: "tirage.json absent du répertoire du run." });
@@ -83,9 +108,59 @@ describe("les dix cases de l'annexe F", () => {
     expect(() => valider("checklist", checklist, "test")).not.toThrow();
   });
 
+  it("sans fichier qui les porte, les cases 2 et 7 sont non faites (D25 (3)), et restent calculées", () => {
+    const constats = [...CONSTATS_FAITS.filter((c) => c.nom !== "items_absence_reverifies" && c.nom !== "robustesse_calculee"), constatItemsAbsenceReverifies(), constatRobustesseCalculee()];
+    const checklist = construireChecklist(RUN_ID, criteres(), constats);
+    const parRang = new Map(checklist.cases.map((c) => [c.rang, c]));
+    expect(parRang.get(2)).toMatchObject({ nature: "calculee", etat: "non_faite" });
+    expect(parRang.get(2)?.motif).toContain("lot extraction");
+    expect(parRang.get(7)).toMatchObject({ nature: "calculee", etat: "non_faite" });
+    expect(parRang.get(7)?.motif).toContain("metriques/");
+    expect(() => valider("checklist", checklist, "test")).not.toThrow();
+  });
+
   it("graine du tirage : identique, faite ; différente, non faite", () => {
     expect(constatGraineDuTirage({ valeur: 1, algorithme: "a" }, { algorithme: "a", valeur: 1 }).fait).toBe(true);
     expect(constatGraineDuTirage({ valeur: 1 }, { valeur: 2 })).toMatchObject({ fait: false });
+  });
+});
+
+describe("interrogation dans la fenêtre de 48 h (case 4 ; §6, fenêtre semi-ouverte [debut, fin))", () => {
+  it("toutes les tentatives démarrent dans la fenêtre, la première à l'ouverture exacte : fait", () => {
+    const reponses = [demarree("2026-12-01T06:00:00+01:00"), demarree("2026-12-03T05:59:59+01:00", "2026-12-03T05:57:00+01:00")];
+    expect(constatInterrogationDansLaFenetre(FENETRE, reponses)).toMatchObject({ nom: "interrogation_dans_la_fenetre", fait: true });
+  });
+
+  it("une tentative qui démarre exactement à la fin : non faite (aucune tentative ne démarre à fin)", () => {
+    const constat = constatInterrogationDansLaFenetre(FENETRE, [demarree("2026-12-02T10:00:00+01:00", "2026-12-03T06:00:00+01:00")]);
+    expect(constat).toMatchObject({ fait: false, detail: "1 tentative(s) démarrée(s) hors de la fenêtre [debut, fin)" });
+  });
+
+  it("une tentative avant l'ouverture : non faite", () => {
+    expect(constatInterrogationDansLaFenetre(FENETRE, [demarree("2026-12-01T05:59:59+01:00")]).fait).toBe(false);
+  });
+
+  it("une manquante hors fenêtre sans tentative n'a rien démarré : elle ne compte pas", () => {
+    const jamaisEnvoyee: DemarragesDeReponse = { contexte: "run", canal: "api", statut_reponse: "manquante" };
+    expect(constatInterrogationDansLaFenetre(FENETRE, [demarree("2026-12-01T07:00:00+01:00"), jamaisEnvoyee]).fait).toBe(true);
+  });
+
+  it("une réponse hors du canal API ou hors du contexte run n'est pas jugée sur la fenêtre", () => {
+    const application = { ...demarree("2026-12-10T10:00:00+01:00"), canal: "application" as const };
+    const contrefactuelle = { ...demarree("2026-12-04T10:00:00+01:00"), contexte: "contrefactuel_candidat" as const };
+    expect(constatInterrogationDansLaFenetre(FENETRE, [application, contrefactuelle]).fait).toBe(true);
+  });
+
+  it("une fenêtre de 47 h dans run.json : non faite", () => {
+    const constat = constatInterrogationDansLaFenetre({ ...FENETRE, fin: "2026-12-03T05:00:00+01:00" }, [demarree("2026-12-01T07:00:00+01:00")]);
+    expect(constat).toMatchObject({ fait: false });
+    expect(constat.detail).toContain("48 h");
+  });
+
+  it("une fenêtre qui n'ouvre pas un mardi à 6 h, heure de Paris : non faite", () => {
+    const constat = constatInterrogationDansLaFenetre({ debut: "2026-12-02T06:00:00+01:00", fin: "2026-12-04T06:00:00+01:00" }, []);
+    expect(constat).toMatchObject({ fait: false });
+    expect(constat.detail).toContain("mardi");
   });
 });
 

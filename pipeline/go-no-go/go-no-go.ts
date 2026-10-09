@@ -16,7 +16,7 @@
  * aucun go/no-go), run `invalide`, run `planifie`. Un `run.json` qui porte déjà un go/no-go (ou un
  * kappa d'échantillon, ou un motif provisoire) différent du recalcul, ou une checklist dont la part
  * calculée diffère, lève : jamais d'écrasement silencieux. Identique : rien n'est réécrit, et
- * l'issue le dit. Les deux fichiers sont validés contre leur schéma avant d'être écrits.
+ * l'issue le dit. `run.json` et `checklist.json` sont validés contre leur schéma avant d'être écrits.
  *
  * `metriques/` n'a encore aucun écrivain ni aucun format (`runs/README.md`) : absent, le critère
  * des analyses est rouge ; présent, la commande s'arrête plutôt que d'inventer sa lecture.
@@ -35,12 +35,22 @@ import {
   lireVerdicts,
   type RunLu,
 } from "../../analysis/lecture-run.ts";
-import type { Ulid } from "../../analysis/types.ts";
+import type { Reponse, Ulid } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { tirerEchantillonHumain } from "../notation/echantillons.ts";
 import type { GraineTirage, Symetrie } from "../questions/types.ts";
-import { constatGraineDuTirage, constatNotationComplete, construireChecklist, partDuPipeline, type Checklist } from "./checklist.ts";
+import {
+  constatGraineDuTirage,
+  constatInterrogationDansLaFenetre,
+  constatItemsAbsenceReverifies,
+  constatNotationComplete,
+  constatRobustesseCalculee,
+  construireChecklist,
+  partDuPipeline,
+  type Checklist,
+  type DemarragesDeReponse,
+} from "./checklist.ts";
 import { critereKappaJugesHumains, critereTestContrefactuel } from "./criteres-juges.ts";
 import {
   critereAnalysesExecutees,
@@ -59,6 +69,7 @@ import type { GoNoGo } from "./types.ts";
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
 interface VueGoNoGo {
   readonly statut: string;
+  readonly fenetre: { readonly debut: string; readonly fin: string };
   readonly symetrie: Symetrie;
   readonly graines: { readonly tirage: GraineTirage; readonly bootstrap: GraineTirage; readonly permutation: GraineTirage };
   readonly perimetre: { readonly outils: readonly OutilDeclare[] };
@@ -95,6 +106,7 @@ export type IssueEcriture = "ecrit" | "inchange";
 export interface ResultatGoNoGo {
   readonly go_no_go: GoNoGo;
   readonly kappas: readonly KappaDeJuge[];
+  readonly indeterminees: number;
   readonly checklist: Checklist;
   readonly run_json: IssueEcriture;
   readonly checklist_json: IssueEcriture;
@@ -103,6 +115,8 @@ export interface ResultatGoNoGo {
 interface Calcul {
   readonly go_no_go: GoNoGo;
   readonly kappas: readonly KappaDeJuge[];
+  /** D25 (1) : réponses de l'échantillon à note humaine indéterminée, écartées du kappa. */
+  readonly indeterminees: number;
   readonly checklist: Checklist;
 }
 
@@ -131,12 +145,12 @@ function graineDuFichierTirage(repertoire_run: string, run: RunLu): GraineTirage
 }
 
 function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
-  const reponses = lireReponses(repertoire_run, run.id);
+  const reponses = lireReponses<Reponse & DemarragesDeReponse>(repertoire_run, run.id);
   const { notations } = lireNotationsDuRun(repertoire_run, run.id);
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
-  const kappas = kappasEchantillon({ juges: run.juges, echantillon, notations });
+  const { kappas, indeterminees } = kappasEchantillon({ juges: run.juges, echantillon, notations });
   const go_no_go = deciderPublication([
     critereKappaJugesHumains(kappas),
     critereTestContrefactuel(run.juges),
@@ -147,10 +161,13 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     critereAnalysesExecutees(resultatsDAnalyse(repertoire_run), { bootstrap: vue.graines.bootstrap.valeur, permutation: vue.graines.permutation.valeur }),
   ]);
   const constats = [
+    constatItemsAbsenceReverifies(),
     constatGraineDuTirage(vue.graines.tirage, graineDuFichierTirage(repertoire_run, run)),
     constatNotationComplete(obtenues, new Set<Ulid>(verdicts.map((v) => v.objet_note.id))),
+    constatInterrogationDansLaFenetre(vue.fenetre, reponses),
+    constatRobustesseCalculee(),
   ];
-  return { go_no_go, kappas, checklist: construireChecklist(run.id, go_no_go.criteres, constats) };
+  return { go_no_go, kappas, indeterminees, checklist: construireChecklist(run.id, go_no_go.criteres, constats) };
 }
 
 /* ------------------------------------------------------------------ run.json */
@@ -170,6 +187,7 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
     ...brut,
     juges: juges.map((juge: Objet) => jugeAvecKappa(juge, calcul.kappas)),
     ...(motif === undefined ? {} : { motif_provisoire: motif }),
+    indeterminees_echantillon_humain: calcul.indeterminees,
     go_no_go: calcul.go_no_go,
   };
 }
@@ -180,6 +198,7 @@ function partEcrite(run: Objet): string {
   return canoniser({
     go_no_go: run["go_no_go"],
     motif_provisoire: run["motif_provisoire"],
+    indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
     juges: Array.isArray(juges)
       ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"]])
       : null,

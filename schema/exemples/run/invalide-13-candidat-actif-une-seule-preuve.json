@@ -364,6 +364,7 @@
       "date_reception": "2026-12-02T15:20:00+01:00"
     }
   ],
+  "indeterminees_echantillon_humain": 0,
   "go_no_go": {
     "criteres": [
       {

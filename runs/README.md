@@ -178,7 +178,9 @@ Sortie 0 sans violation, 1 avec au moins une, 2 si le run n'a pas pu être lu. N
 Les sept critères du §12 et la décision qui en découle (D24, `pipeline/go-no-go/`). Lit `run.json`,
 `volume/reponses/`, `volume/notations/`, `verdicts/`, `tirage.json` s'il est là, et l'existence de
 `metriques/`. Écrit dans `run.json` `go_no_go`, le kappa de l'échantillon humain de chaque juge
-retenu (`kappa_echantillon_humain`, ou son motif d'indéfinition) et `motif_provisoire` si la décision
+retenu (`kappa_echantillon_humain`, ou son motif d'indéfinition), le nombre de réponses de
+l'échantillon à note humaine indéterminée, écartées de ce kappa (`indeterminees_echantillon_humain`,
+D25), et `motif_provisoire` si la décision
 est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `statut`. Refuse un run
 `invalide`, `planifie` ou à symétrie rouge ; un go/no-go déjà écrit et différent du recalcul est une
 erreur, identique un no-op. `metriques/` présent arrête la commande : aucun format n'y est encore

@@ -278,8 +278,8 @@ function exigerContexte<T extends Identifie & { readonly contexte: string }>(
 }
 
 /** `volume/reponses/*.json`, tels quels : `assembler()` applique le filtre `contexte == run`. */
-export function lireReponses(repertoire_run: string, run_id: string): readonly Reponse[] {
-  return lireDossier<Reponse>(exigerVolume(repertoire_run).reponses, "reponse", run_id);
+export function lireReponses<T extends Reponse = Reponse>(repertoire_run: string, run_id: string): readonly T[] {
+  return lireDossier<T>(exigerVolume(repertoire_run).reponses, "reponse", run_id);
 }
 
 /** `verdicts/*.json` (Git) : un verdict n'est écrit que pour un objet de contexte `run`. */

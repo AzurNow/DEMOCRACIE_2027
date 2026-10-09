@@ -371,9 +371,14 @@
       "date_reception": "2026-12-02T15:20:00+01:00"
     }
   ],
-  "indeterminees_echantillon_humain": 0,
   "go_no_go": {
     "criteres": [
+      {
+        "code": "kappa_juges_humains",
+        "statut": "vert",
+        "valeur": 0.81,
+        "seuil": 0.75
+      },
       {
         "code": "test_contrefactuel",
         "statut": "vert",
@@ -409,12 +414,6 @@
         "statut": "vert",
         "valeur": "oui",
         "seuil": "oui"
-      },
-      {
-        "code": "tests_symetrie",
-        "statut": "vert",
-        "valeur": "vert",
-        "seuil": "vert"
       }
     ],
     "decision": "publie"

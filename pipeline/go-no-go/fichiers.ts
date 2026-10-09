@@ -1,5 +1,5 @@
 /**
- * Lecture et écriture des deux fichiers que le go/no-go touche : `run.json` et `checklist.json`.
+ * Lecture et écriture des fichiers que le go/no-go touche : `run.json` et `checklist.json`.
  * Écriture par un fichier temporaire créé en exclusif, synchronisé, puis renommé : un fichier n'est
  * jamais à moitié écrit. Même procédé que `pipeline/notation/inscription-contrefactuel.ts`.
  */

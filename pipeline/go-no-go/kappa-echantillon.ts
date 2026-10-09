@@ -16,8 +16,12 @@
  *
  * L'échantillon est rejoué par l'appelant (`pipeline/notation/echantillons.ts:tirerEchantillonHumain`),
  * comme le fait le contrôle croisé. Toute référence humaine qui manque (double notation incomplète,
- * désaccord sans arbitre) ou qui sort des trois catégories lève `ReferenceHumaineIndefinie` : aucune
- * référence n'est inventée, et le kappa n'est pas calculé sur un échantillon amputé en silence.
+ * désaccord sans arbitre) lève `ReferenceHumaineIndefinie` : aucune référence n'est inventée.
+ *
+ * D25 (1) de l'auteur : une réponse dont la note humaine retenue est « indeterminee » n'a pas de
+ * place parmi les trois catégories ; elle est écartée du kappa de chaque juge, et leur nombre est
+ * publié (`run.json#/indeterminees_echantillon_humain`) : l'échantillon n'est pas amputé en silence.
+ * Toutes écartées : aucune réponse comparable, kappa indéfini, critère rouge.
  */
 
 import { notationsConcordent } from "../../analysis/note-lue.ts";
@@ -71,13 +75,34 @@ export interface EntreeKappaEchantillon {
   readonly notations: readonly NotationIndividuelle[];
 }
 
-/** Un kappa par juge retenu, dans l'ordre de `run.json#/juges`. Les juges retirés n'en ont pas. */
-export function kappasEchantillon(entree: EntreeKappaEchantillon): readonly KappaDeJuge[] {
+export interface ResultatEchantillon {
+  /** Un kappa par juge retenu, dans l'ordre de `run.json#/juges`. Les juges retirés n'en ont pas. */
+  readonly kappas: readonly KappaDeJuge[];
+  /**
+   * D25 (1) : réponses de l'échantillon dont la note humaine retenue est « indeterminee », écartées
+   * du kappa de chaque juge, publiées dans `run.json#/indeterminees_echantillon_humain`.
+   */
+  readonly indeterminees: number;
+}
+
+interface Reference {
+  readonly id: Ulid;
+  readonly notations: readonly NotationIndividuelle[];
+  readonly categorie: CategorieKappaEchantillon;
+}
+
+function estComparable(reference: { readonly categorie: CategorieRetenue }): reference is { readonly categorie: CategorieKappaEchantillon } {
+  return reference.categorie !== "indeterminee";
+}
+
+export function kappasEchantillon(entree: EntreeKappaEchantillon): ResultatEchantillon {
   const parReponse = notationsParReponse(entree.echantillon, entree.notations);
-  const references = [...parReponse].map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
-  return entree.juges
+  const toutes = [...parReponse].map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
+  const references = toutes.filter((r): r is Reference => estComparable(r));
+  const kappas = entree.juges
     .filter((juge) => !juge.retire)
     .map((juge) => kappaDuJuge(juge.juge_id, references.map((r) => ({ a: categorieDuJuge(juge.juge_id, r.id, r.notations), b: r.categorie }))));
+  return { kappas, indeterminees: toutes.length - references.length };
 }
 
 /** Les notations de contexte `run` de chaque réponse de l'échantillon, dans l'ordre de l'échantillon. */
@@ -96,16 +121,17 @@ function humainesSous(notations: readonly NotationIndividuelle[], motif: MotifNo
 
 /**
  * La catégorie de la note humaine retenue d'une réponse de l'échantillon (D24 (1)) : celle des deux
- * humains s'ils s'accordent, sinon celle de l'arbitre. Exportée pour ses tests.
+ * humains s'ils s'accordent, sinon celle de l'arbitre. « indeterminee » est une référence lue comme
+ * les autres ; c'est l'appelant qui l'écarte du kappa (D25 (1)). Exportée pour ses tests.
  */
-export function referenceHumaine(reponse_id: Ulid, notations: readonly NotationIndividuelle[]): CategorieKappaEchantillon {
+export function referenceHumaine(reponse_id: Ulid, notations: readonly NotationIndividuelle[]): CategorieRetenue {
   const double = humainesSous(notations, "echantillon_aleatoire_10");
   const [premiere, seconde] = double;
   if (premiere === undefined || seconde === undefined || double.length !== 2) {
     throw new ReferenceHumaineIndefinie(reponse_id, `${double.length} notation(s) humaine(s) d'échantillon au lieu de deux (double notation incomplète).`);
   }
-  if (notationsConcordent(premiere, seconde)) return categorieComparable(reponse_id, premiere.categorie);
-  return categorieComparable(reponse_id, arbitreDe(reponse_id, notations).categorie);
+  if (notationsConcordent(premiere, seconde)) return premiere.categorie;
+  return arbitreDe(reponse_id, notations).categorie;
 }
 
 function arbitreDe(reponse_id: Ulid, notations: readonly NotationIndividuelle[]): NotationIndividuelle {
@@ -115,18 +141,6 @@ function arbitreDe(reponse_id: Ulid, notations: readonly NotationIndividuelle[])
     throw new ReferenceHumaineIndefinie(reponse_id, `les deux humains divergent et ${arbitrages.length} arbitrage(s) au lieu d'un (§7 : le troisième humain tranche).`);
   }
   return arbitre;
-}
-
-/**
- * Une note humaine `indeterminee` n'a pas de place parmi les trois catégories de D24 : la compter
- * comme un désaccord ou l'écarter changerait le kappa publié, et D24 ne le dit pas. Question
- * ouverte, posée à l'auteur ; d'ici là, elle arrête le calcul.
- */
-function categorieComparable(reponse_id: Ulid, categorie: CategorieRetenue): CategorieKappaEchantillon {
-  if (categorie === "indeterminee") {
-    throw new ReferenceHumaineIndefinie(reponse_id, "la note humaine retenue est « indeterminee », hors des trois catégories du kappa (D24 ne dit pas comment la compter).");
-  }
-  return categorie;
 }
 
 /** La notation du juge retenu sur la réponse : exactement une, jamais « indeterminee » (§7). */

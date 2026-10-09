@@ -63,6 +63,15 @@ describe("pnpm go-no-go, de bout en bout sur un run simulé", () => {
       expect(checklist.contreseing).toBeUndefined();
       expect(checklist.cases).toHaveLength(10);
       expect(checklist.cases.find((c) => c.rang === 7)).toMatchObject({ etat: "non_faite" });
+
+      // D25 (1) : le nombre de réponses écartées du kappa est publié ; le run simulé n'en a aucune.
+      expect(ecrit["indeterminees_echantillon_humain"]).toBe(0);
+      expect(resultat.indeterminees).toBe(0);
+      // D25 (3) : la fenêtre se lit sur les fichiers (réponses simulées dans la fenêtre du run),
+      // la revérification des items d'absence n'est portée par aucun fichier.
+      expect(checklist.cases.find((c) => c.rang === 4)?.appuis).toContain("interrogation_dans_la_fenetre");
+      expect([checklist.cases.find((c) => c.rang === 4)?.motif]).not.toContainEqual(expect.stringContaining("fenêtre"));
+      expect(checklist.cases.find((c) => c.rang === 2)).toMatchObject({ etat: "non_faite" });
     },
     TEMPS,
   );

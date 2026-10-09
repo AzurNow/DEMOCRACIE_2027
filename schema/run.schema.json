@@ -769,6 +769,11 @@
       ],
       "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
     },
+    "indeterminees_echantillon_humain": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Décision D25 (1) de l'auteur (2026-10-09) : nombre de réponses de l'échantillon humain dont la note humaine retenue (accord des deux humains, sinon arbitre) est « indeterminee ». Elles sont écartées du kappa de l'échantillon de chaque juge (juges[].kappa_echantillon_humain), et leur nombre est publié ici, une fois pour le run, puisque la référence humaine est commune aux juges. Écrit par pnpm go-no-go ; exigé d'un run qui porte un go/no-go."
+    },
     "contrefactuel_candidats": {
       "type": "object",
       "additionalProperties": false,
@@ -1522,6 +1527,10 @@
         ]
       },
       "then": {
+        "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui.",
+        "required": [
+          "indeterminees_echantillon_humain"
+        ],
         "properties": {
           "juges": {
             "items": {

@@ -353,8 +353,9 @@ describe("exemples de schema/exemples/", () => {
   // 212 → 219 : décision D21 de l'auteur (lot test-liens), deux valides et cinq invalides d'existence-lien.
   // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
-  it("charge les 232 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(232);
+  // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
+  it("charge les 233 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(233);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
