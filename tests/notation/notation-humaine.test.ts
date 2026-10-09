@@ -22,7 +22,7 @@ import type { Item } from "../../validation/domaine/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { itemO, itemP } from "../aides/fabriques.ts";
-import { REPONSE_PROJETEE, RUN_ID } from "./fabriques.ts";
+import { pagesSansTexte, REPONSE_PROJETEE, RESOLU_POSITION_POUR, RUN_ID } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const LIEN_A = "https://exemple.invalid/a";
@@ -52,9 +52,11 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
   const date_gel = options.date_gel ?? "2026-12-01T06:00:00+01:00";
   const vue = construireVue({
     reponse: reponse(liens.map((l) => l.url_citee)),
-    question: { gabarit: options.gabarit ?? "Q-DIR", texte: "Quelle est la position de Alix Martinez ?" },
+    question: { gabarit: options.gabarit ?? "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez ?" },
     references: items.map((item, rang) => ({ item, role: rang === 0 ? "principal" : "distracteur" })),
     date_run: date_gel,
+    resolu_au_gel: RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(liens.map((l) => l.url_citee), "sans_copie"),
     existences: liens,
   });
   return {

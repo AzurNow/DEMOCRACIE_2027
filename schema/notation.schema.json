@@ -143,6 +143,12 @@
           "items": { "type": "string" },
           "uniqueItems": true,
           "description": "Noms cités ne correspondant à aucun candidat du périmètre, conservés tels quels."
+        },
+        "ambigus_cites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "Décision D27 (D) de l'auteur (charge-juge-v3) : noms cités qui correspondent à plusieurs candidats du périmètre (deux candidats du même nom, cité sans prénom), conservés tels quels et rattachés à aucun (pipeline/notation/rattachement.ts). Jamais un choix entre eux."
         }
       }
     },

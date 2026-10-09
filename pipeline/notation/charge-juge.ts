@@ -25,19 +25,43 @@
  * l'adaptateur et sa version) et la version de la normalisation du test verbatim
  * (`validation/domaine/normalisation.ts`, `VERSION_NORMALISATION`), contre laquelle son extrait
  * justificatif sera contrôlé (`extrait.ts`).
+ *
+ * **Ce qu'un fichier du run sait déjà (D27, 2026-10-09).** La charge v3 transmet au juge ce que le
+ * tirage et le test des liens ont établi, pour qu'il n'ait rien à deviner :
+ *
+ * - (F) le registre de la formulation interrogée (`question.registre`) et, sur la formulation
+ *   orientée seulement, la prémisse résolue au gel (`question.premisse_fausse`, recopiée de
+ *   `tirage.entrees[].premisse_fausse`, que seul `reponse-attendue.ts:premisseFausseAuGel` résout).
+ *   Sur une formulation neutre ou familière, qui n'affiche aucune prémisse (§5), le champ est absent :
+ *   la valeur du tirage porte sur la formulation orientée de la question, pas sur celle-ci ;
+ * - (G) la réponse attendue résolue au gel (`reponse_attendue`, recopiée champ par champ de
+ *   `tirage.entrees[].reponse_attendue`) : sur une Q-ATT, `candidats_attendus` n'y porte que des
+ *   identifiants opaques, comme les items ;
+ * - (E) le texte de chaque page citée (`pages_citees`, `pages-citees.ts`), conservée ou copie
+ *   archivée, borné à `longueur_max_texte_page` points de code, la troncature dite page par page.
+ *
+ * Ce que le juge ne rend plus, le code le calcule (`juge.ts`) : (C) la fraîcheur de l'obsolescence,
+ * et (D) sur une Q-ATT, le rattachement des noms cités aux candidats (`rattachement.ts`). La charge
+ * ne transmet toujours aucun nom de candidat qui ne figure pas déjà dans la question ou les textes de
+ * l'item : une question d'attribution n'en nomme aucun (§5), et le juge relève les noms dans la
+ * réponse.
  */
 
 import type { Gabarit, Instant, RoleItem } from "../../analysis/types.ts";
 import type { ObjetJson, ReponseObtenue } from "../interrogation/types.ts";
+import type { EntreeTirage, Registre, ReponseAttendue } from "../questions/types.ts";
+import { LONGUEUR_MAX_TEXTE_PAGE, type PageCitee } from "./pages-citees.ts";
 import type { ReponseContrefactuelle } from "./reponse-contrefactuelle.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
 
 /**
  * Version du format de la charge : un champ ajouté ou retiré la change. v2 (décision D15 de
- * l'auteur) : les citations sont projetées sur `{ url, texte }`.
+ * l'auteur) : les citations sont projetées sur `{ url, texte }`. v3 (décision D27) : registre et
+ * prémisse de la formulation, réponse attendue, texte des pages citées et sa borne ; le juge ne rend
+ * plus ni la fraîcheur ni le bloc d'attribution (`juge.ts`).
  */
-export const VERSION_CHARGE_JUGE = "charge-juge-v2";
+export const VERSION_CHARGE_JUGE = "charge-juge-v3";
 
 export interface PromptDeJuge {
   /** Chemin d'un fichier de `prompts/`, fourni par l'appelant. */
@@ -47,8 +71,31 @@ export interface PromptDeJuge {
 
 export interface QuestionPosee {
   readonly gabarit: Gabarit;
+  /** Le registre de la formulation interrogée (§5 : neutre, familier, oriente). */
+  readonly registre: Registre;
   /** Le texte de la formulation interrogée, tel qu'envoyé à l'outil. */
   readonly texte: string;
+}
+
+/** Ce que le tirage a résolu au gel pour la question (`tirage.entrees[]`), et que la charge recopie. */
+export interface ResoluAuGel {
+  readonly reponse_attendue: ReponseAttendue;
+  /** `tirage.entrees[].premisse_fausse` : porte sur la formulation orientée de la question. */
+  readonly premisse_fausse: boolean;
+}
+
+/**
+ * Les entrées du tirage, par question : `tirage.json` validé contre son schéma à la lecture
+ * (`analysis/lecture-run.ts:lireTirage`), qui exige `reponse_attendue` et `premisse_fausse` de chaque
+ * entrée. Une question tirée deux fois est une incohérence, jamais départagée.
+ */
+export function resolusAuGel(entrees: readonly Pick<EntreeTirage, "question_id" | "reponse_attendue" | "premisse_fausse">[]): ReadonlyMap<string, ResoluAuGel> {
+  const index = new Map<string, ResoluAuGel>();
+  for (const entree of entrees) {
+    if (index.has(entree.question_id)) throw new Error(`Tirage : la question ${entree.question_id} y figure deux fois.`);
+    index.set(entree.question_id, { reponse_attendue: entree.reponse_attendue, premisse_fausse: entree.premisse_fausse });
+  }
+  return index;
 }
 
 export interface ReferenceSoumise {
@@ -64,6 +111,9 @@ export interface DemandeCharge {
   /** `run.date_gel` : l'instant de référence unique du run. */
   readonly date_run: Instant;
   readonly prompt: PromptDeJuge;
+  readonly resolu_au_gel: ResoluAuGel;
+  /** Une page par lien distinct de la réponse (`pages-citees.ts:pagesCitees`). */
+  readonly pages_citees: readonly PageCitee[];
 }
 
 export interface EtatSoumis {
@@ -109,32 +159,105 @@ export interface ReponseSoumise {
   readonly normalisation: { readonly fonction: string; readonly version: string };
 }
 
+/** La question telle que la charge la transmet : la prémisse n'existe que sur la formulation orientée. */
+export interface QuestionSoumise extends QuestionPosee {
+  readonly premisse_fausse?: boolean;
+}
+
 export interface ChargeJuge {
   readonly version_charge: string;
   readonly prompt: PromptDeJuge;
   readonly date_run: Instant;
   /** Identifiant opaque (ULID) : il ne dit rien de l'outil (`reponse.schema.json`, `id`). */
   readonly reponse_id: string;
-  readonly question: QuestionPosee;
+  readonly question: QuestionSoumise;
+  /** `tirage.schema.json#/$defs/reponse_attendue`, recopiée champ par champ. */
+  readonly reponse_attendue: ReponseAttendue;
   readonly reponse: ReponseSoumise;
+  readonly pages_citees: readonly PageCitee[];
+  /** `pages-citees.ts:LONGUEUR_MAX_TEXTE_PAGE` : la borne, en points de code, du texte de chaque page. */
+  readonly longueur_max_texte_page: number;
   readonly references: readonly ItemSoumis[];
   /** Version de la normalisation du test verbatim qui contrôlera l'extrait justificatif. */
   readonly version_normalisation_verbatim: string;
 }
 
+/** La charge sans ce qui ne regarde que le juge automatique (version du format, prompt) : D18, la vue humaine en part. */
+export type ContenuSoumis = Omit<ChargeJuge, "version_charge" | "prompt">;
+
 export function construireCharge(demande: DemandeCharge): ChargeJuge {
-  if (demande.references.length === 0) {
-    throw new Error(`Réponse ${demande.reponse.id} : aucun item de référence, rien contre quoi noter (notation.schema.json, references_item).`);
-  }
   return {
     version_charge: VERSION_CHARGE_JUGE,
     prompt: { chemin: demande.prompt.chemin, version: demande.prompt.version },
+    ...contenuSoumis(demande),
+  };
+}
+
+/** Tout ce que voit un juge, hors prompt : partagé par la charge et la vue annotateur (D18). */
+export function contenuSoumis(demande: Omit<DemandeCharge, "prompt">): ContenuSoumis {
+  if (demande.references.length === 0) {
+    throw new Error(`Réponse ${demande.reponse.id} : aucun item de référence, rien contre quoi noter (notation.schema.json, references_item).`);
+  }
+  exigerUnePageParLien(demande.reponse, demande.pages_citees);
+  return {
     date_run: demande.date_run,
     reponse_id: demande.reponse.id,
-    question: { gabarit: demande.question.gabarit, texte: demande.question.texte },
+    question: questionSoumise(demande.question, demande.resolu_au_gel.premisse_fausse),
+    reponse_attendue: reponseAttendueSoumise(demande.resolu_au_gel.reponse_attendue),
     reponse: reponseSoumise(demande.reponse),
+    pages_citees: demande.pages_citees.map(pageSoumise),
+    longueur_max_texte_page: LONGUEUR_MAX_TEXTE_PAGE,
     references: demande.references.map(itemSoumis),
     version_normalisation_verbatim: VERSION_NORMALISATION,
+  };
+}
+
+/** Une page par lien distinct de la réponse, dans l'ordre de première citation : ni plus, ni moins. */
+function exigerUnePageParLien(reponse: ReponseObtenue | ReponseContrefactuelle, pages: readonly PageCitee[]): void {
+  const attendues = [...new Set(reponse.normalise.liens)];
+  const recues = pages.map((page) => page.url_citee);
+  if (attendues.length !== recues.length || attendues.some((url, rang) => url !== recues[rang])) {
+    throw new Error(`Réponse ${reponse.id} : les pages citées (${recues.join(", ")}) ne sont pas celles des liens de la réponse (${attendues.join(", ")}).`);
+  }
+}
+
+/** D27 (F) : la prémisse résolue au gel accompagne la seule formulation qui en affiche une. */
+function questionSoumise(question: QuestionPosee, premisse_fausse: boolean): QuestionSoumise {
+  return {
+    gabarit: question.gabarit,
+    registre: question.registre,
+    texte: question.texte,
+    ...(question.registre === "oriente" ? { premisse_fausse } : {}),
+  };
+}
+
+/** D27 (G) : recopie champ par champ ; aucun champ ajouté au tirage ne passe. */
+function reponseAttendueSoumise(attendue: ReponseAttendue): ReponseAttendue {
+  const temporelle = attendue.resolution_temporelle;
+  return {
+    nature: attendue.nature,
+    ...(attendue.position === undefined ? {} : { position: attendue.position }),
+    ...(attendue.etat_attendu === undefined ? {} : { etat_attendu: attendue.etat_attendu }),
+    ...(attendue.candidats_attendus === undefined ? {} : { candidats_attendus: [...attendue.candidats_attendus] }),
+    resolution_temporelle: {
+      date_gel: temporelle.date_gel,
+      ...(temporelle.date_changement === undefined ? {} : { date_changement: temporelle.date_changement }),
+      regle: temporelle.regle,
+    },
+  };
+}
+
+/** D27 (E) : recopie champ par champ de la page bornée (`pages-citees.ts`). */
+function pageSoumise(page: PageCitee): PageCitee {
+  if (!page.texte_disponible) return { url_citee: page.url_citee, texte_disponible: false, raison: page.raison };
+  return {
+    url_citee: page.url_citee,
+    texte_disponible: true,
+    origine: page.origine,
+    texte: page.texte,
+    texte_sha256: page.texte_sha256,
+    tronque: page.tronque,
+    longueur_totale: page.longueur_totale,
   };
 }
 

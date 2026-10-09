@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { DELAI_FRAICHEUR_JOURS, obsolescenceFraiche } from "../../pipeline/notation/fraicheur.ts";
+import { DELAI_FRAICHEUR_JOURS, fraicheurDesItems, obsolescenceFraiche } from "../../pipeline/notation/fraicheur.ts";
 
 const CHANGEMENT = "2026-11-01";
 
@@ -48,5 +48,36 @@ describe("obsolescenceFraiche", () => {
 
   it("une date de changement illisible est refusée", () => {
     expect(() => obsolescenceFraiche("2026-13-45", "2026-11-14T00:00:00Z")).toThrow(/illisible/);
+  });
+});
+
+/** D27 (C) : la fraîcheur se calcule depuis les items soumis, pour un juge comme pour un humain. */
+describe("fraicheurDesItems", () => {
+  const O = (date_changement: string) => ({ obsolescence: { date_changement } });
+  const P = { obsolescence: undefined };
+  const GEL_J14 = "2026-11-15T00:00:00Z";
+
+  it("sans drapeau obsolescence : sans objet, aucune date lue", () => {
+    expect(fraicheurDesItems(["deformation"], [P], GEL_J14)).toEqual({ statut: "sans_objet" });
+  });
+
+  it("item O à J+14 pile : calculée, non fraîche (borne de fraicheur.ts)", () => {
+    expect(fraicheurDesItems(["obsolescence"], [P, O(CHANGEMENT)], GEL_J14)).toEqual({ statut: "calculee", fraiche: false });
+  });
+
+  it("item O à J+13 : calculée, fraîche", () => {
+    expect(fraicheurDesItems(["obsolescence"], [O(CHANGEMENT)], "2026-11-14T00:00:00Z")).toEqual({ statut: "calculee", fraiche: true });
+  });
+
+  it("deux items O de même date : une seule date, calculée", () => {
+    expect(fraicheurDesItems(["obsolescence"], [O(CHANGEMENT), O(CHANGEMENT)], GEL_J14)).toEqual({ statut: "calculee", fraiche: false });
+  });
+
+  it("drapeau sans item O : la date du changement manque, jamais supposée", () => {
+    expect(fraicheurDesItems(["obsolescence"], [P], GEL_J14)).toEqual({ statut: "sans_item_o" });
+  });
+
+  it("deux items O de dates différentes : ambiguë, jamais une date choisie", () => {
+    expect(fraicheurDesItems(["obsolescence"], [O(CHANGEMENT), O("2026-10-01")], GEL_J14)).toEqual({ statut: "ambigue", dates: [CHANGEMENT, "2026-10-01"] });
   });
 });

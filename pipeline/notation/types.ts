@@ -103,6 +103,7 @@ export interface NotationIndividuelle {
     readonly attendus: readonly IdentifiantCourt[];
     readonly cites: readonly IdentifiantCourt[];
     readonly hors_perimetre_cites?: readonly string[];
+    readonly ambigus_cites?: readonly string[];
   };
   readonly sourcage: { readonly cite: boolean; readonly liens: readonly LienNotation[] };
   readonly extrait_justificatif?: ExtraitJustificatif;

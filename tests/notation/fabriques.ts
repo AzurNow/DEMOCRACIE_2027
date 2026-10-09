@@ -7,6 +7,8 @@ import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
 import type { CandidatDuRun, LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
+import type { PageCitee } from "../../pipeline/notation/pages-citees.ts";
 
 export const RUN_ID = ulid("run-notation");
 export const REPONSE_ID = ulid("reponse-notation");
@@ -91,6 +93,23 @@ export const CANDIDATS_DU_RUN: readonly CandidatDuRun[] = [
   { candidat_id: "demo-beta", libelle: "Maxime Le Brun", nom: "Le Brun" },
   { candidat_id: "demo-gamma", libelle: "Camille Ollivier", nom: "Ollivier" },
 ];
+
+/** Le gel des tests de charge : `run.date_gel` de `run-fictif.ts`. */
+export const GEL_DES_TESTS = "2026-12-01T06:00:00+01:00";
+
+/** Ce que le tirage a résolu au gel pour une Q-DIR sur un item P « pour » (D27 (F), (G)). */
+export const RESOLU_POSITION_POUR: ResoluAuGel = {
+  reponse_attendue: { nature: "position", position: "pour", resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } },
+  premisse_fausse: false,
+};
+
+/** Une page « sans texte » par lien distinct, dans l'ordre de première citation (D27 (E)). */
+export function pagesSansTexte(liens: readonly string[], raison: "lien_mort" | "sans_copie" | "extraction_refusee" = "lien_mort"): readonly PageCitee[] {
+  return [...new Set(liens)].map((url_citee) => ({ url_citee, texte_disponible: false, raison }));
+}
+
+/** Ce que la chaîne pose dans le cadre d'une notation de juge pour la charge v3 (D27 (C), (D)). */
+export const CADRE_V3 = { date_gel: GEL_DES_TESTS, items: [], reponse_attendue: RESOLU_POSITION_POUR.reponse_attendue, candidats: CANDIDATS_DU_RUN } as const;
 
 export function runDeNotation(retires: readonly string[] = [], surcharges: Partial<RunDeNotation> = {}): RunDeNotation {
   return {

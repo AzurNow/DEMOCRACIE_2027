@@ -110,12 +110,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
   // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
-  it("1. les 233 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide (Q-ATT, nom ambigu), trois valides et trois invalides du nouveau schéma extraction-page-lien.
+  it("1. les 240 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(233);
+    expect(manifeste.exemples).toHaveLength(240);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -124,9 +125,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 22 → 23 : perimetre (config/perimetre.yaml), conformité 2026-09-29, n° 23 et 25.
   // 23 → 24 : existence-lien (résultat du test HTTP d'un lien), décision D20 de l'auteur.
   // 24 → 25 : checklist (checklist de run de l'annexe F), décision D24 de l'auteur.
-  it("2. les vingt-cinq schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 25 → 26 : extraction-page-lien (texte d'une copie de page citée), décision D27 de l'auteur.
+  it("2. les vingt-six schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(25);
+    expect(conformites).toHaveLength(26);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -246,7 +248,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
   // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 233 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(233);
+  // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 240 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(240);
   });
 });

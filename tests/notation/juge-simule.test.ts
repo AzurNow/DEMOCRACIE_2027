@@ -21,6 +21,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ITEM_P } from "./run-fictif.ts";
 import { FIXTURES_INTERROGATION, FIXTURES_NOTATION, parametresDeReference } from "./simulation.ts";
+import { CADRE_V3, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const temporaires: string[] = [];
 
@@ -44,10 +45,12 @@ function reponse(surcharges: Partial<ReponseObtenue["normalise"]>): ReponseObten
 function charge(r: ReponseObtenue, gabarit: ChargeJuge["question"]["gabarit"] = "Q-DIR"): ChargeJuge {
   return construireCharge({
     reponse: r,
-    question: { gabarit, texte: "Question simulée, sans contenu réel." },
+    question: { gabarit, registre: "neutre", texte: "Question simulée, sans contenu réel." },
     references: [{ item: ITEM_P, role: "principal" }],
     date_run: "2026-12-01T06:00:00+01:00",
     prompt: REGLES_JUGE_SIMULE.prompt,
+    resolu_au_gel: RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(r.normalise.liens),
   });
 }
 
@@ -70,6 +73,7 @@ function notationValide(juge: Juge, sortie: SortieJuge, c: ChargeJuge, r: Repons
     liens: c.reponse.liens,
     existences: new Map([[LIEN, { url_citee: LIEN, verdict_existence: "existe" as const, date_test: "2026-12-04T09:00:00+01:00" }]]),
     textes: { reponse: r.normalise.texte, citations_reference: citationsDeReference([ITEM_P]) },
+    ...CADRE_V3,
   });
   valider("notation", notation, `notation simulée ${juge.identite.juge_id}`);
 }
@@ -132,7 +136,7 @@ describe("le juge simulé", () => {
 
 describe("le fournisseur d'existences simulé", () => {
   it("rend les verdicts de sa table, rien pour un lien inconnu", () => {
-    const fournisseur = fournisseurSimule(parametresDeReference().existences, temporaire());
+    const fournisseur = fournisseurSimule(parametresDeReference().existences, [], temporaire());
     expect(fournisseur.existencesDe("r", [LIEN, "https://inconnu.invalid/"])).toEqual([expect.objectContaining({ url_citee: LIEN, verdict_existence: "mort" })]);
     expect(fournisseur.existencesDe("r", ["https://inconnu.invalid/"])).toEqual([]);
   });
@@ -140,8 +144,22 @@ describe("le fournisseur d'existences simulé", () => {
   it("refuse une table où un lien a deux verdicts, ou un verdict hors du schéma", () => {
     const [existence] = parametresDeReference().existences;
     if (existence === undefined) throw new Error("table de référence vide");
-    expect(() => fournisseurSimule([existence, existence], temporaire())).toThrow(TableExistencesInvalide);
-    expect(() => fournisseurSimule([{ ...existence, verdict_existence: "peut-etre" as never }], temporaire())).toThrow(/non conforme/);
+    expect(() => fournisseurSimule([existence, existence], [], temporaire())).toThrow(TableExistencesInvalide);
+    expect(() => fournisseurSimule([{ ...existence, verdict_existence: "peut-etre" as never }], [], temporaire())).toThrow(/non conforme/);
+  });
+
+  it("D27 (E) : rend le texte d'une copie de sa table, son empreinte calculée ; rien pour une copie inconnue", () => {
+    const sha = "a".repeat(64);
+    const fournisseur = fournisseurSimule([], [{ sha256_contenu: sha, issue: "extrait", texte: "abc" }, { sha256_contenu: "b".repeat(64), issue: "refuse", motif: "image/png" }], temporaire());
+    expect(fournisseur.texteDeCopie(sha)).toEqual({ issue: "extrait", texte: "abc", texte_sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" });
+    expect(fournisseur.texteDeCopie("b".repeat(64))).toEqual({ issue: "refuse", motif: "image/png" });
+    expect(fournisseur.texteDeCopie("c".repeat(64))).toBeUndefined();
+  });
+
+  it("D27 (E) : refuse deux textes pour une copie, ou une empreinte qui n'en est pas une", () => {
+    const texte = { sha256_contenu: "a".repeat(64), issue: "extrait" as const, texte: "abc" };
+    expect(() => fournisseurSimule([], [texte, texte], temporaire())).toThrow(TableExistencesInvalide);
+    expect(() => fournisseurSimule([], [{ ...texte, sha256_contenu: "pas-une-empreinte" }], temporaire())).toThrow(TableExistencesInvalide);
   });
 });
 
@@ -150,7 +168,7 @@ describe("7. garde-fou : jamais sous runs/", () => {
 
   it("le juge simulé et le fournisseur simulé refusent un répertoire de run sous runs/", () => {
     expect(() => jugesSimules(parametresDeReference().juge_simule, sousRuns)).toThrow(SimuleSousRuns);
-    expect(() => fournisseurSimule(parametresDeReference().existences, sousRuns)).toThrow(SimuleSousRuns);
+    expect(() => fournisseurSimule(parametresDeReference().existences, [], sousRuns)).toThrow(SimuleSousRuns);
     expect(() => jugesSimules(parametresDeReference().juge_simule, RUNS_DU_DEPOT)).toThrow(SimuleSousRuns);
   });
 

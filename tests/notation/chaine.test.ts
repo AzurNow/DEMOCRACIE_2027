@@ -116,6 +116,7 @@ function sansExistencePour(reponse_ids: ReadonlySet<string>): (env: Environnemen
   return (env) => {
     const fournisseur: FournisseurExistences = {
       existencesDe: (reponse_id, liens) => (reponse_ids.has(reponse_id) ? [] : env.existences.existencesDe(reponse_id, liens)),
+      texteDeCopie: (sha256_contenu) => env.existences.texteDeCopie(sha256_contenu),
     };
     return { ...env, existences: fournisseur };
   };
@@ -387,6 +388,56 @@ describe("10. la charge reçue par le juge", () => {
         expect(texte.includes(sentinelle), sentinelle).toBe(false);
       }
     }
+  });
+});
+
+describe("D27 : la charge v3 reçue par le juge dans la chaîne", () => {
+  const LIEN_SIMULE = "https://source-simulee.invalid/page";
+  const SHA_COPIE = "c".repeat(64);
+  const existeAvecCopie = (reference: ParametresNotationSimulee): ParametresNotationSimulee => ({
+    ...reference,
+    existences: reference.existences.map((e) => (e.url_citee === LIEN_SIMULE ? { url_citee: e.url_citee, verdict_existence: "existe" as const, code_http: 200, date_test: e.date_test, sha256_contenu: SHA_COPIE } : e)),
+  });
+
+  it("chaque charge porte la réponse attendue et la prémisse du tirage, le registre de sa formulation", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const tirage = JSON.parse(readFileSync(join(execution.prepare.repertoire_run, "tirage.json"), "utf8")) as { entrees: { question_id: string; reponse_attendue: unknown }[] };
+    const parId = new Map(execution.prepare.reponses.map((r) => [r.reponse.id, r]));
+    const origines = contrefactuellesDerivees(execution.prepare.repertoire_run, execution.resultat.run_id);
+    for (const { charge } of appels.filter((a) => !origines.has(a.charge.reponse_id))) {
+      const r = parId.get(charge.reponse_id);
+      const entree = tirage.entrees.find((e) => e.question_id === r?.reponse.question_id);
+      expect(charge.reponse_attendue).toEqual(entree?.reponse_attendue);
+      expect(charge.question.registre).toBe(r?.question.registre);
+      expect("premisse_fausse" in charge.question).toBe(charge.question.registre === "oriente");
+    }
+  });
+
+  it("le lien mort du run de référence arrive sans texte, raison lien_mort", async () => {
+    const appels: Appel[] = [];
+    await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
+    expect(avecLien.length).toBeGreaterThan(0);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([{ url_citee: LIEN_SIMULE, texte_disponible: false, raison: "lien_mort" }]);
+  });
+
+  it("une page conservée dont le texte est extrait arrive dans la charge, avec son empreinte", async () => {
+    const appels: Appel[] = [];
+    const parametres = { ...existeAvecCopie(parametresDeReference()), textes_copies: [{ sha256_contenu: SHA_COPIE, issue: "extrait" as const, texte: "Texte simulé de la page citée." }] };
+    await noter(nouvelleSortie(), parametres, (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
+    expect(avecLien.length).toBeGreaterThan(0);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([expect.objectContaining({ url_citee: LIEN_SIMULE, texte_disponible: true, origine: "page_conservee", texte: "Texte simulé de la page citée.", tronque: false })]);
+  });
+
+  it("une page conservée sans texte extrait : la réponse attend le test des liens, jamais notée sur un texte vide", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), existeAvecCopie(parametresDeReference()), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    expect(appels.filter((a) => a.charge.reponse.liens.length > 0)).toEqual([]);
+    const citent = execution.prepare.reponses.filter((r) => r.reponse.normalise.liens.length > 0).map((r) => r.reponse.id);
+    expect(citent.length).toBeGreaterThan(0);
+    for (const id of citent) expect(execution.resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toEqual(["test_liens"]);
   });
 });
 

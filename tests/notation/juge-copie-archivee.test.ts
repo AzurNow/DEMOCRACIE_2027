@@ -14,7 +14,7 @@ import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { ITEM_REF, REPONSE_ID, REPONSE_PROJETEE, RUN_ID } from "./fabriques.ts";
+import { CADRE_V3, ITEM_REF, REPONSE_ID, REPONSE_PROJETEE, RUN_ID } from "./fabriques.ts";
 
 const DATE_TEST = "2026-12-04T09:00:00+01:00";
 const SHA = "c".repeat(64);
@@ -62,6 +62,7 @@ function noter(existences: readonly ExistenceEtablie[], soutien: VerdictSoutien)
     liens: existences.map((e) => e.url_citee),
     existences: new Map(existences.map((e) => [e.url_citee, e])),
     textes: { reponse: REPONSE_PROJETEE, citations_reference: [] },
+    ...CADRE_V3,
   });
   valider("notation", notation, "notation de juge, copie archivée (D21)");
   return notation;

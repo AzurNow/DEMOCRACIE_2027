@@ -58,12 +58,37 @@ export interface ItemSoumis {
   readonly obsolescence?: { readonly date_changement: string; readonly etat_anterieur: EtatItem; readonly etat_posterieur: EtatItem };
 }
 
+/** La réponse attendue résolue au gel (`tirage.schema.json#/$defs/reponse_attendue`, D27 (G)). */
+export interface ReponseAttendue {
+  readonly nature: string;
+  readonly position?: string;
+  readonly etat_attendu?: string;
+  readonly candidats_attendus?: readonly string[];
+  readonly resolution_temporelle: { readonly date_gel: string; readonly date_changement?: string; readonly regle: string };
+}
+
+/** Le texte d'une page citée, ou la raison de son absence (D27 (E)). */
+export type PageCitee =
+  | {
+      readonly url_citee: string;
+      readonly texte_disponible: true;
+      readonly origine: string;
+      readonly texte: string;
+      readonly texte_sha256: string;
+      readonly tronque: boolean;
+      readonly longueur_totale: number;
+    }
+  | { readonly url_citee: string; readonly texte_disponible: false; readonly raison: string };
+
 export interface Vue {
   readonly version_vue: string;
   readonly version_grille: string;
   readonly date_run: string;
   readonly reponse_id: string;
-  readonly question: { readonly gabarit: string; readonly texte: string };
+  readonly question: { readonly gabarit: string; readonly registre: string; readonly texte: string; readonly premisse_fausse?: boolean };
+  readonly reponse_attendue: ReponseAttendue;
+  readonly pages_citees: readonly PageCitee[];
+  readonly longueur_max_texte_page: number;
   readonly reponse: {
     readonly texte: string;
     readonly liens: readonly Existence[];

@@ -47,7 +47,7 @@ import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { citationsDeReference, controlerExtrait, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
-import { obsolescenceFraiche } from "./fraicheur.ts";
+import { fraicheurDesItems } from "./fraicheur.ts";
 import type { ExtraitJustificatif, LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
 import type { ExistenceEtablie, VueAnnotateur } from "./vue-annotateur.ts";
 
@@ -234,16 +234,17 @@ function fraicheurCalculee(
   drapeaux: readonly Drapeau[],
   contexte: ContexteNotationHumaine,
 ): { readonly fraiche: boolean | undefined; readonly motifs: readonly MotifRefus[] } {
-  if (!drapeaux.includes("obsolescence")) return { fraiche: undefined, motifs: [] };
-  const dates = [...new Set(contexte.items.flatMap((item) => (item.obsolescence === undefined ? [] : [item.obsolescence.date_changement])))];
-  const [date, ...autres] = dates;
-  if (date === undefined) {
-    return { fraiche: undefined, motifs: [{ code: "obsolescence_sans_item_o", detail: "drapeau obsolescence sans item O parmi les items soumis : la date du changement manque (§11)." }] };
+  const fraicheur = fraicheurDesItems(drapeaux, contexte.items, contexte.date_gel);
+  switch (fraicheur.statut) {
+    case "sans_objet":
+      return { fraiche: undefined, motifs: [] };
+    case "calculee":
+      return { fraiche: fraicheur.fraiche, motifs: [] };
+    case "sans_item_o":
+      return { fraiche: undefined, motifs: [{ code: "obsolescence_sans_item_o", detail: "drapeau obsolescence sans item O parmi les items soumis : la date du changement manque (§11)." }] };
+    case "ambigue":
+      return { fraiche: undefined, motifs: [{ code: "obsolescence_ambigue", detail: `drapeau obsolescence avec plusieurs dates de changement (${fraicheur.dates.join(", ")}) : la fraîcheur est ambiguë (§11).` }] };
   }
-  if (autres.length > 0) {
-    return { fraiche: undefined, motifs: [{ code: "obsolescence_ambigue", detail: `drapeau obsolescence avec plusieurs dates de changement (${dates.join(", ")}) : la fraîcheur est ambiguë (§11).` }] };
-  }
-  return { fraiche: obsolescenceFraiche(date, contexte.date_gel), motifs: [] };
 }
 
 /* ------------------------------------------------------------------ assemblage et schéma */

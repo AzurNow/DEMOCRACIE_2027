@@ -8,15 +8,15 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { dispositionRunNote, lireDossier, lireItemsEpingles, lireRunJson, runDeNotationDe, VolumeAbsent, type RunLu } from "../../analysis/lecture-run.ts";
+import { dispositionRunNote, lireDossier, lireItemsEpingles, lireRunJson, lireTirage, runDeNotationDe, VolumeAbsent, type RunLu } from "../../analysis/lecture-run.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { citationsDeReference, type TextesDeVerification } from "../../pipeline/notation/extrait.ts";
 import { tirerJeuOr, type JeuOr } from "../../pipeline/notation/echantillons.ts";
-import type { QuestionPosee, ReferenceSoumise } from "../../pipeline/notation/charge-juge.ts";
+import { resolusAuGel, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import type { RunDeNotation } from "../../pipeline/notation/types.ts";
-import type { Question } from "../../pipeline/questions/types.ts";
+import type { EntreeTirage, Question } from "../../pipeline/questions/types.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 
 export class RepertoireDeRunIllisible extends Error {
@@ -38,6 +38,8 @@ export interface ReponsePreparee {
   readonly reponse: ReponseObtenue;
   readonly question: QuestionPosee;
   readonly references: readonly ReferenceSoumise[];
+  /** `tirage.entrees[]` de la question : réponse attendue et prémisse, que la vue montre (D27, D18). */
+  readonly resolu_au_gel: ResoluAuGel;
   /** Les items des références, dans le même ordre. */
   readonly items: readonly Item[];
   readonly textes: TextesDeVerification;
@@ -75,17 +77,20 @@ function referencesDe(question: Question, items: ReadonlyMap<string, Item>): rea
   });
 }
 
-function preparer(reponse: ReponseObtenue, questions: ReadonlyMap<string, Question>, items: ReadonlyMap<string, Item>): ReponsePreparee {
+function preparer(reponse: ReponseObtenue, questions: ReadonlyMap<string, Question>, items: ReadonlyMap<string, Item>, resolus: ReadonlyMap<string, ResoluAuGel>): ReponsePreparee {
   const question = questions.get(reponse.question_id);
   if (question === undefined) throw new RunSansDonnee(`la réponse ${reponse.id} porte sur la question ${reponse.question_id}, absente de questions.json.`);
   const formulation = question.formulations.find((f) => f.id === reponse.formulation_id);
   if (formulation === undefined) throw new RunSansDonnee(`la réponse ${reponse.id} porte sur la formulation ${reponse.formulation_id}, absente de la question ${question.id}.`);
+  const resolu_au_gel = resolus.get(question.id);
+  if (resolu_au_gel === undefined) throw new RunSansDonnee(`la réponse ${reponse.id} porte sur la question ${question.id}, absente du tirage du run.`);
   const references = referencesDe(question, items);
   const itemsDeLaReponse = references.map((r) => r.item);
   return {
     reponse,
-    question: { gabarit: question.gabarit, texte: formulation.texte },
+    question: { gabarit: question.gabarit, registre: formulation.registre, texte: formulation.texte },
     references,
+    resolu_au_gel,
     items: itemsDeLaReponse,
     textes: { reponse: reponse.normalise.texte, citations_reference: citationsDeReference(itemsDeLaReponse) },
   };
@@ -105,7 +110,9 @@ export function chargerRun(repertoire_run: string, repertoire_items: string): Do
   const questions = lireQuestions(chemin_questions);
   const items = lireItems(questions, run, repertoire_items, chemin_questions);
   const parId = new Map(questions.map((q) => [q.id, q]));
-  const reponses = lireReponsesObtenues(repertoire_run, run.id).map((r) => preparer(r, parId, items));
+  // `lireTirage` a validé tirage.json contre son schéma, qui exige reponse_attendue et premisse_fausse de chaque entrée.
+  const resolus = resolusAuGel(lireTirage(repertoire_run, run).entrees as unknown as readonly EntreeTirage[]);
+  const reponses = lireReponsesObtenues(repertoire_run, run.id).map((r) => preparer(r, parId, items, resolus));
   const run_note = runDeNotationDe(run);
   return {
     repertoire_run,

@@ -1564,6 +1564,51 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 sans indeterminees_echantillon_humain. D25 (1) : les réponses de l'échantillon à note humaine indéterminée sont écartées du kappa, et leur nombre est publié avec tout go/no-go ; l'absence de ce nombre cacherait un échantillon amputé.",
       "regle_protocole": "§7, §12 ; décision D25 de l'auteur du 2026-10-09 (protocole 0.16 à écrire)"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/valide-07-juge-attribution-nom-ambigu.json",
+      "attendu": "valide",
+      "motif": "Copie de valide-01 sur une Q-ATT. D27 (D), charge-juge-v3 : le bloc d'attribution d'un juge est calculé par le code (pipeline/notation/juge.ts) ; un nom cité qui correspond à deux candidats du périmètre est conservé dans ambigus_cites, rattaché à aucun, à côté d'un nom hors périmètre."
+    },
+    {
+      "objet": "extraction-page-lien",
+      "fichier": "extraction-page-lien/valide-01-page-html-extraite.json",
+      "attendu": "valide",
+      "motif": "D27 (E) : texte d'une page HTML conservée, extrait par html.parser (règle blocs-1), encodage déclaré par le Content-Type. Copie du fichier doré tests/liens/dore-textes/extraction-html.json."
+    },
+    {
+      "objet": "extraction-page-lien",
+      "fichier": "extraction-page-lien/valide-02-page-pdf-extraite.json",
+      "attendu": "valide",
+      "motif": "D27 (E) : texte d'un PDF conservé, extrait par pymupdf, intervalles de pages. Copie du fichier doré tests/liens/dore-textes/extraction-pdf.json."
+    },
+    {
+      "objet": "extraction-page-lien",
+      "fichier": "extraction-page-lien/valide-03-extraction-refusee.json",
+      "attendu": "valide",
+      "motif": "D27 (E) : copie d'un type sans extracteur (image/png) ; le refus est consigné avec son motif, aucun texte n'est supposé, et la charge dit extraction_refusee. Copie du fichier doré tests/liens/dore-textes/extraction-refus.json."
+    },
+    {
+      "objet": "extraction-page-lien",
+      "fichier": "extraction-page-lien/invalide-01-refus-portant-un-texte.json",
+      "attendu": "invalide",
+      "motif": "Refus d'extraction qui porte une empreinte et une longueur de texte : une extraction refusée n'a pas de texte, sans quoi le juge lirait un texte qu'aucun extracteur n'a produit.",
+      "regle_protocole": "§7, sourçage ; décision D27 (E)"
+    },
+    {
+      "objet": "extraction-page-lien",
+      "fichier": "extraction-page-lien/invalide-02-extrait-sans-extracteur.json",
+      "attendu": "invalide",
+      "motif": "Texte extrait sans extracteur nommé : sans outil, version et options, une réextraction qui rendrait un autre texte ne s'explique pas.",
+      "regle_protocole": "§9, reproductibilité ; décision D27 (E)"
+    },
+    {
+      "objet": "extraction-page-lien",
+      "fichier": "extraction-page-lien/invalide-03-extracteur-webvtt.json",
+      "attendu": "invalide",
+      "motif": "Extracteur webvtt sur une page citée : une page citée est un HTML ou un PDF, aucun média n'y est transcrit.",
+      "regle_protocole": "Décision D27 (E)"
     }
   ]
 }
