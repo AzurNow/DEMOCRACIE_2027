@@ -9,12 +9,14 @@ import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import type { JugeDuRun, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { runDeNotation } from "./fabriques.ts";
 
-function juge(juge_id: string, retire: boolean, numerateur: number, denominateur = 200): JugeDuRun {
+/** Modifié ouvertement (D31 (1)) : le juge publie aussi ses paires écartées, 0 par défaut d'écriture du test. */
+function juge(juge_id: string, retire: boolean, numerateur: number, denominateur = 200, paires_ecartees_contrefactuel = 0): JugeDuRun {
   return {
     juge_id,
     retire,
     taux_changement_contrefactuel: numerateur / denominateur,
     changements_contrefactuel: { numerateur, denominateur },
+    paires_ecartees_contrefactuel,
   };
 }
 
@@ -63,6 +65,24 @@ describe("13. retrait et taux du test contrefactuel", () => {
   it("dénominateurs égaux à contrefactuel_candidats.taille : aucune violation", () => {
     const run = { ...runAvec([juge("j1", false, 2), juge("j2", false, 4)]), contrefactuel_candidats: { taille: 200 } };
     expect(codes(run)).toEqual([]);
+  });
+
+  it("D31 (1) : dénominateur + paires écartées = taille : aucune violation ; sinon, violation", () => {
+    const bloc = { contrefactuel_candidats: { taille: 200 } };
+    expect(codes({ ...runAvec([juge("j1", false, 2, 199, 1), juge("j2", false, 2)]), ...bloc })).toEqual([]);
+    expect(codes({ ...runAvec([juge("j1", false, 2, 199, 2), juge("j2", false, 2)]), ...bloc })).toEqual(["denominateur_contrefactuel_incoherent"]);
+  });
+
+  it("D31 (1) : taux indéfini avec toutes les paires écartées : aucune violation ; avec une paire comptée, violation", () => {
+    const indefini = (ecartees: number): JugeDuRun => ({ juge_id: "j1", retire: false, paires_ecartees_contrefactuel: ecartees, motif_indefini_contrefactuel: "toutes_paires_ecartees" });
+    const bloc = { contrefactuel_candidats: { taille: 200 } };
+    expect(codes({ ...runAvec([indefini(200), juge("j2", false, 2)]), ...bloc })).toEqual([]);
+    expect(codes({ ...runAvec([indefini(199), juge("j2", false, 2)]), ...bloc })).toEqual(["denominateur_contrefactuel_incoherent"]);
+  });
+
+  it("D31 (1) : effectifs publiés sans le nombre de paires écartées : violation", () => {
+    const { paires_ecartees_contrefactuel: _p, ...sans } = juge("j1", false, 2);
+    expect(codes({ ...runAvec([sans, juge("j2", false, 2)]), contrefactuel_candidats: { taille: 200 } })).toEqual(["denominateur_contrefactuel_incoherent"]);
   });
 
   it("juges sans résultat contrefactuel (run planifié, ou test indéfini) : rien à contrôler", () => {

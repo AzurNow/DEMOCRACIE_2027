@@ -238,6 +238,7 @@
       },
       "kappa_juge_humain": 0.83,
       "kappa_echantillon_humain": 0.8,
+      "renvois_ecartes_kappa_echantillon": 0,
       "retire": false
     },
     {
@@ -252,6 +253,7 @@
       },
       "kappa_juge_humain": 0.78,
       "kappa_echantillon_humain": 0.8,
+      "renvois_ecartes_kappa_echantillon": 0,
       "retire": false
     }
   ],

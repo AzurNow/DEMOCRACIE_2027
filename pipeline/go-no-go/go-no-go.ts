@@ -152,7 +152,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
-  const { kappas, indeterminees } = kappasEchantillon({ juges: run.juges, echantillon, notations });
+  const { kappas, indeterminees } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
   const go_no_go = deciderPublication([
     critereKappaJugesHumains(kappas),
     critereTestContrefactuel(run.juges),
@@ -177,8 +177,10 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
 function jugeAvecKappa(juge: Objet, kappas: readonly KappaDeJuge[]): Objet {
   const kappa = kappas.find((k) => k.juge_id === juge["juge_id"]);
   if (kappa === undefined) return juge;
-  if (kappa.kappa === null) return { ...juge, motif_indefini_kappa_echantillon_humain: kappa.motif_indefini };
-  return { ...juge, kappa_echantillon_humain: kappa.kappa };
+  // D31 (2) : le nombre de réponses écartées de ce kappa par les renvois du juge, 0 compris.
+  const ecartes = { renvois_ecartes_kappa_echantillon: kappa.renvois_ecartes };
+  if (kappa.kappa === null) return { ...juge, motif_indefini_kappa_echantillon_humain: kappa.motif_indefini, ...ecartes };
+  return { ...juge, kappa_echantillon_humain: kappa.kappa, ...ecartes };
 }
 
 function fusionner(brut: Objet, calcul: Calcul): Objet {
@@ -204,14 +206,14 @@ function partEcrite(run: Objet): string {
     indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
     renvois_attribution_indecidable: run["renvois_attribution_indecidable"],
     juges: Array.isArray(juges)
-      ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"]])
+      ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"], juge["renvois_ecartes_kappa_echantillon"]])
       : null,
   });
 }
 
 function partVide(run: Objet): string {
   const juges = run["juges"];
-  return canoniser({ juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined]) : null });
+  return canoniser({ juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined, undefined]) : null });
 }
 
 function issueRun(chemin: string, actuel: Objet, fusionne: Objet): IssueEcriture | null {

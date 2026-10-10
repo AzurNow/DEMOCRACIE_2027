@@ -357,8 +357,9 @@ describe("exemples de schema/exemples/", () => {
   // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
   // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
   // 241 → 246 : décision D30 de l'auteur, deux notations (lecture de comparateur), un run, deux renvois.
-  it("charge les 246 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(246);
+  // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run.
+  it("charge les 250 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(250);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

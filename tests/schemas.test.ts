@@ -113,12 +113,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide (Q-ATT, nom ambigu), trois valides et trois invalides du nouveau schéma extraction-page-lien.
   // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
   // 241 → 246 : décision D30 de l'auteur, une notation valide et une invalide (lecture de comparateur et version_charge), un invalide de run (go/no-go sans renvois_attribution_indecidable), un valide et un invalide du nouveau schéma renvoi-humain.
-  it("1. les 246 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run (paires écartées, taux de juge indéfini, renvois écartés du kappa).
+  it("1. les 250 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(246);
+    expect(manifeste.exemples).toHaveLength(250);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -254,7 +255,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
   // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
   // 241 → 246 : décision D30 de l'auteur, une notation valide et une invalide (lecture de comparateur et version_charge), un invalide de run (go/no-go sans renvois_attribution_indecidable), un valide et un invalide du nouveau schéma renvoi-humain.
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 246 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(246);
+  // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run (paires écartées, taux de juge indéfini, renvois écartés du kappa).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 250 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(250);
   });
 });

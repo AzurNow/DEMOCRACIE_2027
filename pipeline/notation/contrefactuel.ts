@@ -26,6 +26,11 @@
  *    deux notations ne concordent pas sur la catégorie, les drapeaux et la fraîcheur (pas le motif)
  *    (`analysis/note-lue.ts:notesContrefactuellesConcordent`, D14 (3) précisée par D30 (1)) :
  *    le soutien des liens n'y entre pas, le texte des pages citées n'étant pas permuté.
+ * 3 bis. **Renvois (D31 (1)).** Une paire dont l'un des côtés au moins porte un renvoi de CE juge
+ *    vers l'humain (D30 (2), `renvois`) est écartée de son numérateur et de son dénominateur, et
+ *    comptée à part (`paires_ecartees`). Un côté renvoyé n'est pas manquant. Toutes les paires
+ *    écartées : le taux du juge est indéfini (`toutes_paires_ecartees`), jamais 0 %, et il n'est pas
+ *    retiré (rien ne mesure son biais) ; le critère go/no-go est alors rouge (effectifs absents).
  * 4. **Taux et retrait.** Taux = changements / taille du sous-ensemble. Retrait si
  *    `changements × 100 > 3 × n`, en entiers : « au-delà de 3 % » est strict (6 sur 200 n'est pas
  *    retiré, 7 l'est).
@@ -42,7 +47,7 @@ import type { Ulid } from "../../analysis/types.ts";
 import { JugeIndetermine } from "./decision.ts";
 import { comparerChaines, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
-import type { NotationIndividuelle, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 
 /** §7 : « au-delà de 3 % », en fraction exacte. */
 export const SEUIL_RETRAIT = { numerateur: 3, denominateur: 100 } as const;
@@ -62,6 +67,8 @@ export interface EntreeContrefactuel {
   readonly sous_ensemble: SousEnsembleContrefactuel;
   readonly paires: readonly PaireContrefactuelle[];
   readonly notations: readonly NotationIndividuelle[];
+  /** Les renvois de juge portant sur un côté des paires (D30 (2), D31 (1)). */
+  readonly renvois: readonly RenvoiHumain[];
 }
 
 export interface TauxDeChangement {
@@ -71,14 +78,24 @@ export interface TauxDeChangement {
 }
 
 /** Noms de champ de `run.schema.json#/properties/juges` là où ils existent. */
-export interface ResultatJuge {
-  readonly juge_id: string;
-  readonly taux: TauxDeChangement;
-  /** `taux.valeur`, sous le nom que le run stocke. */
-  readonly taux_changement_contrefactuel: number;
-  readonly retire: boolean;
-  readonly motif_retrait?: string;
-}
+export type ResultatJuge =
+  | {
+      readonly juge_id: string;
+      readonly taux: TauxDeChangement;
+      /** `taux.valeur`, sous le nom que le run stocke. */
+      readonly taux_changement_contrefactuel: number;
+      /** D31 (1) : paires écartées par un renvoi de ce juge. */
+      readonly paires_ecartees_contrefactuel: number;
+      readonly retire: boolean;
+      readonly motif_retrait?: string;
+    }
+  | {
+      readonly juge_id: string;
+      /** D31 (1) : toutes les paires sont écartées ; aucun taux, aucun retrait. */
+      readonly motif_indefini_contrefactuel: "toutes_paires_ecartees";
+      readonly paires_ecartees_contrefactuel: number;
+      readonly retire: false;
+    };
 
 export interface PaireIncomplete {
   readonly reponse_id: Ulid;
@@ -122,14 +139,15 @@ export function testerContrefactuel(entree: EntreeContrefactuel): ResultatContre
   const juges = jugesDuTest(entree.run);
   const places = indexerPaires(entree);
   const notations = indexerNotations(entree, juges, places);
+  const renvois = indexerRenvois(entree, juges, places, notations);
   const commun: Commun = {
     sous_effectif: entree.sous_ensemble.sous_effectif,
     mentions_residuelles: entree.paires.reduce((total, paire) => total + paire.mentions_residuelles, 0),
   };
   if (entree.paires.length === 0) return { ...commun, statut: "indefini", motif: "aucune_reponse_eligible", taux_echantillon_humain: 0.1 };
-  const incompletes = pairesIncompletes(entree.paires, juges, notations);
+  const incompletes = pairesIncompletes(entree.paires, juges, notations, renvois);
   if (incompletes.length > 0) return { ...commun, statut: "en_attente", paires_incompletes: incompletes };
-  return issue(commun, juges.map((juge_id) => resultatDuJuge(juge_id, entree.paires, notations)));
+  return issue(commun, juges.map((juge_id) => resultatDuJuge(juge_id, entree.paires, notations, renvois)));
 }
 
 /* ------------------------------------------------------------------ entrées */
@@ -203,6 +221,35 @@ function verifierNotation(notation: NotationIndividuelle, run_id: Ulid, juges: r
   }
 }
 
+/**
+ * Les renvois, indexés comme les notations. Un renvoi hors des paires, d'un autre run, d'un juge
+ * inconnu, sous le contexte d'un autre côté, en double, ou à côté d'une notation du même juge sur
+ * le même objet est incohérent.
+ */
+function indexerRenvois(
+  entree: EntreeContrefactuel,
+  juges: readonly string[],
+  places: ReadonlyMap<Ulid, Place>,
+  notations: ReadonlyMap<string, NotationIndividuelle>,
+): ReadonlySet<string> {
+  const index = new Set<string>();
+  for (const renvoi of entree.renvois) {
+    verifierRenvoi(renvoi, entree.run.id, juges, places);
+    const cle = cleNotation(renvoi.notateur.id, renvoi.objet_note.id);
+    if (index.has(cle) || notations.has(cle)) throw new ContrefactuelIncoherent(`le juge ${renvoi.notateur.id} porte plusieurs issues (notation ou renvoi) sur l'objet ${renvoi.objet_note.id}.`);
+    index.add(cle);
+  }
+  return index;
+}
+
+function verifierRenvoi(renvoi: RenvoiHumain, run_id: Ulid, juges: readonly string[], places: ReadonlyMap<Ulid, Place>): void {
+  const place = places.get(renvoi.objet_note.id);
+  const contexte = place === undefined ? undefined : ATTENDU_DU_COTE[place.cote].contexte;
+  if (renvoi.run_id !== run_id || place === undefined || !juges.includes(renvoi.notateur.id) || renvoi.contexte !== contexte) {
+    throw new ContrefactuelIncoherent(`le renvoi ${renvoi.id} (juge ${renvoi.notateur.id}, contexte ${renvoi.contexte}) porte sur ${renvoi.objet_note.id}, hors des paires du test ou d'un autre côté.`);
+  }
+}
+
 function cleNotation(juge_id: string, objet_id: Ulid): string {
   return `${juge_id}\u0000${objet_id}`;
 }
@@ -213,21 +260,24 @@ function pairesIncompletes(
   paires: readonly PaireContrefactuelle[],
   juges: readonly string[],
   notations: ReadonlyMap<string, NotationIndividuelle>,
+  renvois: ReadonlySet<string>,
 ): PaireIncomplete[] {
   const incompletes: PaireIncomplete[] = [];
   for (const paire of paires) {
     for (const juge_id of juges) {
-      const manque = manquesDe(paire, juge_id, notations);
+      const manque = manquesDe(paire, juge_id, notations, renvois);
       if (manque.length > 0) incompletes.push({ reponse_id: paire.reponse_id, juge_id, manque });
     }
   }
   return incompletes;
 }
 
-function manquesDe(paire: PaireContrefactuelle, juge_id: string, notations: ReadonlyMap<string, NotationIndividuelle>): Cote[] {
+/** Un côté renvoyé (D31 (1)) n'est pas manquant. */
+function manquesDe(paire: PaireContrefactuelle, juge_id: string, notations: ReadonlyMap<string, NotationIndividuelle>, renvois: ReadonlySet<string>): Cote[] {
+  const present = (objet_id: Ulid): boolean => notations.has(cleNotation(juge_id, objet_id)) || renvois.has(cleNotation(juge_id, objet_id));
   const manque: Cote[] = [];
-  if (!notations.has(cleNotation(juge_id, paire.reponse_id))) manque.push("origine");
-  if (!notations.has(cleNotation(juge_id, paire.contrefactuelle_id))) manque.push("permutee");
+  if (!present(paire.reponse_id)) manque.push("origine");
+  if (!present(paire.contrefactuelle_id)) manque.push("permutee");
   return manque;
 }
 
@@ -237,16 +287,22 @@ function resultatDuJuge(
   juge_id: string,
   paires: readonly PaireContrefactuelle[],
   notations: ReadonlyMap<string, NotationIndividuelle>,
+  renvois: ReadonlySet<string>,
 ): ResultatJuge {
-  const changements = paires.filter((paire) => change(paire, juge_id, notations)).length;
-  const taux = { numerateur: changements, denominateur: paires.length, valeur: changements / paires.length };
-  const retire = changements * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * paires.length;
+  const renvoyee = (paire: PaireContrefactuelle): boolean => renvois.has(cleNotation(juge_id, paire.reponse_id)) || renvois.has(cleNotation(juge_id, paire.contrefactuelle_id));
+  const comptees = paires.filter((paire) => !renvoyee(paire));
+  const paires_ecartees_contrefactuel = paires.length - comptees.length;
+  if (comptees.length === 0) return { juge_id, motif_indefini_contrefactuel: "toutes_paires_ecartees", paires_ecartees_contrefactuel, retire: false };
+  const changements = comptees.filter((paire) => change(paire, juge_id, notations)).length;
+  const taux = { numerateur: changements, denominateur: comptees.length, valeur: changements / comptees.length };
+  const retire = changements * SEUIL_RETRAIT.denominateur > SEUIL_RETRAIT.numerateur * comptees.length;
   return {
     juge_id,
     taux,
     taux_changement_contrefactuel: taux.valeur,
+    paires_ecartees_contrefactuel,
     retire,
-    ...(retire ? { motif_retrait: `Test contrefactuel des noms de candidats : ${changements} changements sur ${paires.length}, au-delà de 3 % (§7).` } : {}),
+    ...(retire ? { motif_retrait: `Test contrefactuel des noms de candidats : ${changements} changements sur ${comptees.length}, au-delà de 3 % (§7).` } : {}),
   };
 }
 

@@ -108,19 +108,6 @@ export class JugesNonConformes extends Error {
   }
 }
 
-/**
- * Un juge a renvoyé vers l'humain (D30 (2)) une réponse du sous-ensemble contrefactuel, d'un côté de
- * la paire ou des deux. Le §7 compare deux notes ; D30 ne dit pas ce que vaut une paire où l'un des
- * côtés n'en a pas : le test s'arrête ici, jamais un changement ni une absence de changement inventés.
- * Question posée à l'auteur (lot charge-juge-v3).
- */
-export class RenvoiDansLeTestContrefactuel extends Error {
-  constructor(objets: readonly Ulid[]) {
-    super(`Test contrefactuel : renvoi d'attribution indécidable sur ${objets.join(", ")} ; aucune règle ne dit si la paire change (D30 (2), question ouverte).`);
-    this.name = "RenvoiDansLeTestContrefactuel";
-  }
-}
-
 export class ReponsesNonConformes extends Error {
   constructor(detail: string) {
     super(`Réponses à noter refusées : ${detail}`);
@@ -382,8 +369,7 @@ async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const derangement = tirerDerangement(run.candidats, run.graines.contrefactuel);
   const paires: PaireContrefactuelle[] = [];
   for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaire(etat, exigerPreparee(etat, id), derangement));
-  exigerPairesSansRenvoi(etat, paires);
-  const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires) });
+  const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires), renvois: renvoisDesPaires(etat, paires) });
   const publication = publierContrefactuel(resultat, sous_ensemble, derangement, run);
   if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat };
   return { statut: inscrireContrefactuel(etat.env.repertoire_run, publication), resultat };
@@ -426,10 +412,10 @@ function exigerLiens(r: Preparee): LiensEtablis {
   return r.liens;
 }
 
-function exigerPairesSansRenvoi(etat: Etat, paires: readonly PaireContrefactuelle[]): void {
+/** D31 (1) : les renvois de juge portant sur un côté des paires ; ils écartent la paire du taux de ce juge. */
+function renvoisDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[]): readonly RenvoiHumain[] {
   const objets = new Set(paires.flatMap((p) => [p.reponse_id, p.contrefactuelle_id]));
-  const renvoyes = [...new Set(etat.renvois.filter((r) => objets.has(r.objet_note.id)).map((r) => r.objet_note.id))];
-  if (renvoyes.length > 0) throw new RenvoiDansLeTestContrefactuel(renvoyes);
+  return etat.renvois.filter((r) => objets.has(r.objet_note.id));
 }
 
 /** Les notations de juge portant sur les deux côtés des paires, et elles seules. */

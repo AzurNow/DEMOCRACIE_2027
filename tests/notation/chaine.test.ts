@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
 import { bilanNotation, ReponsePerdue } from "../../pipeline/notation/bilan-notation.ts";
-import { identifiantDerive, JugesNonConformes, noterRun, RenvoiDansLeTestContrefactuel, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { identifiantDerive, JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
@@ -465,10 +465,17 @@ describe("D30 (2) : un renvoi déjà écrit pour une réponse", () => {
     expect(lireNotationsDuRun(prepare.repertoire_run, resultat.run_id).notations.filter((n) => n.objet_note.id === id && n.notateur.id === "juge-simule-a")).toEqual([]);
   });
 
-  it("dans le sous-ensemble contrefactuel : le test s'arrête sur une erreur nommée (question ouverte), jamais un changement inventé", async () => {
+  it("dans le sous-ensemble contrefactuel (D31 (1)) : la paire est écartée du taux de ce juge seulement, et le nombre est inscrit", async () => {
     const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
     poserRenvoi(prepare, QUESTION_NOMMANTE);
-    await expect(noterRun(prepare.reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()))).rejects.toBeInstanceOf(RenvoiDansLeTestContrefactuel);
+    const resultat = await noterRun(prepare.reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()));
+    expect(resultat.contrefactuel.statut).toBe("inscrit");
+    const run = lireRunJson(prepare.repertoire_run);
+    const taille = run.contrefactuel_candidats?.taille as number;
+    const [a, b] = ["juge-simule-a", "juge-simule-b"].map((id) => run.juges.find((j) => j.juge_id === id));
+    expect(a).toMatchObject({ paires_ecartees_contrefactuel: 1, changements_contrefactuel: { denominateur: taille - 1 } });
+    expect(b).toMatchObject({ paires_ecartees_contrefactuel: 0, changements_contrefactuel: { denominateur: taille } });
+    expect(violations(prepare.repertoire_run)).toEqual([]);
   });
 });
 

@@ -180,6 +180,10 @@ export interface JugeDuRun {
    */
   readonly taux_changement_contrefactuel?: number;
   readonly changements_contrefactuel?: ChangementsContrefactuel;
+  /** D31 (1) : paires écartées du taux par un renvoi de ce juge ; présent quand le test est terminé. */
+  readonly paires_ecartees_contrefactuel?: number;
+  /** D31 (1) : toutes les paires écartées, taux indéfini. */
+  readonly motif_indefini_contrefactuel?: "toutes_paires_ecartees";
 }
 
 /** `run.schema.json#/properties/taux_echantillon_humain` : stocké, jamais supposé. */
