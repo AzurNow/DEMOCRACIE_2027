@@ -29,7 +29,8 @@
  *    une notation humaine à extrait invalide n'est jamais enregistrée. La provenance déclarée doit
  *    contenir l'extrait (`provenance_inexacte`), vérifiée par `testerVerbatim` seul (règle 5) ; un
  *    extrait accepté porte `verifie_deterministe: true`. Sans extrait, rien n'est contrôlé ici : le
- *    schéma exige l'extrait hors d'une note exacte.
+ *    schéma exige l'extrait hors d'une note exacte, sauf sur un refus de l'API (D33) : la notation
+ *    porte alors `sur_refus_api`, posé d'après la vue (`normalise.refus_api`), jamais d'après la saisie.
  * 3. **Fraîcheur de l'obsolescence**, calculée, jamais saisie, et seulement si le drapeau
  *    `obsolescence` est posé (D17) : `fraicheur.ts:obsolescenceFraiche`, sur la date du changement
  *    de l'item O soumis et la date de gel. Sans item O parmi les items soumis, la date du changement
@@ -382,6 +383,8 @@ function assembler(saisie: SaisieHumaine, note: NoteSaisie, contexte: ContexteNo
     notateur: { type: "humain", id: contexte.annotateur_id, a_vu_identite_outil: false },
     // D29 (4) : l'humain a vu le contenu de la charge de cette version (D18).
     version_charge: VERSION_CHARGE_JUGE,
+    // D33 : le marqueur vient de la réponse (la vue recopie normalise.refus_api), jamais de la saisie.
+    ...(contexte.vue.reponse.refus_api ? { sur_refus_api: true as const } : {}),
     gabarit: contexte.vue.question.gabarit,
     references_item: contexte.vue.references.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte })),
     categorie: note.categorie,

@@ -16,6 +16,7 @@
  */
 
 import { estDuRun } from "../analysis/filtre.ts";
+import type { Reponse } from "../analysis/types.ts";
 import { lireNotationsDuRun, lireReponses, lireRunJson, lireVerdicts, runDeNotationDe } from "../analysis/lecture-run.ts";
 import { controleCroise, type EntreeControleCroise, type Violation } from "../pipeline/notation/controle-croise.ts";
 import { analyserArguments } from "./arguments.ts";
@@ -32,13 +33,24 @@ function repertoireDemande(bruts: readonly string[]): string {
   return repertoire;
 }
 
+type ReponseLue = Reponse & { readonly normalise?: { readonly refus_api: boolean } };
+
+/** Une réponse obtenue porte toujours sa projection (`reponse.schema.json`) : son absence est une erreur, jamais un « non ». */
+function estUnRefus(reponse: ReponseLue): boolean {
+  if (reponse.normalise === undefined) throw new Error(`réponse obtenue ${reponse.id} sans projection normalisée.`);
+  return reponse.normalise.refus_api;
+}
+
 function lireEntree(repertoire_run: string): EntreeControleCroise {
   const run = lireRunJson(repertoire_run);
-  const reponses = lireReponses(repertoire_run, run.id);
+  // `lireReponses` valide chaque réponse contre son schéma, qui exige `normalise` d'une réponse obtenue.
+  const reponses = lireReponses<ReponseLue>(repertoire_run, run.id);
   const { notations } = lireNotationsDuRun(repertoire_run, run.id);
+  const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue");
   return {
     run: runDeNotationDe(run),
-    reponses_obtenues: reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id),
+    reponses_obtenues: obtenues.map((r) => r.id),
+    refus_api: obtenues.filter(estUnRefus).map((r) => r.id),
     notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   };

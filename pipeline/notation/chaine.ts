@@ -22,7 +22,9 @@
  *    retiré n'est plus appelé, ses notations du sous-ensemble restent écrites et sont écartées par
  *    `decider`, D13), puis décidée (`decider`) avec l'appartenance à l'échantillon humain
  *    (`tirerEchantillonHumain`, sur toutes les réponses obtenues). Un verdict est écrit ; une
- *    attente est rendue avec ses motifs, sans verdict inventé.
+ *    attente est rendue avec ses motifs, sans verdict inventé. **Refus de l'API (D32)** : aucun juge
+ *    n'est appelé ; la règle inscrit la notation `non_reponse` que D12 fixe (`regle-refus.ts`), et
+ *    `decider` en tire le verdict, sans humain hors échantillon, avec les deux humains dedans.
  *
  * **Liens.** Une réponse dont un lien n'a pas de verdict d'existence, ou dont la copie conservée d'un
  * lien n'a pas encore son texte extrait (`pnpm liens:textes`, D27 (E) : la charge v3 transmet le
@@ -57,6 +59,7 @@ import { inscrireContrefactuel, type IssueInscription } from "./inscription-cont
 import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { publierContrefactuel } from "./publication-contrefactuel.ts";
+import { notationParRegle, REGLE_REFUS_API } from "./regle-refus.ts";
 import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
 import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
@@ -161,7 +164,7 @@ interface Etat {
   readonly notations: NotationIndividuelle[];
   /** Les renvois de juge du run (D30 (2)), lus puis écrits. */
   readonly renvois: RenvoiHumain[];
-  /** Clés (contexte, objet, juge) des notations de juge déjà écrites. */
+  /** Clés (contexte, objet, notateur) des notations de juge ou de règle (D32) déjà écrites. */
   readonly cles: Set<string>;
   /** Réponses contrefactuelles déjà écrites, par identifiant, sous forme canonique. */
   readonly contrefactuelles: Map<Ulid, string>;
@@ -209,7 +212,7 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     parId: indexerReponses(preparees, run.id),
     notations: [...lues.notations],
     renvois: [...lues.renvois],
-    cles: new Set([...lues.notations.filter((n) => n.notateur.type === "juge").map(cleDeNotation), ...lues.renvois.map(cleDeNotation)]),
+    cles: new Set([...lues.notations.filter((n) => n.notateur.type !== "humain").map(cleDeNotation), ...lues.renvois.map(cleDeNotation)]),
     contrefactuelles: new Map(lues.reponses_contrefactuelles.map((r) => [r.id, canoniser(r)])),
     verdicts: new Set(lireVerdicts(env.repertoire_run, run.id).map((v) => v.objet_note.id)),
   };
@@ -338,6 +341,25 @@ function consigner(etat: Etat, issue: IssueDeJuge): void {
   etat.cles.add(cleDeNotation(issue.notation));
 }
 
+/**
+ * D32 : un refus de l'API n'est soumis à aucun juge ; la règle inscrit sa note (`regle-refus.ts`),
+ * une fois. Une relance retrouve la notation sous la même clé et ne la recalcule pas.
+ */
+function noterParRegle(etat: Etat, r: Preparee): void {
+  if (etat.cles.has(cle(COTE_RUN.contexte, r.reponse.id, REGLE_REFUS_API.id))) return;
+  const gabarit = r.question.gabarit;
+  const notation = notationParRegle({
+    id: identifiantDerive([etat.run.id, "notation", COTE_RUN.contexte, r.reponse.id, REGLE_REFUS_API.id]),
+    run_id: etat.run.id,
+    reponse: r.reponse,
+    gabarit,
+    references_item: r.references.map(({ item }) => ({ item_id: item.id, item_version: item.version, item_empreinte: item.empreinte })),
+    attribution: gabarit === "Q-ATT" ? { reponse_attendue: r.resolu_au_gel.reponse_attendue, candidats: etat.candidats } : null,
+    date: etat.env.maintenant(),
+  });
+  consigner(etat, { type: "notation", notation });
+}
+
 function demandeDe(etat: Etat, r: Preparee, liens: LiensEtablis): Omit<DemandeCharge, "prompt"> {
   return { reponse: r.reponse, question: r.question, references: r.references, date_run: etat.run.date_gel, resolu_au_gel: r.resolu_au_gel, pages_citees: liens.pages };
 }
@@ -447,8 +469,9 @@ async function noterEnMasse(etat: Etat, run: RunDeNotation): Promise<Pick<Result
 
 /** `null` : la réponse a son verdict. */
 async function noterReponse(etat: Etat, run: RunDeNotation, actifs: readonly Juge[], r: Preparee, dans: boolean): Promise<Attente | null> {
-  if (r.liens === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
-  await noterParLesJuges(etat, actifs, cibleOrigine(etat, r, r.liens));
+  if (r.reponse.normalise.refus_api) noterParRegle(etat, r);
+  else if (r.liens === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
+  else await noterParLesJuges(etat, actifs, cibleOrigine(etat, r, r.liens));
   if (etat.verdicts.has(r.reponse.id)) return null;
   const decision = decider({
     run,

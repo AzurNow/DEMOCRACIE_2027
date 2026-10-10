@@ -23,8 +23,9 @@ import type { Gabarit } from "../../analysis/types.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { itemO, itemP } from "../aides/fabriques.ts";
-import { CANDIDATS_DU_RUN, pagesSansTexte, REPONSE_PROJETEE, RESOLU_POSITION_POUR, RUN_ID } from "./fabriques.ts";
+import { itemA, itemF, itemO, itemP } from "../aides/fabriques.ts";
+import { decider } from "../../pipeline/notation/decision.ts";
+import { CANDIDATS_DU_RUN, notationRegle, pagesSansTexte, refusApi, REPONSE_PROJETEE, RESOLU_POSITION_POUR, RUN_ID, runDeNotation } from "./fabriques.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
@@ -396,5 +397,56 @@ describe("contexte invalide : erreur, pas un refus de saisie", () => {
   it("items soumis différents de ceux de la vue : erreur", () => {
     expect(() => construireNotationHumaine(EXACTE, contexte({ surcharges: { items: [itemO()] } }))).toThrow(ContexteNotationInvalide);
     expect(() => construireNotationHumaine(EXACTE, contexte({ surcharges: { items: [] } }))).toThrow(ContexteNotationInvalide);
+  });
+});
+
+/**
+ * D33 : un refus de l'API tiré dans l'échantillon, sur un item A ou F (ni texte de réponse ni
+ * citation à recopier) : deux humains le notent sans extrait, la notation porte sur_refus_api posé
+ * d'après la réponse, et le verdict de l'échantillon en découle.
+ */
+describe("D33 : refus de l'API dans l'échantillon, noté sans extrait", () => {
+  const NON_REPONSE: SaisieHumaine = { categorie: "non_reponse", drapeaux: [], cite: false, soutiens: [] };
+
+  function contexteRefus(item: Item, annotateur_id: string): ContexteNotationHumaine {
+    const vue = construireVue({
+      reponse: valider<ReponseObtenue>("reponse", refusApi(REPONSE_ID), "refus de test"),
+      question: { gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez ?" },
+      references: [{ item, role: "principal" }],
+      date_run: "2026-12-01T06:00:00+01:00",
+      resolu_au_gel: RESOLU_POSITION_POUR,
+      pages_citees: [],
+      existences: [],
+    });
+    return { ...contexte({ items: [item] }), notation_id: ulid(`notation-refus-${annotateur_id}`), annotateur_id, vue };
+  }
+
+  it.each([
+    ["A", itemA()],
+    ["F", itemF()],
+  ] as const)("item %s : deux humains sans extrait, marqueur posé, verdict echantillon_humain_10", (_type, item) => {
+    const [a, b] = ["a1", "a2"].map((h) => acceptee(construireNotationHumaine(NON_REPONSE, contexteRefus(item, h))));
+    if (a === undefined || b === undefined) throw new Error("deux notations attendues");
+    expect(a.sur_refus_api).toBe(true);
+    expect(a.extrait_justificatif).toBeUndefined();
+    const regle = notationRegle({ objet_note: { type: "reponse", id: REPONSE_ID }, references_item: a.references_item });
+    const decision = decider({
+      run: runDeNotation(),
+      objet_note: { type: "reponse", id: REPONSE_ID },
+      notations: [regle, a, b],
+      renvois: [],
+      dans_echantillon_humain: true,
+      textes: { reponse: "", citations_reference: [] },
+      verdict_id: ulid("verdict-refus-echantillon"),
+      date: "2026-12-06T12:00:00+01:00",
+    });
+    if (decision.statut !== "verdict") throw new Error(`en attente : ${decision.motifs.join(", ")}`);
+    valider("verdict", decision.verdict, "verdict d'un refus de l'échantillon");
+    expect(decision.verdict).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "non_reponse", notations_sources: [regle.id, a.id, b.id] });
+  });
+
+  it("hors refus, le marqueur n'est jamais posé, et la non-réponse sans extrait reste refusée (annexe C)", () => {
+    expect(codes(construireNotationHumaine(NON_REPONSE, contexte()))).toContain("non_conforme_au_schema");
+    expect(acceptee(construireNotationHumaine(EXACTE, contexte())).sur_refus_api).toBeUndefined();
   });
 });

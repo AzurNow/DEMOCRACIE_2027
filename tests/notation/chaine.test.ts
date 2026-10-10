@@ -18,8 +18,8 @@ import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
-import { tailleEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
-import type { ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
+import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
+import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
 import type { SortieJuge } from "../../pipeline/notation/juge.ts";
 import { ContrefactuelDejaInscrit } from "../../pipeline/notation/inscription-contrefactuel.ts";
@@ -98,12 +98,13 @@ function issuesDe(execution: Execution): ReadonlySet<string> {
 
 function violations(repertoire_run: string): readonly unknown[] {
   const run = lireRunJson(repertoire_run);
+  const obtenues = readdirSync(dispositionRunNote(repertoire_run).reponses)
+    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean } })
+    .filter((r) => r.statut_reponse === "obtenue");
   return controleCroise({
     run: runDeNotationDe(run),
-    reponses_obtenues: readdirSync(dispositionRunNote(repertoire_run).reponses)
-      .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string })
-      .filter((r) => r.statut_reponse === "obtenue")
-      .map((r) => r.id),
+    reponses_obtenues: obtenues.map((r) => r.id),
+    refus_api: obtenues.filter((r) => r.normalise?.refus_api === true).map((r) => r.id),
     notations: lireNotationsDuRun(repertoire_run, run.id).notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   });
@@ -147,6 +148,8 @@ describe("2. chaque issue de decider() qu'une notation sans humain peut atteindr
   /** Run de référence : aucun juge retiré. */
   const SANS_RETRAIT = [
     "verdict:accord_juges",
+    // D32 : un refus de l'API hors échantillon, noté par règle.
+    "verdict:regle_refus_api",
     "attente:desaccord_juges",
     "attente:extrait_invalide",
     "attente:drapeau_grave",
@@ -196,16 +199,22 @@ describe("3. un juge simulé réglé au-delà de SEUIL_RETRAIT", () => {
     const taille = execution.bilan.contrefactuel_inscrit?.taille;
     expect(b?.notations_run).toBe(taille);
     expect(b?.notations_contrefactuel).toBe(taille);
-    expect(a?.notations_run).toBe(execution.bilan.reponses_obtenues);
+    // D32 : le juge restant note toute réponse obtenue sauf les refus de l'API, que la règle note.
+    const refus = new Set(execution.prepare.reponses.filter((r) => r.reponse.normalise.refus_api).map((r) => r.reponse.id));
+    expect(refus.size).toBeGreaterThan(0);
+    expect(a?.notations_run).toBe(execution.bilan.reponses_obtenues - refus.size);
+    expect(execution.bilan.notations_par_regle).toBe(refus.size);
 
-    // Aucune note retenue ne cite le juge retiré ; hors échantillon, le juge restant donne la note.
+    // Aucune note retenue ne cite le juge retiré ; hors échantillon, le juge restant donne la note,
+    // sauf sur un refus de l'API, où la règle la donne, sans effet du retrait (D32).
     const notations = new Map(lireNotationsDuRun(repertoire_run, run.id).notations.map((n) => [n.id, n]));
     const verdicts = lireVerdicts(repertoire_run, run.id);
-    expect(verdicts.length).toBeGreaterThan(0);
+    expect(verdicts.filter((v) => !refus.has(v.objet_note.id)).length).toBeGreaterThan(0);
     for (const verdict of verdicts) {
+      const deRefus = refus.has(verdict.objet_note.id);
       expect(verdict.dans_echantillon_humain).toBe(false);
-      expect(verdict.mode_resolution).toBe("juge_unique_apres_retrait");
-      expect(verdict.notations_sources.map((id) => notations.get(id)?.notateur.id)).toEqual(["juge-simule-a"]);
+      expect(verdict.mode_resolution).toBe(deRefus ? "regle_refus_api" : "juge_unique_apres_retrait");
+      expect(verdict.notations_sources.map((id) => notations.get(id)?.notateur.id)).toEqual([deRefus ? "d12-refus-api" : "juge-simule-a"]);
     }
     expect(execution.bilan.attentes_par_motif.double_notation_humaine_incomplete).toBe(tailleEchantillonHumain(execution.bilan.reponses_obtenues, 0.25));
     expect(violations(repertoire_run)).toEqual([]);
@@ -248,23 +257,77 @@ describe("4. le test contrefactuel passe avant la notation de masse", () => {
 });
 
 describe("5. réponse refusée par l'API, réponse tronquée", () => {
-  it("un refus est noté par les deux juges comme toute réponse, hors du test contrefactuel (rien à permuter), sans valeur inventée", async () => {
-    const execution = await noter(nouvelleSortie());
+  it("D32 : un refus n'est soumis à aucun juge ; la règle inscrit non_reponse sans extrait, hors du test contrefactuel, et le verdict en découle sans humain hors échantillon", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
     const { repertoire_run } = execution.prepare;
     const refus = execution.prepare.reponses.filter((r) => r.reponse.normalise.refus_api);
     expect(refus.length).toBeGreaterThan(0);
     const notations = lireNotationsDuRun(repertoire_run, execution.resultat.run_id).notations;
     const derivees = new Set(contrefactuellesDerivees(repertoire_run, execution.resultat.run_id).values());
     const verdicts = new Map(lireVerdicts(repertoire_run, execution.resultat.run_id).map((v) => [v.objet_note.id, v]));
+    const echantillon = new Set(tirerEchantillonHumain(execution.prepare.reponses.map((r) => r.reponse.id), runDeNotationDe(lireRunJson(repertoire_run)).graines.echantillon_humain, 0.1));
     for (const { reponse } of refus) {
+      expect(appels.some((a) => a.charge.reponse_id === reponse.id)).toBe(false);
       const surElle = notations.filter((n) => n.objet_note.id === reponse.id);
-      expect(surElle.map((n) => n.notateur.id).sort()).toEqual(["juge-simule-a", "juge-simule-b"]);
-      expect(surElle.every((n) => n.categorie === "non_reponse" && n.sourcage.liens.length === 0)).toBe(true);
+      expect(surElle).toHaveLength(1);
+      const [regle] = surElle;
+      expect(regle).toMatchObject({ notateur: { type: "regle", id: "d12-refus-api" }, motif_notation: "regle_refus_api", categorie: "non_reponse", drapeaux: [], sourcage: { cite: false, liens: [] } });
+      expect(regle?.extrait_justificatif).toBeUndefined();
       expect(derivees.has(reponse.id)).toBe(false);
       const verdict = verdicts.get(reponse.id);
-      if (verdict === undefined) expect(execution.resultat.attentes.some((a) => a.reponse_id === reponse.id)).toBe(true);
-      else expect(verdict.categorie_retenue).toBe("non_reponse");
+      if (echantillon.has(reponse.id)) {
+        expect(verdict).toBeUndefined();
+        expect(execution.resultat.attentes).toContainEqual({ reponse_id: reponse.id, motifs: ["double_notation_humaine_incomplete"] });
+      } else {
+        expect(verdict).toMatchObject({ mode_resolution: "regle_refus_api", categorie_retenue: "non_reponse", notations_sources: [regle?.id], dans_echantillon_humain: false });
+      }
     }
+    expect(refus.some((r) => !echantillon.has(r.reponse.id))).toBe(true);
+    expect(execution.bilan.notations_par_regle).toBe(refus.length);
+    expect(violations(repertoire_run)).toEqual([]);
+  });
+
+  it("D33 : un refus tiré dans l'échantillon, noté par deux humains sans extrait, reçoit son verdict à la relance", async () => {
+    const sortie = nouvelleSortie();
+    const premiere = await noter(sortie);
+    const { repertoire_run } = premiere.prepare;
+    const run_id = premiere.resultat.run_id;
+    const echantillon = new Set(tirerEchantillonHumain(premiere.prepare.reponses.map((r) => r.reponse.id), runDeNotationDe(lireRunJson(repertoire_run)).graines.echantillon_humain, 0.1));
+    const regles = lireNotationsDuRun(repertoire_run, run_id).notations.filter((n) => n.notateur.type === "regle" && echantillon.has(n.objet_note.id));
+    expect(regles.length).toBeGreaterThan(0);
+    const depot = DepotNotation.ouvrir(repertoire_run);
+    for (const regle of regles) {
+      for (const annotateur of ["annotateur-1", "annotateur-2"]) {
+        const { notateur: _regle, ...reste } = regle;
+        depot.ecrireNotation({
+          ...reste,
+          id: identifiantDerive([run_id, "humain-test", regle.objet_note.id, annotateur]),
+          notateur: { type: "humain", id: annotateur, sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false },
+          version_charge: VERSION_CHARGE_JUGE,
+          motif_notation: "echantillon_aleatoire_10",
+          date: "2026-12-05T09:30:00+01:00",
+        });
+      }
+    }
+    const seconde = await noter(sortie);
+    const verdicts = new Map(lireVerdicts(repertoire_run, run_id).map((v) => [v.objet_note.id, v]));
+    for (const regle of regles) {
+      expect(seconde.resultat.attentes.some((a) => a.reponse_id === regle.objet_note.id)).toBe(false);
+      expect(verdicts.get(regle.objet_note.id)).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "non_reponse", dans_echantillon_humain: true });
+    }
+    expect(violations(repertoire_run)).toEqual([]);
+  });
+
+  it("D32 : reprise, la notation par règle déjà écrite n'est ni recalculée ni réécrite", async () => {
+    const sortie = nouvelleSortie();
+    const premiere = await noter(sortie);
+    const { repertoire_run } = premiere.prepare;
+    const avant = contenus(dispositionRunNote(repertoire_run).notations);
+    const autreDate = { ...parametresDeReference(), date_notation: "2026-12-05T10:00:00+01:00" };
+    const seconde = await noter(sortie, autreDate);
+    expect(contenus(dispositionRunNote(repertoire_run).notations)).toEqual(avant);
+    expect(seconde.bilan.notations_par_regle).toBe(premiere.bilan.notations_par_regle);
   });
 
   it("une réponse tronquée est soumise telle quelle, troncature dite au juge, et notée sur ce qu'elle contient (§8)", async () => {

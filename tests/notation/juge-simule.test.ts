@@ -55,9 +55,8 @@ function charge(r: ReponseObtenue, gabarit: ChargeJuge["question"]["gabarit"] = 
 }
 
 /** Les paramètres de référence, avec une répartition qui ne laisse qu'un scénario. */
-function seul(nature: "ordinaire" | "refus_api", scenario: string): ParametresJugeSimule {
-  const reference = parametresDeReference().juge_simule;
-  return { ...reference, repartition: { ...reference.repartition, [nature]: { [scenario]: 1 } } };
+function seul(scenario: string): ParametresJugeSimule {
+  return { ...parametresDeReference().juge_simule, repartition: { [scenario]: 1 } };
 }
 
 function notationValide(juge: Juge, sortie: SortieJuge, c: ChargeJuge, r: ReponseObtenue): void {
@@ -84,16 +83,32 @@ describe("le juge simulé", () => {
   });
 
   it("rend, pour chaque scénario et chaque rôle, une notation conforme au schéma", async () => {
-    const cas = [
-      ...Object.keys(REGLES_JUGE_SIMULE.scenarios.ordinaire).map((s) => ({ nature: "ordinaire" as const, scenario: s, r: reponse({}) })),
-      ...Object.keys(REGLES_JUGE_SIMULE.scenarios.refus_api).map((s) => ({ nature: "refus_api" as const, scenario: s, r: reponse({ texte: "", liens: [], refus_api: true }) })),
-    ];
-    for (const { nature, scenario, r } of cas) {
-      for (const juge of jugesSimules(seul(nature, scenario), temporaire())) {
-        const c = charge(r);
-        notationValide(juge, await juge.noter(c), c, r);
+    // D32 : une réponse ordinaire, avec texte, et une réponse au texte vide, dont l'extrait vient de la référence.
+    for (const r of [reponse({}), reponse({ texte: "", liens: [] })]) {
+      for (const scenario of Object.keys(REGLES_JUGE_SIMULE.scenarios)) {
+        for (const juge of jugesSimules(seul(scenario), temporaire())) {
+          const c = charge(r);
+          notationValide(juge, await juge.noter(c), c, r);
+        }
       }
     }
+  });
+
+  it("D32 : la table propre à un item soumis remplace la table commune, pour cette charge seulement", async () => {
+    const reference = parametresDeReference().juge_simule;
+    const propre = { ...reference, repartition: { accord: 1 }, repartition_par_item: { [ITEM_P.id]: { extrait_invalide: 1 } } };
+    const [a] = jugesSimules(propre, temporaire());
+    const c = charge(reponse({}));
+    expect((await a?.noter(c))?.extrait_justificatif?.texte).toBe(REGLES_JUGE_SIMULE.extrait_introuvable);
+    const [autre] = jugesSimules({ ...propre, repartition_par_item: { "item-absent": { extrait_invalide: 1 } } }, temporaire());
+    expect(await autre?.noter(c)).toMatchObject({ categorie: "exacte" });
+    expect(() => jugesSimules({ ...propre, repartition_par_item: { [ITEM_P.id]: { inconnu: 1 } } }, temporaire())).toThrow(JugeSimuleMalRegle);
+  });
+
+  it("D32 : refuse un refus de l'API, que la chaîne note par règle sans juge", async () => {
+    const [juge] = jugesSimules(parametresDeReference().juge_simule, temporaire());
+    const refus = charge(reponse({ texte: "", liens: [], citations: [], refus_api: true }));
+    await expect(Promise.resolve().then(() => juge?.noter(refus))).rejects.toThrow(/aucun juge.*D32/);
   });
 
   it("est déterministe : même charge, même graine, même sortie", async () => {
@@ -104,9 +119,9 @@ describe("le juge simulé", () => {
   });
 
   it("le scénario extrait invalide cite un extrait absent de la charge, l'autre rôle un extrait présent", async () => {
-    const r = reponse({ texte: "", liens: [], refus_api: true });
+    const r = reponse({ texte: "", liens: [] });
     const c = charge(r);
-    const [a, b] = jugesSimules(seul("refus_api", "extrait_invalide"), temporaire());
+    const [a, b] = jugesSimules(seul("extrait_invalide"), temporaire());
     const sortieA = a && (await a.noter(c));
     const sortieB = b && (await b.noter(c));
     expect(sortieA?.extrait_justificatif?.texte).toBe(REGLES_JUGE_SIMULE.extrait_introuvable);
@@ -127,8 +142,9 @@ describe("le juge simulé", () => {
 
   it("refuse une répartition qui nomme un scénario inconnu, sans poids, ou un biais hors de [0, 1]", () => {
     const reference = parametresDeReference().juge_simule;
-    expect(() => jugesSimules({ ...reference, repartition: { ...reference.repartition, ordinaire: { inconnu: 1 } } }, temporaire())).toThrow(JugeSimuleMalRegle);
-    expect(() => jugesSimules({ ...reference, repartition: { ...reference.repartition, refus_api: { accord: 0 } } }, temporaire())).toThrow(JugeSimuleMalRegle);
+    expect(() => jugesSimules({ ...reference, repartition: { ...reference.repartition, inconnu: 1 } }, temporaire())).toThrow(JugeSimuleMalRegle);
+    expect(() => jugesSimules({ ...reference, repartition: { accord: 0 } }, temporaire())).toThrow(JugeSimuleMalRegle);
+    expect(() => jugesSimules({ ...reference, repartition: { accord: 1.5 } }, temporaire())).toThrow(JugeSimuleMalRegle);
     const biaise = { ...reference, juges: reference.juges.map((j) => ({ ...j, biais: { candidats: ["demo-beta"], taux: 1.5 } })) };
     expect(() => jugesSimules(biaise, temporaire())).toThrow(JugeSimuleMalRegle);
   });

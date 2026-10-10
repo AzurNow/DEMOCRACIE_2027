@@ -809,6 +809,11 @@
       "minimum": 0,
       "description": "Décision D30 (2) de l'auteur (2026-10-10) : nombre de renvois de juge vers la notation humaine pour une question d'attribution indécidable (volume/renvois/, schema/renvoi-humain.schema.json), contexte run, juges retirés compris. Écrit par pnpm go-no-go, comme indeterminees_echantillon_humain ; exigé d'un run qui porte un go/no-go."
     },
+    "refus_api_echantillon_humain": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Décision D32 de l'auteur (2026-10-10) : nombre de réponses de l'échantillon humain refusées par l'API (reponse.normalise.refus_api), qu'aucun juge ne note (la règle d12-refus-api les note non-réponse, notation.schema.json). Sans note de juge, elles sont écartées du kappa de l'échantillon de chaque juge (juges[].kappa_echantillon_humain), par la raison de D31 (2), et leur nombre est publié ici, une fois pour le run, comme indeterminees_echantillon_humain. Écrit par pnpm go-no-go ; exigé d'un run qui porte un go/no-go."
+    },
     "indeterminees_echantillon_humain": {
       "type": "integer",
       "minimum": 0,
@@ -1567,10 +1572,11 @@
         ]
       },
       "then": {
-        "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui.",
+        "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui. D32 : les refus de l'API de l'échantillon aussi.",
         "required": [
           "indeterminees_echantillon_humain",
-          "renvois_attribution_indecidable"
+          "renvois_attribution_indecidable",
+          "refus_api_echantillon_humain"
         ],
         "properties": {
           "juges": {

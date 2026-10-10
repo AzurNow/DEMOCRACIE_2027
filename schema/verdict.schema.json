@@ -116,9 +116,10 @@
         "echantillon_humain_10",
         "revue_erreur_grave",
         "arbitrage_panel",
-        "juge_unique_apres_retrait"
+        "juge_unique_apres_retrait",
+        "regle_refus_api"
       ],
-      "description": "§7 : accord des deux juges ⇒ note retenue ; désaccord ⇒ notation humaine qui tranche. juge_unique_apres_retrait couvre le cas du §7 où un juge dépasse 3 % de changement au test contrefactuel et est retiré du run."
+      "description": "§7 : accord des deux juges ⇒ note retenue ; désaccord ⇒ notation humaine qui tranche. juge_unique_apres_retrait couvre le cas du §7 où un juge dépasse 3 % de changement au test contrefactuel et est retiré du run. regle_refus_api (décision D32 de l'auteur) : hors échantillon humain, un refus de l'API reçoit la note que D12 fixe d'avance, non-réponse, inscrite par le code dans une notation par règle (notation.schema.json, notateur.type regle), sa seule source ; aucun juge n'est appelé."
     },
 
     "desaccord_juges": {
@@ -208,13 +209,28 @@
       }
     },
     {
-      "$comment": "§7 (0.7) : pour une réponse de l'échantillon, la note humaine prévaut sur celle des juges. La note retenue ne peut donc pas venir d'un accord de juges ni d'un juge seul.",
+      "$comment": "§7 (0.7) : pour une réponse de l'échantillon, la note humaine prévaut sur celle des juges. La note retenue ne peut donc pas venir d'un accord de juges ni d'un juge seul ; ni, D32, de la seule règle d'un refus de l'API (§7 : double notation humaine « quel que soit l'accord des juges »).",
       "if": { "properties": { "dans_echantillon_humain": { "const": true } }, "required": ["dans_echantillon_humain"] },
       "then": {
         "properties": {
           "notations_sources": { "minItems": 2 },
-          "mode_resolution": { "not": { "enum": ["accord_juges", "juge_unique_apres_retrait"] } }
+          "mode_resolution": { "not": { "enum": ["accord_juges", "juge_unique_apres_retrait", "regle_refus_api"] } }
         }
+      }
+    },
+    {
+      "$comment": "D32 : la note par règle d'un refus de l'API est non-réponse, sans source citée, sans désaccord (aucun juge), hors échantillon humain, et n'a qu'une source, la notation par règle.",
+      "if": { "properties": { "mode_resolution": { "const": "regle_refus_api" } }, "required": ["mode_resolution"] },
+      "then": {
+        "properties": {
+          "categorie_retenue": { "const": "non_reponse" },
+          "sourcage_retenu": { "properties": { "cite": { "const": false } } },
+          "notations_sources": { "maxItems": 1 },
+          "desaccord_juges": { "const": false },
+          "dans_echantillon_humain": { "const": false },
+          "erreur_grave": { "const": false }
+        },
+        "not": { "required": ["revue_humaine"] }
       }
     },
     {

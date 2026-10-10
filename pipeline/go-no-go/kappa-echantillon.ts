@@ -28,12 +28,20 @@
  * leur nombre est publié par juge (`juges[].renvois_ecartes_kappa_echantillon`). Une note de juge
  * absente SANS renvoi reste une erreur (`NotationDeJugeIntrouvable`). Les renvois d'un juge retiré
  * n'entrent nulle part (D13) : il n'a pas de kappa. Tout écarté : `aucune_reponse_comparable`, rouge.
+ *
+ * D32 de l'auteur : un refus de l'API n'est soumis à aucun juge, la règle le note (`regle-refus.ts`).
+ * Une réponse de l'échantillon qui porte cette notation par règle n'a de note d'aucun juge ; par la
+ * raison de D31 (2) (aucun accord ne se mesure là où le juge n'a rendu aucune note), elle est
+ * écartée du kappa de CHAQUE juge, avant toute lecture de sa référence humaine, et leur nombre est
+ * publié une fois pour le run (`run.json#/refus_api_echantillon_humain`), comme D25 (1). Une
+ * notation ou un renvoi de juge sur un tel refus lève `RefusNoteParUnJuge`.
  */
 
 import { notationsConcordent } from "../../analysis/note-lue.ts";
 import type { CategorieRetenue, MotifNotation, Ulid } from "../../analysis/types.ts";
 import { comptesKappa, kappaCohen, type PaireCategories } from "../../validation/domaine/kappa.ts";
 import { JugeIndetermine } from "../notation/decision.ts";
+import { estNotationParRegle } from "../notation/regle-refus.ts";
 import type { JugeDuRun, NotationIndividuelle, RenvoiHumain } from "../notation/types.ts";
 
 /** Les trois catégories primaires qu'un juge peut rendre (§7), dans un ordre figé. */
@@ -75,6 +83,13 @@ export class NotationDeJugeIntrouvable extends Error {
   }
 }
 
+export class RefusNoteParUnJuge extends Error {
+  constructor(reponse_id: Ulid, nombre: number) {
+    super(`Réponse ${reponse_id} de l'échantillon humain : notée par règle comme refus de l'API (D32), elle porte aussi ${nombre} notation(s) ou renvoi(s) de juge. Le kappa de l'échantillon n'est pas calculé.`);
+    this.name = "RefusNoteParUnJuge";
+  }
+}
+
 export interface EntreeKappaEchantillon {
   readonly juges: readonly JugeDuRun[];
   /** Les réponses de l'échantillon humain, rejouées par l'appelant. */
@@ -93,6 +108,11 @@ export interface ResultatEchantillon {
    * du kappa de chaque juge, publiées dans `run.json#/indeterminees_echantillon_humain`.
    */
   readonly indeterminees: number;
+  /**
+   * D32 : réponses de l'échantillon refusées par l'API, notées par règle et par aucun juge, écartées
+   * du kappa de chaque juge, publiées dans `run.json#/refus_api_echantillon_humain`.
+   */
+  readonly refus_api: number;
 }
 
 interface Reference {
@@ -106,13 +126,22 @@ function estComparable(reference: { readonly categorie: CategorieRetenue }): ref
 }
 
 export function kappasEchantillon(entree: EntreeKappaEchantillon): ResultatEchantillon {
-  const parReponse = notationsParReponse(entree.echantillon, entree.notations);
-  const toutes = [...parReponse].map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
+  const parReponse = [...notationsParReponse(entree.echantillon, entree.notations)];
+  const refus = parReponse.filter(([, notations]) => notations.some(estNotationParRegle));
+  for (const [id, notations] of refus) exigerSansJuge(id, notations, entree.renvois);
+  const notees = parReponse.filter(([, notations]) => !notations.some(estNotationParRegle));
+  const toutes = notees.map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
   const references = toutes.filter((r): r is Reference => estComparable(r));
   const kappas = entree.juges
     .filter((juge) => !juge.retire)
     .map((juge) => kappaAvecRenvois(juge.juge_id, references, renvoyesPar(juge.juge_id, entree.renvois)));
-  return { kappas, indeterminees: toutes.length - references.length };
+  return { kappas, indeterminees: toutes.length - references.length, refus_api: refus.length };
+}
+
+/** D32 : un refus noté par règle n'a ni notation ni renvoi de juge, même d'un juge retiré. */
+function exigerSansJuge(reponse_id: Ulid, notations: readonly NotationIndividuelle[], renvois: readonly RenvoiHumain[]): void {
+  const juges = notations.filter((n) => n.notateur.type === "juge").length + renvois.filter((r) => r.contexte === "run" && r.objet_note.id === reponse_id).length;
+  if (juges > 0) throw new RefusNoteParUnJuge(reponse_id, juges);
 }
 
 /** Les notations de contexte `run` de chaque réponse de l'échantillon, dans l'ordre de l'échantillon. */

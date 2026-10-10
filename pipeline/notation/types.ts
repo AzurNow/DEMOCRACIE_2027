@@ -51,6 +51,7 @@ export const MODES_RESOLUTION = [
   "revue_erreur_grave",
   "arbitrage_panel",
   "juge_unique_apres_retrait",
+  "regle_refus_api",
 ] as const;
 export type ModeResolution = (typeof MODES_RESOLUTION)[number];
 
@@ -77,7 +78,8 @@ export interface ExtraitJustificatif {
 }
 
 export interface Notateur {
-  readonly type: "juge" | "humain";
+  /** `regle` (D32) : la note inscrite par le code pour un refus de l'API (`regle-refus.ts`). */
+  readonly type: "juge" | "humain" | "regle";
   readonly id: IdentifiantCourt;
   readonly famille_modele?: string;
   readonly modele?: string;
@@ -98,6 +100,12 @@ export interface NotationIndividuelle {
    * d'une notation de réponse, interdite pour une lecture de comparateur (D30 (4), le schéma).
    */
   readonly version_charge?: string;
+  /**
+   * D33 : la notation porte sur un refus de l'API, posé d'après `reponse.normalise.refus_api`, jamais
+   * d'après une saisie. Exigé de la notation par règle, admis pour un humain, interdit pour un juge ;
+   * lui seul exempte de l'extrait justificatif (annexe C). Absent hors refus.
+   */
+  readonly sur_refus_api?: true;
   readonly gabarit: Gabarit;
   readonly references_item: readonly ReferenceItem[];
   readonly categorie: CategorieRetenue;
