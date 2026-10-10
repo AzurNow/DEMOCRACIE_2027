@@ -23,6 +23,11 @@
     "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
     "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
 
+    "sur_refus_api": {
+      "const": true,
+      "description": "Décision D33 de l'auteur (2026-10-10) : la notation porte sur un refus de l'API (reponse.normalise.refus_api vrai). Posé par le code d'après la réponse, jamais d'après une saisie (pipeline/notation/regle-refus.ts, pipeline/notation/notation-humaine.ts) ; absent sinon. Exigé de la notation par règle, admis pour un humain, interdit pour un juge. Il exempte de l'extrait justificatif de l'annexe C, et lui seul. pipeline/notation/controle-croise.ts vérifie marqueur ⇔ refus_api."
+    },
+
     "version_charge": {
       "type": "string",
       "pattern": "^charge-juge-v[0-9]+$",
@@ -227,7 +232,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["provenance", "texte", "verifie_deterministe"],
-      "description": "Annexe C : obligatoire pour toute note autre qu'exacte. L'annexe ne disait pas d'où l'extrait provient ; un juge qui cite un extrait absent de la réponse fabrique sa justification, exactement le défaut qu'on mesure chez les outils.",
+      "description": "Annexe C : obligatoire pour toute note autre qu'exacte, sauf sur un refus de l'API (sur_refus_api, D33). L'annexe ne disait pas d'où l'extrait provient ; un juge qui cite un extrait absent de la réponse fabrique sa justification, exactement le défaut qu'on mesure chez les outils.",
       "properties": {
         "provenance": { "type": "string", "enum": ["reponse", "reference"] },
         "texte": { "type": "string", "minLength": 1 },
@@ -351,15 +356,26 @@
       "else": { "required": ["motif_inexactitude"] }
     },
     {
-      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte, de juge comme d'humain. D32 : seule la notation par règle d'un refus de l'API en est exemptée (elle n'a rien à recopier, et la règle ne justifie pas : elle applique D12).",
+      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte, de juge comme d'humain. D32 et D33 : seule une notation marquée sur_refus_api en est exemptée, par règle ou humaine (un refus de l'API n'a ni texte ni lien, et sur un item A ou F aucune citation n'est à recopier).",
       "if": {
-        "properties": {
-          "categorie": { "not": { "const": "exacte" } },
-          "notateur": { "properties": { "type": { "not": { "const": "regle" } } }, "required": ["type"] }
-        },
-        "required": ["categorie", "notateur"]
+        "properties": { "categorie": { "not": { "const": "exacte" } } },
+        "required": ["categorie"],
+        "not": { "required": ["sur_refus_api"] }
       },
       "then": { "required": ["extrait_justificatif"] }
+    },
+    {
+      "$comment": "D33 : la notation par règle porte toujours le marqueur ; un juge jamais (aucun juge ne note un refus, D32). Le marqueur ne porte que sur une réponse de contexte run.",
+      "if": { "properties": { "notateur": { "properties": { "type": { "const": "regle" } }, "required": ["type"] } }, "required": ["notateur"] },
+      "then": { "required": ["sur_refus_api"] }
+    },
+    {
+      "if": { "properties": { "notateur": { "properties": { "type": { "const": "juge" } }, "required": ["type"] } }, "required": ["notateur"] },
+      "then": { "not": { "required": ["sur_refus_api"] } }
+    },
+    {
+      "if": { "required": ["sur_refus_api"] },
+      "then": { "properties": { "contexte": { "const": "run" }, "objet_note": { "properties": { "type": { "const": "reponse" } } } } }
     },
     {
       "$comment": "§11 : le comptage à part des obsolescences de moins de 14 jours n'est possible que si le drapeau porte sa fraîcheur. Décision D17 de l'auteur (2026-10-06) : sans le drapeau obsolescence, la fraîcheur est absente ; aucune métrique ne la lirait, et l'accord des notations (analysis/note-lue.ts) la comparerait.",

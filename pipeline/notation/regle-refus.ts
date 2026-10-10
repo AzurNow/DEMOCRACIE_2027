@@ -12,8 +12,9 @@
  * le contrôle croisé et par le recalcul (a) du §8. Un notateur d'un troisième genre plutôt qu'un
  * faux juge : la notation ne porte ni famille de modèle, ni prompt, ni version de charge (aucune
  * charge n'a été construite), ni extrait justificatif (règle 7 : rien à recopier, rien d'inventé).
- * Le schéma de notation n'exempte de l'extrait de l'annexe C que cette notation-là ; un juge ou un
- * humain qui rend une note autre qu'exacte reste tenu d'en fournir un.
+ * D33 : la notation porte le marqueur `sur_refus_api`, posé d'après `normalise.refus_api` ; le schéma
+ * n'exempte de l'extrait de l'annexe C qu'une notation marquée (par règle, ou humaine dans
+ * l'échantillon) ; un juge ne porte jamais le marqueur.
  *
  * **Ce que la règle écrit.** Catégorie `non_reponse`, aucun drapeau, aucune source citée (un refus
  * n'a ni texte ni lien : `reponse.schema.json` fixe sa projection), le motif `regle_refus_api`.
@@ -69,6 +70,7 @@ export function notationParRegle(cadre: CadreNotationParRegle): NotationIndividu
     contexte: "run",
     objet_note: { type: "reponse", id: reponse_id },
     notateur: REGLE_REFUS_API,
+    sur_refus_api: true,
     gabarit: cadre.gabarit,
     references_item: cadre.references_item,
     categorie: "non_reponse",

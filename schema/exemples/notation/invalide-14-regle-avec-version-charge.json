@@ -10,6 +10,7 @@
     "type": "regle",
     "id": "d12-refus-api"
   },
+  "sur_refus_api": true,
   "gabarit": "Q-DIR",
   "references_item": [
     {

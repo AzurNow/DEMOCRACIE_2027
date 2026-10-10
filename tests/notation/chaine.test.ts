@@ -19,7 +19,7 @@ import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
-import type { ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
+import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
 import type { SortieJuge } from "../../pipeline/notation/juge.ts";
 import { ContrefactuelDejaInscrit } from "../../pipeline/notation/inscription-contrefactuel.ts";
@@ -98,12 +98,13 @@ function issuesDe(execution: Execution): ReadonlySet<string> {
 
 function violations(repertoire_run: string): readonly unknown[] {
   const run = lireRunJson(repertoire_run);
+  const obtenues = readdirSync(dispositionRunNote(repertoire_run).reponses)
+    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean } })
+    .filter((r) => r.statut_reponse === "obtenue");
   return controleCroise({
     run: runDeNotationDe(run),
-    reponses_obtenues: readdirSync(dispositionRunNote(repertoire_run).reponses)
-      .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string })
-      .filter((r) => r.statut_reponse === "obtenue")
-      .map((r) => r.id),
+    reponses_obtenues: obtenues.map((r) => r.id),
+    refus_api: obtenues.filter((r) => r.normalise?.refus_api === true).map((r) => r.id),
     notations: lireNotationsDuRun(repertoire_run, run.id).notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   });
@@ -284,6 +285,37 @@ describe("5. réponse refusée par l'API, réponse tronquée", () => {
     }
     expect(refus.some((r) => !echantillon.has(r.reponse.id))).toBe(true);
     expect(execution.bilan.notations_par_regle).toBe(refus.length);
+    expect(violations(repertoire_run)).toEqual([]);
+  });
+
+  it("D33 : un refus tiré dans l'échantillon, noté par deux humains sans extrait, reçoit son verdict à la relance", async () => {
+    const sortie = nouvelleSortie();
+    const premiere = await noter(sortie);
+    const { repertoire_run } = premiere.prepare;
+    const run_id = premiere.resultat.run_id;
+    const echantillon = new Set(tirerEchantillonHumain(premiere.prepare.reponses.map((r) => r.reponse.id), runDeNotationDe(lireRunJson(repertoire_run)).graines.echantillon_humain, 0.1));
+    const regles = lireNotationsDuRun(repertoire_run, run_id).notations.filter((n) => n.notateur.type === "regle" && echantillon.has(n.objet_note.id));
+    expect(regles.length).toBeGreaterThan(0);
+    const depot = DepotNotation.ouvrir(repertoire_run);
+    for (const regle of regles) {
+      for (const annotateur of ["annotateur-1", "annotateur-2"]) {
+        const { notateur: _regle, ...reste } = regle;
+        depot.ecrireNotation({
+          ...reste,
+          id: identifiantDerive([run_id, "humain-test", regle.objet_note.id, annotateur]),
+          notateur: { type: "humain", id: annotateur, sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false },
+          version_charge: VERSION_CHARGE_JUGE,
+          motif_notation: "echantillon_aleatoire_10",
+          date: "2026-12-05T09:30:00+01:00",
+        });
+      }
+    }
+    const seconde = await noter(sortie);
+    const verdicts = new Map(lireVerdicts(repertoire_run, run_id).map((v) => [v.objet_note.id, v]));
+    for (const regle of regles) {
+      expect(seconde.resultat.attentes.some((a) => a.reponse_id === regle.objet_note.id)).toBe(false);
+      expect(verdicts.get(regle.objet_note.id)).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "non_reponse", dans_echantillon_humain: true });
+    }
     expect(violations(repertoire_run)).toEqual([]);
   });
 

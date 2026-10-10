@@ -45,7 +45,7 @@ function runPropre(run: RunDeNotation): EntreeControleCroise {
     if (decision.statut !== "verdict") throw new Error(`réponse ${id} en attente`);
     verdicts.push(valider<VerdictProduit>("verdict", decision.verdict, `verdict ${id}`));
   }
-  return { run, reponses_obtenues: REPONSES, notations, verdicts };
+  return { run, reponses_obtenues: REPONSES, refus_api: [], notations, verdicts };
 }
 
 function codes(entree: EntreeControleCroise): readonly string[] {
@@ -210,8 +210,30 @@ function avecRefusParRegle(propre: EntreeControleCroise, i: number): EntreeContr
   });
   if (decision.statut !== "verdict") throw new Error(`refus ${id} en attente`);
   const notations = [...propre.notations.filter((n) => n.objet_note.id !== id), regle];
-  return { ...propre, notations, verdicts: propre.verdicts.map((v, j) => (j === i ? valider<VerdictProduit>("verdict", decision.verdict, "verdict par règle") : v)) };
+  return {
+    ...propre,
+    refus_api: [...propre.refus_api, id],
+    notations,
+    verdicts: propre.verdicts.map((v, j) => (j === i ? valider<VerdictProduit>("verdict", decision.verdict, "verdict par règle") : v)),
+  };
 }
+
+describe("D33 : marqueur sur_refus_api ⇔ réponse refusée par l'API", () => {
+  it("un marqueur sur une réponse qui n'est pas un refus : violation, sans verdict", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const avecRegle = avecRefusParRegle(propre, i);
+    const violations = controleCroise({ ...avecRegle, refus_api: [] });
+    expect(violations.map((v) => v.code)).toEqual(["marqueur_refus_api_incoherent"]);
+    expect(violations[0]?.verdict_id).toBeUndefined();
+  });
+
+  it("un refus noté sans marqueur (comme une réponse ordinaire) : violation", () => {
+    const propre = runPropre(runDeNotation());
+    const id = verdictA(propre, indiceHorsEchantillon(propre)).objet_note.id;
+    expect(codes({ ...propre, refus_api: [id] })).toEqual(["marqueur_refus_api_incoherent", "marqueur_refus_api_incoherent"]);
+  });
+});
 
 describe("D32 : verdict d'un refus de l'API noté par règle", () => {
   it("un run propre avec un refus noté par règle, juge retiré ou non : aucune violation", () => {
@@ -228,7 +250,8 @@ describe("D32 : verdict d'un refus de l'API noté par règle", () => {
     const id = verdictA(avecRegle, i).objet_note.id;
     const juge = notationJuge("j1", { ...surObjet(id), id: ulid(`juge-sur-refus-${id}`) });
     const entree = { ...avecRegle, notations: [...avecRegle.notations, juge], verdicts: avecRegle.verdicts.map((v, j) => (j === i ? { ...v, notations_sources: [juge.id] } : v)) };
-    expect(codes(entree)).toEqual(["notation_par_regle_incoherente"]);
+    // D33 : la notation de juge posée sur le refus ne porte pas le marqueur, violation de plus.
+    expect(codes(entree)).toEqual(["marqueur_refus_api_incoherent", "notation_par_regle_incoherente"]);
   });
 
   it("une notation par règle citée par un verdict qui n'est pas regle_refus_api hors échantillon : violation", () => {

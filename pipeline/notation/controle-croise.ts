@@ -36,6 +36,7 @@ export const CODES_VIOLATION = [
   "taux_contrefactuel_incoherent",
   "denominateur_contrefactuel_incoherent",
   "notation_par_regle_incoherente",
+  "marqueur_refus_api_incoherent",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
 
@@ -50,6 +51,8 @@ export interface EntreeControleCroise {
   readonly run: RunDeNotation;
   /** Les réponses obtenues du run, population du tirage de l'échantillon humain. */
   readonly reponses_obtenues: readonly Ulid[];
+  /** D33 : celles des réponses obtenues qui sont un refus de l'API (`normalise.refus_api`). */
+  readonly refus_api: readonly Ulid[];
   readonly notations: readonly NotationIndividuelle[];
   readonly verdicts: readonly VerdictProduit[];
 }
@@ -81,7 +84,26 @@ export function controleCroise(entree: EntreeControleCroise): readonly Violation
     echantillon: new Set(tirerEchantillonHumain(entree.reponses_obtenues, entree.run.graines.echantillon_humain, entree.run.taux_echantillon_humain)),
     notations: entree.notations,
   };
-  return [...violationsDuRun(entree.run), ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx))];
+  return [
+    ...violationsDuRun(entree.run),
+    ...marqueursRefus(entree.notations, new Set(entree.refus_api)),
+    ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx)),
+  ];
+}
+
+/**
+ * D33 : une notation de contexte run sur une réponse porte `sur_refus_api` si et seulement si la
+ * réponse est un refus de l'API. Le marqueur exempte de l'extrait : posé sur une réponse ordinaire,
+ * il ferait passer une note sans justification ; absent sur un refus, la réponse a été notée comme
+ * une autre.
+ */
+function marqueursRefus(notations: readonly NotationIndividuelle[], refus: ReadonlySet<Ulid>): Violation[] {
+  return notations
+    .filter((n) => n.contexte === "run" && n.objet_note.type === "reponse" && (n.sur_refus_api === true) !== refus.has(n.objet_note.id))
+    .map((n) => ({
+      code: "marqueur_refus_api_incoherent" as const,
+      detail: `notation ${n.id} (${n.notateur.type} ${n.notateur.id}) : sur_refus_api ${n.sur_refus_api === true ? "posé" : "absent"}, alors que la réponse ${n.objet_note.id} ${refus.has(n.objet_note.id) ? "est" : "n'est pas"} un refus de l'API.`,
+    }));
 }
 
 function violationsDuRun(run: RunDeNotation): Violation[] {

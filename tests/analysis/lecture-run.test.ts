@@ -237,6 +237,7 @@ describe("9. aller-retour : écrire, relire, assembler", () => {
     const violations = controleCroise({
       run: runDeNotationDe(runLu),
       reponses_obtenues: entrees.reponses.map((r) => r.id),
+      refus_api: [],
       notations,
       verdicts: lireVerdicts(run.repertoire_run, runLu.id),
     });

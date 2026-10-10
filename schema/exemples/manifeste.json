@@ -1681,20 +1681,20 @@
       "objet": "notation",
       "fichier": "notation/valide-09-regle-refus-api.json",
       "attendu": "valide",
-      "motif": "Notation par règle d'un refus de l'API (D32) : notateur regle d12-refus-api, non-réponse sans source, sans extrait justificatif ni version de charge, sous le motif regle_refus_api. La note est celle que D12 fixe d'avance ; aucun juge n'a été appelé. L'objet noté est le refus de l'API de reponse/valide-03."
+      "motif": "Notation par règle d'un refus de l'API (D32) : notateur regle d12-refus-api, non-réponse sans source, sans extrait justificatif ni version de charge, sous le motif regle_refus_api. La note est celle que D12 fixe d'avance ; aucun juge n'a été appelé. L'objet noté est le refus de l'API de reponse/valide-03. Modifié ouvertement (D33) : sur_refus_api (true) ajouté, exigé de toute notation par règle ; rien d'autre ne change."
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-13-regle-avec-extrait.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-09 avec un extrait justificatif. D32 : la notation par règle n'a rien à recopier ni à justifier ; un extrait y serait inventé (règle 7).",
+      "motif": "Copie de valide-09 avec un extrait justificatif. D32 : la notation par règle n'a rien à recopier ni à justifier ; un extrait y serait inventé (règle 7). Modifié ouvertement (D33) : sur_refus_api (true) ajouté, exigé de toute notation par règle ; rien d'autre ne change.",
       "regle_protocole": "§7, annexe C ; décision D32 de l'auteur"
     },
     {
       "objet": "notation",
       "fichier": "notation/invalide-14-regle-avec-version-charge.json",
       "attendu": "invalide",
-      "motif": "Copie de valide-09 avec version_charge. D32 : la notation par règle n'a reçu aucune charge ; la version de la charge y est interdite.",
+      "motif": "Copie de valide-09 avec version_charge. D32 : la notation par règle n'a reçu aucune charge ; la version de la charge y est interdite. Modifié ouvertement (D33) : sur_refus_api (true) ajouté, exigé de toute notation par règle ; rien d'autre ne change.",
       "regle_protocole": "§7 ; décisions D29 (4) et D32 de l'auteur"
     },
     {
@@ -1737,6 +1737,26 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 sans refus_api_echantillon_humain : le nombre de refus de l'API de l'échantillon, écartés du kappa de chaque juge faute de note de juge, est publié avec tout go/no-go (D32, par la raison de D31 (2)).",
       "regle_protocole": "§7, §12 ; décision D32 de l'auteur"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/valide-10-humain-refus-sans-extrait.json",
+      "attendu": "valide",
+      "motif": "Notation humaine de l'échantillon sur un refus de l'API (D33) : sur_refus_api posé d'après la réponse, non-réponse sans extrait justificatif. Un refus n'a ni texte ni lien, et sur un item A ou F aucune citation n'est à recopier : seul ce marqueur exempte de l'annexe C."
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-17-juge-avec-marqueur-refus.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 (juge) marquée sur_refus_api. D32 et D33 : aucun juge ne note un refus de l'API ; le marqueur est interdit à un juge.",
+      "regle_protocole": "§7, annexe C ; décisions D32 et D33 de l'auteur"
+    },
+    {
+      "objet": "notation",
+      "fichier": "notation/invalide-18-regle-sans-marqueur-refus.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-09 sans sur_refus_api. D33 : la notation par règle porte toujours le marqueur, qui seul l'exempte de l'extrait.",
+      "regle_protocole": "§7, annexe C ; décision D33 de l'auteur"
     }
   ]
 }

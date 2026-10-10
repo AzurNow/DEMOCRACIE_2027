@@ -15,7 +15,7 @@ import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";
-import { FIXTURES_NOTATION, options, parametresDeReference } from "../notation/simulation.ts";
+import { options, parametresDeReference } from "../notation/simulation.ts";
 import { VERSION_CHARGE_JUGE } from "../../pipeline/notation/charge-juge.ts";
 
 type Categorie3 = Extract<CategorieRetenue, "exacte" | "inexacte" | "non_reponse">;
@@ -122,20 +122,11 @@ function noterEchantillon(repertoire_run: string): void {
 }
 
 /**
- * D32 : un refus de l'API de l'échantillon n'a pas de notation de juge à recopier. Les humains le
- * notent non-réponse, avec pour extrait la citation de l'item P de référence (les items du run
- * simulé sont des items P) : l'annexe C reste exigée d'eux.
+ * D32 et D33 : un refus de l'API de l'échantillon n'a pas de notation de juge à recopier. Les humains
+ * le notent non-réponse, sans extrait : leur notation porte sur_refus_api, comme la règle.
  */
 function nonReponseHumaineSurRefus(regle: NotationIndividuelle): NotationIndividuelle {
-  const [reference] = regle.references_item;
-  if (reference === undefined) throw new Error(`notation par règle ${regle.id} sans item de référence.`);
-  const item = JSON.parse(readFileSync(join(FIXTURES_NOTATION, "items", `${reference.item_id}.json`), "utf8")) as { readonly assertion?: { readonly citation_verbatim: string } };
-  if (item.assertion === undefined) throw new Error(`item ${reference.item_id} sans citation : aucun extrait humain possible (D32, question ouverte).`);
-  return {
-    ...regle,
-    version_charge: VERSION_CHARGE_JUGE,
-    extrait_justificatif: { provenance: "reference", texte: item.assertion.citation_verbatim, verifie_deterministe: true },
-  };
+  return { ...regle, version_charge: VERSION_CHARGE_JUGE };
 }
 
 let reference: Promise<string> | undefined;

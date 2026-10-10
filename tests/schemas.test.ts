@@ -115,12 +115,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 241 → 246 : décision D30 de l'auteur, une notation valide et une invalide (lecture de comparateur et version_charge), un invalide de run (go/no-go sans renvois_attribution_indecidable), un valide et un invalide du nouveau schéma renvoi-humain.
   // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run (paires écartées, taux de juge indéfini, renvois écartés du kappa).
   // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides (notation par règle d'un refus de l'API), un verdict valide et deux invalides (regle_refus_api), un invalide de run (go/no-go sans refus_api_echantillon_humain).
-  it("1. les 259 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
+  it("1. les 262 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(259);
+    expect(manifeste.exemples).toHaveLength(262);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -258,7 +259,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 241 → 246 : décision D30 de l'auteur, une notation valide et une invalide (lecture de comparateur et version_charge), un invalide de run (go/no-go sans renvois_attribution_indecidable), un valide et un invalide du nouveau schéma renvoi-humain.
   // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run (paires écartées, taux de juge indéfini, renvois écartés du kappa).
   // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides (notation par règle d'un refus de l'API), un verdict valide et deux invalides (regle_refus_api), un invalide de run (go/no-go sans refus_api_echantillon_humain).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 259 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(259);
+  // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 262 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(262);
   });
 });

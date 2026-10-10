@@ -6,6 +6,7 @@
  */
 
 import { champ, el, liste } from "./dom.ts";
+import { extraitDemande } from "./extrait.ts";
 import { nomsParLigne } from "./noms.ts";
 import { motifSansSoutien, soutiensAdmis } from "./soutiens.ts";
 import type { Existence, Grille, Saisie, SaisieAttribution, Vue } from "./types.ts";
@@ -118,9 +119,12 @@ function blocLiens(vue: Vue, grille: Grille): { readonly noeud: HTMLElement; rea
   return { noeud: el("fieldset", {}, el("legend", {}, "Liens : la page citée contient-elle l'affirmation ?"), ...lignes), soutiens };
 }
 
-/** Hors Q-ATT, pas d'extrait sur une note exacte ; sur une Q-ATT, la note n'est connue qu'au serveur. */
-function lireExtrait(c: Controles, categorie: string | null): Pick<Saisie, "extrait"> {
-  if (categorie === "exacte" || c.extrait.value.length === 0) return {};
+/**
+ * Hors Q-ATT, pas d'extrait sur une note exacte ; sur une Q-ATT, la note n'est connue qu'au serveur.
+ * D33 : sur un refus de l'API, l'extrait n'est ni demandé ni envoyé.
+ */
+function lireExtrait(c: Controles, categorie: string | null, vue: Vue): Pick<Saisie, "extrait"> {
+  if (!extraitDemande(vue) || categorie === "exacte" || c.extrait.value.length === 0) return {};
   return { extrait: { texte: c.extrait.value, provenance: c.provenance.value } };
 }
 
@@ -138,7 +142,7 @@ function communDe(racine: HTMLElement, c: Controles, vue: Vue, categorie: string
   return {
     cite: choisi(racine, "cite") === "oui",
     soutiens: vue.reponse.liens.map((lien, rang) => ({ url_citee: lien.url_citee, verdict_soutien: (c.soutiens[rang] as HTMLSelectElement).value })),
-    ...lireExtrait(c, categorie),
+    ...lireExtrait(c, categorie, vue),
   };
 }
 
@@ -199,7 +203,9 @@ export function construireFormulaire(vue: Vue, grille: Grille): Formulaire {
     ...(decidee === null ? [] : [decidee.bloc]),
     el("fieldset", {}, el("legend", {}, "La réponse cite-t-elle une source ?"), radios("cite", ["oui", "non"])),
     liens.noeud,
-    el("fieldset", {}, el("legend", {}, "Extrait justificatif (toute note autre qu'exacte) : copié de la réponse ou d'une citation de référence"), controles.extrait, champ("Provenance", controles.provenance)),
+    ...(extraitDemande(vue)
+      ? [el("fieldset", {}, el("legend", {}, "Extrait justificatif (toute note autre qu'exacte) : copié de la réponse ou d'une citation de référence"), controles.extrait, champ("Provenance", controles.provenance))]
+      : [el("p", { class: "alerte" }, "Refus de l'API : aucun extrait justificatif n'est demandé.")]),
     el("button", { type: "submit" }, "Enregistrer la notation"),
   );
   return {

@@ -1,16 +1,21 @@
 {
-  "id": "8RQ7D2KXRF1V0GMS3ZB5N4CW6E",
+  "id": "P584FDFZGFEB8P08FNANNGSXR9",
   "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "contexte": "run",
   "objet_note": {
     "type": "reponse",
-    "id": "7T0C1V3QX8M2NHD6RZ4KJ9PWEA"
+    "id": "YPWCRSKQA9C9VVYJ9Z3SFNQX2F"
   },
   "notateur": {
-    "type": "regle",
-    "id": "d12-refus-api"
+    "type": "juge",
+    "id": "juge-1",
+    "famille_modele": "famille-x",
+    "modele": "famille-x/modele-juge-1",
+    "version_prompt": "prompts/judge-primaire-1.0.0",
+    "a_vu_identite_outil": false
   },
   "sur_refus_api": true,
+  "version_charge": "charge-juge-v3",
   "gabarit": "Q-DIR",
   "references_item": [
     {
@@ -26,5 +31,11 @@
     "liens": []
   },
   "date": "2026-12-03T11:00:00+01:00",
-  "motif_notation": "regle_refus_api"
+  "duree_ms": 2400,
+  "motif_notation": "notation_juge",
+  "extrait_justificatif": {
+    "provenance": "reponse",
+    "texte": "Je ne peux pas répondre.",
+    "verifie_deterministe": true
+  }
 }

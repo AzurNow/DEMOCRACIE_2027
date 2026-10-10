@@ -1,5 +1,5 @@
 {
-  "id": "8RQ7D2KXRF1V0GMS3ZB5N4CW6E",
+  "id": "5KQ2W8ZRX3N7V0BMT6YD4CFH9J",
   "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
   "contexte": "run",
   "objet_note": {
@@ -7,10 +7,13 @@
     "id": "7T0C1V3QX8M2NHD6RZ4KJ9PWEA"
   },
   "notateur": {
-    "type": "regle",
-    "id": "d12-refus-api"
+    "type": "humain",
+    "id": "a4",
+    "sensibilite_declaree_famille": "famille-2",
+    "a_vu_identite_outil": false
   },
   "sur_refus_api": true,
+  "version_charge": "charge-juge-v3",
   "gabarit": "Q-DIR",
   "references_item": [
     {
@@ -25,6 +28,6 @@
     "cite": false,
     "liens": []
   },
-  "date": "2026-12-03T11:00:00+01:00",
-  "motif_notation": "regle_refus_api"
+  "date": "2026-12-05T09:30:00+01:00",
+  "motif_notation": "echantillon_aleatoire_10"
 }

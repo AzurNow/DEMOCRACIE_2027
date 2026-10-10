@@ -65,6 +65,7 @@ describe("D32 : la notation par règle d'un refus de l'API", () => {
       contexte: "run",
       objet_note: { type: "reponse", id: REFUS.id },
       notateur: REGLE_REFUS_API,
+      sur_refus_api: true,
       gabarit: "Q-DIR",
       references_item: references(item),
       categorie: "non_reponse",
@@ -145,8 +146,19 @@ describe("D32 : le schéma de notation", () => {
     schemaRefuse(notationHumaine("h1", "regle_refus_api", { categorie: "non_reponse", extrait_justificatif: { provenance: "reference", texte: "x", verifie_deterministe: true } }));
   });
 
-  it("l'annexe C reste entière pour un juge et pour un humain : non_reponse sans extrait refusée", () => {
+  it("hors refus, l'annexe C reste entière pour un juge et pour un humain : non_reponse sans extrait refusée", () => {
     schemaRefuse(notationJuge("j1", { categorie: "non_reponse" }));
     schemaRefuse(notationHumaine("h1", "echantillon_aleatoire_10", { categorie: "non_reponse" }));
+  });
+
+  it("D33 : le marqueur sur_refus_api est exigé de la règle, interdit au juge, admis pour l'humain, qu'il exempte de l'extrait", () => {
+    const { sur_refus_api: _marqueur, ...sansMarqueur } = regle();
+    schemaRefuse(sansMarqueur);
+    schemaRefuse(notationJuge("j1", { categorie: "non_reponse", sur_refus_api: true, extrait_justificatif: { provenance: "reference", texte: "x", verifie_deterministe: true } }));
+    schemaRefuse({ ...regle(), sur_refus_api: false });
+    for (const categorie of ["non_reponse", "indeterminee"] as const) {
+      valider("notation", notationHumaine("h1", "echantillon_aleatoire_10", { categorie, sur_refus_api: true }), "humain sur refus sans extrait");
+    }
+    schemaRefuse(notationHumaine("h1", "echantillon_aleatoire_10", { categorie: "non_reponse", sur_refus_api: true, contexte: "contrefactuel_candidat" }));
   });
 });
