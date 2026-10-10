@@ -471,6 +471,12 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       preuve d'adhésion de YouGov et Cluster17. Puis archiver (`pnpm preuve --fichier
       scratch/perimetre/urls-a-archiver.txt`) et remplir `config/perimetre.yaml`.
 
+- [ ] **Écrire aussi en 0.16 : D32 (§7)**, tranchée le 2026-10-10. Après la règle de décision :
+      « Un refus de l'API est noté non-réponse sans être soumis aux juges. »
+
+- [ ] **Relire puis inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3),
+      sept choix de rédaction à relire en fin de fichier ; le recopier dans `prompts/judge-1.0.0.md`.
+
 ### Prompts (`prompts/`)
 
 - [ ] **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
