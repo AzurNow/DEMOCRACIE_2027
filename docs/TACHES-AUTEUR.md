@@ -472,7 +472,10 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       scratch/perimetre/urls-a-archiver.txt`) et remplir `config/perimetre.yaml`.
 
 - [ ] **Écrire aussi en 0.16 : D32 (§7)**, tranchée le 2026-10-10. Après la règle de décision :
-      « Un refus de l'API est noté non-réponse sans être soumis aux juges. »
+      « Un refus de l'API est noté non-réponse sans être soumis aux juges. » D33 : à l'annexe C,
+      « extrait justificatif obligatoire pour toute note autre qu'exacte, sauf sur un refus de
+      l'API, qui n'a rien à citer » ; au §7, « un refus tiré dans l'échantillon reste doublement
+      noté par des humains et n'entre pas dans l'accord juges-humains ; leur nombre est publié ».
 
 - [ ] **Relire puis inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3),
       sept choix de rédaction à relire en fin de fichier ; le recopier dans `prompts/judge-1.0.0.md`.

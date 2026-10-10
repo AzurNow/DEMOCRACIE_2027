@@ -112,6 +112,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-10 :** Option 1. À écrire au §7 en 0.16 : un refus de l'API est noté non-réponse sans juge.
 
+### D33 — Deux points ouverts par la PR #108 (D32) : extrait humain d'un refus de l'API tiré dans l'échantillon sur un item A ou F ; refus de l'échantillon dans le kappa juge-humain.
+
+**Décision du 2026-10-10 :** Option 1 sur les deux points. À écrire en 0.16 avec D32 (§7, annexe C).
+
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
 **Décision du 2026-09-20 :** Adresse mail dédiée seule pour la v1.0, phrase du §4 ajustée avant gel — révision de texte, pas amendement. Un service de formulaire pourra s'ajouter par amendement quand le volume le justifiera.
