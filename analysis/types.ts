@@ -130,6 +130,7 @@ export const MOTIFS_NOTATION = [
   "arbitrage_echantillon_10",
   "extrait_invalide",
   "accord_partiel_juges",
+  "attribution_indecidable",
 ] as const;
 export type MotifNotation = (typeof MOTIFS_NOTATION)[number];
 

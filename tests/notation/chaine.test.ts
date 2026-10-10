@@ -13,7 +13,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
 import { bilanNotation, ReponsePerdue } from "../../pipeline/notation/bilan-notation.ts";
-import { JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { identifiantDerive, JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { DepotNotation } from "../../pipeline/notation/stockage.ts";
+import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
@@ -116,6 +118,7 @@ function sansExistencePour(reponse_ids: ReadonlySet<string>): (env: Environnemen
   return (env) => {
     const fournisseur: FournisseurExistences = {
       existencesDe: (reponse_id, liens) => (reponse_ids.has(reponse_id) ? [] : env.existences.existencesDe(reponse_id, liens)),
+      texteDeCopie: (sha256_contenu) => env.existences.texteDeCopie(sha256_contenu),
     };
     return { ...env, existences: fournisseur };
   };
@@ -387,6 +390,92 @@ describe("10. la charge reçue par le juge", () => {
         expect(texte.includes(sentinelle), sentinelle).toBe(false);
       }
     }
+  });
+});
+
+describe("D27 : la charge v3 reçue par le juge dans la chaîne", () => {
+  const LIEN_SIMULE = "https://source-simulee.invalid/page";
+  const SHA_COPIE = "c".repeat(64);
+  const existeAvecCopie = (reference: ParametresNotationSimulee): ParametresNotationSimulee => ({
+    ...reference,
+    existences: reference.existences.map((e) => (e.url_citee === LIEN_SIMULE ? { url_citee: e.url_citee, verdict_existence: "existe" as const, code_http: 200, date_test: e.date_test, sha256_contenu: SHA_COPIE } : e)),
+  });
+
+  it("chaque charge porte la réponse attendue et la prémisse du tirage, le registre de sa formulation", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const tirage = JSON.parse(readFileSync(join(execution.prepare.repertoire_run, "tirage.json"), "utf8")) as { entrees: { question_id: string; reponse_attendue: unknown }[] };
+    const parId = new Map(execution.prepare.reponses.map((r) => [r.reponse.id, r]));
+    const origines = contrefactuellesDerivees(execution.prepare.repertoire_run, execution.resultat.run_id);
+    for (const { charge } of appels.filter((a) => !origines.has(a.charge.reponse_id))) {
+      const r = parId.get(charge.reponse_id);
+      const entree = tirage.entrees.find((e) => e.question_id === r?.reponse.question_id);
+      expect(charge.reponse_attendue).toEqual(entree?.reponse_attendue);
+      expect(charge.question.registre).toBe(r?.question.registre);
+      expect("premisse_fausse" in charge.question).toBe(charge.question.registre === "oriente");
+    }
+  });
+
+  it("le lien mort du run de référence arrive sans texte, raison lien_mort", async () => {
+    const appels: Appel[] = [];
+    await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
+    expect(avecLien.length).toBeGreaterThan(0);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([{ url_citee: LIEN_SIMULE, texte_disponible: false, raison: "lien_mort" }]);
+  });
+
+  it("une page conservée dont le texte est extrait arrive dans la charge, avec son empreinte", async () => {
+    const appels: Appel[] = [];
+    const parametres = { ...existeAvecCopie(parametresDeReference()), textes_copies: [{ sha256_contenu: SHA_COPIE, issue: "extrait" as const, texte: "Texte simulé de la page citée." }] };
+    await noter(nouvelleSortie(), parametres, (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
+    expect(avecLien.length).toBeGreaterThan(0);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([expect.objectContaining({ url_citee: LIEN_SIMULE, texte_disponible: true, origine: "page_conservee", texte: "Texte simulé de la page citée.", tronque: false })]);
+  });
+
+  it("une page conservée sans texte extrait : la réponse attend le test des liens, jamais notée sur un texte vide", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), existeAvecCopie(parametresDeReference()), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    expect(appels.filter((a) => a.charge.reponse.liens.length > 0)).toEqual([]);
+    const citent = execution.prepare.reponses.filter((r) => r.reponse.normalise.liens.length > 0).map((r) => r.reponse.id);
+    expect(citent.length).toBeGreaterThan(0);
+    for (const id of citent) expect(execution.resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toEqual(["test_liens"]);
+  });
+});
+
+describe("D30 (2) : un renvoi déjà écrit pour une réponse", () => {
+  function poserRenvoi(prepare: RunSimulePrepare, question_id: string): string {
+    const cible = prepare.reponses.find((r) => r.reponse.question_id === question_id);
+    if (cible === undefined) throw new Error("réponse attendue");
+    const run_id = lireRunJson(prepare.repertoire_run).id;
+    const id = identifiantDerive([run_id, "notation", "run", cible.reponse.id, "juge-simule-a"]);
+    const renvoi = renvoiJuge("juge-simule-a", { id, run_id, objet_note: { type: "reponse", id: cible.reponse.id }, notateur: { type: "juge", id: "juge-simule-a", famille_modele: "famille-simulee-a", modele: "simule/juge-a", version_prompt: "simule://juge-simule@1.0.0", a_vu_identite_outil: false } });
+    DepotNotation.ouvrir(prepare.repertoire_run).ecrireRenvoi(renvoi);
+    return cible.reponse.id;
+  }
+
+  it("hors du sous-ensemble contrefactuel : le juge n'est pas redemandé, la réponse attend un humain sous attribution_indecidable", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    const id = poserRenvoi(prepare, QUESTION_SANS_NOM);
+    const appels: Appel[] = [];
+    const env = environnementSimule(prepare.repertoire_run, parametresDeReference());
+    const resultat = await noterRun(prepare.reponses, { ...env, juges: enregistreurs(env.juges, appels) });
+    expect(appels.filter((a) => a.juge_id === "juge-simule-a" && a.charge.reponse_id === id)).toEqual([]);
+    expect(resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toContain("attribution_indecidable");
+    expect(lireNotationsDuRun(prepare.repertoire_run, resultat.run_id).notations.filter((n) => n.objet_note.id === id && n.notateur.id === "juge-simule-a")).toEqual([]);
+  });
+
+  it("dans le sous-ensemble contrefactuel (D31 (1)) : la paire est écartée du taux de ce juge seulement, et le nombre est inscrit", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    poserRenvoi(prepare, QUESTION_NOMMANTE);
+    const resultat = await noterRun(prepare.reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()));
+    expect(resultat.contrefactuel.statut).toBe("inscrit");
+    const run = lireRunJson(prepare.repertoire_run);
+    const taille = run.contrefactuel_candidats?.taille as number;
+    const [a, b] = ["juge-simule-a", "juge-simule-b"].map((id) => run.juges.find((j) => j.juge_id === id));
+    expect(a).toMatchObject({ paires_ecartees_contrefactuel: 1, changements_contrefactuel: { denominateur: taille - 1 } });
+    expect(b).toMatchObject({ paires_ecartees_contrefactuel: 0, changements_contrefactuel: { denominateur: taille } });
+    expect(violations(prepare.repertoire_run)).toEqual([]);
   });
 });
 

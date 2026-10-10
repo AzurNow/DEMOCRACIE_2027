@@ -156,6 +156,8 @@ export function fournisseurQuiConnait(reponse_ids: readonly string[]): Fournisse
   return {
     existencesDe: (reponse_id, liens) =>
       reponse_ids.includes(reponse_id) ? liens.map((url): ExistenceEtablie => ({ url_citee: url, verdict_existence: "existe", date_test: "2026-12-02T10:00:00+01:00" })) : [],
+    // Aucune copie conservée (pas de sha256_contenu) : la page est « sans_copie », aucun texte n'est lu.
+    texteDeCopie: () => undefined,
   };
 }
 

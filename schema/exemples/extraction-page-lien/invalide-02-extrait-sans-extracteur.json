@@ -1,0 +1,11 @@
+{
+  "sha256_contenu": "1e21cb1fec674124554f2275a0fdfa449f126b9cfe8150c94180f8369943f6f5",
+  "issue": "extrait",
+  "texte_sha256": "21b01a0c4bcc8569d54aeb761aa925f05ea0bba73b4452ac2d279db5be681161",
+  "longueur": 40,
+  "date_extraction": "2026-09-22T14:30:05+02:00",
+  "encodage": {
+    "nom": "utf-8",
+    "origine": "content-type"
+  }
+}

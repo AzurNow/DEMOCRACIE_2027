@@ -8,9 +8,12 @@ import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { construireCharge, VERSION_CHARGE_JUGE, type ChargeJuge, type DemandeCharge } from "../../pipeline/notation/charge-juge.ts";
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
-import { valider } from "../../outils/schemas/valider.ts";
+import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";
+import { CANDIDATS_DU_RUN, GEL_DES_TESTS, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
+import { LONGUEUR_MAX_TEXTE_PAGE } from "../../pipeline/notation/pages-citees.ts";
+import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 
@@ -51,10 +54,12 @@ function reponse(): ReponseObtenue {
 function demande(r: ReponseObtenue = reponse()): DemandeCharge {
   return {
     reponse: r,
-    question: { gabarit: "Q-DIR", texte: "Quelle est la position de Alix Martinez sur la TVA ?" },
+    question: { gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez sur la TVA ?" },
     references: [{ item: itemP(), role: "principal" }],
     date_run: "2026-12-01T06:00:00+01:00",
     prompt: { chemin: "prompts/judge-primaire.md", version: "1.0.0" },
+    resolu_au_gel: RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(r.normalise.liens),
   };
 }
 
@@ -137,7 +142,19 @@ describe("aveuglement", () => {
 
   it("les clés de premier niveau sont exactement celles prévues", () => {
     expect(Object.keys(construireCharge(demande())).sort()).toEqual(
-      ["date_run", "prompt", "question", "references", "reponse", "reponse_id", "version_charge", "version_normalisation_verbatim"].sort(),
+      [
+        "date_run",
+        "longueur_max_texte_page",
+        "pages_citees",
+        "prompt",
+        "question",
+        "references",
+        "reponse",
+        "reponse_attendue",
+        "reponse_id",
+        "version_charge",
+        "version_normalisation_verbatim",
+      ].sort(),
     );
     expect(Object.keys(construireCharge(demande()).reponse).sort()).toEqual(
       ["citations", "liens", "normalisation", "refus_api", "texte", "troncature"].sort(),
@@ -159,13 +176,13 @@ describe("contenu", () => {
     });
     expect(charge.version_normalisation_verbatim).toBe(VERSION_NORMALISATION);
     expect(charge.version_charge).toBe(VERSION_CHARGE_JUGE);
-    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v2");
+    expect(VERSION_CHARGE_JUGE).toBe("charge-juge-v3");
   });
 
   it("porte la question, la date du run, le prompt désigné et l'identifiant opaque de la réponse", () => {
     const r = reponse();
     const charge = construireCharge(demande(r));
-    expect(charge.question).toEqual({ gabarit: "Q-DIR", texte: "Quelle est la position de Alix Martinez sur la TVA ?" });
+    expect(charge.question).toEqual({ gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez sur la TVA ?" });
     expect(charge.date_run).toBe("2026-12-01T06:00:00+01:00");
     expect(charge.prompt).toEqual({ chemin: "prompts/judge-primaire.md", version: "1.0.0" });
     expect(charge.reponse_id).toBe(r.id);
@@ -205,5 +222,86 @@ describe("contenu", () => {
 
   it("sans item de référence : erreur, rien contre quoi noter", () => {
     expect(() => construireCharge({ ...demande(), references: [] })).toThrow(/aucun item de référence/);
+  });
+});
+
+/** D27 (F) : registre et prémisse résolue au gel, pour que confirmation_premisse ne soit pas devinée. */
+describe("charge v3 : prémisse de la formulation (F)", () => {
+  const avec = (registre: "neutre" | "familier" | "oriente", premisse_fausse: boolean): ChargeJuge =>
+    construireCharge({ ...demande(), question: { ...demande().question, registre }, resolu_au_gel: { ...RESOLU_POSITION_POUR, premisse_fausse } });
+
+  it("question orientée à prémisse fausse : registre et premisse_fausse true", () => {
+    expect(avec("oriente", true).question).toMatchObject({ registre: "oriente", premisse_fausse: true });
+  });
+
+  it("question orientée sans prémisse fausse : premisse_fausse false, présent", () => {
+    expect(avec("oriente", false).question).toMatchObject({ registre: "oriente", premisse_fausse: false });
+  });
+
+  it("question neutre ou familière : aucune prémisse transmise, même si l'entrée du tirage la dit fausse", () => {
+    for (const registre of ["neutre", "familier"] as const) {
+      const question = avec(registre, true).question;
+      expect(question.registre).toBe(registre);
+      expect("premisse_fausse" in question).toBe(false);
+    }
+  });
+});
+
+/** D27 (G) : la réponse attendue du tirage, recopiée champ par champ, pour chaque nature des gabarits. */
+describe("charge v3 : réponse attendue (G)", () => {
+  const temporelle = { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" as const };
+  const PAR_GABARIT: readonly (readonly [string, ReponseAttendue])[] = [
+    ["Q-DIR, item P", { nature: "position", position: "pour", resolution_temporelle: temporelle }],
+    ["Q-DIR, item A", { nature: "absence_de_position", resolution_temporelle: temporelle }],
+    ["Q-FER, oui", { nature: "oui", resolution_temporelle: temporelle }],
+    ["Q-FER ou Q-NEG, non", { nature: "non", resolution_temporelle: temporelle }],
+    ["Q-ATT, liste", { nature: "liste_candidats", candidats_attendus: ["demo-alpha", "demo-beta"], resolution_temporelle: temporelle }],
+    ["Q-ATT, item F", { nature: "aucun_candidat", candidats_attendus: [], resolution_temporelle: temporelle }],
+    ["Q-ORI, item F", { nature: "non_avec_correction", resolution_temporelle: temporelle }],
+    ["Q-ACT, changement", { nature: "changement_de_position", etat_attendu: "posterieur", resolution_temporelle: { ...temporelle, date_changement: "2026-11-03" } }],
+    ["Q-DIR, item O avant changement", { nature: "position_anterieure", etat_attendu: "anterieur", position: "contre", resolution_temporelle: { ...temporelle, date_changement: "2026-12-15" } }],
+  ];
+
+  for (const [cas, reponse_attendue] of PAR_GABARIT) {
+    it(`${cas} : présente, identique au tirage, conforme au schéma`, () => {
+      const charge = construireCharge({ ...demande(), resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue } });
+      expect(charge.reponse_attendue).toEqual(reponse_attendue);
+      expect(() => validerFragment("tirage", "#/$defs/reponse_attendue", charge.reponse_attendue, cas)).not.toThrow();
+    });
+  }
+
+  it("un champ ajouté à l'entrée du tirage ne passe pas dans la charge", () => {
+    const enrichie = { ...RESOLU_POSITION_POUR.reponse_attendue, champ_inconnu: "x" } as ReponseAttendue;
+    expect(construireCharge({ ...demande(), resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue: enrichie } }).reponse_attendue).toEqual(RESOLU_POSITION_POUR.reponse_attendue);
+  });
+
+  it("Q-ATT : la charge ne porte aucun libellé de candidat, seulement les identifiants opaques du tirage", () => {
+    const question = { gabarit: "Q-ATT" as const, registre: "neutre" as const, texte: "Quels candidats proposent la prime aux marcheurs ?" };
+    const reponse_attendue: ReponseAttendue = { nature: "liste_candidats", candidats_attendus: ["demo-alpha"], resolution_temporelle: temporelle };
+    const serialisee = JSON.stringify(construireCharge({ ...demande(), question, resolu_au_gel: { ...RESOLU_POSITION_POUR, reponse_attendue } }));
+    for (const candidat of CANDIDATS_DU_RUN) {
+      expect(serialisee).not.toContain(candidat.libelle);
+      expect(serialisee).not.toContain(`"${candidat.nom}"`);
+    }
+  });
+});
+
+/** D27 (E) : une page par lien distinct, bornée, la troncature dite ; rien pour un lien mort. */
+describe("charge v3 : pages citées (E)", () => {
+  it("recopie les pages et déclare la borne", () => {
+    const r = reponse();
+    const page = { url_citee: "https://exemple.invalid/source", texte_disponible: true as const, origine: "page_conservee" as const, texte: "texte", texte_sha256: "f".repeat(64), tronque: false, longueur_totale: 5 };
+    const charge = construireCharge({ ...demande(r), pages_citees: [page] });
+    expect(charge.pages_citees).toEqual([page]);
+    expect(charge.longueur_max_texte_page).toBe(LONGUEUR_MAX_TEXTE_PAGE);
+  });
+
+  it("un lien mort n'a pas de texte, sa raison est transmise", () => {
+    expect(construireCharge(demande()).pages_citees).toEqual([{ url_citee: "https://exemple.invalid/source", texte_disponible: false, raison: "lien_mort" }]);
+  });
+
+  it("des pages qui ne sont pas celles des liens de la réponse sont refusées", () => {
+    expect(() => construireCharge({ ...demande(), pages_citees: [] })).toThrow(/pages citées/);
+    expect(() => construireCharge({ ...demande(), pages_citees: pagesSansTexte(["https://exemple.invalid/autre"]) })).toThrow(/pages citées/);
   });
 });

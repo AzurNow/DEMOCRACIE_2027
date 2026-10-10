@@ -10,8 +10,9 @@
  * 2. **Interrogation simulée.** `lancerRunSimule` (celle de `pnpm run:dry`) écrit le run, ou le
  *    reprend sans rien réécrire s'il est déjà là : `pnpm run:dry --sortie X` puis
  *    `pnpm notation:dry --sortie X` notent le même run.
- * 3. **Gel simulé.** `pnpm run:dry` n'écrit que le volume ; la notation lit aussi `run.json` et
- *    `questions.json`. Ils sont posés depuis les fixtures, par ouverture exclusive : un fichier déjà
+ * 3. **Gel simulé.** `pnpm run:dry` n'écrit que le volume ; la notation lit aussi `run.json`,
+ *    `questions.json` et `tirage.json` (réponse attendue et prémisse résolues au gel, que la charge
+ *    v3 transmet, D27). Ils sont posés depuis les fixtures, par ouverture exclusive : un fichier déjà
  *    là n'est jamais réécrit, et il doit être celui des fixtures (pour `run.json`, à l'inscription du
  *    test contrefactuel près), sinon `GelDivergent`.
  * 4. **Lecture.** Le run, les questions, les réponses obtenues du contexte `run`, chaque fichier
@@ -29,7 +30,7 @@
 
 import { constants, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { dispositionRunNote, ItemEpingleIntrouvable, lireDossier, lireRunJson } from "../../analysis/lecture-run.ts";
+import { dispositionRunNote, ItemEpingleIntrouvable, lireDossier, lireRunJson, lireTirage } from "../../analysis/lecture-run.ts";
 import { estDuRun } from "../../analysis/filtre.ts";
 import type { Instant } from "../../analysis/types.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
@@ -37,10 +38,11 @@ import { canoniser } from "../../validation/domaine/empreinte.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { lancerRunSimule, type ResultatRunSimule } from "../interrogation/run-simule.ts";
 import type { ReponseEcrite, ReponseObtenue } from "../interrogation/types.ts";
-import type { Question } from "../questions/types.ts";
+import type { EntreeTirage, Question } from "../questions/types.ts";
 import { bilanNotation, type BilanNotation } from "./bilan-notation.ts";
 import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatChaine } from "./chaine.ts";
-import { fournisseurSimule } from "./fournisseur-simule.ts";
+import { resolusAuGel, type ResoluAuGel } from "./charge-juge.ts";
+import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
 import { exigerHorsDeRuns } from "./garde-simule.ts";
 import { CHAMPS_DU_TEST } from "./inscription-contrefactuel.ts";
 import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type NatureReponse, type ParametresJugeSimule } from "./juge-simule.ts";
@@ -51,6 +53,8 @@ export interface ParametresNotationSimulee {
   readonly date_notation: Instant;
   readonly juge_simule: ParametresJugeSimule;
   readonly existences: readonly ExistenceEtablie[];
+  /** Texte extrait (ou refus) de chaque copie conservée, par empreinte (D27 (E)). */
+  readonly textes_copies: readonly TexteSimule[];
 }
 
 export interface OptionsNotationSimulee {
@@ -110,7 +114,7 @@ export function environnementSimule(repertoire_run: string, parametres: Parametr
   return {
     repertoire_run,
     juges: jugesSimules(parametres.juge_simule, repertoire_run),
-    existences: fournisseurSimule(parametres.existences, repertoire_run),
+    existences: fournisseurSimule(parametres.existences, parametres.textes_copies, repertoire_run),
     maintenant: () => parametres.date_notation,
   };
 }
@@ -120,6 +124,8 @@ export function environnementSimule(repertoire_run: string, parametres: Parametr
 function poserGel(repertoire_run: string, options: OptionsNotationSimulee): void {
   const disposition = dispositionRunNote(repertoire_run);
   poserFichier(join(options.fixtures_interrogation, "questions.json"), disposition.questions, (lu, source) => lu === source);
+  // D27 : la charge v3 recopie la réponse attendue et la prémisse que le tirage a résolues au gel.
+  poserFichier(join(options.fixtures_notation, "tirage.json"), join(repertoire_run, "tirage.json"), (lu, source) => lu === source);
   poserFichier(join(options.fixtures_notation, "run.json"), disposition.run_json, (lu, source) => canoniser(formeAuGel(lu)) === canoniser(formeAuGel(source)));
 }
 
@@ -148,10 +154,12 @@ function lireReponsesANoter(repertoire_run: string, repertoire_items: string): r
   const questions = lireQuestions(disposition.questions);
   const items = lireItemsDesFixtures(questions, repertoire_items);
   const parId = new Map(questions.map((q) => [q.id, q]));
+  // `lireTirage` a validé tirage.json contre son schéma, qui exige reponse_attendue et premisse_fausse de chaque entrée.
+  const resolus = resolusAuGel(lireTirage(repertoire_run, run).entrees as unknown as readonly EntreeTirage[]);
   const obtenue = (r: ReponseEcrite): r is ReponseObtenue => estDuRun(r) && r.statut_reponse === "obtenue";
   return lireDossier<ReponseEcrite>(disposition.reponses, "reponse", run.id)
     .filter(obtenue)
-    .map((reponse) => reponseANoter(reponse, parId, items));
+    .map((reponse) => reponseANoter(reponse, parId, items, resolus));
 }
 
 function lireQuestions(chemin: string): readonly Question[] {
@@ -175,18 +183,25 @@ function lireItemsDesFixtures(questions: readonly Question[], repertoire_items: 
   return items;
 }
 
-function reponseANoter(reponse: ReponseObtenue, questions: ReadonlyMap<string, Question>, items: ReadonlyMap<string, Item>): ReponseANoter {
+function reponseANoter(
+  reponse: ReponseObtenue,
+  questions: ReadonlyMap<string, Question>,
+  items: ReadonlyMap<string, Item>,
+  resolus: ReadonlyMap<string, ResoluAuGel>,
+): ReponseANoter {
   const question = questions.get(reponse.question_id);
   const formulation = question?.formulations.find((f) => f.id === reponse.formulation_id);
   if (question === undefined || formulation === undefined) {
     throw new ParametresSimulesInvalides(reponse.id, `question ${reponse.question_id} ou formulation ${reponse.formulation_id} absente de questions.json.`);
   }
+  const resolu_au_gel = resolus.get(question.id);
+  if (resolu_au_gel === undefined) throw new ParametresSimulesInvalides(reponse.id, `question ${question.id} absente du tirage du run.`);
   const references = question.items.map(({ reference, role }) => {
     const item = items.get(reference.item_id);
     if (item === undefined) throw new ItemEpingleIntrouvable(reference, "absent des items lus");
     return { item, role };
   });
-  return { reponse, question: { gabarit: question.gabarit, texte: formulation.texte }, references };
+  return { reponse, question: { gabarit: question.gabarit, registre: formulation.registre, texte: formulation.texte }, references, resolu_au_gel };
 }
 
 /* ------------------------------------------------------------------ paramètres */
@@ -228,7 +243,16 @@ export function lireParametresNotationSimulee(chemin: string): ParametresNotatio
     date_notation,
     juge_simule: lireJugeSimule(exigerObjet(brut["juge_simule"], chemin, "juge_simule"), chemin),
     existences: exigerListe(brut, "existences", chemin).map((e) => exigerObjet(e, chemin, "existences[]") as unknown as ExistenceEtablie),
+    textes_copies: exigerListe(brut, "textes_copies", chemin).map((t) => lireTexteSimule(exigerObjet(t, chemin, "textes_copies[]"), chemin)),
   };
+}
+
+function lireTexteSimule(objet: Objet, chemin: string): TexteSimule {
+  const sha256_contenu = exigerTexte(objet, "sha256_contenu", chemin);
+  const issue = exigerTexte(objet, "issue", chemin);
+  if (issue === "extrait") return { sha256_contenu, issue, texte: exigerTexte(objet, "texte", chemin) };
+  if (issue === "refuse") return { sha256_contenu, issue, motif: exigerTexte(objet, "motif", chemin) };
+  throw new ParametresSimulesInvalides(chemin, `textes_copies[] : issue « ${issue} », « extrait » ou « refuse » attendu.`);
 }
 
 function lireJugeSimule(objet: Objet, chemin: string): ParametresJugeSimule {

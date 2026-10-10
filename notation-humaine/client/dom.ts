@@ -22,11 +22,3 @@ export function champ(libelle: string, controle: HTMLElement): HTMLLabelElement 
 export function liste(valeurs: readonly string[], attributs: Attributs = {}): HTMLUListElement {
   return el("ul", attributs, ...valeurs.map((valeur) => el("li", {}, valeur)));
 }
-
-/** Les éléments d'une liste séparée par des virgules, sans blancs ni éléments vides. */
-export function separerParVirgules(texte: string): readonly string[] {
-  return texte
-    .split(",")
-    .map((element) => element.trim())
-    .filter((element) => element.length > 0);
-}

@@ -128,18 +128,22 @@ function violationsContrefactuelles(juge: JugeDuRun): Violation[] {
 }
 
 /**
- * Le dénominateur du taux d'un juge est la taille du sous-ensemble publiée dans
- * `contrefactuel_candidats.taille`. Contrôlé quand les deux sont présents ; le schéma exige le bloc
- * d'un run publié.
+ * Le dénominateur du taux d'un juge plus ses paires écartées (D31 (1) : paires dont il a renvoyé un
+ * côté vers l'humain) font la taille du sous-ensemble publiée dans `contrefactuel_candidats.taille` ;
+ * un taux indéfini (`toutes_paires_ecartees`) suppose toutes les paires écartées. Contrôlé quand le
+ * bloc est présent et que le juge publie un résultat ; le schéma exige le bloc d'un run publié.
  */
 function denominateurContrefactuel(juge: JugeDuRun, run: RunDeNotation): Violation[] {
-  const changements = juge.changements_contrefactuel;
   const bloc = run.contrefactuel_candidats;
-  if (changements === undefined || bloc === undefined || changements.denominateur === bloc.taille) return [];
+  const resultat = juge.changements_contrefactuel !== undefined || juge.motif_indefini_contrefactuel !== undefined;
+  if (bloc === undefined || !resultat) return [];
+  const ecartees = juge.paires_ecartees_contrefactuel;
+  const comptees = juge.changements_contrefactuel === undefined ? 0 : juge.changements_contrefactuel.denominateur;
+  if (ecartees !== undefined && comptees + ecartees === bloc.taille) return [];
   return [
     {
       code: "denominateur_contrefactuel_incoherent",
-      detail: `juge ${juge.juge_id} : ${changements.denominateur} paires au dénominateur, pour un sous-ensemble de ${bloc.taille} réponse(s) (contrefactuel_candidats.taille).`,
+      detail: `juge ${juge.juge_id} : ${comptees} paire(s) au dénominateur et ${String(ecartees)} écartée(s), pour un sous-ensemble de ${bloc.taille} réponse(s) (contrefactuel_candidats.taille).`,
     },
   ];
 }

@@ -93,6 +93,11 @@ export interface NotationIndividuelle {
   readonly contexte: ContexteMesure;
   readonly objet_note: ObjetNote;
   readonly notateur: Notateur;
+  /**
+   * D29 (4) : la version du format de ce que le notateur a reçu (`VERSION_CHARGE_JUGE`). Exigée
+   * d'une notation de réponse, interdite pour une lecture de comparateur (D30 (4), le schéma).
+   */
+  readonly version_charge?: string;
   readonly gabarit: Gabarit;
   readonly references_item: readonly ReferenceItem[];
   readonly categorie: CategorieRetenue;
@@ -103,12 +108,34 @@ export interface NotationIndividuelle {
     readonly attendus: readonly IdentifiantCourt[];
     readonly cites: readonly IdentifiantCourt[];
     readonly hors_perimetre_cites?: readonly string[];
+    readonly ambigus_cites?: readonly string[];
   };
   readonly sourcage: { readonly cite: boolean; readonly liens: readonly LienNotation[] };
   readonly extrait_justificatif?: ExtraitJustificatif;
   readonly date: Instant;
   readonly duree_ms?: number;
   readonly motif_notation?: MotifNotation;
+}
+
+/**
+ * Le renvoi d'un juge vers la notation humaine, à la place de sa note, sur une question
+ * d'attribution qu'aucun texte ne permet de noter (D30 (2)) : champ pour champ
+ * `schema/renvoi-humain.schema.json`.
+ */
+export interface RenvoiHumain {
+  readonly id: Ulid;
+  readonly run_id: Ulid;
+  readonly contexte: "run" | "contrefactuel_candidat";
+  readonly objet_note: { readonly type: "reponse"; readonly id: Ulid };
+  readonly notateur: Notateur;
+  readonly version_charge: string;
+  readonly gabarit: "Q-ATT";
+  readonly references_item: readonly ReferenceItem[];
+  readonly motif: "attribution_indecidable";
+  readonly raison: string;
+  readonly noms_cites: readonly string[];
+  readonly attribution: NonNullable<NotationIndividuelle["attribution"]>;
+  readonly date: Instant;
 }
 
 export interface RevueHumaine {
@@ -153,6 +180,10 @@ export interface JugeDuRun {
    */
   readonly taux_changement_contrefactuel?: number;
   readonly changements_contrefactuel?: ChangementsContrefactuel;
+  /** D31 (1) : paires écartées du taux par un renvoi de ce juge ; présent quand le test est terminé. */
+  readonly paires_ecartees_contrefactuel?: number;
+  /** D31 (1) : toutes les paires écartées, taux indéfini. */
+  readonly motif_indefini_contrefactuel?: "toutes_paires_ecartees";
 }
 
 /** `run.schema.json#/properties/taux_echantillon_humain` : stocké, jamais supposé. */

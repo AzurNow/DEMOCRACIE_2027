@@ -24,9 +24,11 @@
  *    (`tirerEchantillonHumain`, sur toutes les réponses obtenues). Un verdict est écrit ; une
  *    attente est rendue avec ses motifs, sans verdict inventé.
  *
- * **Liens.** Une réponse dont un lien n'a pas de verdict d'existence n'est ni notée ni décidée : elle
- * est rendue en attente `test_liens`. Si une réponse du sous-ensemble contrefactuel attend ainsi,
- * le test ne peut pas se faire, et la notation de masse n'a pas lieu (D14 (1)).
+ * **Liens.** Une réponse dont un lien n'a pas de verdict d'existence, ou dont la copie conservée d'un
+ * lien n'a pas encore son texte extrait (`pnpm liens:textes`, D27 (E) : la charge v3 transmet le
+ * texte de chaque page citée, `pages-citees.ts`), n'est ni notée ni décidée : elle est rendue en
+ * attente `test_liens`. Si une réponse du sous-ensemble contrefactuel attend ainsi, le test ne peut
+ * pas se faire, et la notation de masse n'a pas lieu (D14 (1)).
  *
  * **Reprise (règle 7).** Les identifiants sont dérivés du run, du rôle de l'objet et de l'objet
  * (`identifiantDerive`) : une relance retrouve les mêmes. Une notation de juge déjà écrite (même
@@ -44,7 +46,7 @@ import type { Instant, Ulid } from "../../analysis/types.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { nommeUnCandidat, textesNommables } from "./candidats.ts";
-import { construireCharge, type DemandeCharge, type QuestionPosee, type ReferenceSoumise } from "./charge-juge.ts";
+import { construireCharge, type DemandeCharge, type QuestionPosee, type ReferenceSoumise, type ResoluAuGel } from "./charge-juge.ts";
 import { testerContrefactuel, type PaireContrefactuelle, type ResultatContrefactuel } from "./contrefactuel.ts";
 import { decider, type MotifAttente } from "./decision.ts";
 import { tirerDerangement, type Derangement } from "./derangement.ts";
@@ -52,18 +54,21 @@ import { comparerChaines, tirerEchantillonHumain, tirerSousEnsembleContrefactuel
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
-import { notationDeJuge, versionPromptDe, type Juge } from "./juge.ts";
+import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
+import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { publierContrefactuel } from "./publication-contrefactuel.ts";
 import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
-import type { NotationIndividuelle, RunDeNotation } from "./types.ts";
+import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
 
-/** Une réponse obtenue du run, avec sa question posée et ses items épinglés au gel. */
+/** Une réponse obtenue du run, avec sa question posée, ses items épinglés et ce que le tirage a résolu au gel. */
 export interface ReponseANoter {
   readonly reponse: ReponseObtenue;
   readonly question: QuestionPosee;
   readonly references: readonly ReferenceSoumise[];
+  /** `tirage.entrees[]` de la question : réponse attendue et prémisse (D27 (F), (G)). */
+  readonly resolu_au_gel: ResoluAuGel;
 }
 
 export interface EnvironnementChaine {
@@ -129,21 +134,33 @@ export function identifiantDerive(composants: readonly string[]): Ulid {
 
 /* ------------------------------------------------------------------ état de la chaîne */
 
+/** Ce que le test des liens a établi pour une réponse : le verdict d'existence et la page de chaque lien. */
+interface LiensEtablis {
+  readonly existences: ReadonlyMap<string, ExistenceEtablie>;
+  readonly pages: readonly PageCitee[];
+}
+
 interface Preparee extends ReponseANoter {
   readonly textes: TextesDeVerification;
-  /** `null` : au moins un lien sans verdict d'existence. */
-  readonly existences: ReadonlyMap<string, ExistenceEtablie> | null;
+  /** `null` : au moins un lien sans verdict d'existence, ou une copie sans texte extrait. */
+  readonly liens: LiensEtablis | null;
 }
 
 interface Etat {
   readonly env: EnvironnementChaine;
   readonly run: RunLu;
+  /** Les candidats du périmètre du run : les noms cités sur une Q-ATT s'y rattachent (D27 (D)). */
+  readonly candidats: readonly CandidatDuRun[];
+  /** Les candidats interrogés au run : la note d'une Q-ATT les distingue (D29 (1)). */
+  readonly interroges: readonly string[];
   readonly depot: DepotNotation;
   /** Rangées par identifiant croissant. */
   readonly reponses: readonly Preparee[];
   readonly parId: ReadonlyMap<Ulid, Preparee>;
   /** Toutes les notations du run, lues puis écrites. */
   readonly notations: NotationIndividuelle[];
+  /** Les renvois de juge du run (D30 (2)), lus puis écrits. */
+  readonly renvois: RenvoiHumain[];
   /** Clés (contexte, objet, juge) des notations de juge déjà écrites. */
   readonly cles: Set<string>;
   /** Réponses contrefactuelles déjà écrites, par identifiant, sous forme canonique. */
@@ -185,11 +202,14 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
   return {
     env,
     run,
+    candidats: runDeNotationDe(run).candidats,
+    interroges: run.perimetre.candidats.filter((candidat) => candidat.interroge).map((candidat) => candidat.candidat_id),
     depot,
     reponses: preparees,
     parId: indexerReponses(preparees, run.id),
     notations: [...lues.notations],
-    cles: new Set(lues.notations.filter((n) => n.notateur.type === "juge").map(cleDeNotation)),
+    renvois: [...lues.renvois],
+    cles: new Set([...lues.notations.filter((n) => n.notateur.type === "juge").map(cleDeNotation), ...lues.renvois.map(cleDeNotation)]),
     contrefactuelles: new Map(lues.reponses_contrefactuelles.map((r) => [r.id, canoniser(r)])),
     verdicts: new Set(lireVerdicts(env.repertoire_run, run.id).map((v) => v.objet_note.id)),
   };
@@ -227,11 +247,18 @@ function preparer(r: ReponseANoter, fournisseur: FournisseurExistences): Prepare
   return {
     ...r,
     textes: { reponse: r.reponse.normalise.texte, citations_reference: citationsDeReference(items) },
-    existences: existencesCompletes(r.reponse, fournisseur),
+    liens: liensEtablis(r.reponse, fournisseur),
   };
 }
 
-/** Le verdict d'existence de chaque lien cité, ou `null` s'il en manque un : jamais supposé. */
+/** Le verdict d'existence et la page de chaque lien cité, ou `null` s'il en manque un : jamais supposé. */
+function liensEtablis(reponse: ReponseObtenue, fournisseur: FournisseurExistences): LiensEtablis | null {
+  const existences = existencesCompletes(reponse, fournisseur);
+  if (existences === null) return null;
+  const pages = pagesCitees(reponse.id, reponse.normalise.liens, existences, (sha256) => fournisseur.texteDeCopie(sha256));
+  return pages === null ? null : { existences, pages };
+}
+
 function existencesCompletes(reponse: ReponseObtenue, fournisseur: FournisseurExistences): ReadonlyMap<string, ExistenceEtablie> | null {
   const liens = [...new Set(reponse.normalise.liens)];
   if (liens.length === 0) return new Map();
@@ -251,7 +278,7 @@ function indexerReponses(reponses: readonly Preparee[], run_id: Ulid): ReadonlyM
   return index;
 }
 
-function cleDeNotation(notation: NotationIndividuelle): string {
+function cleDeNotation(notation: Pick<NotationIndividuelle | RenvoiHumain, "contexte" | "objet_note" | "notateur">): string {
   return cle(notation.contexte, notation.objet_note.id, notation.notateur.id);
 }
 
@@ -273,7 +300,7 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
     if (etat.cles.has(cle(cible.cote.contexte, cible.objet_id, juge.identite.juge_id))) continue;
     const charge = construireCharge({ ...cible.demande, prompt: juge.identite.prompt });
     const sortie = await juge.noter(charge);
-    const notation = notationDeJuge(juge.identite, sortie, {
+    const issue = issueDeJuge(juge.identite, sortie, {
       id: identifiantDerive([etat.run.id, "notation", cible.cote.contexte, cible.objet_id, juge.identite.juge_id]),
       run_id: etat.run.id,
       contexte: cible.cote.contexte,
@@ -285,19 +312,38 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
       liens: charge.reponse.liens,
       existences: cible.existences,
       textes: cible.textes,
+      date_gel: cible.demande.date_run,
+      items: cible.demande.references.map(({ item }) => item),
+      reponse_attendue: cible.demande.resolu_au_gel.reponse_attendue,
+      candidats: etat.candidats,
+      interroges: etat.interroges,
+      registre: cible.demande.question.registre,
+      premisse_fausse: cible.demande.resolu_au_gel.premisse_fausse,
+      version_charge: charge.version_charge,
     });
-    etat.depot.ecrireNotation(notation);
-    etat.notations.push(notation);
-    etat.cles.add(cleDeNotation(notation));
+    consigner(etat, issue);
   }
 }
 
-function demandeDe(etat: Etat, r: Preparee): Omit<DemandeCharge, "prompt"> {
-  return { reponse: r.reponse, question: r.question, references: r.references, date_run: etat.run.date_gel };
+/** D30 (2) : un renvoi s'écrit à la place de la notation, sous la même clé ; une relance ne redemande pas le juge. */
+function consigner(etat: Etat, issue: IssueDeJuge): void {
+  if (issue.type === "renvoi") {
+    etat.depot.ecrireRenvoi(issue.renvoi);
+    etat.renvois.push(issue.renvoi);
+    etat.cles.add(cleDeNotation(issue.renvoi));
+    return;
+  }
+  etat.depot.ecrireNotation(issue.notation);
+  etat.notations.push(issue.notation);
+  etat.cles.add(cleDeNotation(issue.notation));
 }
 
-function cibleOrigine(etat: Etat, r: Preparee, existences: ReadonlyMap<string, ExistenceEtablie>): Cible {
-  return { cote: COTE_RUN, objet_id: r.reponse.id, demande: demandeDe(etat, r), textes: r.textes, existences };
+function demandeDe(etat: Etat, r: Preparee, liens: LiensEtablis): Omit<DemandeCharge, "prompt"> {
+  return { reponse: r.reponse, question: r.question, references: r.references, date_run: etat.run.date_gel, resolu_au_gel: r.resolu_au_gel, pages_citees: liens.pages };
+}
+
+function cibleOrigine(etat: Etat, r: Preparee, liens: LiensEtablis): Cible {
+  return { cote: COTE_RUN, objet_id: r.reponse.id, demande: demandeDe(etat, r, liens), textes: r.textes, existences: liens.existences };
 }
 
 /* ------------------------------------------------------------------ test contrefactuel */
@@ -318,23 +364,23 @@ async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const run = runAvantLeTest(runDeNotationDe(etat.run));
   const eligibles = etat.reponses.filter((r) => estEligible(r, run)).map((r) => r.reponse.id);
   const sous_ensemble = tirerSousEnsembleContrefactuel(eligibles, run.graines.contrefactuel);
-  const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).existences === null);
+  const attendent = sous_ensemble.reponse_ids.filter((id) => exigerPreparee(etat, id).liens === null);
   if (attendent.length > 0) return { statut: "en_attente_test_liens", reponse_ids: attendent };
   const derangement = tirerDerangement(run.candidats, run.graines.contrefactuel);
   const paires: PaireContrefactuelle[] = [];
   for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaire(etat, exigerPreparee(etat, id), derangement));
-  const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires) });
+  const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires), renvois: renvoisDesPaires(etat, paires) });
   const publication = publierContrefactuel(resultat, sous_ensemble, derangement, run);
   if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat };
   return { statut: inscrireContrefactuel(etat.env.repertoire_run, publication), resultat };
 }
 
 async function noterPaire(etat: Etat, r: Preparee, derangement: Derangement): Promise<PaireContrefactuelle> {
-  const existences = exigerExistences(r);
-  await noterParLesJuges(etat, etat.env.juges, cibleOrigine(etat, r, existences));
+  const liens = exigerLiens(r);
+  await noterParLesJuges(etat, etat.env.juges, cibleOrigine(etat, r, liens));
   const contrefactuelle_id = identifiantDerive([etat.run.id, "reponse_contrefactuelle", "noms_candidats", r.reponse.id]);
-  const permutee = permuter(etat, r, contrefactuelle_id, derangement);
-  const cible: Cible = { cote: COTE_PERMUTE, objet_id: contrefactuelle_id, demande: permutee.demande, textes: permutee.textes, existences };
+  const permutee = permuter(etat, r, liens, contrefactuelle_id, derangement);
+  const cible: Cible = { cote: COTE_PERMUTE, objet_id: contrefactuelle_id, demande: permutee.demande, textes: permutee.textes, existences: liens.existences };
   await noterParLesJuges(etat, etat.env.juges, cible);
   return {
     reponse_id: r.reponse.id,
@@ -346,11 +392,11 @@ async function noterPaire(etat: Etat, r: Preparee, derangement: Derangement): Pr
 }
 
 /** La demande permutée ; sa réponse est écrite une fois, et une relance la retrouve identique. */
-function permuter(etat: Etat, r: Preparee, contrefactuelle_id: Ulid, derangement: Derangement): DemandePermutee {
+function permuter(etat: Etat, r: Preparee, liens: LiensEtablis, contrefactuelle_id: Ulid, derangement: Derangement): DemandePermutee {
   const [premier] = etat.env.juges;
   if (premier === undefined) throw new JugesNonConformes("aucun juge.");
   // Le prompt ne touche ni la réponse ni les textes permutés ; chaque juge reçoit le sien (noterParLesJuges).
-  const permutee = demandePermutee({ ...demandeDe(etat, r), prompt: premier.identite.prompt }, contrefactuelle_id, derangement);
+  const permutee = demandePermutee({ ...demandeDe(etat, r, liens), prompt: premier.identite.prompt }, contrefactuelle_id, derangement);
   const deja = etat.contrefactuelles.get(contrefactuelle_id);
   if (deja === undefined) {
     etat.depot.ecrireReponseContrefactuelle(permutee.reponse);
@@ -361,9 +407,15 @@ function permuter(etat: Etat, r: Preparee, contrefactuelle_id: Ulid, derangement
   return permutee;
 }
 
-function exigerExistences(r: Preparee): ReadonlyMap<string, ExistenceEtablie> {
-  if (r.existences === null) throw new ReponsesNonConformes(`la réponse ${r.reponse.id} attend le test des liens.`);
-  return r.existences;
+function exigerLiens(r: Preparee): LiensEtablis {
+  if (r.liens === null) throw new ReponsesNonConformes(`la réponse ${r.reponse.id} attend le test des liens.`);
+  return r.liens;
+}
+
+/** D31 (1) : les renvois de juge portant sur un côté des paires ; ils écartent la paire du taux de ce juge. */
+function renvoisDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[]): readonly RenvoiHumain[] {
+  const objets = new Set(paires.flatMap((p) => [p.reponse_id, p.contrefactuelle_id]));
+  return etat.renvois.filter((r) => objets.has(r.objet_note.id));
 }
 
 /** Les notations de juge portant sur les deux côtés des paires, et elles seules. */
@@ -375,7 +427,7 @@ function notationsDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[])
 /* ------------------------------------------------------------------ notation de masse */
 
 function attenteSansMasse(r: Preparee, statut: "en_attente_test_liens" | "run_invalide"): Attente {
-  if (r.existences === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
+  if (r.liens === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
   return { reponse_id: r.reponse.id, motifs: [statut === "run_invalide" ? "run_invalide" : "contrefactuel_en_attente"] };
 }
 
@@ -395,13 +447,14 @@ async function noterEnMasse(etat: Etat, run: RunDeNotation): Promise<Pick<Result
 
 /** `null` : la réponse a son verdict. */
 async function noterReponse(etat: Etat, run: RunDeNotation, actifs: readonly Juge[], r: Preparee, dans: boolean): Promise<Attente | null> {
-  if (r.existences === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
-  await noterParLesJuges(etat, actifs, cibleOrigine(etat, r, r.existences));
+  if (r.liens === null) return { reponse_id: r.reponse.id, motifs: ["test_liens"] };
+  await noterParLesJuges(etat, actifs, cibleOrigine(etat, r, r.liens));
   if (etat.verdicts.has(r.reponse.id)) return null;
   const decision = decider({
     run,
     objet_note: { type: "reponse", id: r.reponse.id },
     notations: etat.notations.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
+    renvois: etat.renvois.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
     dans_echantillon_humain: dans,
     textes: r.textes,
     verdict_id: identifiantDerive([etat.run.id, "verdict", r.reponse.id]),

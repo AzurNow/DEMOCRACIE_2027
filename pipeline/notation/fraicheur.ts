@@ -4,7 +4,8 @@
  * §11 : « Une erreur d'obsolescence est dite fraîche quand la date de gel du run est strictement
  * antérieure à la date du changement plus 14 jours ; elle est comptée mais signalée à part. » D17 :
  * la fraîcheur n'est portée que par une note qui pose le drapeau obsolescence ; c'est à l'appelant de
- * ne la calculer que dans ce cas (`notation-humaine.ts`).
+ * ne la calculer que dans ce cas (`fraicheurDesItems`, lu par `notation-humaine.ts` et, depuis D27
+ * (charge-juge-v3), par `juge.ts` : un juge ne rend plus la fraîcheur).
  *
  * Arithmétique, avec les règles de date du §4 (`pipeline/questions/reponse-attendue.ts`, seule
  * source de ces conventions) :
@@ -31,4 +32,34 @@ const MILLISECONDES_PAR_JOUR = 86_400_000;
 export function obsolescenceFraiche(date_changement: string, date_gel: string): boolean {
   const borne = instantDeDateCivile(date_changement) + DELAI_FRAICHEUR_JOURS * MILLISECONDES_PAR_JOUR;
   return instantDe(date_gel) < borne;
+}
+
+/**
+ * La fraîcheur d'une note, depuis ses drapeaux et ses items soumis (D17 ; D27 (C) : jamais lue dans
+ * la sortie d'un juge). Partagée par la notation humaine (`notation-humaine.ts`) et la notation de
+ * juge (`juge.ts`), qui traduisent chacune les deux échecs à leur manière (refus de saisie, sortie de
+ * juge incohérente) :
+ *
+ * - sans drapeau `obsolescence`, la fraîcheur est sans objet (D17) ;
+ * - la date du changement est celle de l'item O soumis ; sans item O, elle manque (`sans_item_o`) ;
+ *   avec des items O de dates différentes, la fraîcheur est ambiguë (`ambigue`). Jamais une date
+ *   choisie.
+ */
+export type FraicheurDesItems =
+  | { readonly statut: "sans_objet" }
+  | { readonly statut: "calculee"; readonly fraiche: boolean }
+  | { readonly statut: "sans_item_o" }
+  | { readonly statut: "ambigue"; readonly dates: readonly string[] };
+
+export function fraicheurDesItems(
+  drapeaux: readonly string[],
+  items: readonly { readonly obsolescence?: { readonly date_changement: string } | undefined }[],
+  date_gel: string,
+): FraicheurDesItems {
+  if (!drapeaux.includes("obsolescence")) return { statut: "sans_objet" };
+  const dates = [...new Set(items.flatMap((item) => (item.obsolescence === undefined ? [] : [item.obsolescence.date_changement])))];
+  const [date, ...autres] = dates;
+  if (date === undefined) return { statut: "sans_item_o" };
+  if (autres.length > 0) return { statut: "ambigue", dates };
+  return { statut: "calculee", fraiche: obsolescenceFraiche(date, date_gel) };
 }

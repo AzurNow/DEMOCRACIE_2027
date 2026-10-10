@@ -23,12 +23,21 @@
  * réellement noté, dont seuls les noms ont été permutés pour le juge. La charge se construit
  * ensuite par `construireCharge`, inchangée ; l'extrait justificatif de la notation permutée se
  * contrôle contre les textes permutés (`textes`).
+ *
+ * **Charge v3 (D27).** Le registre et la prémisse de la formulation sont recopiés. La liste attendue
+ * d'une Q-ATT (`resolu_au_gel.reponse_attendue.candidats_attendus`) suit les items : chaque
+ * identifiant devient celui de son image. Le texte des pages citées (`pages_citees`) n'est PAS
+ * permuté : le §7 ne permute les noms que « dans la réponse et dans l'item de référence », et une page
+ * conservée est une copie publiée, pas un texte du projet. Le juge voit donc, côté permuté, une
+ * réponse qui nomme l'image et une page qui nomme la source : trou du protocole signalé à l'auteur
+ * (lot charge-juge-v3), aucune règle n'est inventée ici.
  */
 
 import type { ObjetJson, ReponseEcrite, ReponseObtenue } from "../interrogation/types.ts";
 import type { EtatPositionnel, Item } from "../../validation/domaine/types.ts";
-import type { DemandeCharge, ReferenceSoumise } from "./charge-juge.ts";
+import type { DemandeCharge, ReferenceSoumise, ResoluAuGel } from "./charge-juge.ts";
 import { correspondancesDe, type Derangement } from "./derangement.ts";
+import { comparerChaines } from "./echantillons.ts";
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import { permuterTexte } from "./permutation.ts";
 
@@ -93,8 +102,9 @@ export function demandePermutee(demande: DemandeCharge, nouvel_id: string, deran
   const permutee: DemandeCharge = {
     ...demande,
     reponse,
-    question: { gabarit: demande.question.gabarit, texte: permuter(demande.question.texte) },
+    question: { gabarit: demande.question.gabarit, registre: demande.question.registre, texte: permuter(demande.question.texte) },
     references,
+    resolu_au_gel: resoluPermute(demande.resolu_au_gel, derangement),
   };
   return {
     demande: permutee,
@@ -157,6 +167,18 @@ function etatPermute(etat: EtatPositionnel, permuter: (texte: string) => string)
     paraphrase: permuter(etat.paraphrase),
     citation_verbatim: permuter(etat.citation_verbatim),
   };
+}
+
+/**
+ * D27 (G) : la liste attendue d'une Q-ATT désigne des candidats ; elle suit leurs items, dont le
+ * `candidat_id` devient celui de leur image. Triée comme le tirage la trie. La prémisse, la nature et
+ * les dates ne nomment personne : recopiées.
+ */
+function resoluPermute(resolu: ResoluAuGel, derangement: Derangement): ResoluAuGel {
+  const candidats = resolu.reponse_attendue.candidats_attendus;
+  if (candidats === undefined) return resolu;
+  const images = candidats.map((candidat_id) => imageDe(candidat_id, derangement, "de la liste attendue")).sort(comparerChaines);
+  return { ...resolu, reponse_attendue: { ...resolu.reponse_attendue, candidats_attendus: images } };
 }
 
 function imageDe(candidat_id: string, derangement: Derangement, item_id: string): string {

@@ -57,7 +57,7 @@ import { decider, type Decision, type MotifAttente } from "./decision.ts";
 import { comparerChaines, tirerEchantillonHumain, tirerJeuOr, type JeuOr } from "./echantillons.ts";
 import type { TextesDeVerification } from "./extrait.ts";
 import { exigerPseudonyme, MOTIFS_HUMAINS, type MotifHumain } from "./notation-humaine.ts";
-import type { NotationIndividuelle, RunDeNotation } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 
 export interface ReponseDeLaFile {
   readonly reponse_id: Ulid;
@@ -71,6 +71,8 @@ export interface EntreeFile {
   readonly reponses: readonly ReponseDeLaFile[];
   /** Toutes les notations du run, juges et humains, calibration comprise. */
   readonly notations: readonly NotationIndividuelle[];
+  /** Les renvois de juge du run (D30 (2)) : ils appellent un humain sous `attribution_indecidable`. */
+  readonly renvois: readonly RenvoiHumain[];
   /** Le tirage du jeu d'or d'un run pilote ; `null` pour tout autre run. */
   readonly jeu_or: JeuOr | null;
 }
@@ -136,6 +138,8 @@ export function separerCalibration(notations: readonly NotationIndividuelle[]): 
  * retenu, parce qu'il est la raison première de l'appel.
  */
 const MOTIF_HUMAIN_DE_L_ATTENTE: readonly (readonly [MotifAttente, MotifHumain])[] = [
+  // D30 (2) : un renvoi de juge prime, comme dans `decision.ts:motifsHumainsAdmis`.
+  ["attribution_indecidable", "attribution_indecidable"],
   ["extrait_invalide", "extrait_invalide"],
   ["desaccord_juges", "desaccord_juges"],
   ["drapeau_grave", "erreur_grave"],
@@ -170,7 +174,7 @@ export function construireFile(entree: EntreeFile): FileHumaine {
     jeu_or: rangs(jeuOrRejoue(entree, ids)),
   };
   const parReponse = regrouper(entree, ids);
-  const bilans = entree.reponses.map((reponse) => bilanDeReponse(ctx, reponse, notationsDe(parReponse, reponse.reponse_id)));
+  const bilans = entree.reponses.map((reponse) => bilanDeReponse(ctx, reponse, notationsDe(parReponse, reponse.reponse_id), renvoisDe(entree, reponse.reponse_id)));
   const taches = bilans.flatMap((b) => b.taches).sort((a, b) => comparerTaches(ctx, a, b));
   const parId = (a: ReponseEnAttente, b: ReponseEnAttente): number => comparerChaines(a.reponse_id, b.reponse_id);
   return {
@@ -225,12 +229,17 @@ function notationsDe(parReponse: ReadonlyMap<Ulid, readonly NotationIndividuelle
 
 /* ------------------------------------------------------------------ une réponse */
 
-function bilanDeReponse(ctx: Contexte, reponse: ReponseDeLaFile, notations: readonly NotationIndividuelle[]): BilanReponse {
+/** Les renvois de contexte run portant sur la réponse ; `decider` contrôle leur cohérence. */
+function renvoisDe(entree: EntreeFile, reponse_id: Ulid): readonly RenvoiHumain[] {
+  return entree.renvois.filter((renvoi) => renvoi.contexte === "run" && renvoi.objet_note.id === reponse_id);
+}
+
+function bilanDeReponse(ctx: Contexte, reponse: ReponseDeLaFile, notations: readonly NotationIndividuelle[], renvois: readonly RenvoiHumain[]): BilanReponse {
   const id = reponse.reponse_id;
   verifierUnParMotif(id, notations);
   const { decision, calibration } = separerCalibration(notations);
   const dans = ctx.echantillon.has(id);
-  const resultat = decider({ run: ctx.run, objet_note: { type: "reponse", id }, notations: decision, dans_echantillon_humain: dans, textes: reponse.textes, ...VERDICT_JETABLE });
+  const resultat = decider({ run: ctx.run, objet_note: { type: "reponse", id }, notations: decision, renvois, dans_echantillon_humain: dans, textes: reponse.textes, ...VERDICT_JETABLE });
   const sansMotif = dans ? attenteSansMotifAdmis(id, resultat) : [];
   return {
     taches: [...(dans ? tachesEchantillon(id, decision) : tachesHorsEchantillon(id, resultat)), ...tachesJeuOr(ctx, id, calibration)],

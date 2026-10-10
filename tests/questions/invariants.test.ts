@@ -354,8 +354,12 @@ describe("exemples de schema/exemples/", () => {
   // 219 → 220 : décision D22 de l'auteur (lot test-liens), un invalide d'existence-lien (téléchargement servi hors de la forme id_).
   // 220 → 232 : décision D24 de l'auteur (lot go-no-go), un valide et quatre invalides de run, deux valides et cinq invalides du nouveau schéma checklist.
   // 232 → 233 : décision D25 de l'auteur (lot go-no-go), un invalide de run (go/no-go sans indeterminees_echantillon_humain).
-  it("charge les 233 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(233);
+  // 233 → 240 : décision D27 de l'auteur (lot charge-juge-v3), une notation valide, trois valides et trois invalides d'extraction-page-lien.
+  // 240 → 241 : décision D29 (4) de l'auteur, une notation invalide (sans version_charge).
+  // 241 → 246 : décision D30 de l'auteur, deux notations (lecture de comparateur), un run, deux renvois.
+  // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run.
+  it("charge les 250 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(250);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
@@ -395,7 +399,12 @@ describe("exemples de schema/exemples/", () => {
     // obsolescence), copies de valide-01 ; leur contexte suit toujours l'objet noté.
     // 24 → 26 : une notation valide et une invalide ajoutées (décision D15, motif accord_partiel_juges) ;
     // leur contexte suit toujours l'objet noté.
-    expect(notants).toHaveLength(26);
+    // 26 → 27 : une notation valide ajoutée (décision D27, Q-ATT à nom ambigu), copie de valide-01 ;
+    // son contexte suit toujours l'objet noté.
+    // 27 → 28 : une notation invalide ajoutée (décision D29 (4), sans version_charge), copie de valide-01.
+    // 28 → 30 : une notation valide et une invalide sur une lecture de comparateur (décision D30 (4)) ;
+    // leur contexte suit toujours l'objet noté.
+    expect(notants).toHaveLength(30);
     expect(contexteSuitObjetNote(notants, objets)).toEqual([]);
   });
 

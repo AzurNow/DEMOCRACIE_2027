@@ -54,6 +54,15 @@
  * `checklist` décrit `runs/<date>/checklist.json`, la checklist de run de l'annexe F, écrite par
  * `pnpm go-no-go` et contresignée par `pnpm go-no-go:contresigner` (décision D24 (4) de l'auteur) :
  * le vingt-cinquième.
+ *
+ * `extraction-page-lien` décrit la fiche d'extraction du texte d'une copie conservée par le test des
+ * liens (décision D27 (E), charge-juge-v3), écrite par `pipeline/liens/textes.py` dans
+ * `runs/<date>/volume/liens/extractions/` et lue par la notation (`fournisseur-fichiers.ts`).
+ * Vérifiée comme la collecte : fichiers dorés de `tests/liens/dore-textes/`. Le vingt-sixième.
+ *
+ * `renvoi-humain` décrit le renvoi d'une question d'attribution indécidable vers la notation humaine
+ * (décision D30 (2)), écrit par la chaîne dans `runs/<date>/volume/renvois/` à la place de la note du
+ * juge. Le vingt-septième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -81,6 +90,8 @@ export const NOMS_SCHEMAS = [
   "perimetre",
   "existence-lien",
   "checklist",
+  "extraction-page-lien",
+  "renvoi-humain",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

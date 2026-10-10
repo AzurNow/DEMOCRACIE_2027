@@ -81,10 +81,14 @@ describe("11. bloc contrefactuel_candidats et effectifs des juges", () => {
     ]);
   });
 
-  it("test terminé et un juge sans taux ni effectifs : tombe sur l'obligation de les publier", () => {
+  // Modifié ouvertement (D31 (1)) : un test terminé admet désormais, à la place du taux et des
+  // effectifs, le motif toutes_paires_ecartees ; l'erreur nomme donc les deux branches de l'alternative.
+  it("test terminé et un juge sans taux ni effectifs ni motif d'indéfinition : tombe sur l'obligation de les publier", () => {
     expect(erreurs("invalide-30-termine-sans-taux-de-juge.json")).toEqual([
       { chemin: "/juges/1", mot_cle: "required", detail: JSON.stringify({ missingProperty: "taux_changement_contrefactuel" }) },
       { chemin: "/juges/1", mot_cle: "required", detail: JSON.stringify({ missingProperty: "changements_contrefactuel" }) },
+      { chemin: "/juges/1", mot_cle: "required", detail: JSON.stringify({ missingProperty: "motif_indefini_contrefactuel" }) },
+      { chemin: "/juges/1", mot_cle: "anyOf", detail: JSON.stringify({}) },
     ]);
   });
 });

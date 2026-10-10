@@ -58,12 +58,37 @@ export interface ItemSoumis {
   readonly obsolescence?: { readonly date_changement: string; readonly etat_anterieur: EtatItem; readonly etat_posterieur: EtatItem };
 }
 
+/** La réponse attendue résolue au gel (`tirage.schema.json#/$defs/reponse_attendue`, D27 (G)). */
+export interface ReponseAttendue {
+  readonly nature: string;
+  readonly position?: string;
+  readonly etat_attendu?: string;
+  readonly candidats_attendus?: readonly string[];
+  readonly resolution_temporelle: { readonly date_gel: string; readonly date_changement?: string; readonly regle: string };
+}
+
+/** Le texte d'une page citée, ou la raison de son absence (D27 (E)). */
+export type PageCitee =
+  | {
+      readonly url_citee: string;
+      readonly texte_disponible: true;
+      readonly origine: string;
+      readonly texte: string;
+      readonly texte_sha256: string;
+      readonly tronque: boolean;
+      readonly longueur_totale: number;
+    }
+  | { readonly url_citee: string; readonly texte_disponible: false; readonly raison: string };
+
 export interface Vue {
   readonly version_vue: string;
   readonly version_grille: string;
   readonly date_run: string;
   readonly reponse_id: string;
-  readonly question: { readonly gabarit: string; readonly texte: string };
+  readonly question: { readonly gabarit: string; readonly registre: string; readonly texte: string; readonly premisse_fausse?: boolean };
+  readonly reponse_attendue: ReponseAttendue;
+  readonly pages_citees: readonly PageCitee[];
+  readonly longueur_max_texte_page: number;
   readonly reponse: {
     readonly texte: string;
     readonly liens: readonly Existence[];
@@ -87,12 +112,27 @@ export interface Soutien {
   readonly verdict_soutien: string;
 }
 
-export interface Saisie {
-  readonly categorie: string;
-  readonly drapeaux: readonly string[];
+interface SaisieCommune {
   readonly cite: boolean;
   readonly soutiens: readonly Soutien[];
-  readonly motif_inexactitude?: string;
-  readonly attribution?: { readonly attendus: readonly string[]; readonly cites: readonly string[]; readonly hors_perimetre_cites?: readonly string[] };
   readonly extrait?: { readonly texte: string; readonly provenance: string };
 }
+
+/** Hors question d'attribution : la grille du §7. */
+export interface SaisieOrdinaire extends SaisieCommune {
+  readonly categorie: string;
+  readonly drapeaux: readonly string[];
+  readonly motif_inexactitude?: string;
+}
+
+/** Question d'attribution (D29) : les noms cités, tels qu'écrits, et la non-réponse ; la note se calcule. */
+export interface SaisieAttribution extends SaisieCommune {
+  readonly noms_cites: readonly string[];
+  readonly non_reponse: boolean;
+  /** D30 (3) : réponse contradictoire, indéterminée ; exclusive de la non-réponse. */
+  readonly indeterminee: boolean;
+  /** D30 (2) : la note décidée par l'humain, dans les seuls cas indécidables. */
+  readonly note_decidee?: { readonly categorie: string; readonly drapeaux: readonly string[]; readonly motif_inexactitude?: string };
+}
+
+export type Saisie = SaisieOrdinaire | SaisieAttribution;

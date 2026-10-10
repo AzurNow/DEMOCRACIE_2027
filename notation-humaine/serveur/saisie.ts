@@ -6,7 +6,7 @@
  * par défaut : un champ absent est une erreur, pas un `false` ni une liste vide.
  */
 
-import type { SaisieHumaine, SoutienSaisi } from "../../pipeline/notation/notation-humaine.ts";
+import type { NoteDecidee, SaisieAttribution, SaisieHumaine, SaisieOrdinaire, SoutienSaisi } from "../../pipeline/notation/notation-humaine.ts";
 
 export interface DemandeNotation {
   readonly reponse_id: string;
@@ -20,10 +20,13 @@ export type LectureDemande =
 type Objet = Readonly<Record<string, unknown>>;
 
 const CHAMPS_DEMANDE = ["reponse_id", "saisie"] as const;
-const CHAMPS_SAISIE = ["categorie", "drapeaux", "motif_inexactitude", "cite", "soutiens", "attribution", "extrait"] as const;
+const CHAMPS_SAISIE = ["categorie", "drapeaux", "motif_inexactitude", "cite", "soutiens", "extrait"] as const;
+/** D29 (1) : sur une Q-ATT, l'annotateur saisit les noms cités et la non-réponse, pas la catégorie. */
+const CHAMPS_SAISIE_ATTRIBUTION = ["noms_cites", "non_reponse", "indeterminee", "note_decidee", "cite", "soutiens", "extrait"] as const;
+/** D30 (2) : la note décidée par l'humain sur une Q-ATT indécidable. */
+const CHAMPS_NOTE_DECIDEE = ["categorie", "drapeaux", "motif_inexactitude"] as const;
 const CHAMPS_SOUTIEN = ["url_citee", "verdict_soutien"] as const;
 const CHAMPS_EXTRAIT = ["texte", "provenance"] as const;
-const CHAMPS_ATTRIBUTION = ["attendus", "cites", "hors_perimetre_cites"] as const;
 
 function estObjet(valeur: unknown): valeur is Objet {
   return typeof valeur === "object" && valeur !== null && !Array.isArray(valeur);
@@ -65,34 +68,48 @@ function erreursListe(objet: Objet, cle: string, chemin: string, obligatoire: bo
   return estListeDeChaines(objet[cle]) ? [] : [`${chemin}.${cle} : une liste de chaînes est attendue`];
 }
 
-function erreursAttribution(attribution: unknown): readonly string[] {
-  if (attribution === undefined) return [];
-  if (!estObjet(attribution)) return ["saisie.attribution : un objet est attendu"];
-  return [
-    ...champsInconnus(attribution, CHAMPS_ATTRIBUTION, "saisie.attribution"),
-    ...erreursListe(attribution, "attendus", "saisie.attribution", true),
-    ...erreursListe(attribution, "cites", "saisie.attribution", true),
-    ...erreursListe(attribution, "hors_perimetre_cites", "saisie.attribution", false),
-  ];
-}
-
 function erreursSoutiens(soutiens: unknown): readonly string[] {
   if (!Array.isArray(soutiens)) return ["saisie.soutiens : une liste est attendue"];
   return soutiens.flatMap((soutien: unknown, rang) => erreursSoutien(soutien, rang));
 }
 
-function erreursSaisie(saisie: unknown): readonly string[] {
-  if (!estObjet(saisie)) return ["saisie : un objet est attendu"];
+function exigerBooleen(objet: Objet, cle: string): readonly string[] {
+  return typeof objet[cle] === "boolean" ? [] : [`saisie.${cle} : un booléen est attendu`];
+}
+
+/** Une saisie qui porte `noms_cites` est celle d'une Q-ATT ; le domaine refuse la forme qui ne va pas avec la question. */
+function estSaisieAttribution(saisie: Objet): boolean {
+  return "noms_cites" in saisie;
+}
+
+function erreursNoteDecidee(note: unknown): readonly string[] {
+  if (note === undefined) return [];
+  if (!estObjet(note)) return ["saisie.note_decidee : un objet est attendu"];
+  const chemin = "saisie.note_decidee";
+  return [...champsInconnus(note, CHAMPS_NOTE_DECIDEE, chemin), ...exigerChaine(note, "categorie", chemin), ...erreursListe(note, "drapeaux", chemin, true), ...chaineSiPresente(note, "motif_inexactitude", chemin)];
+}
+
+function erreursPropres(saisie: Objet): readonly string[] {
+  if (estSaisieAttribution(saisie)) {
+    return [
+      ...champsInconnus(saisie, CHAMPS_SAISIE_ATTRIBUTION, "saisie"),
+      ...erreursListe(saisie, "noms_cites", "saisie", true),
+      ...exigerBooleen(saisie, "non_reponse"),
+      ...exigerBooleen(saisie, "indeterminee"),
+      ...erreursNoteDecidee(saisie["note_decidee"]),
+    ];
+  }
   return [
     ...champsInconnus(saisie, CHAMPS_SAISIE, "saisie"),
     ...exigerChaine(saisie, "categorie", "saisie"),
     ...erreursListe(saisie, "drapeaux", "saisie", true),
     ...chaineSiPresente(saisie, "motif_inexactitude", "saisie"),
-    ...(typeof saisie["cite"] === "boolean" ? [] : ["saisie.cite : un booléen est attendu"]),
-    ...erreursSoutiens(saisie["soutiens"]),
-    ...erreursAttribution(saisie["attribution"]),
-    ...erreursExtrait(saisie["extrait"]),
   ];
+}
+
+function erreursSaisie(saisie: unknown): readonly string[] {
+  if (!estObjet(saisie)) return ["saisie : un objet est attendu"];
+  return [...erreursPropres(saisie), ...exigerBooleen(saisie, "cite"), ...erreursSoutiens(saisie["soutiens"]), ...erreursExtrait(saisie["extrait"])];
 }
 
 function erreursDemande(corps: unknown): readonly string[] {
@@ -110,17 +127,39 @@ function soutiensDe(brut: readonly Objet[]): readonly SoutienSaisi[] {
  * des champs que `erreursDemande` vient de vérifier ; les valeurs d'énumération restent à contrôler
  * par le schéma, dans `construireNotationHumaine`.
  */
+/** Recopie champ par champ ; la valeur de la catégorie décidée est contrôlée par le domaine. */
+function saisieAttributionDe(brut: Objet, commune: Pick<SaisieHumaine, "cite" | "soutiens" | "extrait">): SaisieAttribution {
+  const note = brut["note_decidee"] as Objet | undefined;
+  return {
+    ...commune,
+    noms_cites: [...(brut["noms_cites"] as readonly string[])],
+    non_reponse: brut["non_reponse"] as boolean,
+    indeterminee: brut["indeterminee"] as boolean,
+    ...(note === undefined
+      ? {}
+      : {
+          note_decidee: {
+            categorie: note["categorie"] as NoteDecidee["categorie"],
+            drapeaux: note["drapeaux"] as NoteDecidee["drapeaux"],
+            ...(note["motif_inexactitude"] === undefined ? {} : { motif_inexactitude: note["motif_inexactitude"] as NonNullable<NoteDecidee["motif_inexactitude"]> }),
+          },
+        }),
+  };
+}
+
 function saisieDe(brut: Objet): SaisieHumaine {
   const extrait = brut["extrait"] as Objet | undefined;
-  const attribution = brut["attribution"] as Objet | undefined;
-  return {
-    categorie: brut["categorie"] as SaisieHumaine["categorie"],
-    drapeaux: brut["drapeaux"] as SaisieHumaine["drapeaux"],
+  const commune = {
     cite: brut["cite"] as boolean,
     soutiens: soutiensDe(brut["soutiens"] as readonly Objet[]),
-    ...(brut["motif_inexactitude"] === undefined ? {} : { motif_inexactitude: brut["motif_inexactitude"] as NonNullable<SaisieHumaine["motif_inexactitude"]> }),
-    ...(attribution === undefined ? {} : { attribution: attribution as unknown as NonNullable<SaisieHumaine["attribution"]> }),
     ...(extrait === undefined ? {} : { extrait: { texte: extrait["texte"] as string, provenance: extrait["provenance"] as NonNullable<SaisieHumaine["extrait"]>["provenance"] } }),
+  };
+  if (estSaisieAttribution(brut)) return saisieAttributionDe(brut, commune);
+  return {
+    ...commune,
+    categorie: brut["categorie"] as SaisieOrdinaire["categorie"],
+    drapeaux: brut["drapeaux"] as SaisieOrdinaire["drapeaux"],
+    ...(brut["motif_inexactitude"] === undefined ? {} : { motif_inexactitude: brut["motif_inexactitude"] as NonNullable<SaisieOrdinaire["motif_inexactitude"]> }),
   };
 }
 

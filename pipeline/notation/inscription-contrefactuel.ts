@@ -42,7 +42,7 @@ export class InscriptionImpossible extends Error {
 type Objet = Readonly<Record<string, unknown>>;
 
 /** Les champs d'un juge que le test fixe : retirés de l'ancien juge avant la fusion. */
-export const CHAMPS_DU_TEST = ["retire", "motif_retrait", "taux_changement_contrefactuel", "changements_contrefactuel"] as const;
+export const CHAMPS_DU_TEST = ["retire", "motif_retrait", "taux_changement_contrefactuel", "changements_contrefactuel", "paires_ecartees_contrefactuel", "motif_indefini_contrefactuel"] as const;
 
 export function inscrireContrefactuel(repertoire_run: string, publication: PublicationContrefactuel): IssueInscription {
   if (publication.statut !== undefined) {

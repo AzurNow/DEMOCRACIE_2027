@@ -15,7 +15,7 @@ import type { ReponseManquante, ReponseObtenue } from "../../pipeline/interrogat
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemA, itemO, itemP } from "../aides/fabriques.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { CANDIDATS_DU_RUN, notationJuge } from "./fabriques.ts";
+import { CANDIDATS_DU_RUN, notationJuge, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const NOUVEL_ID = ulid("reponse-contrefactuelle");
@@ -61,7 +61,7 @@ const FORMES_ALPHA = ["Alix Martinez", "Martinez"];
 function demande(r: ReponseObtenue = reponse()): DemandeCharge {
   return {
     reponse: r,
-    question: { gabarit: "Q-DIR", texte: "Quelle est la position d’Alix Martinez sur la TVA ?" },
+    question: { gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position d’Alix Martinez sur la TVA ?" },
     references: [
       {
         item: itemP({
@@ -78,6 +78,8 @@ function demande(r: ReponseObtenue = reponse()): DemandeCharge {
     ],
     date_run: "2026-12-01T06:00:00+01:00",
     prompt: { chemin: "prompts/judge-primaire.md", version: "1.0.0" },
+    resolu_au_gel: RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(r.normalise.liens),
   };
 }
 
@@ -241,9 +243,29 @@ describe("charge permutée", () => {
     expect(() => demandePermutee(etranger, NOUVEL_ID, CYCLE)).toThrow(/inconnu/);
   });
 
+  it("D27 (G) : la liste attendue d'une Q-ATT suit les items, triée ; prémisse et registre recopiés", () => {
+    const reponse_attendue = { nature: "liste_candidats" as const, candidats_attendus: ["demo-alpha", "demo-gamma"], resolution_temporelle: RESOLU_POSITION_POUR.reponse_attendue.resolution_temporelle };
+    const base = { ...demande(), question: { ...demande().question, registre: "oriente" as const }, resolu_au_gel: { reponse_attendue, premisse_fausse: true } };
+    const permutee = demandePermutee(base, NOUVEL_ID, CYCLE).demande;
+    // alpha → beta, gamma → alpha (CYCLE)
+    expect(permutee.resolu_au_gel.reponse_attendue.candidats_attendus).toEqual(["demo-alpha", "demo-beta"]);
+    expect(permutee.resolu_au_gel.premisse_fausse).toBe(true);
+    expect(permutee.question.registre).toBe("oriente");
+  });
+
+  it("D27 (G) : une réponse attendue sans liste de candidats est recopiée telle quelle", () => {
+    expect(demandePermutee(demande(), NOUVEL_ID, CYCLE).demande.resolu_au_gel).toEqual(RESOLU_POSITION_POUR);
+  });
+
+  it("D27 (E) : le texte des pages citées n'est pas permuté (§7 ne permute que réponse et item ; trou signalé)", () => {
+    const page = { url_citee: "https://exemple.invalid/Martinez", texte_disponible: true as const, origine: "page_conservee" as const, texte: "Alix Martinez propose la mesure.", texte_sha256: "e".repeat(64), tronque: false, longueur_totale: 32 };
+    const permutee = demandePermutee({ ...demande(), pages_citees: [page] }, NOUVEL_ID, CYCLE).demande;
+    expect(permutee.pages_citees).toEqual([page]);
+  });
+
   it("les mentions résiduelles comptent la réponse, la question et les items", () => {
     const base = demande();
-    const question = { gabarit: base.question.gabarit, texte: "Et MARTINEZ ?" };
+    const question = { gabarit: base.question.gabarit, registre: base.question.registre, texte: "Et MARTINEZ ?" };
     expect(demandePermutee(base, NOUVEL_ID, CYCLE).mentions_residuelles).toBe(1);
     expect(demandePermutee({ ...base, question }, NOUVEL_ID, CYCLE).mentions_residuelles).toBe(2);
   });

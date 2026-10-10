@@ -12,7 +12,7 @@ import { PseudonymeVide } from "../../pipeline/notation/notation-humaine.ts";
 import type { NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { inexacte, notationHumaine, notationJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, notationHumaine, notationJuge, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 
 const TEXTES = { reponse: REPONSE_PROJETEE, citations_reference: ["Nous ne toucherons pas à la taxe foncière."] };
 
@@ -35,6 +35,7 @@ function entree(ids: readonly string[], notations: readonly NotationIndividuelle
     run: runDeNotation(),
     reponses: ids.map((reponse_id) => ({ reponse_id, textes: TEXTES })),
     notations,
+    renvois: [],
     jeu_or: null,
     ...options,
   };
@@ -164,7 +165,7 @@ describe("hors échantillon", () => {
       const [tache] = tachesDe(construireFile(entree(IDS, [...autres, ...juges])), H1);
       if (tache === undefined) throw new Error("tâche attendue");
       const humain = notationHumaine("a1", tache.motif_notation, sur(H1));
-      const decision = decider({ run: runDeNotation(), objet_note: { type: "reponse", id: H1 }, notations: [...juges, humain], dans_echantillon_humain: false, textes: TEXTES, verdict_id: ulid("v"), date: "2026-12-06T12:00:00+01:00" });
+      const decision = decider({ run: runDeNotation(), objet_note: { type: "reponse", id: H1 }, notations: [...juges, humain], renvois: [], dans_echantillon_humain: false, textes: TEXTES, verdict_id: ulid("v"), date: "2026-12-06T12:00:00+01:00" });
       expect(decision.statut).toBe("verdict");
       expect(tachesDe(construireFile(entree(IDS, [...autres, ...juges, humain])), H1)).toEqual([]);
     }
@@ -176,6 +177,19 @@ describe("hors échantillon", () => {
     const file = construireFile(entree(IDS, [...autres, j1, j2]));
     expect(tachesDe(file, H1)).toEqual([{ reponse_id: H1, motif_notation: "accord_partiel_juges", places_restantes: 1, deja_notee_par: [] }]);
     expect(file.sans_motif_admis).toEqual([]);
+  });
+});
+
+describe("D30 (2) : renvoi d'un juge sur une Q-ATT indécidable", () => {
+  it("la réponse hors échantillon devient une tâche humaine sous attribution_indecidable, puis sort de la file une fois notée", () => {
+    const qatt = { gabarit: "Q-ATT" as const, attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha"] } };
+    const autres = jugesDAccord(IDS.filter((id) => id !== H1));
+    const j2 = notationJuge("j2", { ...sur(H1), ...qatt });
+    const renvois = [renvoiJuge("j1", sur(H1))];
+    const [tache] = tachesDe(construireFile(entree(IDS, [...autres, j2], { renvois })), H1);
+    expect(tache?.motif_notation).toBe("attribution_indecidable");
+    const humain = notationHumaine("a1", "attribution_indecidable", { ...sur(H1), ...qatt });
+    expect(tachesDe(construireFile(entree(IDS, [...autres, j2, humain], { renvois })), H1)).toEqual([]);
   });
 });
 
@@ -233,7 +247,7 @@ describe("jeu d'or", () => {
     expect(file.taches.filter((t) => t.reponse_id === OR)).toEqual([]);
     // decider, lui, refuse une notation de calibration : c'est pourquoi la file la sépare.
     expect(() =>
-      decider({ run, objet_note: { type: "reponse", id: OR }, notations: [...jugesDAccord([OR]), ...calibrations], dans_echantillon_humain: echantillon.has(OR), textes: TEXTES, verdict_id: ulid("v"), date: "2026-12-06T12:00:00+01:00" }),
+      decider({ run, objet_note: { type: "reponse", id: OR }, notations: [...jugesDAccord([OR]), ...calibrations], renvois: [], dans_echantillon_humain: echantillon.has(OR), textes: TEXTES, verdict_id: ulid("v"), date: "2026-12-06T12:00:00+01:00" }),
     ).toThrow(NotationsIncoherentes);
   });
 
@@ -329,7 +343,8 @@ describe("entrées", () => {
   });
 
   it("les notations de lectures de comparateur sont hors de la file", () => {
-    const lecture = notationJuge("j1", { objet_note: { type: "lecture_comparateur", id: ulid("lecture") } });
+    // D30 (4) : une lecture de comparateur ne porte pas de version de charge.
+    const { version_charge: _sansCharge, ...lecture } = notationJuge("j1", { objet_note: { type: "lecture_comparateur", id: ulid("lecture") } });
     const file = construireFile(entree(IDS, [...jugesDAccord(IDS), lecture]));
     expect(file.taches.map((t) => t.reponse_id)).toEqual([DANS]);
   });

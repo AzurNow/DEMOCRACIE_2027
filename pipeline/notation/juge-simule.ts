@@ -169,7 +169,7 @@ function jugeSimule(declare: JugeSimuleDeclare, parametres: ParametresJugeSimule
 
 function noterSimule(charge: ChargeJuge, declare: JugeSimuleDeclare, parametres: ParametresJugeSimule): SortieJuge {
   if (charge.question.gabarit === "Q-ATT") {
-    throw new JugeSimuleMalRegle("une question d'attribution (Q-ATT) exige un bloc attribution, que le juge simulé ne sait pas poser.");
+    throw new JugeSimuleMalRegle("une question d'attribution (Q-ATT) exige les noms cités relevés dans la réponse (noms_cites, D27), que le juge simulé ne sait pas relever.");
   }
   const contenu = cleDeContenu(charge);
   const nature: NatureReponse = charge.reponse.refus_api ? "refus_api" : "ordinaire";

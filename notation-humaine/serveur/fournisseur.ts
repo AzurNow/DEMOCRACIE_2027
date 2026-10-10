@@ -19,6 +19,7 @@ export type { FournisseurExistences } from "../../pipeline/notation/fournisseur-
  */
 export const FOURNISSEUR_SANS_EXISTENCE: FournisseurExistences = {
   existencesDe: () => [],
+  texteDeCopie: () => undefined,
 };
 
 /**

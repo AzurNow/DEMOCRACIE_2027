@@ -136,6 +136,7 @@ function noter(run: RunDeNotation, reponse: ReponseObtenue, dans: boolean): { no
     run,
     objet_note: { type: "reponse", id: reponse.id },
     notations,
+    renvois: [],
     dans_echantillon_humain: dans,
     textes: { reponse: reponse.normalise.texte, citations_reference: [] },
     verdict_id: ulid(`es-verdict-${reponse.id}`),

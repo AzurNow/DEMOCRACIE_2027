@@ -8,13 +8,32 @@
  * l'auteur) et le juge simulé de `pnpm notation:dry` (`juge-simule.ts`) implémentent ce même port ;
  * la chaîne de notation (`chaine.ts`) ne sait pas lequel elle appelle.
  *
- * **Ce que le juge rend, et ce qu'il ne rend pas.** Il rend la note (catégorie, drapeaux, motif,
- * fraîcheur, attribution), son avis de soutien sur chaque lien et son extrait justificatif. Il ne
- * rend ni l'existence d'un lien, qui vient du test HTTP déterministe (`fournisseur-existences.ts`),
- * ni le contrôle de son extrait, que fait le test verbatim (`extrait.ts`), ni l'identifiant, le
- * contexte, la date ou le motif de la notation, que pose la chaîne. `notationDeJuge` assemble la
- * notation individuelle de `schema/notation.schema.json` à partir de ces trois sources ; la
- * validation de schéma a lieu à l'écriture (`stockage.ts`).
+ * **Ce que le juge rend, et ce qu'il ne rend pas.** Il rend la note (catégorie, drapeaux, motif),
+ * sur une question d'attribution les noms qu'il lit cités dans la réponse, son avis de soutien sur
+ * chaque lien et son extrait justificatif. Il ne rend ni l'existence d'un lien, qui vient du test
+ * HTTP déterministe (`fournisseur-existences.ts`), ni le contrôle de son extrait, que fait le test
+ * verbatim (`extrait.ts`), ni l'identifiant, le contexte, la date ou le motif de la notation, que
+ * pose la chaîne. `notationDeJuge` assemble la notation individuelle de `schema/notation.schema.json`
+ * à partir de ces trois sources ; la validation de schéma a lieu à l'écriture (`stockage.ts`).
+ *
+ * **Calculé, jamais lu du juge (D27, charge-juge-v3).**
+ *
+ * - (C) `obsolescence_fraiche` : quand le juge pose le drapeau `obsolescence`, la fraîcheur se
+ *   calcule depuis la date de gel et la date du changement de l'item O soumis
+ *   (`fraicheur.ts:fraicheurDesItems`, règle du §11), exactement comme pour un humain. Sans item O,
+ *   ou avec deux dates de changement, la sortie est incohérente (`SortieJugeIncoherente`) : le schéma
+ *   exige la fraîcheur avec le drapeau, et aucune date n'est choisie.
+ * - (D), D29 (1) : sur une Q-ATT, toute la note — catégorie, drapeaux, motif et bloc d'attribution —
+ *   se calcule (`note-attribution.ts:noterAttribution`) depuis la liste attendue du tirage et les
+ *   noms que le juge relève (`noms_cites`, rattachés par `rattachement.ts`), avec sa déclaration
+ *   explicite de non-réponse (`non_reponse`). Un cas qu'aucun texte ne tranche lève
+ *   `AttributionIndecidable` : aucune notation n'est écrite.
+ *
+ * **Sortie contrôlée.** Hors Q-ATT, une sortie qui porte un champ hors de `CHAMPS_SORTIE_JUGE` est
+ * refusée (`SortieJugeIncoherente`) ; sur une Q-ATT, hors de `CHAMPS_SORTIE_JUGE_ATTRIBUTION`. Un juge
+ * qui rend encore `obsolescence_fraiche`, `attribution`, ou une catégorie sur une Q-ATT, suit un
+ * prompt d'une autre version de la charge : sa valeur, qui pourrait diverger du calcul, n'entre
+ * jamais, ni en silence ni à côté.
  *
  * **Le soutien d'un lien mort (D19) ou sans copie archivée (D21).** Le juge ne connaît pas
  * l'existence des liens : il peut déclarer « soutient » un lien que le test HTTP dit mort. §7 : « Un
@@ -32,10 +51,14 @@
  */
 
 import type { CategorieRetenue, Drapeau, Gabarit, Instant, ReferenceItem, Ulid, VerdictExistence, VerdictSoutien } from "../../analysis/types.ts";
+import type { Registre, ReponseAttendue } from "../questions/types.ts";
 import type { ChargeJuge, PromptDeJuge } from "./charge-juge.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
+import { fraicheurDesItems } from "./fraicheur.ts";
+import { AttributionIncoherente, noterAttribution, type NoteAttribution } from "./note-attribution.ts";
+import { NomCiteSansMot } from "./rattachement.ts";
 import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
-import type { LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
+import type { CandidatDuRun, LienNotation, MotifInexactitude, NotationIndividuelle, RenvoiHumain } from "./types.ts";
 
 export interface IdentiteJuge {
   readonly juge_id: string;
@@ -49,16 +72,46 @@ export interface SoutienDeLien {
   readonly verdict_soutien: VerdictSoutien;
 }
 
-/** La sortie structurée du §7. `categorie` reste large : `indeterminee` est refusée en aval, pas tue ici. */
-export interface SortieJuge {
-  readonly categorie: CategorieRetenue;
-  readonly drapeaux: readonly Drapeau[];
-  readonly motif_inexactitude?: MotifInexactitude;
-  readonly obsolescence_fraiche?: boolean;
-  readonly attribution?: NotationIndividuelle["attribution"];
+interface SortieCommune {
   /** `soutiens` : un avis par lien de `charge.reponse.liens`, dans le même ordre, si `cite` ; aucun sinon. */
   readonly sourcage: { readonly cite: boolean; readonly soutiens: readonly SoutienDeLien[] };
   readonly extrait_justificatif?: { readonly provenance: "reponse" | "reference"; readonly texte: string };
+}
+
+/** La sortie structurée du §7 hors Q-ATT. `categorie` reste large : `indeterminee` est refusée en aval, pas tue ici. */
+export interface SortieJugeOrdinaire extends SortieCommune {
+  readonly categorie: CategorieRetenue;
+  readonly drapeaux: readonly Drapeau[];
+  readonly motif_inexactitude?: MotifInexactitude;
+}
+
+/**
+ * La sortie d'un juge sur une Q-ATT (D27 (D), D29 (1)) : il relève les noms que la réponse cite comme
+ * proposant la mesure, tels qu'écrits, et dit explicitement si elle refuse ou ne répond pas. La note
+ * se calcule (`note-attribution.ts`) ; il ne la rend pas.
+ */
+export interface SortieJugeAttribution extends SortieCommune {
+  readonly noms_cites: readonly string[];
+  readonly non_reponse: boolean;
+}
+
+export type SortieJuge = SortieJugeOrdinaire | SortieJugeAttribution;
+
+/** Les seuls champs d'une sortie de juge hors Q-ATT (charge-juge-v3). Tout autre est refusé. */
+export const CHAMPS_SORTIE_JUGE = ["categorie", "drapeaux", "motif_inexactitude", "sourcage", "extrait_justificatif"] as const satisfies readonly (keyof SortieJugeOrdinaire)[];
+
+/** Les seuls champs d'une sortie de juge sur une Q-ATT (D29 (1)). Une catégorie rendue est refusée. */
+export const CHAMPS_SORTIE_JUGE_ATTRIBUTION = ["noms_cites", "non_reponse", "sourcage", "extrait_justificatif"] as const satisfies readonly (keyof SortieJugeAttribution)[];
+
+/**
+ * Une Q-ATT dont la note n'est déterminée par aucun texte (`note-attribution.ts`, cas indécidables) :
+ * aucune notation n'est écrite, et la chaîne s'arrête sur cette erreur nommée. Jamais une note devinée.
+ */
+export class AttributionIndecidable extends Error {
+  constructor(juge_id: string, objet_id: string, raison: string) {
+    super(`Juge ${juge_id}, objet ${objet_id} : note de la question d'attribution indécidable — ${raison}`);
+    this.name = "AttributionIndecidable";
+  }
 }
 
 export interface Juge {
@@ -94,29 +147,107 @@ export interface CadreNotationJuge {
   readonly existences: ReadonlyMap<string, ExistenceEtablie>;
   /** Les textes contre lesquels l'extrait est contrôlé, du côté noté (origine ou permuté). */
   readonly textes: TextesDeVerification;
+  /** `run.date_gel` : l'instant de la fraîcheur (§11). */
+  readonly date_gel: Instant;
+  /** Les items soumis, du côté noté : la date du changement d'un item O (D27 (C)). */
+  readonly items: readonly { readonly obsolescence?: { readonly date_changement: string } | undefined }[];
+  /** La réponse attendue résolue au gel, du côté noté : la liste attendue d'une Q-ATT (D27 (D)). */
+  readonly reponse_attendue: ReponseAttendue;
+  /** Les candidats du périmètre du run, auxquels les noms cités se rattachent (D27 (D)). */
+  readonly candidats: readonly CandidatDuRun[];
+  /** Les identifiants des candidats interrogés au run (D29 (1)). */
+  readonly interroges: readonly string[];
+  /** Le registre de la formulation et la prémisse résolue au gel (D29 (1) : confirmation de prémisse). */
+  readonly registre: Registre;
+  readonly premisse_fausse: boolean;
+  /** `charge.version_charge`, enregistrée dans la notation (D29 (4)). */
+  readonly version_charge: string;
 }
 
+/** Une Q-ATT indécidable (D30 (2)) : la raison, les noms relevés et le bloc d'attribution rattaché. */
+interface Renvoye {
+  readonly raison: string;
+  readonly noms_cites: readonly string[];
+  readonly attribution: NonNullable<NotationIndividuelle["attribution"]>;
+}
+
+/** Ce que la note retient de la sortie, ou calcule à sa place sur une Q-ATT. */
+interface NoteDeJuge {
+  readonly categorie: CategorieRetenue;
+  readonly drapeaux: readonly Drapeau[];
+  readonly motif_inexactitude?: MotifInexactitude;
+  readonly attribution?: NonNullable<NotationIndividuelle["attribution"]>;
+}
+
+/**
+ * Ce qu'un juge rend, une fois sa sortie contrôlée : une notation, ou, sur une Q-ATT qu'aucun texte ne
+ * permet de noter, un renvoi vers la notation humaine (D30 (2)), écrit à la place de la notation.
+ */
+export type IssueDeJuge = { readonly type: "notation"; readonly notation: NotationIndividuelle } | { readonly type: "renvoi"; readonly renvoi: RenvoiHumain };
+
+export function issueDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): IssueDeJuge {
+  const note = cadre.gabarit === "Q-ATT" ? noteAttributionDe(identite.juge_id, sortie, cadre) : noteOrdinaireDe(identite.juge_id, sortie, cadre);
+  if ("raison" in note) return { type: "renvoi", renvoi: renvoiDe(identite, note, cadre) };
+  return { type: "notation", notation: notationDe(identite, sortie, cadre, note) };
+}
+
+/** La notation d'un juge ; un renvoi y lève `AttributionIndecidable` (la chaîne lit `issueDeJuge`). */
 export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): NotationIndividuelle {
+  const issue = issueDeJuge(identite, sortie, cadre);
+  if (issue.type === "renvoi") throw new AttributionIndecidable(identite.juge_id, cadre.objet_id, issue.renvoi.raison);
+  return issue.notation;
+}
+
+function notateurDe(identite: IdentiteJuge): NotationIndividuelle["notateur"] {
+  return {
+    type: "juge",
+    id: identite.juge_id,
+    famille_modele: identite.famille_modele,
+    modele: identite.modele,
+    version_prompt: versionPromptDe(identite.prompt),
+    a_vu_identite_outil: false,
+  };
+}
+
+function referencesDe(cadre: CadreNotationJuge): NotationIndividuelle["references_item"] {
+  return cadre.references_item.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte }));
+}
+
+/** Le renvoi porte l'identifiant que la notation aurait porté (dans son propre dossier) : une relance le retrouve. */
+function renvoiDe(identite: IdentiteJuge, renvoye: Renvoye, cadre: CadreNotationJuge): RenvoiHumain {
+  return {
+    id: cadre.id,
+    run_id: cadre.run_id,
+    contexte: cadre.contexte,
+    objet_note: { type: "reponse", id: cadre.objet_id },
+    notateur: notateurDe(identite),
+    version_charge: cadre.version_charge,
+    gabarit: "Q-ATT",
+    references_item: referencesDe(cadre),
+    motif: "attribution_indecidable",
+    raison: renvoye.raison,
+    noms_cites: [...renvoye.noms_cites],
+    attribution: renvoye.attribution,
+    date: cadre.date,
+  };
+}
+
+function notationDe(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge, note: NoteDeJuge): NotationIndividuelle {
+  const fraiche = fraicheurCalculee(identite.juge_id, note.drapeaux, cadre);
   const brouillon: NotationIndividuelle = {
     id: cadre.id,
     run_id: cadre.run_id,
     contexte: cadre.contexte,
     objet_note: { type: "reponse", id: cadre.objet_id },
-    notateur: {
-      type: "juge",
-      id: identite.juge_id,
-      famille_modele: identite.famille_modele,
-      modele: identite.modele,
-      version_prompt: versionPromptDe(identite.prompt),
-      a_vu_identite_outil: false,
-    },
+    notateur: notateurDe(identite),
+    version_charge: cadre.version_charge,
     gabarit: cadre.gabarit,
-    references_item: cadre.references_item.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte })),
-    categorie: sortie.categorie,
-    drapeaux: [...sortie.drapeaux],
-    ...(sortie.motif_inexactitude === undefined ? {} : { motif_inexactitude: sortie.motif_inexactitude }),
-    ...(sortie.obsolescence_fraiche === undefined ? {} : { obsolescence_fraiche: sortie.obsolescence_fraiche }),
-    ...(sortie.attribution === undefined ? {} : { attribution: sortie.attribution }),
+    references_item: referencesDe(cadre),
+    categorie: note.categorie,
+    drapeaux: [...note.drapeaux],
+    ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
+    ...(fraiche === undefined ? {} : { obsolescence_fraiche: fraiche }),
+    ...(note.attribution === undefined ? {} : { attribution: note.attribution }),
     sourcage: { cite: sortie.sourcage.cite, liens: liensNotes(identite.juge_id, sortie, cadre) },
     ...(sortie.extrait_justificatif === undefined
       ? {}
@@ -125,6 +256,65 @@ export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre
     motif_notation: cadre.motif_notation,
   };
   return avecExtraitControle(brouillon, cadre.textes);
+}
+
+/** Une sortie qui porte un champ hors du format attendu est refusée, jamais lue en partie. */
+function exigerChampsConnus(juge_id: string, objet_id: Ulid, sortie: SortieJuge, connus: readonly string[]): void {
+  const inconnus = Object.keys(sortie).filter((cle) => !connus.includes(cle));
+  if (inconnus.length > 0) {
+    throw new SortieJugeIncoherente(
+      juge_id,
+      objet_id,
+      `champ(s) ${inconnus.join(", ")} hors de la sortie charge-juge-v3 (${connus.join(", ")}). La fraîcheur, et toute la note d'une question d'attribution, se calculent (D27, D29) : une valeur rendue par le juge n'est jamais retenue.`,
+    );
+  }
+}
+
+function noteOrdinaireDe(juge_id: string, sortie: SortieJuge, cadre: CadreNotationJuge): NoteDeJuge {
+  exigerChampsConnus(juge_id, cadre.objet_id, sortie, CHAMPS_SORTIE_JUGE);
+  if (!("categorie" in sortie)) throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "sortie sans catégorie sur une question qui n'est pas d'attribution.");
+  return { categorie: sortie.categorie, drapeaux: sortie.drapeaux, ...(sortie.motif_inexactitude === undefined ? {} : { motif_inexactitude: sortie.motif_inexactitude }) };
+}
+
+/** D29 (1) : sur une Q-ATT, la note se calcule depuis les noms relevés et la liste attendue du tirage. */
+function noteAttributionDe(juge_id: string, sortie: SortieJuge, cadre: CadreNotationJuge): NoteDeJuge | Renvoye {
+  exigerChampsConnus(juge_id, cadre.objet_id, sortie, CHAMPS_SORTIE_JUGE_ATTRIBUTION);
+  if (!("noms_cites" in sortie) || typeof sortie.non_reponse !== "boolean") {
+    throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "question d'attribution sans noms_cites ou sans non_reponse : les deux sont exigés.");
+  }
+  const note = noterOuRefuser(juge_id, cadre, sortie);
+  if (note.statut === "indecidable") return { raison: note.raison, noms_cites: sortie.noms_cites, attribution: note.attribution };
+  if (note.categorie !== "exacte" && sortie.extrait_justificatif === undefined) {
+    throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `note calculée « ${note.categorie} » sans extrait justificatif : sur une question d'attribution, l'extrait est exigé dès qu'un nom est cité ou que la liste attendue n'est pas vide.`);
+  }
+  return { categorie: note.categorie, drapeaux: note.drapeaux, ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }), attribution: note.attribution };
+}
+
+function noterOuRefuser(juge_id: string, cadre: CadreNotationJuge, sortie: SortieJugeAttribution): NoteAttribution {
+  try {
+    return noterAttribution(
+      { noms_cites: sortie.noms_cites, non_reponse: sortie.non_reponse },
+      { reponse_attendue: cadre.reponse_attendue, candidats: cadre.candidats, interroges: cadre.interroges, registre: cadre.registre, premisse_fausse: cadre.premisse_fausse },
+    );
+  } catch (erreur) {
+    if (erreur instanceof NomCiteSansMot || erreur instanceof AttributionIncoherente) throw new SortieJugeIncoherente(juge_id, cadre.objet_id, erreur.message);
+    throw erreur;
+  }
+}
+
+/** D27 (C) : la fraîcheur se calcule ; le drapeau sans date de changement unique est incohérent. */
+function fraicheurCalculee(juge_id: string, drapeaux: readonly Drapeau[], cadre: CadreNotationJuge): boolean | undefined {
+  const fraicheur = fraicheurDesItems(drapeaux, cadre.items, cadre.date_gel);
+  switch (fraicheur.statut) {
+    case "sans_objet":
+      return undefined;
+    case "calculee":
+      return fraicheur.fraiche;
+    case "sans_item_o":
+      throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "drapeau obsolescence sans item O parmi les items soumis : la date du changement manque (§11).");
+    case "ambigue":
+      throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `drapeau obsolescence avec plusieurs dates de changement (${fraicheur.dates.join(", ")}) : la fraîcheur est ambiguë (§11).`);
+  }
 }
 
 /** `verifie_deterministe` est le résultat du test verbatim (`extrait.ts`), jamais la parole du juge. */

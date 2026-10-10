@@ -1,0 +1,116 @@
+{
+  "run_id": "01KBCS0G00SM0R0N0S1M01E000",
+  "date_gel": "2026-11-27T09:00:00+01:00",
+  "graine_tirage": {
+    "valeur": 20261127,
+    "algorithme": "splitmix64-sha256-v1",
+    "bibliotheque": "banc-essai-2027/validation/domaine/alea.ts",
+    "version": "1"
+  },
+  "parametres": {
+    "questions_par_strate": 1,
+    "questions_attribution_par_theme": 1
+  },
+  "entrees": [
+    {
+      "question_id": "q_0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+      "candidat_id": "demo-alpha",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-DIR",
+      "grappe_id": "0F3C8M1N2P4Q5R6S7T8V9W0X1Y",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "0F3C8M1N2P4Q5R6S7T8V9W0X1Y",
+            "item_version": 1,
+            "item_empreinte": "7e358945e4ea8d3f310120a8793f534876811cce100498eaa9007b9955b83380"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "position",
+        "position": "pour",
+        "resolution_temporelle": {
+          "date_gel": "2026-11-27T09:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "premisse_fausse": false,
+      "reprise": false
+    },
+    {
+      "question_id": "q_1b2c3d4e5f60718293a4b5c6d7e8f90a",
+      "candidat_id": "demo-alpha",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-DIR",
+      "grappe_id": "1G4D9N2P3Q5R6S7T8V9W0X1Y2Z",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "1G4D9N2P3Q5R6S7T8V9W0X1Y2Z",
+            "item_version": 1,
+            "item_empreinte": "e4833fe7b9af97d3fbbde7681ba72a1753827bf28a8110f5e1c7d04174e5417d"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "position",
+        "position": "pour",
+        "resolution_temporelle": {
+          "date_gel": "2026-11-27T09:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "premisse_fausse": false,
+      "reprise": false
+    },
+    {
+      "question_id": "q_2c3d4e5f60718293a4b5c6d7e8f90a1b",
+      "candidat_id": "demo-beta",
+      "theme": "fiscalite_pouvoir_achat",
+      "gabarit": "Q-DIR",
+      "grappe_id": "2H5E0P3Q4R6S7T8V9W0X1Y2Z3A",
+      "items_au_gel": [
+        {
+          "reference": {
+            "item_id": "2H5E0P3Q4R6S7T8V9W0X1Y2Z3A",
+            "item_version": 1,
+            "item_empreinte": "79787e90d64d39bf4e77477ffa9e653412c6bd8ac9e2947d75c62e96084abb37"
+          },
+          "role": "principal",
+          "statut_validation_au_gel": "verifie",
+          "statut_contestation_au_gel": "aucune"
+        }
+      ],
+      "reponse_attendue": {
+        "nature": "position",
+        "position": "contre",
+        "resolution_temporelle": {
+          "date_gel": "2026-11-27T09:00:00+01:00",
+          "regle": "semi_ouvert"
+        }
+      },
+      "premisse_fausse": false,
+      "reprise": false
+    }
+  ],
+  "exclusions": [],
+  "contestes_au_gel": [
+    {
+      "candidat_id": "demo-alpha",
+      "item_ids": []
+    },
+    {
+      "candidat_id": "demo-beta",
+      "item_ids": []
+    }
+  ],
+  "bilan_reprise": [],
+  "compensations": []
+}

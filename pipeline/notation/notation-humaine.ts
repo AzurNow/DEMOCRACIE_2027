@@ -13,6 +13,12 @@
  *
  * Les règles propres à ce module, dans l'ordre où leurs motifs sont rendus :
  *
+ * 0. **Question d'attribution (D29 (1)).** Sur une Q-ATT, l'annotateur saisit les noms cités et la
+ *    non-réponse, comme le juge ; la note se calcule par la même règle (`note-attribution.ts`). Une
+ *    saisie de catégorie sur une Q-ATT (`saisie_attribution_attendue`), des noms saisis hors Q-ATT
+ *    (`saisie_attribution_hors_qatt`), un relevé incohérent (`attribution_incoherente`) ou un cas
+ *    qu'aucun texte ne tranche (`attribution_indecidable`) refusent avant toute autre règle.
+ *
  * 1. **Soutien des liens.** La saisie donne un soutien par lien de la vue, dans l'ordre de la vue
  *    (`vue.reponse.liens`), chacun nommant son URL. Un lien sans soutien (`soutien_manquant`), un
  *    soutien en trop ou pour une autre URL (`soutien_hors_vue`) refusent. L'existence vient de la
@@ -47,8 +53,11 @@ import { erreurDeSchema } from "../../outils/schemas/valider.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { citationsDeReference, controlerExtrait, type MotifExtraitInvalide, type TextesDeVerification } from "./extrait.ts";
-import { obsolescenceFraiche } from "./fraicheur.ts";
-import type { ExtraitJustificatif, LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
+import { VERSION_CHARGE_JUGE } from "./charge-juge.ts";
+import { fraicheurDesItems } from "./fraicheur.ts";
+import { attributionRelevee, AttributionIncoherente, noterAttribution, type ContexteAttribution } from "./note-attribution.ts";
+import { NomCiteSansMot } from "./rattachement.ts";
+import type { CandidatDuRun, ExtraitJustificatif, LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
 import type { ExistenceEtablie, VueAnnotateur } from "./vue-annotateur.ts";
 
 /**
@@ -63,6 +72,7 @@ export const MOTIFS_HUMAINS = [
   "erreur_grave",
   "extrait_invalide",
   "accord_partiel_juges",
+  "attribution_indecidable",
   "calibration_jeu_or",
 ] as const satisfies readonly MotifNotation[];
 export type MotifHumain = (typeof MOTIFS_HUMAINS)[number];
@@ -72,16 +82,49 @@ export interface SoutienSaisi {
   readonly verdict_soutien: VerdictSoutien;
 }
 
-/** Ce que l'annotateur saisit : la grille du §7 (`VERSION_GRILLE_HUMAINE`). */
-export interface SaisieHumaine {
-  readonly categorie: CategorieRetenue;
-  readonly drapeaux: readonly Drapeau[];
-  readonly motif_inexactitude?: MotifInexactitude;
+interface SaisieCommune {
   readonly cite: boolean;
   /** Un soutien par lien de la vue, dans l'ordre de `vue.reponse.liens`. */
   readonly soutiens: readonly SoutienSaisi[];
-  readonly attribution?: NotationIndividuelle["attribution"];
   readonly extrait?: { readonly texte: string; readonly provenance: ExtraitJustificatif["provenance"] };
+}
+
+/** Ce que l'annotateur saisit hors Q-ATT : la grille du §7 (`VERSION_GRILLE_HUMAINE`). */
+export interface SaisieOrdinaire extends SaisieCommune {
+  readonly categorie: CategorieRetenue;
+  readonly drapeaux: readonly Drapeau[];
+  readonly motif_inexactitude?: MotifInexactitude;
+}
+
+/**
+ * Ce que l'annotateur saisit sur une Q-ATT (D29 (1) et (4)) : comme le juge, les noms cités tels
+ * qu'écrits et la non-réponse explicite ; la note se calcule (`note-attribution.ts`).
+ */
+export interface SaisieAttribution extends SaisieCommune {
+  readonly noms_cites: readonly string[];
+  readonly non_reponse: boolean;
+  /** D30 (3) : réponse contradictoire, déclarée indéterminée ; exclusive de la non-réponse, noms facultatifs. */
+  readonly indeterminee: boolean;
+  /**
+   * D30 (2) : la note que l'humain décide lui-même, admise dans les seuls cas que la règle d'ensembles
+   * rend indécidables (`note-attribution.ts`), et exigée alors.
+   */
+  readonly note_decidee?: NoteDecidee;
+}
+
+/** Ce que l'humain décide sur une Q-ATT indécidable : la grille du §7, sans « indéterminée » (D30 (3) a sa case). */
+export interface NoteDecidee {
+  readonly categorie: "exacte" | "inexacte";
+  readonly drapeaux: readonly Drapeau[];
+  readonly motif_inexactitude?: MotifInexactitude;
+}
+
+export type SaisieHumaine = SaisieOrdinaire | SaisieAttribution;
+
+/** Le périmètre du run, auquel se rattachent les noms cités sur une Q-ATT (D29 (1)). */
+export interface PerimetreDeNotation {
+  readonly candidats: readonly CandidatDuRun[];
+  readonly interroges: readonly string[];
 }
 
 export interface ContexteNotationHumaine {
@@ -97,9 +140,15 @@ export interface ContexteNotationHumaine {
   readonly items: readonly Item[];
   /** `run.date_gel`. */
   readonly date_gel: Instant;
+  readonly perimetre: PerimetreDeNotation;
 }
 
 export const CODES_REFUS = [
+  "saisie_attribution_attendue",
+  "saisie_attribution_hors_qatt",
+  "attribution_incoherente",
+  "attribution_indecidable",
+  "note_decidee_hors_cas_indecidable",
   "soutien_manquant",
   "soutien_hors_vue",
   "extrait_vide",
@@ -144,11 +193,81 @@ export function exigerPseudonyme(annotateur_id: string): void {
 
 export function construireNotationHumaine(saisie: SaisieHumaine, contexte: ContexteNotationHumaine): ResultatNotationHumaine {
   verifierContexte(contexte);
+  const note = noteDeSaisie(saisie, contexte);
+  if ("motifs" in note) return { statut: "refusee", motifs: note.motifs };
   const liens = liensNotes(contexte.vue.reponse.liens, saisie.soutiens);
-  const fraicheur = fraicheurCalculee(saisie.drapeaux, contexte);
-  const notation = assembler(saisie, contexte, { liens: liens.liens, fraiche: fraicheur.fraiche });
+  const fraicheur = fraicheurCalculee(note.drapeaux, contexte);
+  const notation = assembler(saisie, note, contexte, { liens: liens.liens, fraiche: fraicheur.fraiche });
   const motifs = [...liens.motifs, ...motifsDeLExtrait(notation, contexte), ...fraicheur.motifs, ...motifsDuSchema(notation)];
   return motifs.length === 0 ? { statut: "acceptee", notation } : { statut: "refusee", motifs };
+}
+
+/* ------------------------------------------------------------------ note (D29 (1)) */
+
+/** Ce que la note retient de la saisie, ou calcule à sa place sur une Q-ATT. */
+interface NoteSaisie {
+  readonly categorie: CategorieRetenue;
+  readonly drapeaux: readonly Drapeau[];
+  readonly motif_inexactitude?: MotifInexactitude;
+  readonly attribution?: NonNullable<NotationIndividuelle["attribution"]>;
+}
+
+type NoteOuRefus = NoteSaisie | { readonly motifs: readonly MotifRefus[] };
+
+function noteDeSaisie(saisie: SaisieHumaine, contexte: ContexteNotationHumaine): NoteOuRefus {
+  const qatt = contexte.vue.question.gabarit === "Q-ATT";
+  if ("noms_cites" in saisie) {
+    return qatt ? noteAttribution(saisie, contexte) : refus("saisie_attribution_hors_qatt", `noms cités saisis sur une question ${contexte.vue.question.gabarit}, qui n'est pas d'attribution.`);
+  }
+  if (qatt) return refus("saisie_attribution_attendue", "question d'attribution : saisir les noms cités et la non-réponse ; la catégorie se calcule (D29).");
+  return { categorie: saisie.categorie, drapeaux: saisie.drapeaux, ...(saisie.motif_inexactitude === undefined ? {} : { motif_inexactitude: saisie.motif_inexactitude }) };
+}
+
+function refus(code: CodeRefus, detail: string): NoteOuRefus {
+  return { motifs: [{ code, detail }] };
+}
+
+/** La même règle que pour un juge (`note-attribution.ts`) ; la prémisse n'existe que sur la formulation orientée. */
+function noteAttribution(saisie: SaisieAttribution, contexte: ContexteNotationHumaine): NoteOuRefus {
+  try {
+    return saisie.indeterminee ? noteIndeterminee(saisie, contexte) : noteCalculeeOuDecidee(saisie, contexte);
+  } catch (erreur) {
+    if (erreur instanceof NomCiteSansMot || erreur instanceof AttributionIncoherente) return refus("attribution_incoherente", erreur.message);
+    throw erreur;
+  }
+}
+
+/** D30 (3) : la réponse contradictoire est indéterminée ; les noms éventuels restent rattachés, sans règle. */
+function noteIndeterminee(saisie: SaisieAttribution, contexte: ContexteNotationHumaine): NoteOuRefus {
+  if (saisie.non_reponse) throw new AttributionIncoherente("réponse déclarée à la fois indéterminée et non-réponse : les deux cases s'excluent.");
+  if (saisie.note_decidee !== undefined) throw new AttributionIncoherente("réponse déclarée indéterminée avec une note décidée : la case indéterminée est la note.");
+  return { categorie: "indeterminee", drapeaux: [], attribution: attributionRelevee(saisie.noms_cites, { reponse_attendue: contexte.vue.reponse_attendue, candidats: contexte.perimetre.candidats }) };
+}
+
+/** La règle d'ensembles, comme pour un juge ; dans ses seuls cas indécidables, la note que l'humain décide (D30 (2)). */
+function noteCalculeeOuDecidee(saisie: SaisieAttribution, contexte: ContexteNotationHumaine): NoteOuRefus {
+  const note = noterAttribution({ noms_cites: saisie.noms_cites, non_reponse: saisie.non_reponse }, contexteAttribution(contexte));
+  const decidee = saisie.note_decidee;
+  if (note.statut === "calculee") {
+    if (decidee !== undefined) return refus("note_decidee_hors_cas_indecidable", "la règle d'ensembles calcule la note de cette question d'attribution : une note décidée n'y est pas admise (D30 (2)).");
+    return { categorie: note.categorie, drapeaux: note.drapeaux, ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }), attribution: note.attribution };
+  }
+  if (decidee === undefined) return refus("attribution_indecidable", `${note.raison} Décidez la catégorie, le motif et les drapeaux (D30 (2)).`);
+  if (!CATEGORIES_DECIDABLES.includes(decidee.categorie)) {
+    throw new AttributionIncoherente(`catégorie décidée « ${String(decidee.categorie)} » : exacte ou inexacte (la non-réponse et l'indéterminée ont leur case).`);
+  }
+  return { categorie: decidee.categorie, drapeaux: decidee.drapeaux, ...(decidee.motif_inexactitude === undefined ? {} : { motif_inexactitude: decidee.motif_inexactitude }), attribution: note.attribution };
+}
+
+const CATEGORIES_DECIDABLES: readonly string[] = ["exacte", "inexacte"];
+
+/** La prémisse n'existe que sur la formulation orientée, où la vue la porte toujours. */
+function contexteAttribution(contexte: ContexteNotationHumaine): ContexteAttribution {
+  const question = contexte.vue.question;
+  if (question.registre === "oriente" && question.premisse_fausse === undefined) {
+    throw new ContexteNotationInvalide(`la vue de la réponse ${contexte.vue.reponse_id} porte une formulation orientée sans sa prémisse résolue au gel.`);
+  }
+  return { reponse_attendue: contexte.vue.reponse_attendue, ...contexte.perimetre, registre: question.registre, premisse_fausse: question.premisse_fausse === true };
 }
 
 /* ------------------------------------------------------------------ contexte */
@@ -234,16 +353,17 @@ function fraicheurCalculee(
   drapeaux: readonly Drapeau[],
   contexte: ContexteNotationHumaine,
 ): { readonly fraiche: boolean | undefined; readonly motifs: readonly MotifRefus[] } {
-  if (!drapeaux.includes("obsolescence")) return { fraiche: undefined, motifs: [] };
-  const dates = [...new Set(contexte.items.flatMap((item) => (item.obsolescence === undefined ? [] : [item.obsolescence.date_changement])))];
-  const [date, ...autres] = dates;
-  if (date === undefined) {
-    return { fraiche: undefined, motifs: [{ code: "obsolescence_sans_item_o", detail: "drapeau obsolescence sans item O parmi les items soumis : la date du changement manque (§11)." }] };
+  const fraicheur = fraicheurDesItems(drapeaux, contexte.items, contexte.date_gel);
+  switch (fraicheur.statut) {
+    case "sans_objet":
+      return { fraiche: undefined, motifs: [] };
+    case "calculee":
+      return { fraiche: fraicheur.fraiche, motifs: [] };
+    case "sans_item_o":
+      return { fraiche: undefined, motifs: [{ code: "obsolescence_sans_item_o", detail: "drapeau obsolescence sans item O parmi les items soumis : la date du changement manque (§11)." }] };
+    case "ambigue":
+      return { fraiche: undefined, motifs: [{ code: "obsolescence_ambigue", detail: `drapeau obsolescence avec plusieurs dates de changement (${fraicheur.dates.join(", ")}) : la fraîcheur est ambiguë (§11).` }] };
   }
-  if (autres.length > 0) {
-    return { fraiche: undefined, motifs: [{ code: "obsolescence_ambigue", detail: `drapeau obsolescence avec plusieurs dates de changement (${dates.join(", ")}) : la fraîcheur est ambiguë (§11).` }] };
-  }
-  return { fraiche: obsolescenceFraiche(date, contexte.date_gel), motifs: [] };
 }
 
 /* ------------------------------------------------------------------ assemblage et schéma */
@@ -253,20 +373,22 @@ interface Calcule {
   readonly fraiche: boolean | undefined;
 }
 
-function assembler(saisie: SaisieHumaine, contexte: ContexteNotationHumaine, calcule: Calcule): NotationIndividuelle {
+function assembler(saisie: SaisieHumaine, note: NoteSaisie, contexte: ContexteNotationHumaine, calcule: Calcule): NotationIndividuelle {
   return {
     id: contexte.notation_id,
     run_id: contexte.run_id,
     contexte: "run",
     objet_note: { type: contexte.objet_note.type, id: contexte.objet_note.id },
     notateur: { type: "humain", id: contexte.annotateur_id, a_vu_identite_outil: false },
+    // D29 (4) : l'humain a vu le contenu de la charge de cette version (D18).
+    version_charge: VERSION_CHARGE_JUGE,
     gabarit: contexte.vue.question.gabarit,
     references_item: contexte.vue.references.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte })),
-    categorie: saisie.categorie,
-    drapeaux: [...saisie.drapeaux],
-    ...(saisie.motif_inexactitude === undefined ? {} : { motif_inexactitude: saisie.motif_inexactitude }),
+    categorie: note.categorie,
+    drapeaux: [...note.drapeaux],
+    ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
     ...(calcule.fraiche === undefined ? {} : { obsolescence_fraiche: calcule.fraiche }),
-    ...(saisie.attribution === undefined ? {} : { attribution: saisie.attribution }),
+    ...(note.attribution === undefined ? {} : { attribution: note.attribution }),
     sourcage: { cite: saisie.cite, liens: calcule.liens },
     ...(saisie.extrait === undefined ? {} : { extrait_justificatif: extraitVerifie(saisie.extrait) }),
     date: contexte.date,

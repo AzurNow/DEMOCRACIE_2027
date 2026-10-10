@@ -6,7 +6,9 @@
 import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
-import type { CandidatDuRun, LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun, LienNotation, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../pipeline/notation/types.ts";
+import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
+import type { PageCitee } from "../../pipeline/notation/pages-citees.ts";
 
 export const RUN_ID = ulid("run-notation");
 export const REPONSE_ID = ulid("reponse-notation");
@@ -33,6 +35,7 @@ export function notationJuge(juge_id: string, surcharges: Surcharges = {}): Nota
       version_prompt: "prompts/judge-primaire-1.0.0",
       a_vu_identite_outil: false,
     },
+    version_charge: VERSION_CHARGE_JUGE,
     gabarit: "Q-DIR",
     references_item: [ITEM_REF],
     categorie: "exacte",
@@ -40,6 +43,26 @@ export function notationJuge(juge_id: string, surcharges: Surcharges = {}): Nota
     sourcage: { cite: false, liens: [] },
     date: "2026-12-03T11:00:00+01:00",
     motif_notation: "notation_juge",
+    ...surcharges,
+  };
+}
+
+/** Un renvoi de juge vers l'humain (D30 (2)), conforme à `schema/renvoi-humain.schema.json`. */
+export function renvoiJuge(juge_id: string, surcharges: Partial<RenvoiHumain> = {}): RenvoiHumain {
+  return {
+    id: ulid(`renvoi-${juge_id}-${surcharges.objet_note === undefined ? REPONSE_ID : surcharges.objet_note.id}`),
+    run_id: RUN_ID,
+    contexte: "run",
+    objet_note: { type: "reponse", id: REPONSE_ID },
+    notateur: { type: "juge", id: juge_id, famille_modele: `famille-${juge_id}`, modele: `famille-${juge_id}/modele`, version_prompt: "prompts/judge-primaire-1.0.0", a_vu_identite_outil: false },
+    version_charge: VERSION_CHARGE_JUGE,
+    gabarit: "Q-ATT",
+    references_item: [ITEM_REF],
+    motif: "attribution_indecidable",
+    raison: "candidat cité au périmètre mais non interrogé.",
+    noms_cites: ["Martinez"],
+    attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha"] },
+    date: "2026-12-03T11:00:00+01:00",
     ...surcharges,
   };
 }
@@ -55,6 +78,7 @@ export function notationHumaine(
     contexte: "run",
     objet_note: { type: "reponse", id: REPONSE_ID },
     notateur: { type: "humain", id: annotateur, sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false },
+    version_charge: VERSION_CHARGE_JUGE,
     gabarit: "Q-DIR",
     references_item: [ITEM_REF],
     categorie: "exacte",
@@ -91,6 +115,32 @@ export const CANDIDATS_DU_RUN: readonly CandidatDuRun[] = [
   { candidat_id: "demo-beta", libelle: "Maxime Le Brun", nom: "Le Brun" },
   { candidat_id: "demo-gamma", libelle: "Camille Ollivier", nom: "Ollivier" },
 ];
+
+/** Le gel des tests de charge : `run.date_gel` de `run-fictif.ts`. */
+export const GEL_DES_TESTS = "2026-12-01T06:00:00+01:00";
+
+/** Ce que le tirage a résolu au gel pour une Q-DIR sur un item P « pour » (D27 (F), (G)). */
+export const RESOLU_POSITION_POUR: ResoluAuGel = {
+  reponse_attendue: { nature: "position", position: "pour", resolution_temporelle: { date_gel: GEL_DES_TESTS, regle: "semi_ouvert" } },
+  premisse_fausse: false,
+};
+
+/** Une page « sans texte » par lien distinct, dans l'ordre de première citation (D27 (E)). */
+export function pagesSansTexte(liens: readonly string[], raison: "lien_mort" | "sans_copie" | "extraction_refusee" = "lien_mort"): readonly PageCitee[] {
+  return [...new Set(liens)].map((url_citee) => ({ url_citee, texte_disponible: false, raison }));
+}
+
+/** Ce que la chaîne pose dans le cadre d'une notation de juge pour la charge v3 (D27 (C), (D)). */
+export const CADRE_V3 = {
+  date_gel: GEL_DES_TESTS,
+  items: [],
+  reponse_attendue: RESOLU_POSITION_POUR.reponse_attendue,
+  candidats: CANDIDATS_DU_RUN,
+  interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id),
+  registre: "neutre",
+  premisse_fausse: false,
+  version_charge: VERSION_CHARGE_JUGE,
+} as const;
 
 export function runDeNotation(retires: readonly string[] = [], surcharges: Partial<RunDeNotation> = {}): RunDeNotation {
   return {

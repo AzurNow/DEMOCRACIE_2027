@@ -22,6 +22,7 @@ import {
 import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { itemP } from "../aides/fabriques.ts";
+import { pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const LIEN_A = "https://exemple.invalid/a";
@@ -52,9 +53,11 @@ function existence(url: string, verdict: ExistenceEtablie["verdict_existence"] =
 function demande(r: ReponseObtenue = reponse(), existences: readonly ExistenceEtablie[] = [existence(LIEN_A), existence(LIEN_B, "mort")]): DemandeVue {
   return {
     reponse: r,
-    question: { gabarit: "Q-DIR", texte: "Quelle est la position de Alix Martinez sur la TVA ?" },
+    question: { gabarit: "Q-DIR", registre: "oriente", texte: "Quelle est la position de Alix Martinez sur la TVA ?" },
     references: [{ item: itemP(), role: "principal" }],
     date_run: "2026-12-01T06:00:00+01:00",
+    resolu_au_gel: RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(r.normalise.liens),
     existences,
   };
 }
@@ -92,9 +95,33 @@ describe("aveuglement de la vue (D18)", () => {
   it("les clés sont exactement celles prévues, à chaque niveau", () => {
     const vue = construireVue(demande());
     expect(Object.keys(vue).sort()).toEqual(
-      ["date_run", "question", "references", "reponse", "reponse_id", "version_grille", "version_normalisation_verbatim", "version_vue"].sort(),
+      [
+        "date_run",
+        "longueur_max_texte_page",
+        "pages_citees",
+        "question",
+        "references",
+        "reponse",
+        "reponse_attendue",
+        "reponse_id",
+        "version_grille",
+        "version_normalisation_verbatim",
+        "version_vue",
+      ].sort(),
     );
     expect(Object.keys(vue.reponse).sort()).toEqual(["citations", "liens", "normalisation", "refus_api", "texte", "troncature"].sort());
+    expect(Object.keys(vue.question).sort()).toEqual(["gabarit", "premisse_fausse", "registre", "texte"]);
+  });
+
+  it("D27 : la vue porte exactement la réponse attendue, la prémisse et les pages de la charge v3", () => {
+    const d = demande();
+    const vue = construireVue(d);
+    const charge = construireCharge({ ...d, prompt: { chemin: "prompts/judge-primaire.md", version: "1.0.0" } });
+    expect(vue.reponse_attendue).toEqual(charge.reponse_attendue);
+    expect(vue.question).toEqual(charge.question);
+    expect(vue.pages_citees).toEqual(charge.pages_citees);
+    expect(vue.longueur_max_texte_page).toBe(charge.longueur_max_texte_page);
+    expect(VERSION_VUE_ANNOTATEUR).toBe("vue-annotateur-v2");
   });
 
   it("hors les liens enrichis et les versions, la vue est la charge du juge sans son prompt", () => {

@@ -5,9 +5,9 @@
  * champ de la `VueAnnotateur` du pipeline y figure (D18 : un humain reçoit ce que reçoit un juge).
  */
 
-import type { Citation, EtatItem, Existence, ItemSoumis, Vue } from "./types.ts";
+import type { Citation, EtatItem, Existence, ItemSoumis, PageCitee, ReponseAttendue, Vue } from "./types.ts";
 
-export type ClasseParagraphe = "note" | "alerte" | "question" | "reponse";
+export type ClasseParagraphe = "note" | "alerte" | "question" | "reponse" | "page";
 
 export type Bloc =
   | { readonly genre: "titre"; readonly niveau: 2 | 3; readonly texte: string }
@@ -110,6 +110,49 @@ function blocsCitations(vue: Vue): readonly Bloc[] {
   return [titre(3, "Citations de la réponse"), { genre: "liste", classe: null, lignes: citations.map(ligneCitation) }];
 }
 
+/** D27 (F) : la prémisse résolue au gel n'existe que sur la formulation orientée. */
+function blocsPremisse(vue: Vue): readonly Bloc[] {
+  const fausse = vue.question.premisse_fausse;
+  if (fausse === undefined) return [];
+  return [paragraphe("note", `Prémisse de la formulation, résolue au gel : ${fausse ? "fausse" : "vraie"}`)];
+}
+
+/** D27 (G) : la réponse attendue que le tirage a résolue au gel, champ par champ. */
+function lignesAttendue(a: ReponseAttendue): readonly string[] {
+  const t = a.resolution_temporelle;
+  return [
+    `Nature : ${a.nature}`,
+    ...(a.position === undefined ? [] : [`Position : ${a.position}`]),
+    ...(a.etat_attendu === undefined ? [] : [`État qui fait foi : ${a.etat_attendu}`]),
+    ...(a.candidats_attendus === undefined ? [] : [`Candidats attendus : ${a.candidats_attendus.length === 0 ? "aucun" : a.candidats_attendus.join(", ")}`]),
+    `Résolue au gel du ${t.date_gel}${t.date_changement === undefined ? "" : `, changement du ${t.date_changement}`} (règle ${t.regle})`,
+  ];
+}
+
+/** D27 (E) : le texte de chaque page citée, tel que le juge le reçoit, ou la raison de son absence. */
+function blocPage(page: PageCitee, borne: number): Bloc {
+  if (!page.texte_disponible) {
+    return { genre: "groupe", element: "div", classe: "page-citee", blocs: [paragraphe("note", `Page citée ${page.url_citee} — pas de texte : ${page.raison}`)] };
+  }
+  const longueur = `${page.longueur_totale} points de code${page.tronque ? `, tronqué aux ${borne} premiers` : ""}`;
+  return {
+    genre: "groupe",
+    element: "div",
+    classe: "page-citee",
+    blocs: [
+      paragraphe("note", `Page citée ${page.url_citee} — texte de la copie (${page.origine}) · empreinte du texte ${page.texte_sha256} · ${longueur}`),
+      ...(page.tronque ? [paragraphe("alerte", "Texte de la page tronqué à la borne de la charge.")] : []),
+      paragraphe("page", page.texte),
+    ],
+  };
+}
+
+function blocsPages(vue: Vue): readonly Bloc[] {
+  const borne = paragraphe("note", `Borne du texte transmis par page : ${vue.longueur_max_texte_page} points de code`);
+  if (vue.pages_citees.length === 0) return [borne, paragraphe("note", "Aucune page citée.")];
+  return [borne, ...vue.pages_citees.map((page) => blocPage(page, vue.longueur_max_texte_page))];
+}
+
 function blocsAvertissements(vue: Vue): readonly Bloc[] {
   return [
     ...(vue.reponse.troncature ? [paragraphe("alerte", "Réponse tronquée par l'outil.")] : []),
@@ -117,18 +160,26 @@ function blocsAvertissements(vue: Vue): readonly Bloc[] {
   ];
 }
 
-/** Le contenu du volet gauche, dans l'ordre d'affichage : question, réponse, avertissements, liens, citations, références. */
+/**
+ * Le contenu du volet gauche, dans l'ordre d'affichage : question (registre, prémisse), réponse
+ * attendue, réponse, avertissements, liens, citations, pages citées, références.
+ */
 export function contenuVue(vue: Vue): readonly Bloc[] {
   return [
-    paragraphe("note", `Question ${vue.question.gabarit} · run du ${vue.date_run} · réponse ${vue.reponse_id}`),
+    paragraphe("note", `Question ${vue.question.gabarit} · registre ${vue.question.registre} · run du ${vue.date_run} · réponse ${vue.reponse_id}`),
     titre(2, "Question posée"),
     paragraphe("question", vue.question.texte),
+    ...blocsPremisse(vue),
+    titre(3, "Réponse attendue"),
+    { genre: "liste", classe: null, lignes: lignesAttendue(vue.reponse_attendue) },
     titre(2, "Réponse"),
     ...blocsAvertissements(vue),
     paragraphe("reponse", vue.reponse.texte),
     titre(3, "Liens cités"),
     ...blocsLiens(vue),
     ...blocsCitations(vue),
+    titre(3, "Pages citées"),
+    ...blocsPages(vue),
     titre(2, "Items de référence"),
     ...vue.references.map(reference),
   ];

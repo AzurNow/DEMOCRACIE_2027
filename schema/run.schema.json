@@ -683,6 +683,15 @@
               }
             }
           },
+          "paires_ecartees_contrefactuel": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Décision D31 (1) de l'auteur (2026-10-10) : nombre de paires du sous-ensemble contrefactuel écartées du taux de CE juge, parce qu'il a renvoyé vers l'humain (D30 (2), volume/renvois/) l'un des deux côtés au moins. Écartées du numérateur et du dénominateur ; changements_contrefactuel.denominateur + paires_ecartees_contrefactuel = contrefactuel_candidats.taille (contrôle croisé). Exigé de chaque juge quand le test est terminé, 0 compris."
+          },
+          "motif_indefini_contrefactuel": {
+            "const": "toutes_paires_ecartees",
+            "description": "D31 (1) : toutes les paires du sous-ensemble sont écartées pour ce juge ; son taux est indéfini, publié absent avec ce motif, jamais 0 %. Le critère test_contrefactuel du go/no-go est alors rouge (effectifs absents, D25 (2))."
+          },
           "kappa_juge_humain": {
             "type": "number",
             "minimum": -1,
@@ -700,6 +709,11 @@
           },
           "motif_indefini_kappa_echantillon_humain": {
             "$ref": "#/$defs/motif_kappa_echantillon_indefini"
+          },
+          "renvois_ecartes_kappa_echantillon": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Décision D31 (2) de l'auteur : nombre de réponses de l'échantillon humain écartées du kappa_echantillon_humain de CE juge parce qu'il les a renvoyées vers l'humain (D30 (2)). Écrit par pnpm go-no-go ; exigé d'un juge retenu quand go_no_go est présent ; un juge retiré n'en porte aucun (D13 : ses renvois sont déjà écartés avec ses notations). Tout écarté : kappa indéfini, aucune_reponse_comparable, critère rouge (D24 (2))."
           },
           "retire": {
             "type": "boolean"
@@ -746,8 +760,29 @@
               "$comment": "D13 et D24 (1) : les notations d'un juge retiré sont écartées ; il n'a pas de kappa d'échantillon.",
               "properties": {
                 "kappa_echantillon_humain": false,
-                "motif_indefini_kappa_echantillon_humain": false
+                "motif_indefini_kappa_echantillon_humain": false,
+                "renvois_ecartes_kappa_echantillon": false
               }
+            }
+          },
+          {
+            "$comment": "D31 (1) : un taux de juge indéfini (toutes paires écartées) n'a ni taux ni effectifs, et suppose au moins une paire écartée.",
+            "if": {
+              "required": [
+                "motif_indefini_contrefactuel"
+              ]
+            },
+            "then": {
+              "properties": {
+                "taux_changement_contrefactuel": false,
+                "changements_contrefactuel": false,
+                "paires_ecartees_contrefactuel": {
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "paires_ecartees_contrefactuel"
+              ]
             }
           }
         ],
@@ -768,6 +803,11 @@
         0.25
       ],
       "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
+    },
+    "renvois_attribution_indecidable": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Décision D30 (2) de l'auteur (2026-10-10) : nombre de renvois de juge vers la notation humaine pour une question d'attribution indécidable (volume/renvois/, schema/renvoi-humain.schema.json), contexte run, juges retirés compris. Écrit par pnpm go-no-go, comme indeterminees_echantillon_humain ; exigé d'un run qui porte un go/no-go."
     },
     "indeterminees_echantillon_humain": {
       "type": "integer",
@@ -1529,7 +1569,8 @@
       "then": {
         "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui.",
         "required": [
-          "indeterminees_echantillon_humain"
+          "indeterminees_echantillon_humain",
+          "renvois_attribution_indecidable"
         ],
         "properties": {
           "juges": {
@@ -1545,6 +1586,9 @@
                 ]
               },
               "then": {
+                "required": [
+                  "renvois_ecartes_kappa_echantillon"
+                ],
                 "anyOf": [
                   {
                     "required": [
@@ -1713,7 +1757,9 @@
             "items": {
               "properties": {
                 "taux_changement_contrefactuel": false,
-                "changements_contrefactuel": false
+                "changements_contrefactuel": false,
+                "paires_ecartees_contrefactuel": false,
+                "motif_indefini_contrefactuel": false
               }
             }
           }
@@ -1721,7 +1767,7 @@
       }
     },
     {
-      "$comment": "§7 : un test terminé publie le taux de chaque juge, avec ses effectifs.",
+      "$comment": "§7 : un test terminé publie le taux de chaque juge, avec ses effectifs ; D31 (1) : ou, si toutes ses paires sont écartées, le motif de son indéfinition ; et toujours le nombre de ses paires écartées.",
       "if": {
         "properties": {
           "contrefactuel_candidats": {
@@ -1744,8 +1790,20 @@
           "juges": {
             "items": {
               "required": [
-                "taux_changement_contrefactuel",
-                "changements_contrefactuel"
+                "paires_ecartees_contrefactuel"
+              ],
+              "anyOf": [
+                {
+                  "required": [
+                    "taux_changement_contrefactuel",
+                    "changements_contrefactuel"
+                  ]
+                },
+                {
+                  "required": [
+                    "motif_indefini_contrefactuel"
+                  ]
+                }
               ]
             }
           }

@@ -14,6 +14,7 @@ import {
   lien,
   notationHumaine,
   notationJuge,
+  renvoiJuge,
   REPONSE_ID,
   REPONSE_PROJETEE,
   runDeNotation,
@@ -27,6 +28,7 @@ function entree(notations: readonly NotationIndividuelle[], options: Partial<Ent
     run: runDeNotation(),
     objet_note: { type: "reponse", id: REPONSE_ID },
     notations,
+    renvois: [],
     dans_echantillon_humain: false,
     textes: TEXTES,
     verdict_id: VERDICT_ID,
@@ -149,6 +151,47 @@ describe("extrait justificatif", () => {
     });
     const b = notationJuge("j2", inexacte());
     expect(verdictDe(decide([a, b])).mode_resolution).toBe("accord_juges");
+  });
+});
+
+describe("D30 (2) : renvoi d'un juge sur une Q-ATT indécidable → humain sous attribution_indecidable", () => {
+  const QATT = { gabarit: "Q-ATT" as const, attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha"] } };
+  const J2_QATT = notationJuge("j2", QATT);
+
+  it("un juge renvoie, l'autre note : en attente d'un humain, motif attribution_indecidable", () => {
+    expect(decide([J2_QATT], { renvois: [renvoiJuge("j1")] })).toEqual({ statut: "en_attente", attend: "humain", motifs: ["attribution_indecidable"] });
+  });
+
+  it("les deux juges renvoient : en attente d'un humain, jamais d'un juge manquant", () => {
+    expect(decide([], { renvois: [renvoiJuge("j1"), renvoiJuge("j2")] })).toEqual({ statut: "en_attente", attend: "humain", motifs: ["attribution_indecidable"] });
+  });
+
+  it("l'humain appelé sous attribution_indecidable tranche ; le renvoi n'est pas une source", () => {
+    const humain = notationHumaine("a1", "attribution_indecidable", QATT);
+    const v = verdictDe(decide([J2_QATT, humain], { renvois: [renvoiJuge("j1")] }));
+    expect(v.mode_resolution).toBe("tranche_humain");
+    expect(v.notations_sources).toEqual([J2_QATT.id, humain.id]);
+  });
+
+  it("le renvoi prime sur un extrait invalide de l'autre juge : seul attribution_indecidable est admis", () => {
+    const invalide = notationJuge("j2", { ...QATT, ...inexacte(), extrait_justificatif: { provenance: "reponse", texte: "absent", verifie_deterministe: true } });
+    expect(decide([invalide], { renvois: [renvoiJuge("j1")] })).toMatchObject({ statut: "en_attente", motifs: ["attribution_indecidable", "extrait_invalide"] });
+    expect(() => decide([invalide, notationHumaine("a1", "extrait_invalide", QATT)], { renvois: [renvoiJuge("j1")] })).toThrow(NotationsIncoherentes);
+  });
+
+  it("le renvoi d'un juge retiré est écarté comme ses notations (D13)", () => {
+    expect(verdictDe(decide([J2_QATT], { run: runDeNotation(["j1"]), renvois: [renvoiJuge("j1")] })).mode_resolution).toBe("juge_unique_apres_retrait");
+  });
+
+  it("un juge qui porte une notation et un renvoi sur l'objet, ou un renvoi d'un autre objet : incohérent", () => {
+    expect(() => decide([notationJuge("j1", QATT), J2_QATT], { renvois: [renvoiJuge("j1")] })).toThrow(NotationsIncoherentes);
+    expect(() => decide([J2_QATT], { renvois: [renvoiJuge("j1", { objet_note: { type: "reponse", id: ulid("autre") } })] })).toThrow(NotationsIncoherentes);
+  });
+
+  it("dans l'échantillon, le renvoi ne compte pas et les humains d'échantillon décident", () => {
+    const humains = ["a1", "a2"].map((a) => notationHumaine(a, "echantillon_aleatoire_10", QATT));
+    const v = verdictDe(decide([J2_QATT, ...humains], { renvois: [renvoiJuge("j1")], dans_echantillon_humain: true }));
+    expect(v.mode_resolution).toBe("echantillon_humain_10");
   });
 });
 
