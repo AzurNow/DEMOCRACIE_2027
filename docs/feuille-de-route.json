@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-09",
+  "date_maj": "2026-10-10",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -421,6 +421,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points.",
       "date_decision": "2026-10-09"
+    },
+    {
+      "id": "D31",
+      "statut": "tranchee",
+      "question": "Renvoi d'un juge (Q-ATT indécidable, D30) dans le test contrefactuel et dans le kappa juge-humain de l'échantillon.",
+      "contexte": "Un renvoi n'est pas une note : une paire contrefactuelle dont un côté est renvoyé, ou une réponse de l'échantillon renvoyée par le juge, n'a rien à comparer. La chaîne s'arrêtait (RenvoiDansLeTestContrefactuel) et pnpm go-no-go aussi (NotationDeJugeIntrouvable). Le dénominateur contrefactuel peut déjà descendre sous 200 (sous_effectif publié).",
+      "options": [
+        "(1) Paire contrefactuelle avec au moins un renvoi de ce juge : écartée du numérateur et du dénominateur de ce juge, nombre publié avec ses effectifs ; (2) réponse de l'échantillon renvoyée par un juge : écartée du kappa de ce juge, nombre publié par juge, comme D25 (1) ; tout écarté ⇒ kappa indéfini ⇒ rouge (D24 (2)).",
+        "(1) Un seul côté renvoyé = changement ; (2) renvoi compté comme désaccord."
+      ],
+      "recommandation": "Option 1 sur les deux points : aucun biais ni accord ne se mesure là où le juge n'a rendu aucune note, et la permutation peut elle-même faire basculer la règle d'ensembles.",
+      "retenu": "Option 1 sur les deux points.",
+      "date_decision": "2026-10-10"
     }
   ],
   "lots": [
@@ -640,9 +653,10 @@
         "D27",
         "D29",
         "D3",
-        "D30"
+        "D30",
+        "D31"
       ],
-      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*. Le 2026-10-09 : PR #106 (brouillon) livre charge-juge-v3 ; D29 tranchée sur ses points ouverts, à coder dans la même PR. Le 2026-10-09 : D29 codée dans la PR #106 ; D30 tranchée sur les points ouverts restants, à coder dans la même PR."
+      "note": "Les prompts prompts/judge-* appartiennent à l'auteur. Développable sur des réponses fictives. Le 2026-10-02 : la 0.15 (§7, n° 18) exige un contrôle croisé verdict × notations × run après le retrait d'un juge (DETTE 2026-10-02, point 3). Le 2026-10-03 (D13) : les notations du juge retiré sont aussi écartées de l'accord juges-humains et du kappa des juges publiés. Le 2026-10-05 (D14) : contrefactuel avant la notation de masse, 25 % emboîté, dérangement sur réponses nommantes, changement = métriques primaires, contrefactuel outil dans le texte. Le 2026-10-05 : PR A (noyau pur, #79) et D15. Le 2026-10-06 : T2 pour le seul noyau pur (PR A) ; restent la PR B (contrefactuel, permutation de candidat_id, test reliant notationsConcordent aux métriques primaires, DETTE 2026-10-05) et la PR C (entrées-sorties sur runs/, assembler()). Le 2026-10-06 : PR B (#82, contrefactuel des candidats, D16, D17) et PR C (#84, écriture et lecture de runs/, pnpm notation:controle, publication du contrefactuel au schéma du run). Reste une PR D : juge simulé et pnpm notation:dry de bout en bout ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 : PR D (#89, juge simulé, port du juge, chaîne noterRun, pnpm notation:dry) ; D19 tranchée. Reste : forcer non_applicable sur le soutien d'un lien mort (D19), un écrivain du gel (run.json, questions.json) et l'inscription d'un run invalide (D16 (3)), absents ; les vrais juges attendent prompts/judge-* (auteur). Le 2026-10-06 (soir) : D19 codée (#91, soutien d'un lien mort forcé à non_applicable). T3 : chaîne complète sur fixtures par pnpm notation:dry ; T4 attend les vrais juges (prompts/judge-*) et le test des liens. Le 2026-10-09 : D27 tranchée (charge-juge-v3 : fraîcheur calculée, noms cités rattachés par le code, texte de la page citée, prémisse et réponse attendue transmises) ; à coder avant de finaliser prompts/judge-*. Le 2026-10-09 : PR #106 (brouillon) livre charge-juge-v3 ; D29 tranchée sur ses points ouverts, à coder dans la même PR. Le 2026-10-09 : D29 codée dans la PR #106 ; D30 tranchée sur les points ouverts restants, à coder dans la même PR. Le 2026-10-10 : D30 codée dans la PR #106 ; D31 tranchée (renvoi écarté du contrefactuel et du kappa, nombres publiés), à coder dans la même PR."
     },
     {
       "id": "notation-humaine",

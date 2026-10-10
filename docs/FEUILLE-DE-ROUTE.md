@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-09.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-10.
 
 ## Décisions en attente
 
@@ -99,6 +99,10 @@ Aucune décision en attente.
 ### D30 — Points ouverts par le codage de D29 dans la PR #106 : définition d'un changement contrefactuel ; trois cas de Q-ATT qu'aucun texte ne tranche ; « indéterminée » humaine sur une Q-ATT ; version de la charge d'une lecture de comparateur.
 
 **Décision du 2026-10-09 :** Option 1 sur les quatre points.
+
+### D31 — Renvoi d'un juge (Q-ATT indécidable, D30) dans le test contrefactuel et dans le kappa juge-humain de l'échantillon.
+
+**Décision du 2026-10-10 :** Option 1 sur les deux points.
 
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
