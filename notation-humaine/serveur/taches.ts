@@ -66,6 +66,7 @@ export function etatDesTaches(contexte: Contexte): EtatDesTaches {
     run: donnees.run_note,
     reponses: donnees.reponses.map((prep) => ({ reponse_id: prep.reponse.id, textes: prep.textes })),
     notations: contexte.notations(),
+    renvois: contexte.renvois(),
     jeu_or: donnees.jeu_or,
   });
   const notables: Notable[] = [];

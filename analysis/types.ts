@@ -130,6 +130,7 @@ export const MOTIFS_NOTATION = [
   "arbitrage_echantillon_10",
   "extrait_invalide",
   "accord_partiel_juges",
+  "attribution_indecidable",
 ] as const;
 export type MotifNotation = (typeof MOTIFS_NOTATION)[number];
 
@@ -159,8 +160,6 @@ export interface Notation {
   readonly notateur: { readonly type: TypeNotateur; readonly id: IdentifiantCourt };
   readonly categorie: CategorieRetenue;
   readonly drapeaux: readonly Drapeau[];
-  /** Présent sur une note inexacte (schéma) ; lu par le seul test contrefactuel (D29 (2)). */
-  readonly motif_inexactitude?: string;
   /** §11 : présent uniquement avec le drapeau obsolescence. */
   readonly obsolescence_fraiche?: boolean;
   readonly sourcage: { readonly cite: boolean; readonly liens: readonly LienNote[] };

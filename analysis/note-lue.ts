@@ -64,16 +64,25 @@ export function notationsConcordent(a: Notation, b: Notation): boolean {
 }
 
 /**
- * « La note change » du test contrefactuel des noms de candidats (décision D29 (2) de l'auteur,
- * 2026-10-09, qui remplace D14 (3) pour ce seul test) : catégorie, drapeaux et motif d'inexactitude.
- * Le soutien des liens n'y entre pas : le texte des pages citées n'est pas permuté (§7 ne permute que
- * la réponse et l'item), un soutien qui change avec lui ne dit rien d'un biais sur le nom. La
- * fraîcheur n'y entre pas non plus : elle se calcule depuis les dates (D27 (C)), identiques des deux
- * côtés. Seconde égalité du dépôt, à côté de `notationsConcordent`, qui garde l'accord des juges et
- * des humains.
+ * « La note change » du test contrefactuel des noms de candidats (D14 (3), précisée par D30 (1) de
+ * l'auteur) : ce que lisent les métriques primaires, sourçage excepté — catégorie, drapeaux,
+ * fraîcheur de l'obsolescence. Le motif d'inexactitude n'y entre pas. Le soutien n'y entre pas : le
+ * texte des pages citées n'est pas permuté (§7 ne permute que la réponse et l'item), un soutien qui
+ * change avec lui ne dit rien d'un biais sur le nom.
+ *
+ * Définie à partir de `memeNote` elle-même, le sourçage de chaque note lue remplacé par une même
+ * valeur neutre : une seule liste de ce que lisent les métriques primaires existe (`NoteLue`). Si un
+ * champ y entre, il entre ici aussi ; deux listes écrites à part divergeraient sans bruit.
  */
 export function notesContrefactuellesConcordent(a: Notation, b: Notation): boolean {
-  return a.categorie === b.categorie && memesDrapeaux(a.drapeaux, b.drapeaux) && a.motif_inexactitude === b.motif_inexactitude;
+  return memeNote(sansSourcage(lireNote(a)), sansSourcage(lireNote(b)));
+}
+
+/** Le même sourçage neutre des deux côtés : `memeSourcage` est alors vrai, quels que soient les liens. */
+const SOURCAGE_NEUTRE: SourcageRetenu = { cite: false, au_moins_un_lien_existant: false, au_moins_un_lien_soutenant: false };
+
+function sansSourcage(note: NoteLue): NoteLue {
+  return { ...note, sourcage: SOURCAGE_NEUTRE };
 }
 
 /** Les drapeaux sont un ensemble (`uniqueItems` au schéma) : l'ordre ne compte pas. */

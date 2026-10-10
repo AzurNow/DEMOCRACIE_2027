@@ -58,7 +58,7 @@ import { fraicheurDesItems } from "./fraicheur.ts";
 import { AttributionIncoherente, noterAttribution, type NoteAttribution } from "./note-attribution.ts";
 import { NomCiteSansMot } from "./rattachement.ts";
 import { LienSansVerdictExistence, type ExistenceEtablie } from "./vue-annotateur.ts";
-import type { CandidatDuRun, LienNotation, MotifInexactitude, NotationIndividuelle } from "./types.ts";
+import type { CandidatDuRun, LienNotation, MotifInexactitude, NotationIndividuelle, RenvoiHumain } from "./types.ts";
 
 export interface IdentiteJuge {
   readonly juge_id: string;
@@ -164,6 +164,13 @@ export interface CadreNotationJuge {
   readonly version_charge: string;
 }
 
+/** Une Q-ATT indécidable (D30 (2)) : la raison, les noms relevés et le bloc d'attribution rattaché. */
+interface Renvoye {
+  readonly raison: string;
+  readonly noms_cites: readonly string[];
+  readonly attribution: NonNullable<NotationIndividuelle["attribution"]>;
+}
+
 /** Ce que la note retient de la sortie, ou calcule à sa place sur une Q-ATT. */
 interface NoteDeJuge {
   readonly categorie: CategorieRetenue;
@@ -172,25 +179,70 @@ interface NoteDeJuge {
   readonly attribution?: NonNullable<NotationIndividuelle["attribution"]>;
 }
 
-export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): NotationIndividuelle {
+/**
+ * Ce qu'un juge rend, une fois sa sortie contrôlée : une notation, ou, sur une Q-ATT qu'aucun texte ne
+ * permet de noter, un renvoi vers la notation humaine (D30 (2)), écrit à la place de la notation.
+ */
+export type IssueDeJuge = { readonly type: "notation"; readonly notation: NotationIndividuelle } | { readonly type: "renvoi"; readonly renvoi: RenvoiHumain };
+
+export function issueDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): IssueDeJuge {
   const note = cadre.gabarit === "Q-ATT" ? noteAttributionDe(identite.juge_id, sortie, cadre) : noteOrdinaireDe(identite.juge_id, sortie, cadre);
+  if ("raison" in note) return { type: "renvoi", renvoi: renvoiDe(identite, note, cadre) };
+  return { type: "notation", notation: notationDe(identite, sortie, cadre, note) };
+}
+
+/** La notation d'un juge ; un renvoi y lève `AttributionIndecidable` (la chaîne lit `issueDeJuge`). */
+export function notationDeJuge(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge): NotationIndividuelle {
+  const issue = issueDeJuge(identite, sortie, cadre);
+  if (issue.type === "renvoi") throw new AttributionIndecidable(identite.juge_id, cadre.objet_id, issue.renvoi.raison);
+  return issue.notation;
+}
+
+function notateurDe(identite: IdentiteJuge): NotationIndividuelle["notateur"] {
+  return {
+    type: "juge",
+    id: identite.juge_id,
+    famille_modele: identite.famille_modele,
+    modele: identite.modele,
+    version_prompt: versionPromptDe(identite.prompt),
+    a_vu_identite_outil: false,
+  };
+}
+
+function referencesDe(cadre: CadreNotationJuge): NotationIndividuelle["references_item"] {
+  return cadre.references_item.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte }));
+}
+
+/** Le renvoi porte l'identifiant que la notation aurait porté (dans son propre dossier) : une relance le retrouve. */
+function renvoiDe(identite: IdentiteJuge, renvoye: Renvoye, cadre: CadreNotationJuge): RenvoiHumain {
+  return {
+    id: cadre.id,
+    run_id: cadre.run_id,
+    contexte: cadre.contexte,
+    objet_note: { type: "reponse", id: cadre.objet_id },
+    notateur: notateurDe(identite),
+    version_charge: cadre.version_charge,
+    gabarit: "Q-ATT",
+    references_item: referencesDe(cadre),
+    motif: "attribution_indecidable",
+    raison: renvoye.raison,
+    noms_cites: [...renvoye.noms_cites],
+    attribution: renvoye.attribution,
+    date: cadre.date,
+  };
+}
+
+function notationDe(identite: IdentiteJuge, sortie: SortieJuge, cadre: CadreNotationJuge, note: NoteDeJuge): NotationIndividuelle {
   const fraiche = fraicheurCalculee(identite.juge_id, note.drapeaux, cadre);
   const brouillon: NotationIndividuelle = {
     id: cadre.id,
     run_id: cadre.run_id,
     contexte: cadre.contexte,
     objet_note: { type: "reponse", id: cadre.objet_id },
-    notateur: {
-      type: "juge",
-      id: identite.juge_id,
-      famille_modele: identite.famille_modele,
-      modele: identite.modele,
-      version_prompt: versionPromptDe(identite.prompt),
-      a_vu_identite_outil: false,
-    },
+    notateur: notateurDe(identite),
     version_charge: cadre.version_charge,
     gabarit: cadre.gabarit,
-    references_item: cadre.references_item.map((r) => ({ item_id: r.item_id, item_version: r.item_version, item_empreinte: r.item_empreinte })),
+    references_item: referencesDe(cadre),
     categorie: note.categorie,
     drapeaux: [...note.drapeaux],
     ...(note.motif_inexactitude === undefined ? {} : { motif_inexactitude: note.motif_inexactitude }),
@@ -225,13 +277,13 @@ function noteOrdinaireDe(juge_id: string, sortie: SortieJuge, cadre: CadreNotati
 }
 
 /** D29 (1) : sur une Q-ATT, la note se calcule depuis les noms relevés et la liste attendue du tirage. */
-function noteAttributionDe(juge_id: string, sortie: SortieJuge, cadre: CadreNotationJuge): NoteDeJuge {
+function noteAttributionDe(juge_id: string, sortie: SortieJuge, cadre: CadreNotationJuge): NoteDeJuge | Renvoye {
   exigerChampsConnus(juge_id, cadre.objet_id, sortie, CHAMPS_SORTIE_JUGE_ATTRIBUTION);
   if (!("noms_cites" in sortie) || typeof sortie.non_reponse !== "boolean") {
     throw new SortieJugeIncoherente(juge_id, cadre.objet_id, "question d'attribution sans noms_cites ou sans non_reponse : les deux sont exigés.");
   }
   const note = noterOuRefuser(juge_id, cadre, sortie);
-  if (note.statut === "indecidable") throw new AttributionIndecidable(juge_id, cadre.objet_id, note.raison);
+  if (note.statut === "indecidable") return { raison: note.raison, noms_cites: sortie.noms_cites, attribution: note.attribution };
   if (note.categorie !== "exacte" && sortie.extrait_justificatif === undefined) {
     throw new SortieJugeIncoherente(juge_id, cadre.objet_id, `note calculée « ${note.categorie} » sans extrait justificatif : sur une question d'attribution, l'extrait est exigé dès qu'un nom est cité ou que la liste attendue n'est pas vide.`);
   }

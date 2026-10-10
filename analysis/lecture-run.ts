@@ -36,7 +36,7 @@ import { basename, join } from "node:path";
 import { valider } from "../outils/schemas/valider.ts";
 import type { NomSchema } from "../outils/schemas/noms.ts";
 import { dateParis, lireInstant } from "../pipeline/interrogation/heure-paris.ts";
-import type { JugeDuRun, NotationIndividuelle, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "../pipeline/notation/types.ts";
+import type { JugeDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain, VerdictProduit } from "../pipeline/notation/types.ts";
 import type { GraineTirage } from "../pipeline/questions/types.ts";
 import type { EntreesAnalyse } from "./filtre.ts";
 import type { CandidatAuGel, EntreeTirage, Item, Question, ReferenceItem, Reponse, Run } from "./types.ts";
@@ -56,6 +56,8 @@ export interface DispositionRunNote {
   readonly notations: string;
   /** Réponses permutées du test contrefactuel : produites par aucun outil, jamais dans `reponses/`. */
   readonly reponses_contrefactuelles: string;
+  /** Renvois d'un juge vers la notation humaine (D30 (2), `schema/renvoi-humain.schema.json`). */
+  readonly renvois: string;
 }
 
 export function dispositionRunNote(repertoire_run: string): DispositionRunNote {
@@ -69,6 +71,7 @@ export function dispositionRunNote(repertoire_run: string): DispositionRunNote {
     reponses: join(volume, "reponses"),
     notations: join(volume, "notations"),
     reponses_contrefactuelles: join(volume, "reponses-contrefactuelles"),
+    renvois: join(volume, "renvois"),
   };
 }
 
@@ -299,6 +302,8 @@ export interface ReponseContrefactuelleLue extends Reponse {
 export interface NotationsDuRun {
   readonly notations: readonly NotationIndividuelle[];
   readonly reponses_contrefactuelles: readonly ReponseContrefactuelleLue[];
+  /** D30 (2) : les renvois de juge, publiés avec les notations. */
+  readonly renvois: readonly RenvoiHumain[];
 }
 
 /** Les notations individuelles et les réponses contrefactuelles du volume, hors `assembler()`. */
@@ -306,9 +311,14 @@ export function lireNotationsDuRun(repertoire_run: string, run_id: string): Nota
   const disposition = exigerVolume(repertoire_run);
   exigerDossier(disposition.notations, "les notations individuelles du volume");
   exigerDossier(disposition.reponses_contrefactuelles, "les réponses contrefactuelles du volume");
+  exigerDossier(disposition.renvois, "les renvois de juge du volume (D30 (2))");
   const reponses_contrefactuelles = lireDossier<ReponseContrefactuelleLue>(disposition.reponses_contrefactuelles, "reponse", run_id);
   exigerContexte(reponses_contrefactuelles, disposition.reponses_contrefactuelles, (c) => c !== "run", "une réponse contrefactuelle n'est jamais de contexte run");
-  return { notations: lireDossier<NotationIndividuelle>(disposition.notations, "notation", run_id), reponses_contrefactuelles };
+  return {
+    notations: lireDossier<NotationIndividuelle>(disposition.notations, "notation", run_id),
+    reponses_contrefactuelles,
+    renvois: lireDossier<RenvoiHumain>(disposition.renvois, "renvoi-humain", run_id),
+  };
 }
 
 /* ------------------------------------------------------------------ tirage et questions */

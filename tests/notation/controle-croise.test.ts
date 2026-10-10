@@ -36,6 +36,7 @@ function runPropre(run: RunDeNotation): EntreeControleCroise {
       run,
       objet_note: { type: "reponse", id },
       notations: siennes,
+      renvois: [],
       dans_echantillon_humain: dans,
       textes: { reponse: REPONSE_PROJETEE, citations_reference: [] },
       verdict_id: ulid(`verdict-${id}`),

@@ -13,7 +13,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
 import { bilanNotation, ReponsePerdue } from "../../pipeline/notation/bilan-notation.ts";
-import { JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { identifiantDerive, JugesNonConformes, noterRun, RenvoiDansLeTestContrefactuel, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { DepotNotation } from "../../pipeline/notation/stockage.ts";
+import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
 import { tailleEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
@@ -438,6 +440,35 @@ describe("D27 : la charge v3 reçue par le juge dans la chaîne", () => {
     const citent = execution.prepare.reponses.filter((r) => r.reponse.normalise.liens.length > 0).map((r) => r.reponse.id);
     expect(citent.length).toBeGreaterThan(0);
     for (const id of citent) expect(execution.resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toEqual(["test_liens"]);
+  });
+});
+
+describe("D30 (2) : un renvoi déjà écrit pour une réponse", () => {
+  function poserRenvoi(prepare: RunSimulePrepare, question_id: string): string {
+    const cible = prepare.reponses.find((r) => r.reponse.question_id === question_id);
+    if (cible === undefined) throw new Error("réponse attendue");
+    const run_id = lireRunJson(prepare.repertoire_run).id;
+    const id = identifiantDerive([run_id, "notation", "run", cible.reponse.id, "juge-simule-a"]);
+    const renvoi = renvoiJuge("juge-simule-a", { id, run_id, objet_note: { type: "reponse", id: cible.reponse.id }, notateur: { type: "juge", id: "juge-simule-a", famille_modele: "famille-simulee-a", modele: "simule/juge-a", version_prompt: "simule://juge-simule@1.0.0", a_vu_identite_outil: false } });
+    DepotNotation.ouvrir(prepare.repertoire_run).ecrireRenvoi(renvoi);
+    return cible.reponse.id;
+  }
+
+  it("hors du sous-ensemble contrefactuel : le juge n'est pas redemandé, la réponse attend un humain sous attribution_indecidable", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    const id = poserRenvoi(prepare, QUESTION_SANS_NOM);
+    const appels: Appel[] = [];
+    const env = environnementSimule(prepare.repertoire_run, parametresDeReference());
+    const resultat = await noterRun(prepare.reponses, { ...env, juges: enregistreurs(env.juges, appels) });
+    expect(appels.filter((a) => a.juge_id === "juge-simule-a" && a.charge.reponse_id === id)).toEqual([]);
+    expect(resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toContain("attribution_indecidable");
+    expect(lireNotationsDuRun(prepare.repertoire_run, resultat.run_id).notations.filter((n) => n.objet_note.id === id && n.notateur.id === "juge-simule-a")).toEqual([]);
+  });
+
+  it("dans le sous-ensemble contrefactuel : le test s'arrête sur une erreur nommée (question ouverte), jamais un changement inventé", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    poserRenvoi(prepare, QUESTION_NOMMANTE);
+    await expect(noterRun(prepare.reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()))).rejects.toBeInstanceOf(RenvoiDansLeTestContrefactuel);
   });
 });
 

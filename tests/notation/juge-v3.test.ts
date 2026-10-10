@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { AttributionIndecidable, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
+import { AttributionIndecidable, issueDeJuge, notationDeJuge, SortieJugeIncoherente, type CadreNotationJuge, type IdentiteJuge, type SortieJuge, type SortieJugeAttribution } from "../../pipeline/notation/juge.ts";
 import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ReponseAttendue } from "../../pipeline/questions/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -163,8 +163,30 @@ describe("(D) et D29 (1) : question d'attribution, le juge relève les noms, le 
     expect(() => qatt(sansExtrait)).toThrow(/extrait/);
   });
 
-  it("cas indécidable (candidat du périmètre non interrogé cité) : AttributionIndecidable, aucune note", () => {
+  it("notationDeJuge sur un cas indécidable : AttributionIndecidable, jamais une note (la chaîne lit issueDeJuge)", () => {
     expect(() => qatt(releve(["Martinez", "Le Brun", "Ollivier"]), LISTE, { interroges: ["demo-alpha", "demo-beta", "demo-gamma"] })).toThrow(AttributionIndecidable);
+  });
+
+  describe("D30 (2) : les trois cas indécidables donnent un renvoi vers l'humain, conforme à son schéma", () => {
+    const issue = (sortie: SortieJuge, reponse_attendue: ReponseAttendue, surcharges: Partial<CadreNotationJuge>) =>
+      issueDeJuge(IDENTITE, sortie, cadre({ gabarit: "Q-ATT", reponse_attendue, candidats: HOMONYMES, interroges: INTERROGES, ...surcharges }));
+    const CAS: readonly (readonly [string, SortieJuge, ReponseAttendue, Partial<CadreNotationJuge>])[] = [
+      ["candidat du périmètre non interrogé cité sur une mesure réelle", releve(["Martinez", "Le Brun", "Hélène Ollivier"]), LISTE, { interroges: ["demo-alpha", "demo-beta", "demo-gamma"] }],
+      ["nom ambigu dont un candidat possible est attendu", releve(["Martinez", "Ollivier"]), { ...LISTE, candidats_attendus: ["demo-alpha", "demo-delta"] }, {}],
+      ["Q-ATT orientée à prémisse fausse avec un nom cité", releve(["Martinez"]), FICTIVE, { registre: "oriente", premisse_fausse: true }],
+    ];
+    for (const [cas, sortie, attendue, surcharges] of CAS) {
+      it(cas, () => {
+        const resultat = issue(sortie, attendue, surcharges);
+        if (resultat.type !== "renvoi") throw new Error("renvoi attendu");
+        expect(() => valider("renvoi-humain", resultat.renvoi, cas)).not.toThrow();
+        expect(resultat.renvoi).toMatchObject({ motif: "attribution_indecidable", gabarit: "Q-ATT", version_charge: "charge-juge-v3", noms_cites: (sortie as SortieJugeAttribution).noms_cites });
+      });
+    }
+
+    it("un cas décidable donne une notation, pas un renvoi", () => {
+      expect(issue(releve(["Martinez", "Le Brun"]), LISTE, {}).type).toBe("notation");
+    });
   });
 
   it("noms_cites hors Q-ATT : sortie incohérente", () => {

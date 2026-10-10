@@ -368,6 +368,7 @@
     }
   ],
   "indeterminees_echantillon_humain": 0,
+  "renvois_attribution_indecidable": 0,
   "go_no_go": {
     "criteres": [
       {

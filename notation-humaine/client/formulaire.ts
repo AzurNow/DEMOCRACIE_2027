@@ -8,7 +8,7 @@
 import { champ, el, liste } from "./dom.ts";
 import { nomsParLigne } from "./noms.ts";
 import { motifSansSoutien, soutiensAdmis } from "./soutiens.ts";
-import type { Existence, Grille, Saisie, Vue } from "./types.ts";
+import type { Existence, Grille, Saisie, SaisieAttribution, Vue } from "./types.ts";
 
 export type LectureFormulaire =
   | { readonly ok: true; readonly saisie: Saisie }
@@ -17,6 +17,12 @@ export type LectureFormulaire =
 export interface Formulaire {
   readonly racine: HTMLFormElement;
   lire(): LectureFormulaire;
+  /**
+   * D30 (2) : sur une Q-ATT que la règle d'ensembles rend indécidable (refus `attribution_indecidable`
+   * du serveur), montre la catégorie, les drapeaux et le motif que l'humain décide. Hors de ce cas,
+   * ils restent cachés et ne sont jamais envoyés.
+   */
+  revelerNoteDecidee(): void;
 }
 
 function radios(nom: string, valeurs: readonly string[]): HTMLElement {
@@ -52,7 +58,14 @@ interface Controles {
   readonly provenance: HTMLSelectElement;
   /** Q-ATT seulement (D29) : les noms cités, un par ligne. */
   readonly noms: HTMLTextAreaElement | null;
+  /** Q-ATT seulement (D30 (2)) : la note décidée, cachée tant que le serveur ne l'exige pas. */
+  readonly decidee: { readonly bloc: HTMLFieldSetElement; readonly motif: HTMLSelectElement } | null;
 }
+
+/** D30 (3) : trois natures exclusives de la réponse à une Q-ATT ; la note se calcule dans le premier cas. */
+const NATURE_REPOND = "répond";
+const NATURE_NON_REPONSE = "refuse ou ne répond pas";
+const NATURE_INDETERMINEE = "contradictoire, indéterminée";
 
 /** D29 : sur une Q-ATT, l'annotateur relève les noms cités et la non-réponse ; la note se calcule. */
 function blocAttribution(noms: HTMLTextAreaElement): HTMLElement {
@@ -60,9 +73,23 @@ function blocAttribution(noms: HTMLTextAreaElement): HTMLElement {
     "fieldset",
     {},
     el("legend", {}, "Question d'attribution : la note se calcule à partir de votre relevé"),
-    champ("Noms que la réponse cite comme proposant la mesure, tels qu'écrits, un par ligne", noms),
-    el("fieldset", {}, el("legend", {}, "La réponse refuse-t-elle, ou ne répond-elle pas ?"), radios("non_reponse", ["oui", "non"])),
+    champ("Noms que la réponse cite comme proposant la mesure, tels qu'écrits, un par ligne (facultatifs si la réponse est indéterminée)", noms),
+    el("fieldset", {}, el("legend", {}, "Nature de la réponse"), radios("nature", [NATURE_REPOND, NATURE_NON_REPONSE, NATURE_INDETERMINEE])),
   );
+}
+
+/** D30 (2) : la note que l'humain décide quand aucun texte ne la détermine ; cachée par défaut d'affichage. */
+function blocNoteDecidee(grille: Grille, motif: HTMLSelectElement): HTMLFieldSetElement {
+  const bloc = el(
+    "fieldset",
+    {},
+    el("legend", {}, "Cas indécidable : décidez la note (catégorie, drapeaux, motif)"),
+    radios("decidee_categorie", ["exacte", "inexacte"]),
+    el("div", {}, ...grille.drapeaux.map((d) => el("label", {}, el("input", { type: "checkbox", name: "decidee_drapeau", value: d }), ` ${d}`))),
+    champ("Motif d'inexactitude (réponse inexacte)", motif),
+  );
+  bloc.hidden = true;
+  return bloc;
 }
 
 /** Hors Q-ATT : la catégorie, les drapeaux et le motif du §7. */
@@ -98,9 +125,10 @@ function lireExtrait(c: Controles, categorie: string | null): Pick<Saisie, "extr
 }
 
 function erreursDeChoix(racine: HTMLElement, c: Controles): readonly string[] {
-  const propre = c.noms === null ? ["categorie", "Choisissez une catégorie."] : ["non_reponse", "Dites si la réponse refuse ou ne répond pas."];
+  const propre = c.noms === null ? ["categorie", "Choisissez une catégorie."] : ["nature", "Dites la nature de la réponse."];
   return [
     ...(choisi(racine, propre[0] as string) === null ? [propre[1] as string] : []),
+    ...(c.decidee !== null && !c.decidee.bloc.hidden && choisi(racine, "decidee_categorie") === null ? ["Décidez la catégorie du cas indécidable."] : []),
     ...(choisi(racine, "cite") === null ? ["Dites si la réponse cite une source."] : []),
     ...(c.soutiens.some((s) => valeurChoisie(s) === null) ? ["Choisissez un soutien pour chaque lien."] : []),
   ];
@@ -126,29 +154,61 @@ function saisieOrdinaire(racine: HTMLElement, c: Controles, categorie: string, v
 }
 
 function saisieAttribution(racine: HTMLElement, noms: HTMLTextAreaElement, c: Controles, vue: Vue): Saisie {
-  return { noms_cites: nomsParLigne(noms.value), non_reponse: choisi(racine, "non_reponse") === "oui", ...communDe(racine, c, vue, null) };
+  const nature = choisi(racine, "nature");
+  return {
+    noms_cites: nomsParLigne(noms.value),
+    non_reponse: nature === NATURE_NON_REPONSE,
+    indeterminee: nature === NATURE_INDETERMINEE,
+    ...noteDecideeDe(racine, c),
+    ...communDe(racine, c, vue, null),
+  };
+}
+
+/** Envoyée seulement quand le bloc est montré (refus `attribution_indecidable`) et une catégorie choisie. */
+function noteDecideeDe(racine: HTMLElement, c: Controles): Pick<SaisieAttribution, "note_decidee"> {
+  const categorie = choisi(racine, "decidee_categorie");
+  if (c.decidee === null || c.decidee.bloc.hidden || categorie === null) return {};
+  const motif = valeurChoisie(c.decidee.motif);
+  const inexacte = categorie === "inexacte";
+  return { note_decidee: { categorie, drapeaux: inexacte ? cochees(racine, "decidee_drapeau") : [], ...(inexacte && motif !== null ? { motif_inexactitude: motif } : {}) } };
+}
+
+/** D30 (2) : le bloc de la note décidée, sur une Q-ATT seulement. */
+function decideeDe(vue: Vue, grille: Grille): Controles["decidee"] {
+  if (vue.question.gabarit !== "Q-ATT") return null;
+  const motif = selection(grille.motifs_inexactitude);
+  return { bloc: blocNoteDecidee(grille, motif), motif };
 }
 
 export function construireFormulaire(vue: Vue, grille: Grille): Formulaire {
   const liens = blocLiens(vue, grille);
+  const decidee = decideeDe(vue, grille);
   const controles: Controles = {
     soutiens: liens.soutiens,
     motif: selection(grille.motifs_inexactitude),
     extrait: el("textarea", { rows: "3" }),
     provenance: el("select", {}, ...grille.provenances.map((p) => el("option", { value: p }, p))),
     noms: vue.question.gabarit === "Q-ATT" ? el("textarea", { rows: "4" }) : null,
+    decidee,
   };
   const racine = el(
     "form",
     { class: "volet volet-grille" },
     el("h2", {}, "Votre notation"),
     ...(controles.noms === null ? blocsGrille(grille, controles.motif) : [blocAttribution(controles.noms)]),
+    ...(decidee === null ? [] : [decidee.bloc]),
     el("fieldset", {}, el("legend", {}, "La réponse cite-t-elle une source ?"), radios("cite", ["oui", "non"])),
     liens.noeud,
     el("fieldset", {}, el("legend", {}, "Extrait justificatif (toute note autre qu'exacte) : copié de la réponse ou d'une citation de référence"), controles.extrait, champ("Provenance", controles.provenance)),
     el("button", { type: "submit" }, "Enregistrer la notation"),
   );
-  return { racine, lire: () => lire(racine, controles, vue) };
+  return {
+    racine,
+    lire: () => lire(racine, controles, vue),
+    revelerNoteDecidee: () => {
+      if (decidee !== null) decidee.bloc.hidden = false;
+    },
+  };
 }
 
 function lire(racine: HTMLFormElement, controles: Controles, vue: Vue): LectureFormulaire {

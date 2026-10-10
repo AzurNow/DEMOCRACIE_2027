@@ -54,12 +54,12 @@ import { comparerChaines, tirerEchantillonHumain, tirerSousEnsembleContrefactuel
 import { citationsDeReference, type TextesDeVerification } from "./extrait.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
 import { inscrireContrefactuel, type IssueInscription } from "./inscription-contrefactuel.ts";
-import { notationDeJuge, versionPromptDe, type Juge } from "./juge.ts";
+import { issueDeJuge, versionPromptDe, type IssueDeJuge, type Juge } from "./juge.ts";
 import { pagesCitees, type PageCitee } from "./pages-citees.ts";
 import { publierContrefactuel } from "./publication-contrefactuel.ts";
 import { demandePermutee, type DemandePermutee } from "./reponse-contrefactuelle.ts";
 import { DepotNotation } from "./stockage.ts";
-import type { CandidatDuRun, NotationIndividuelle, RunDeNotation } from "./types.ts";
+import type { CandidatDuRun, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "./types.ts";
 import { indexerExistences, type ExistenceEtablie } from "./vue-annotateur.ts";
 
 /** Une réponse obtenue du run, avec sa question posée, ses items épinglés et ce que le tirage a résolu au gel. */
@@ -105,6 +105,19 @@ export class JugesNonConformes extends Error {
   constructor(detail: string) {
     super(`Juges refusés : ${detail}`);
     this.name = "JugesNonConformes";
+  }
+}
+
+/**
+ * Un juge a renvoyé vers l'humain (D30 (2)) une réponse du sous-ensemble contrefactuel, d'un côté de
+ * la paire ou des deux. Le §7 compare deux notes ; D30 ne dit pas ce que vaut une paire où l'un des
+ * côtés n'en a pas : le test s'arrête ici, jamais un changement ni une absence de changement inventés.
+ * Question posée à l'auteur (lot charge-juge-v3).
+ */
+export class RenvoiDansLeTestContrefactuel extends Error {
+  constructor(objets: readonly Ulid[]) {
+    super(`Test contrefactuel : renvoi d'attribution indécidable sur ${objets.join(", ")} ; aucune règle ne dit si la paire change (D30 (2), question ouverte).`);
+    this.name = "RenvoiDansLeTestContrefactuel";
   }
 }
 
@@ -159,6 +172,8 @@ interface Etat {
   readonly parId: ReadonlyMap<Ulid, Preparee>;
   /** Toutes les notations du run, lues puis écrites. */
   readonly notations: NotationIndividuelle[];
+  /** Les renvois de juge du run (D30 (2)), lus puis écrits. */
+  readonly renvois: RenvoiHumain[];
   /** Clés (contexte, objet, juge) des notations de juge déjà écrites. */
   readonly cles: Set<string>;
   /** Réponses contrefactuelles déjà écrites, par identifiant, sous forme canonique. */
@@ -206,7 +221,8 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     reponses: preparees,
     parId: indexerReponses(preparees, run.id),
     notations: [...lues.notations],
-    cles: new Set(lues.notations.filter((n) => n.notateur.type === "juge").map(cleDeNotation)),
+    renvois: [...lues.renvois],
+    cles: new Set([...lues.notations.filter((n) => n.notateur.type === "juge").map(cleDeNotation), ...lues.renvois.map(cleDeNotation)]),
     contrefactuelles: new Map(lues.reponses_contrefactuelles.map((r) => [r.id, canoniser(r)])),
     verdicts: new Set(lireVerdicts(env.repertoire_run, run.id).map((v) => v.objet_note.id)),
   };
@@ -275,7 +291,7 @@ function indexerReponses(reponses: readonly Preparee[], run_id: Ulid): ReadonlyM
   return index;
 }
 
-function cleDeNotation(notation: NotationIndividuelle): string {
+function cleDeNotation(notation: Pick<NotationIndividuelle | RenvoiHumain, "contexte" | "objet_note" | "notateur">): string {
   return cle(notation.contexte, notation.objet_note.id, notation.notateur.id);
 }
 
@@ -297,7 +313,7 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
     if (etat.cles.has(cle(cible.cote.contexte, cible.objet_id, juge.identite.juge_id))) continue;
     const charge = construireCharge({ ...cible.demande, prompt: juge.identite.prompt });
     const sortie = await juge.noter(charge);
-    const notation = notationDeJuge(juge.identite, sortie, {
+    const issue = issueDeJuge(juge.identite, sortie, {
       id: identifiantDerive([etat.run.id, "notation", cible.cote.contexte, cible.objet_id, juge.identite.juge_id]),
       run_id: etat.run.id,
       contexte: cible.cote.contexte,
@@ -318,10 +334,21 @@ async function noterParLesJuges(etat: Etat, juges: readonly Juge[], cible: Cible
       premisse_fausse: cible.demande.resolu_au_gel.premisse_fausse,
       version_charge: charge.version_charge,
     });
-    etat.depot.ecrireNotation(notation);
-    etat.notations.push(notation);
-    etat.cles.add(cleDeNotation(notation));
+    consigner(etat, issue);
   }
+}
+
+/** D30 (2) : un renvoi s'écrit à la place de la notation, sous la même clé ; une relance ne redemande pas le juge. */
+function consigner(etat: Etat, issue: IssueDeJuge): void {
+  if (issue.type === "renvoi") {
+    etat.depot.ecrireRenvoi(issue.renvoi);
+    etat.renvois.push(issue.renvoi);
+    etat.cles.add(cleDeNotation(issue.renvoi));
+    return;
+  }
+  etat.depot.ecrireNotation(issue.notation);
+  etat.notations.push(issue.notation);
+  etat.cles.add(cleDeNotation(issue.notation));
 }
 
 function demandeDe(etat: Etat, r: Preparee, liens: LiensEtablis): Omit<DemandeCharge, "prompt"> {
@@ -355,6 +382,7 @@ async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   const derangement = tirerDerangement(run.candidats, run.graines.contrefactuel);
   const paires: PaireContrefactuelle[] = [];
   for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaire(etat, exigerPreparee(etat, id), derangement));
+  exigerPairesSansRenvoi(etat, paires);
   const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires) });
   const publication = publierContrefactuel(resultat, sous_ensemble, derangement, run);
   if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat };
@@ -398,6 +426,12 @@ function exigerLiens(r: Preparee): LiensEtablis {
   return r.liens;
 }
 
+function exigerPairesSansRenvoi(etat: Etat, paires: readonly PaireContrefactuelle[]): void {
+  const objets = new Set(paires.flatMap((p) => [p.reponse_id, p.contrefactuelle_id]));
+  const renvoyes = [...new Set(etat.renvois.filter((r) => objets.has(r.objet_note.id)).map((r) => r.objet_note.id))];
+  if (renvoyes.length > 0) throw new RenvoiDansLeTestContrefactuel(renvoyes);
+}
+
 /** Les notations de juge portant sur les deux côtés des paires, et elles seules. */
 function notationsDesPaires(etat: Etat, paires: readonly PaireContrefactuelle[]): readonly NotationIndividuelle[] {
   const objets = new Set(paires.flatMap((p) => [p.reponse_id, p.contrefactuelle_id]));
@@ -434,6 +468,7 @@ async function noterReponse(etat: Etat, run: RunDeNotation, actifs: readonly Jug
     run,
     objet_note: { type: "reponse", id: r.reponse.id },
     notations: etat.notations.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
+    renvois: etat.renvois.filter((n) => n.contexte === "run" && n.objet_note.id === r.reponse.id),
     dans_echantillon_humain: dans,
     textes: r.textes,
     verdict_id: identifiantDerive([etat.run.id, "verdict", r.reponse.id]),

@@ -184,6 +184,7 @@ function decisionDe(a: NotationIndividuelle, b: NotationIndividuelle): ReturnTyp
     run: runDeNotation(),
     objet_note: { type: "reponse", id: REPONSE_ID },
     notations: [a, b],
+    renvois: [],
     dans_echantillon_humain: false,
     textes: { reponse: REPONSE_PROJETEE, citations_reference: [] },
     verdict_id: ulid("verdict-lien-mort"),

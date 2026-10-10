@@ -23,6 +23,12 @@
  *    tranche aussi, sous `accord_partiel_juges` (D15). Sinon, accord des deux juges
  *    (`accord_juges`), ou juge restant seul après un retrait (`juge_unique_apres_retrait`).
  *
+ * **Renvoi d'attribution (D30 (2)).** Sur une Q-ATT qu'aucun texte ne permet de noter, un juge ne rend
+ * pas de note mais un renvoi (`schema/renvoi-humain.schema.json`) : il n'est pas manquant, il ne
+ * compte pas, et un humain est requis sous le motif `attribution_indecidable`, qui prime sur
+ * `extrait_invalide` (l'humain y décide lui-même la catégorie si son relevé est indécidable aussi).
+ * Le renvoi d'un juge retiré est écarté comme ses notations (D13).
+ *
  * « S'accorder » est `analysis/note-lue.ts:notationsConcordent` (D14 (3)), seule égalité du dépôt.
  *
  * **Note commune.** Deux notations qui s'accordent peuvent encore différer sur des champs que les
@@ -45,13 +51,15 @@ import type { Instant, MotifNotation, ObjetNote, Ulid } from "../../analysis/typ
 import { comparerChaines } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { construireVerdict, noteCommune, noteDe, porteDrapeauGrave, type NoteRetenue, type Resolution } from "./note-retenue.ts";
-import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, VerdictProduit } from "./types.ts";
 
 export interface EntreeDecision {
   readonly run: RunDeNotation;
   readonly objet_note: ObjetNote;
   /** Toutes les notations du run portant sur l'objet, juges retirés compris. */
   readonly notations: readonly NotationIndividuelle[];
+  /** Les renvois de juge portant sur l'objet (D30 (2)), juges retirés compris. */
+  readonly renvois: readonly RenvoiHumain[];
   readonly dans_echantillon_humain: boolean;
   readonly textes: TextesDeVerification;
   /** Fournis par l'appelant : le noyau n'engendre ni identifiant ni date. */
@@ -67,6 +75,7 @@ export const MOTIFS_ATTENTE = [
   "double_notation_humaine_incomplete",
   "arbitrage_echantillon_manquant",
   "accord_sans_note_commune",
+  "attribution_indecidable",
 ] as const;
 export type MotifAttente = (typeof MOTIFS_ATTENTE)[number];
 
@@ -110,6 +119,8 @@ interface Tri {
 /** Ce que disent les juges non retirés. */
 interface BilanJuges {
   readonly manquants: readonly string[];
+  /** Juges non retirés qui ont renvoyé la question vers l'humain (D30 (2)). */
+  readonly renvoyes: readonly string[];
   /** Notations à extrait valide : les seules qui comptent. */
   readonly comptees: readonly NotationIndividuelle[];
   readonly invalides: readonly NotationIndividuelle[];
@@ -120,7 +131,8 @@ interface BilanJuges {
 export function decider(entree: EntreeDecision): Decision {
   const juges = jugesDuRun(entree.run, entree.objet_note.id);
   const tri = trier(entree, juges);
-  const bilan = bilanDesJuges(tri.juges, juges.actifs, entree.textes);
+  const renvoyes = jugesRenvoyes(entree, juges, tri.juges);
+  const bilan = bilanDesJuges(tri.juges, juges.actifs, renvoyes, entree.textes);
   return entree.dans_echantillon_humain ? deciderEchantillon(entree, tri, bilan) : deciderHorsEchantillon(entree, tri, bilan);
 }
 
@@ -187,6 +199,7 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
   ["erreur_grave", "appeles"],
   ["extrait_invalide", "appeles"],
   ["accord_partiel_juges", "appeles"],
+  ["attribution_indecidable", "appeles"],
 ]);
 
 /**
@@ -200,6 +213,7 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
  * `accord_partiel_juges` est alors le seul motif admis.
  */
 function motifsHumainsAdmis(bilan: BilanJuges): readonly MotifNotation[] {
+  if (bilan.renvoyes.length > 0) return ["attribution_indecidable"];
   if (bilan.invalides.length > 0) return ["extrait_invalide"];
   return bilan.desaccord || bilan.grave ? ["desaccord_juges", "erreur_grave"] : ["accord_partiel_juges"];
 }
@@ -225,17 +239,49 @@ function verifierUnParNotateur(notations: readonly NotationIndividuelle[], objet
 
 /* ------------------------------------------------------------------ juges */
 
+/**
+ * Les juges non retirés qui ont renvoyé l'objet (D30 (2)). Un renvoi d'un autre run, d'un autre
+ * objet, d'un juge inconnu, en double, ou d'un juge qui a aussi noté l'objet est incohérent.
+ */
+function jugesRenvoyes(
+  entree: EntreeDecision,
+  juges: { readonly actifs: readonly string[]; readonly retires: ReadonlySet<string> },
+  notations: readonly NotationIndividuelle[],
+): readonly string[] {
+  const renvoyes: string[] = [];
+  for (const renvoi of entree.renvois) {
+    const juge = renvoi.notateur.id;
+    verifierRenvoi(renvoi, entree, juges);
+    if (juges.retires.has(juge)) continue;
+    if (renvoyes.includes(juge) || notations.some((n) => n.notateur.id === juge)) {
+      throw new NotationsIncoherentes(entree.objet_note.id, `le juge ${juge} porte à la fois plusieurs issues (notation ou renvoi) sur l'objet.`);
+    }
+    renvoyes.push(juge);
+  }
+  return renvoyes;
+}
+
+function verifierRenvoi(renvoi: RenvoiHumain, entree: EntreeDecision, juges: { readonly actifs: readonly string[]; readonly retires: ReadonlySet<string> }): void {
+  const juge = renvoi.notateur.id;
+  const connu = juges.actifs.includes(juge) || juges.retires.has(juge);
+  if (renvoi.run_id !== entree.run.id || renvoi.objet_note.id !== entree.objet_note.id || renvoi.contexte !== "run" || !connu) {
+    throw new NotationsIncoherentes(entree.objet_note.id, `le renvoi ${renvoi.id} porte sur ${renvoi.objet_note.id}, run ${renvoi.run_id}, contexte ${renvoi.contexte}, juge ${juge}.`);
+  }
+}
+
 function bilanDesJuges(
   notations: readonly NotationIndividuelle[],
   actifs: readonly string[],
+  renvoyes: readonly string[],
   textes: TextesDeVerification,
 ): BilanJuges {
-  const presents = new Set(notations.map((n) => n.notateur.id));
+  const presents = new Set([...notations.map((n) => n.notateur.id), ...renvoyes]);
   const triees = [...notations].sort((a, b) => comparerChaines(a.notateur.id, b.notateur.id));
   const comptees = triees.filter((n) => controlerExtrait(n, textes).valide);
   const [premiere, seconde] = comptees;
   return {
     manquants: actifs.filter((id) => !presents.has(id)),
+    renvoyes,
     comptees,
     invalides: triees.filter((n) => !comptees.includes(n)),
     desaccord: premiere !== undefined && seconde !== undefined && !notationsConcordent(premiere, seconde),
@@ -265,6 +311,7 @@ function deciderHorsEchantillon(entree: EntreeDecision, tri: Tri, bilan: BilanJu
 
 function motifsHumainRequis(bilan: BilanJuges): MotifAttente[] {
   const motifs: MotifAttente[] = [];
+  if (bilan.renvoyes.length > 0) motifs.push("attribution_indecidable");
   if (bilan.desaccord) motifs.push("desaccord_juges");
   if (bilan.invalides.length > 0) motifs.push("extrait_invalide");
   if (bilan.grave) motifs.push("drapeau_grave");

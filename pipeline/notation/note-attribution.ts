@@ -39,7 +39,9 @@
  * **Indécidable, jamais deviné.** Outre l'incertain ci-dessus, une formulation orientée à prémisse
  * fausse (au gel) qui cite au moins un nom ne permet pas de dire si la prémisse est validée
  * (confirmation de prémisse, §7) : aucun texte ne relie la prémisse d'une Q-ATT aux noms cités.
- * Ces cas sont rendus `indecidable` avec leur raison ; l'appelant refuse d'enregistrer une note.
+ * Ces cas sont rendus `indecidable` avec leur raison. D30 (2) : pour un juge, la chaîne écrit alors un
+ * renvoi (`schema/renvoi-humain.schema.json`) et la réponse part en notation humaine ; pour un humain,
+ * et dans ces seuls cas, l'écran lui fait décider catégorie, motif et drapeaux.
  */
 
 import type { Drapeau } from "../../analysis/types.ts";
@@ -99,16 +101,28 @@ export function noterAttribution(releve: ReleveAttribution, contexte: ContexteAt
   }
   const rattachement = rattacherNoms(releve.noms_cites, contexte.candidats);
   const attendus = attendusDe(contexte.reponse_attendue);
-  const attribution: Attribution = {
+  const attribution = attributionDe(rattachement, attendus);
+  if (releve.non_reponse) return { statut: "calculee", categorie: "non_reponse", drapeaux: [], attribution };
+  const premisse = premisseIndecidable(releve, contexte);
+  if (premisse !== null) return { statut: "indecidable", raison: premisse, attribution };
+  return appliquerRegle(ensemblesDe(rattachement, attendus, contexte), attribution);
+}
+
+/**
+ * Le bloc d'attribution seul, sans la règle (D30 (3) : une réponse que l'humain déclare indéterminée
+ * garde ses noms rattachés, sans note calculée).
+ */
+export function attributionRelevee(noms_cites: readonly string[], contexte: Pick<ContexteAttribution, "reponse_attendue" | "candidats">): Attribution {
+  return attributionDe(rattacherNoms(noms_cites, contexte.candidats), attendusDe(contexte.reponse_attendue));
+}
+
+function attributionDe(rattachement: ReturnType<typeof rattacherNoms>, attendus: readonly string[]): Attribution {
+  return {
     attendus,
     cites: rattachement.cites,
     ...(rattachement.hors_perimetre.length === 0 ? {} : { hors_perimetre_cites: rattachement.hors_perimetre }),
     ...(rattachement.ambigus.length === 0 ? {} : { ambigus_cites: rattachement.ambigus }),
   };
-  if (releve.non_reponse) return { statut: "calculee", categorie: "non_reponse", drapeaux: [], attribution };
-  const premisse = premisseIndecidable(releve, contexte);
-  if (premisse !== null) return { statut: "indecidable", raison: premisse, attribution };
-  return appliquerRegle(ensemblesDe(rattachement, attendus, contexte), attribution);
 }
 
 /** La liste attendue du tirage, jamais recalculée ni supposée. */

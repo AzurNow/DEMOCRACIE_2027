@@ -11,7 +11,9 @@ import { dispositionRunNote } from "../../analysis/lecture-run.ts";
 import { ErreurSchema } from "../../outils/schemas/valider.ts";
 import { DepotNotation, FichierDejaEcrit, ObjetHorsDeSonDossier } from "../../pipeline/notation/stockage.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { poserRunNote, type RunFictif } from "./run-fictif.ts";
+import { poserRunNote, RUN_ID, type RunFictif } from "./run-fictif.ts";
+import { renvoiJuge } from "./fabriques.ts";
+import { lireNotationsDuRun } from "../../analysis/lecture-run.ts";
 
 let courant: RunFictif | null = null;
 
@@ -34,6 +36,25 @@ function premier<T>(liste: readonly T[]): T {
 function contenu(dossier: string): readonly string[] {
   return readdirSync(dossier).sort();
 }
+
+describe("D30 (2) : renvois de juge, volume/renvois/", () => {
+  it("un renvoi s'écrit une fois, se relit avec les notations, et n'est jamais réécrit", () => {
+    const run = runNote();
+    const renvoi = renvoiJuge("juge-1", { run_id: RUN_ID });
+    const depot = DepotNotation.ouvrir(run.repertoire_run);
+    depot.ecrireRenvoi(renvoi);
+    expect(lireNotationsDuRun(run.repertoire_run, RUN_ID).renvois).toEqual([renvoi]);
+    expect(() => depot.ecrireRenvoi(renvoi)).toThrow(FichierDejaEcrit);
+  });
+
+  it("un renvoi hors schéma ou d'un autre run est refusé, rien n'est écrit", () => {
+    const run = runNote();
+    const depot = DepotNotation.ouvrir(run.repertoire_run);
+    expect(() => depot.ecrireRenvoi({ ...renvoiJuge("juge-1", { run_id: RUN_ID }), gabarit: "Q-DIR" as never })).toThrow(ErreurSchema);
+    expect(() => depot.ecrireRenvoi(renvoiJuge("juge-1"))).toThrow(ObjetHorsDeSonDossier);
+    expect(contenu(dispositionRunNote(run.repertoire_run).renvois)).toEqual([]);
+  });
+});
 
 describe("1. écriture d'un fichier existant", () => {
   it("une notation déjà écrite : refus, fichier intact octet pour octet", () => {

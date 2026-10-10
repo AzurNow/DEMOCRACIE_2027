@@ -93,8 +93,11 @@ export interface NotationIndividuelle {
   readonly contexte: ContexteMesure;
   readonly objet_note: ObjetNote;
   readonly notateur: Notateur;
-  /** D29 (4) : la version du format de ce que le notateur a reçu (`VERSION_CHARGE_JUGE`). */
-  readonly version_charge: string;
+  /**
+   * D29 (4) : la version du format de ce que le notateur a reçu (`VERSION_CHARGE_JUGE`). Exigée
+   * d'une notation de réponse, interdite pour une lecture de comparateur (D30 (4), le schéma).
+   */
+  readonly version_charge?: string;
   readonly gabarit: Gabarit;
   readonly references_item: readonly ReferenceItem[];
   readonly categorie: CategorieRetenue;
@@ -112,6 +115,27 @@ export interface NotationIndividuelle {
   readonly date: Instant;
   readonly duree_ms?: number;
   readonly motif_notation?: MotifNotation;
+}
+
+/**
+ * Le renvoi d'un juge vers la notation humaine, à la place de sa note, sur une question
+ * d'attribution qu'aucun texte ne permet de noter (D30 (2)) : champ pour champ
+ * `schema/renvoi-humain.schema.json`.
+ */
+export interface RenvoiHumain {
+  readonly id: Ulid;
+  readonly run_id: Ulid;
+  readonly contexte: "run" | "contrefactuel_candidat";
+  readonly objet_note: { readonly type: "reponse"; readonly id: Ulid };
+  readonly notateur: Notateur;
+  readonly version_charge: string;
+  readonly gabarit: "Q-ATT";
+  readonly references_item: readonly ReferenceItem[];
+  readonly motif: "attribution_indecidable";
+  readonly raison: string;
+  readonly noms_cites: readonly string[];
+  readonly attribution: NonNullable<NotationIndividuelle["attribution"]>;
+  readonly date: Instant;
 }
 
 export interface RevueHumaine {

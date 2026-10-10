@@ -769,6 +769,11 @@
       ],
       "description": "§7 : 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel. Stocké, jamais supposé."
     },
+    "renvois_attribution_indecidable": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Décision D30 (2) de l'auteur (2026-10-10) : nombre de renvois de juge vers la notation humaine pour une question d'attribution indécidable (volume/renvois/, schema/renvoi-humain.schema.json), contexte run, juges retirés compris. Écrit par pnpm go-no-go, comme indeterminees_echantillon_humain ; exigé d'un run qui porte un go/no-go."
+    },
     "indeterminees_echantillon_humain": {
       "type": "integer",
       "minimum": 0,
@@ -1529,7 +1534,8 @@
       "then": {
         "$comment": "D25 (1) : le nombre de réponses écartées du kappa de l'échantillon est publié avec lui.",
         "required": [
-          "indeterminees_echantillon_humain"
+          "indeterminees_echantillon_humain",
+          "renvois_attribution_indecidable"
         ],
         "properties": {
           "juges": {

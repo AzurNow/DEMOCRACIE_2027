@@ -6,7 +6,7 @@
 import { empreinte, ulid } from "../analysis/fabriques.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
-import type { CandidatDuRun, LienNotation, NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
+import type { CandidatDuRun, LienNotation, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 import type { PageCitee } from "../../pipeline/notation/pages-citees.ts";
 
@@ -43,6 +43,26 @@ export function notationJuge(juge_id: string, surcharges: Surcharges = {}): Nota
     sourcage: { cite: false, liens: [] },
     date: "2026-12-03T11:00:00+01:00",
     motif_notation: "notation_juge",
+    ...surcharges,
+  };
+}
+
+/** Un renvoi de juge vers l'humain (D30 (2)), conforme à `schema/renvoi-humain.schema.json`. */
+export function renvoiJuge(juge_id: string, surcharges: Partial<RenvoiHumain> = {}): RenvoiHumain {
+  return {
+    id: ulid(`renvoi-${juge_id}-${surcharges.objet_note === undefined ? REPONSE_ID : surcharges.objet_note.id}`),
+    run_id: RUN_ID,
+    contexte: "run",
+    objet_note: { type: "reponse", id: REPONSE_ID },
+    notateur: { type: "juge", id: juge_id, famille_modele: `famille-${juge_id}`, modele: `famille-${juge_id}/modele`, version_prompt: "prompts/judge-primaire-1.0.0", a_vu_identite_outil: false },
+    version_charge: VERSION_CHARGE_JUGE,
+    gabarit: "Q-ATT",
+    references_item: [ITEM_REF],
+    motif: "attribution_indecidable",
+    raison: "candidat cité au périmètre mais non interrogé.",
+    noms_cites: ["Martinez"],
+    attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha"] },
+    date: "2026-12-03T11:00:00+01:00",
     ...surcharges,
   };
 }

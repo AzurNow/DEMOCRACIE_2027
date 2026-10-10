@@ -167,26 +167,32 @@ describe("issue du test", () => {
 });
 
 describe("ce qu'est un changement", () => {
-  // Modifié ouvertement (D29 (2), qui remplace D14 (3) pour le seul test contrefactuel) : le motif
-  // d'inexactitude entre dans la comparaison ; ce test affirmait auparavant le contraire.
-  it("D29 (2) : même catégorie et mêmes drapeaux mais motifs d'inexactitude différents, c'est un changement", () => {
+  // Rétabli (D30 (1)) : D29 (2) avait ajouté le motif par erreur ; le changement porte sur ce que
+  // lisent les métriques primaires, sourçage excepté (D14 (3)).
+  it("D14 (3) : notes concordantes mais motifs d'inexactitude différents, pas un changement", () => {
     const notations = [
       surOrigine("j1", 0, inexacte()),
       surPermutee("j1", 0, { ...inexacte(), motif_inexactitude: "ajout_fabrique" }),
       surOrigine("j2", 0),
       surPermutee("j2", 0),
     ];
-    expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(1);
+    expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(0);
   });
 
-  it("D29 (2) : seul le soutien d'un lien diffère (sourçage valide d'un côté, pas de l'autre) : pas un changement", () => {
+  it("D30 (1) : seul le soutien d'un lien diffère (sourçage valide d'un côté, pas de l'autre) : pas un changement", () => {
     const soutient = { sourcage: { cite: true, liens: [lien("existe", "soutient")] } };
     const neSoutientPas = { sourcage: { cite: true, liens: [lien("existe", "ne_soutient_pas")] } };
     const notations = [surOrigine("j1", 0, soutient), surPermutee("j1", 0, neSoutientPas), surOrigine("j2", 0), surPermutee("j2", 0)];
     expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(0);
   });
 
-  it("D29 (2) : un drapeau différent reste un changement", () => {
+  it("D30 (1) : la fraîcheur de l'obsolescence différente est un changement", () => {
+    const obsolete = (fraiche: boolean) => ({ ...inexacte(["obsolescence"]), obsolescence_fraiche: fraiche });
+    const notations = [surOrigine("j1", 0, obsolete(true)), surPermutee("j1", 0, obsolete(false)), surOrigine("j2", 0), surPermutee("j2", 0)];
+    expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(1);
+  });
+
+  it("D30 (1) : un drapeau différent reste un changement", () => {
     const notations = [surOrigine("j1", 0, inexacte()), surPermutee("j1", 0, inexacte(["deformation"])), surOrigine("j2", 0), surPermutee("j2", 0)];
     expect(juge(testerContrefactuel(entree(1, notations)), "j1").taux.numerateur).toBe(1);
   });

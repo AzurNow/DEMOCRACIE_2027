@@ -23,8 +23,8 @@
  *    calculé sur un jeu incomplet (D16 (2)), pour aucun juge.
  * 3. **Changement.** Une paire change quand l'extrait justificatif de l'une des deux notations est
  *    invalide (`extrait.ts:controlerExtrait`, contre les textes de son côté ; D16 (2)), ou quand les
- *    deux notations ne concordent pas sur la catégorie, les drapeaux et le motif d'inexactitude
- *    (`analysis/note-lue.ts:notesContrefactuellesConcordent`, D29 (2), qui remplace ici D14 (3)) :
+ *    deux notations ne concordent pas sur la catégorie, les drapeaux et la fraîcheur (pas le motif)
+ *    (`analysis/note-lue.ts:notesContrefactuellesConcordent`, D14 (3) précisée par D30 (1)) :
  *    le soutien des liens n'y entre pas, le texte des pages citées n'étant pas permuté.
  * 4. **Taux et retrait.** Taux = changements / taille du sous-ensemble. Retrait si
  *    `changements × 100 > 3 × n`, en entiers : « au-delà de 3 % » est strict (6 sur 200 n'est pas
@@ -250,7 +250,7 @@ function resultatDuJuge(
   };
 }
 
-/** D16 (2) : un extrait invalide d'un côté ou de l'autre est un changement ; sinon, D29 (2). */
+/** D16 (2) : un extrait invalide d'un côté ou de l'autre est un changement ; sinon, D14 (3) sans le sourçage (D30 (1)). */
 function change(paire: PaireContrefactuelle, juge_id: string, notations: ReadonlyMap<string, NotationIndividuelle>): boolean {
   const origine = exiger(notations, juge_id, paire.reponse_id);
   const permutee = exiger(notations, juge_id, paire.contrefactuelle_id);

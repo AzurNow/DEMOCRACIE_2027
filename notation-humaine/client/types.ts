@@ -129,6 +129,10 @@ export interface SaisieOrdinaire extends SaisieCommune {
 export interface SaisieAttribution extends SaisieCommune {
   readonly noms_cites: readonly string[];
   readonly non_reponse: boolean;
+  /** D30 (3) : réponse contradictoire, indéterminée ; exclusive de la non-réponse. */
+  readonly indeterminee: boolean;
+  /** D30 (2) : la note décidée par l'humain, dans les seuls cas indécidables. */
+  readonly note_decidee?: { readonly categorie: string; readonly drapeaux: readonly string[]; readonly motif_inexactitude?: string };
 }
 
 export type Saisie = SaisieOrdinaire | SaisieAttribution;
