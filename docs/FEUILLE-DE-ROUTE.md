@@ -108,6 +108,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-10 :** Option 1 sur les deux points.
 
+### D32 — Notation d'un refus de l'API : D12 le classe non-réponse, mais l'annexe C exige un extrait justificatif pour toute note autre qu'exacte, et sur un item A ou F (ou une Q-ATT dont la référence n'a que des items F) il n'y a ni texte de réponse ni citation à recopier ; la chaîne s'arrêtait (schéma de notation, SortieJugeIncoherente).
+
+**Décision du 2026-10-10 :** Option 1. À écrire au §7 en 0.16 : un refus de l'API est noté non-réponse sans juge.
+
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
 **Décision du 2026-09-20 :** Adresse mail dédiée seule pour la v1.0, phrase du §4 ajustée avant gel — révision de texte, pas amendement. Un service de formulaire pourra s'ajouter par amendement quand le volume le justifiera.
