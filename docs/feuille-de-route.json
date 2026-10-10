@@ -397,6 +397,19 @@
       "date_decision": "2026-10-09"
     },
     {
+      "id": "D28",
+      "statut": "tranchee",
+      "question": "Quatre trous du §3, du §6 et du §10 relevés par le dossier de recherche du périmètre au 15 octobre (scratch/perimetre/dossier-2026-10-15.md) : candidat éliminé au premier tour d'une primaire ; intention de candidature ; outil sans recherche web par API ; clause restrictive de l'API Gemini en mode web.",
+      "contexte": "Primaire PS–Place publique–GRS : premier tour les 9 et 10 octobre, second les 16 et 17 ; le §3 dit seulement « le vainqueur seul reste ensuite ». Villepin : « je veux être candidat, je me bats pour être candidat » (30 août), déclaration formelle annoncée pour plus tard. DeepSeek remplit la règle d'inclusion (rang 42 Productivité) mais son API n'offre pas de recherche web, alors que le §8 publie les deux modes côte à côte. Les conditions de l'API Gemini en mode web (grounding) interdisent d'analyser les résultats ancrés, limitent leur conservation à deux ans et réservent leur affichage à l'utilisateur, en conflit avec la règle 7 et le §8.",
+      "options": [
+        "(1) Éliminé au premier tour ⇒ retiré dès la proclamation du résultat ; (2) seule une déclaration explicite (« je suis / serai candidat ») de l'intéressé, ou une investiture du parti, compte ; une intention ne compte pas ; (3) outil inclus avec le seul mode web_desactivee, le mode web publié « sans objet : l'API ne le propose pas », jamais compté en réponses manquantes, comparaison des modes sans objet pour cet outil ; (4) Gemini inclus, clause_restrictive_signalee et clause citée (§10), mode web suspendu jusqu'à l'avis de l'avocat (ajouté à sa relecture de J1), publié « non mesurable » avec la clause si l'avis est défavorable.",
+        "(1) Inclus jusqu'au vainqueur ; (2) une volonté affirmée suffit ; (3) outil exclu avec motif ; (4) mesurer quand même, ou Gemini sans web définitivement."
+      ],
+      "recommandation": "Option 1 sur les quatre points : règles vérifiables par un tiers sans interprétation ; aucun outil remplissant la règle d'inclusion n'est sorti pour une raison technique ; rien n'est mesuré contre une clause sans avis juridique, ni passé sous silence.",
+      "retenu": "Option 1 sur les quatre points. Points 1 à 3 à écrire en 0.16 (§3 et §8) ; point 4 : question ajoutée à la relecture de l'avocat.",
+      "date_decision": "2026-10-09"
+    },
+    {
       "id": "D29",
       "statut": "tranchee",
       "question": "Points ouverts par la PR #106 (charge-juge-v3) : qui décide la note d'une Q-ATT ; pages citées dans le test contrefactuel ; borne du texte d'une page ; rattachement des noms, ambigus, saisie humaine d'une Q-ATT, version de la charge enregistrée.",
@@ -542,9 +555,10 @@
       "depend_de": [],
       "decisions": [
         "D26",
+        "D28",
         "D5"
       ],
-      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur."
+      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur. Le 2026-10-09 : dossier de recherche au 15 octobre produit (relevés du 9, à refaire le 15) ; D28 tranchée (primaire, intention, outil sans web, clause Gemini). Prompts d'extraction et de reformulation en PR #104 (brouillon, relecture de l'auteur) ; prompt juge après charge-juge-v3 (D27)."
     },
     {
       "id": "collecte",

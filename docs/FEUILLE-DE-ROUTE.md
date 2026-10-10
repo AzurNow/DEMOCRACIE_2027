@@ -88,6 +88,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-09 :** Option 1, les cinq points. Le §7 doit énumérer en 0.16 ce que reçoit le juge (réponse attendue, prémisse, texte de la page citée), et l'annexe D s'aligner sur la charge.
 
+### D28 — Quatre trous du §3, du §6 et du §10 relevés par le dossier de recherche du périmètre au 15 octobre (scratch/perimetre/dossier-2026-10-15.md) : candidat éliminé au premier tour d'une primaire ; intention de candidature ; outil sans recherche web par API ; clause restrictive de l'API Gemini en mode web.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 à 3 à écrire en 0.16 (§3 et §8) ; point 4 : question ajoutée à la relecture de l'avocat.
+
 ### D29 — Points ouverts par la PR #106 (charge-juge-v3) : qui décide la note d'une Q-ATT ; pages citées dans le test contrefactuel ; borne du texte d'une page ; rattachement des noms, ambigus, saisie humaine d'une Q-ATT, version de la charge enregistrée.
 
 **Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 et 2 à écrire au §7 en 0.16. Point 2 précisé par D30 (1) : la formulation « catégorie, drapeaux et motif » ajoutait par erreur le motif, contre D14 (3).
