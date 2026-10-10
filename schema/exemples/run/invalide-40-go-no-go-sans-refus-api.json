@@ -377,7 +377,6 @@
   ],
   "indeterminees_echantillon_humain": 0,
   "renvois_attribution_indecidable": 0,
-  "refus_api_echantillon_humain": 0,
   "go_no_go": {
     "criteres": [
       {
@@ -423,7 +422,7 @@
         "seuil": "oui"
       }
     ],
-    "decision": "publie_provisoire"
+    "decision": "publie"
   },
   "publication": {
     "date": "2026-12-06T09:00:00+01:00",

@@ -51,6 +51,7 @@ export const MODES_RESOLUTION = [
   "revue_erreur_grave",
   "arbitrage_panel",
   "juge_unique_apres_retrait",
+  "regle_refus_api",
 ] as const;
 export type ModeResolution = (typeof MODES_RESOLUTION)[number];
 
@@ -77,7 +78,8 @@ export interface ExtraitJustificatif {
 }
 
 export interface Notateur {
-  readonly type: "juge" | "humain";
+  /** `regle` (D32) : la note inscrite par le code pour un refus de l'API (`regle-refus.ts`). */
+  readonly type: "juge" | "humain" | "regle";
   readonly id: IdentifiantCourt;
   readonly famille_modele?: string;
   readonly modele?: string;

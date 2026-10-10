@@ -35,6 +35,7 @@ export const CODES_VIOLATION = [
   "retrait_contrefactuel_incoherent",
   "taux_contrefactuel_incoherent",
   "denominateur_contrefactuel_incoherent",
+  "notation_par_regle_incoherente",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
 
@@ -156,7 +157,28 @@ function violationsDuVerdict(verdict: VerdictProduit, ctx: Contexte): Violation[
     ...drapeauGraveIgnore(verdict, ctx),
     ...appartenanceEchantillon(verdict, ctx),
     ...humainsAbsents(verdict, sources.notations),
+    ...regleIncoherente(verdict, sources.notations),
   ].map((violation) => ({ ...violation, verdict_id: verdict.id }));
+}
+
+/** Modes dont un verdict peut citer la notation par règle d'un refus de l'API (D32). */
+const MODES_AVEC_REGLE: ReadonlySet<ModeResolution> = new Set<ModeResolution>(["regle_refus_api", "echantillon_humain_10"]);
+
+/**
+ * D32 : un verdict `regle_refus_api` a pour seule source la notation par règle ; une notation par
+ * règle n'est citée que par lui, ou, dans l'échantillon, à côté des deux humains dont la note prévaut.
+ */
+function regleIncoherente(verdict: VerdictProduit, sources: readonly NotationIndividuelle[]): ViolationSansVerdict[] {
+  const regles = sources.filter((n) => n.notateur.type === "regle");
+  const parRegle = verdict.mode_resolution === "regle_refus_api";
+  const seuleSource = regles.length === 1 && sources.length === 1;
+  if (parRegle ? seuleSource : regles.length === 0 || MODES_AVEC_REGLE.has(verdict.mode_resolution)) return [];
+  return [
+    {
+      code: "notation_par_regle_incoherente",
+      detail: `verdict en ${verdict.mode_resolution} avec ${regles.length} notation(s) par règle parmi ${sources.length} source(s) (D32).`,
+    },
+  ];
 }
 
 type ViolationSansVerdict = Omit<Violation, "verdict_id">;

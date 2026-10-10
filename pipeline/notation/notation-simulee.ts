@@ -45,7 +45,7 @@ import { resolusAuGel, type ResoluAuGel } from "./charge-juge.ts";
 import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
 import { exigerHorsDeRuns } from "./garde-simule.ts";
 import { CHAMPS_DU_TEST } from "./inscription-contrefactuel.ts";
-import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type NatureReponse, type ParametresJugeSimule } from "./juge-simule.ts";
+import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type ParametresJugeSimule } from "./juge-simule.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
 
 export interface ParametresNotationSimulee {
@@ -256,18 +256,20 @@ function lireTexteSimule(objet: Objet, chemin: string): TexteSimule {
 }
 
 function lireJugeSimule(objet: Objet, chemin: string): ParametresJugeSimule {
-  const repartition = exigerObjet(objet["repartition"], chemin, "juge_simule.repartition");
-  const natures: readonly NatureReponse[] = ["ordinaire", "refus_api"];
-  const lue = Object.fromEntries(natures.map((nature) => [nature, lirePoids(repartition[nature], chemin, nature)])) as Record<NatureReponse, Readonly<Record<string, number>>>;
   return {
     graine: exigerNombre(objet, "graine", chemin),
-    repartition: lue,
+    repartition: lirePoids(objet["repartition"], chemin),
+    repartition_par_item: lirePoidsParItem(exigerObjet(objet["repartition_par_item"], chemin, "juge_simule.repartition_par_item"), chemin),
     juges: exigerListe(objet, "juges", chemin).map((j) => lireJugeDeclare(exigerObjet(j, chemin, "juge_simule.juges[]"), chemin)),
   };
 }
 
-function lirePoids(valeur: unknown, chemin: string, nature: string): Readonly<Record<string, number>> {
-  const poids = exigerObjet(valeur, chemin, `juge_simule.repartition.${nature}`);
+function lirePoidsParItem(objet: Objet, chemin: string): Readonly<Record<string, Readonly<Record<string, number>>>> {
+  return Object.fromEntries(Object.keys(objet).map((item_id) => [item_id, lirePoids(objet[item_id], chemin)]));
+}
+
+function lirePoids(valeur: unknown, chemin: string): Readonly<Record<string, number>> {
+  const poids = exigerObjet(valeur, chemin, "juge_simule.repartition");
   return Object.fromEntries(Object.keys(poids).map((nom) => [nom, exigerNombre(poids, nom, chemin)]));
 }
 

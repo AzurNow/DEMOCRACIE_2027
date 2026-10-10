@@ -47,6 +47,8 @@ export interface BilanNotation {
   readonly reponses_en_attente: number;
   readonly attentes_par_motif: Readonly<Partial<Record<MotifEnAttente, number>>>;
   readonly notations_humaines: number;
+  /** D32 : notations inscrites par la règle d'un refus de l'API, sans juge. */
+  readonly notations_par_regle: number;
   readonly reponses_contrefactuelles: number;
 }
 
@@ -90,6 +92,7 @@ export function bilanNotation(repertoire_run: string, resultat: ResultatChaine, 
     reponses_en_attente: resultat.attentes.length,
     attentes_par_motif: compter(resultat.attentes.flatMap((a) => a.motifs)),
     notations_humaines: notations.filter((n) => n.notateur.type === "humain").length,
+    notations_par_regle: notations.filter((n) => n.notateur.type === "regle").length,
     reponses_contrefactuelles: reponses_contrefactuelles.length,
   };
 }

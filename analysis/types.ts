@@ -131,10 +131,11 @@ export const MOTIFS_NOTATION = [
   "extrait_invalide",
   "accord_partiel_juges",
   "attribution_indecidable",
+  "regle_refus_api",
 ] as const;
 export type MotifNotation = (typeof MOTIFS_NOTATION)[number];
 
-export const TYPES_NOTATEUR = ["juge", "humain"] as const;
+export const TYPES_NOTATEUR = ["juge", "humain", "regle"] as const;
 export type TypeNotateur = (typeof TYPES_NOTATEUR)[number];
 
 export const VERDICTS_EXISTENCE = ["existe", "mort", "inaccessible", "non_testable"] as const;

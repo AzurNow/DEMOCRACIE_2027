@@ -59,6 +59,7 @@ function imprimerBilan(repertoire_run: string, bilan: BilanNotation): void {
     const taux = juge.changements_contrefactuel === undefined ? "sans taux" : `${juge.changements_contrefactuel.numerateur}/${juge.changements_contrefactuel.denominateur} changements`;
     ecrire(`  ${juge.juge_id.padEnd(16)} ${juge.retire ? "RETIRÉ" : "retenu"}  ${taux}  notations : run ${juge.notations_run}, contrefactuel ${juge.notations_contrefactuel}`);
   }
+  ecrire(`  règle d12-refus-api (D32)  notations : run ${bilan.notations_par_regle}, sans juge`);
   ecrire(`Échantillon humain : ${bilan.taux_echantillon_humain * 100} %`);
   ecrire(`Réponses obtenues : ${bilan.reponses_obtenues} = ${bilan.verdicts} verdict(s) + ${bilan.reponses_en_attente} en attente`);
   for (const [mode, nombre] of Object.entries(bilan.verdicts_par_mode)) ecrire(`  verdict ${mode.padEnd(28)} ${nombre}`);

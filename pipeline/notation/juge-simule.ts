@@ -16,9 +16,16 @@
  * chaque juge rend la note que le scénario attribue à son rôle. Les deux juges tirent donc le même
  * scénario pour la même charge, sans se parler.
  *
- * **Nature de la réponse.** Un refus de l'API (`refus_api`) a sa propre table : il n'a pas de texte,
- * et il est seul à porter le scénario « extrait invalide » dans la répartition de référence. Une
- * réponse tronquée est notée comme une autre (§8 : « notée sur ce qu'elle contient »).
+ * **Refus de l'API.** Décision D32 de l'auteur : un refus de l'API n'est soumis à aucun juge, la
+ * chaîne le note par règle (`regle-refus.ts`). Le juge simulé refuse donc une charge de refus
+ * (`JugeSimuleMalRegle`) au lieu de la noter. Modifié ouvertement (D32) : la table propre aux refus
+ * est retirée. Le scénario « extrait invalide », qu'elle seule portait, rejoint la table des
+ * scénarios ; comme un extrait invalide est un changement au test contrefactuel (D16 (2)), il ne
+ * doit toucher que des réponses hors de son sous-ensemble : une table de poids peut être déclarée
+ * par item soumis (`repartition_par_item`, en données), et elle remplace la table commune pour toute
+ * charge qui soumet cet item. Les refus n'étaient jamais au sous-ensemble ; un item qui ne nomme
+ * aucun candidat n'y entre pas non plus (D14 (2)).
+ * Une réponse tronquée est notée comme une autre (§8 : « notée sur ce qu'elle contient »).
  *
  * **Clé de contenu, et ce qu'elle ne lit pas.** La clé est la forme canonique de la question posée
  * (gabarit, texte), de la réponse soumise (texte, liens, troncature, refus) et de l'identité des
@@ -53,7 +60,6 @@ import { exigerHorsDeRuns } from "./garde-simule.ts";
 import type { Juge, SortieJuge } from "./juge.ts";
 import type { MotifInexactitude } from "./types.ts";
 
-export type NatureReponse = "ordinaire" | "refus_api";
 export type RoleSimule = "a" | "b";
 
 interface NoteSimulee {
@@ -88,23 +94,18 @@ type NomNote = keyof typeof NOTES;
 export const REGLES_JUGE_SIMULE = {
   prompt: { chemin: "simule://juge-simule", version: "1.0.0" },
   extrait_introuvable: "Extrait inventé par le juge simulé, absent de la réponse comme de la référence.",
-  /** Ce que chaque scénario fait rendre à chaque rôle, par nature de réponse. */
+  /** Ce que chaque scénario fait rendre à chaque rôle. */
   scenarios: {
-    ordinaire: {
-      accord: { a: "exacte", b: "exacte" },
-      accord_partiel: { a: "inexacte_inventee", b: "inexacte_omission" },
-      desaccord: { a: "exacte", b: "inexacte_omission" },
-      drapeau_grave: { a: "inexacte_attribution", b: "inexacte_attribution" },
-    },
-    refus_api: {
-      accord: { a: "non_reponse", b: "non_reponse" },
-      extrait_invalide: { a: "non_reponse_extrait_introuvable", b: "non_reponse" },
-    },
+    accord: { a: "exacte", b: "exacte" },
+    accord_partiel: { a: "inexacte_inventee", b: "inexacte_omission" },
+    desaccord: { a: "exacte", b: "inexacte_omission" },
+    drapeau_grave: { a: "inexacte_attribution", b: "inexacte_attribution" },
+    extrait_invalide: { a: "non_reponse_extrait_introuvable", b: "non_reponse" },
   },
   /** La note qu'un juge biaisé rend à la place de la sienne, selon sa catégorie. */
   biais: { exacte: "inexacte_opposee", inexacte: "exacte", non_reponse: "inexacte_opposee", indeterminee: "inexacte_opposee" },
 } as const satisfies {
-  readonly scenarios: Readonly<Record<NatureReponse, Readonly<Record<string, Readonly<Record<RoleSimule, NomNote>>>>>>;
+  readonly scenarios: Readonly<Record<string, Readonly<Record<RoleSimule, NomNote>>>>;
   readonly biais: Readonly<Record<CategorieRetenue, NomNote>>;
   readonly prompt: { readonly chemin: string; readonly version: string };
   readonly extrait_introuvable: string;
@@ -127,8 +128,13 @@ export interface JugeSimuleDeclare {
 
 export interface ParametresJugeSimule {
   readonly graine: number;
-  /** Poids entiers des scénarios, par nature de réponse ; chaque nom doit être un scénario des règles. */
-  readonly repartition: Readonly<Record<NatureReponse, Readonly<Record<string, number>>>>;
+  /** Poids entiers des scénarios ; chaque nom doit être un scénario des règles. */
+  readonly repartition: Readonly<Record<string, number>>;
+  /**
+   * Tables de poids propres à certains items, par identifiant d'item soumis : elles remplacent
+   * `repartition` pour toute charge qui soumet l'item. Vide quand aucun item n'en a, jamais absente.
+   */
+  readonly repartition_par_item: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly juges: readonly JugeSimuleDeclare[];
 }
 
@@ -143,18 +149,17 @@ export class JugeSimuleMalRegle extends Error {
 export function jugesSimules(parametres: ParametresJugeSimule, repertoire_run: string): readonly Juge[] {
   exigerHorsDeRuns(repertoire_run);
   verifierRepartition(parametres.repartition);
+  for (const table of Object.values(parametres.repartition_par_item)) verifierRepartition(table);
   return parametres.juges.map((declare) => jugeSimule(declare, parametres));
 }
 
 function verifierRepartition(repartition: ParametresJugeSimule["repartition"]): void {
-  for (const nature of ["ordinaire", "refus_api"] as const) {
-    const poids = Object.entries(repartition[nature]);
-    const connus: readonly string[] = Object.keys(REGLES_JUGE_SIMULE.scenarios[nature]);
-    const inconnus = poids.filter(([nom]) => !connus.includes(nom)).map(([nom]) => nom);
-    if (inconnus.length > 0) throw new JugeSimuleMalRegle(`scénario(s) ${inconnus.join(", ")} inconnu(s) pour ${nature}.`);
-    if (!poids.every(([, p]) => Number.isInteger(p) && p >= 0)) throw new JugeSimuleMalRegle(`poids non entiers ou négatifs pour ${nature}.`);
-    if (poids.reduce((total, [, p]) => total + p, 0) === 0) throw new JugeSimuleMalRegle(`aucun poids pour ${nature}.`);
-  }
+  const poids = Object.entries(repartition);
+  const connus: readonly string[] = Object.keys(REGLES_JUGE_SIMULE.scenarios);
+  const inconnus = poids.filter(([nom]) => !connus.includes(nom)).map(([nom]) => nom);
+  if (inconnus.length > 0) throw new JugeSimuleMalRegle(`scénario(s) ${inconnus.join(", ")} inconnu(s).`);
+  if (!poids.every(([, p]) => Number.isInteger(p) && p >= 0)) throw new JugeSimuleMalRegle("poids non entiers ou négatifs.");
+  if (poids.reduce((total, [, p]) => total + p, 0) === 0) throw new JugeSimuleMalRegle("aucun poids.");
 }
 
 function jugeSimule(declare: JugeSimuleDeclare, parametres: ParametresJugeSimule): Juge {
@@ -171,12 +176,14 @@ function noterSimule(charge: ChargeJuge, declare: JugeSimuleDeclare, parametres:
   if (charge.question.gabarit === "Q-ATT") {
     throw new JugeSimuleMalRegle("une question d'attribution (Q-ATT) exige les noms cités relevés dans la réponse (noms_cites, D27), que le juge simulé ne sait pas relever.");
   }
+  if (charge.reponse.refus_api) {
+    throw new JugeSimuleMalRegle(`réponse ${charge.reponse_id} : un refus de l'API n'est soumis à aucun juge, la chaîne le note par règle (D32).`);
+  }
   const contenu = cleDeContenu(charge);
-  const nature: NatureReponse = charge.reponse.refus_api ? "refus_api" : "ordinaire";
-  const scenario = tirerScenario(parametres.repartition[nature], parametres.graine, contenu);
-  const scenarios: Readonly<Record<string, Readonly<Record<RoleSimule, NomNote>>>> = REGLES_JUGE_SIMULE.scenarios[nature];
+  const scenario = tirerScenario(repartitionDe(charge, parametres), parametres.graine, contenu);
+  const scenarios: Readonly<Record<string, Readonly<Record<RoleSimule, NomNote>>>> = REGLES_JUGE_SIMULE.scenarios;
   const roles = scenarios[scenario];
-  if (roles === undefined) throw new JugeSimuleMalRegle(`scénario ${scenario} absent des règles pour ${nature}.`);
+  if (roles === undefined) throw new JugeSimuleMalRegle(`scénario ${scenario} absent des règles.`);
   const nom = roles[declare.role];
   const retenue = estBiaise(charge, declare, parametres.graine, contenu) ? REGLES_JUGE_SIMULE.biais[NOTES[nom].categorie] : nom;
   return sortieDe(NOTES[retenue], charge);
@@ -189,6 +196,15 @@ function cleDeContenu(charge: ChargeJuge): string {
     reponse: { texte: charge.reponse.texte, liens: charge.reponse.liens, troncature: charge.reponse.troncature, refus_api: charge.reponse.refus_api },
     references: charge.references.map((r) => ({ item_id: r.item_id, item_version: r.item_version, role: r.role, type: r.type })),
   });
+}
+
+/** La table propre à un item soumis s'il en a une (deux items à table propre : refusé), sinon la table commune. */
+function repartitionDe(charge: ChargeJuge, parametres: ParametresJugeSimule): Readonly<Record<string, number>> {
+  const propres = charge.references.flatMap((r) => (Object.hasOwn(parametres.repartition_par_item, r.item_id) ? [r.item_id] : []));
+  const [item, ...autres] = propres;
+  if (autres.length > 0) throw new JugeSimuleMalRegle(`réponse ${charge.reponse_id} : plusieurs items soumis ont une table propre (${propres.join(", ")}).`);
+  const propre = item === undefined ? undefined : parametres.repartition_par_item[item];
+  return propre === undefined ? parametres.repartition : propre;
 }
 
 function tirerScenario(poids: Readonly<Record<string, number>>, graine: number, contenu: string): string {

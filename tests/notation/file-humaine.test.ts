@@ -12,7 +12,7 @@ import { PseudonymeVide } from "../../pipeline/notation/notation-humaine.ts";
 import type { NotationIndividuelle, RunDeNotation } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { generateur, melanger } from "../../validation/domaine/alea.ts";
-import { inexacte, notationHumaine, notationJuge, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, notationHumaine, notationJuge, notationRegle, renvoiJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 
 const TEXTES = { reponse: REPONSE_PROJETEE, citations_reference: ["Nous ne toucherons pas à la taxe foncière."] };
 
@@ -355,5 +355,21 @@ describe("entrées", () => {
 
   it("une réponse en double : refusée", () => {
     expect(() => construireFile(entree([...IDS, H1], []))).toThrow(/en double/);
+  });
+});
+
+describe("D32 : refus de l'API noté par règle", () => {
+  const sansRefus = (refus: string) => jugesDAccord(IDS.filter((id) => id !== refus));
+
+  it("hors échantillon : aucune tâche humaine, et la réponse n'attend aucun juge", () => {
+    const file = construireFile(entree(IDS, [...sansRefus(H1), notationRegle(sur(H1))]));
+    expect(tachesDe(file, H1)).toEqual([]);
+    expect(file.attend_juge.map((a) => a.reponse_id)).not.toContain(H1);
+  });
+
+  it("dans l'échantillon : la double notation humaine reste à faire (§7), comme pour toute réponse tirée", () => {
+    const file = construireFile(entree(IDS, [...sansRefus(DANS), notationRegle(sur(DANS))]));
+    expect(tachesDe(file, DANS)).toEqual([{ reponse_id: DANS, motif_notation: "echantillon_aleatoire_10", places_restantes: 2, deja_notee_par: [] }]);
+    expect(file.attend_juge.map((a) => a.reponse_id)).not.toContain(DANS);
   });
 });

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:banc-essai-2027:schema:notation",
   "title": "Notation individuelle",
-  "description": "UNE notation, par UN notateur (juge automatique ou humain), sur UNE réponse ou UNE lecture de comparateur. L'annexe D ne décrivait que la sortie d'un juge, alors que §7 empile deux juges, l'humain sur désaccord, un échantillon de 10 %, la revue obligatoire des erreurs graves et l'arbitrage du panel. Sans cette séparation entre notation individuelle et note retenue (schéma verdict), l'analyse de robustesse §8(a) — recalcul sur la SEULE notation humaine de l'échantillon de 10 % — est impossible.",
+  "description": "UNE notation, par UN notateur (juge automatique, humain, ou règle déterministe du code, D32), sur UNE réponse ou UNE lecture de comparateur. L'annexe D ne décrivait que la sortie d'un juge, alors que §7 empile deux juges, l'humain sur désaccord, un échantillon de 10 %, la revue obligatoire des erreurs graves et l'arbitrage du panel. Sans cette séparation entre notation individuelle et note retenue (schéma verdict), l'analyse de robustesse §8(a) — recalcul sur la SEULE notation humaine de l'échantillon de 10 % — est impossible.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -50,10 +50,14 @@
       "additionalProperties": false,
       "required": ["type", "id"],
       "properties": {
-        "type": { "type": "string", "enum": ["juge", "humain"] },
+        "type": {
+          "type": "string",
+          "enum": ["juge", "humain", "regle"],
+          "description": "regle (décision D32 de l'auteur, 2026-10-10) : la note n'est rendue ni par un juge ni par un humain, elle est inscrite par le code, de façon déterministe, parce qu'une décision publiée la fixe d'avance. Seul cas : le refus de l'API (reponse.normalise.refus_api), que D12 classe non-réponse ; aucun juge n'est appelé (pipeline/notation/regle-refus.ts)."
+        },
         "id": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
-          "description": "Pseudonyme pour les humains (§9 : annotateurs pseudonymisés)."
+          "description": "Pseudonyme pour les humains (§9 : annotateurs pseudonymisés). Pour une règle, l'identifiant de la décision qui la fixe (d12-refus-api)."
         },
         "famille_modele": {
           "type": "string",
@@ -253,16 +257,23 @@
         "arbitrage_echantillon_10",
         "extrait_invalide",
         "accord_partiel_juges",
-        "attribution_indecidable"
+        "attribution_indecidable",
+        "regle_refus_api"
       ],
-      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas. attribution_indecidable (décision D30 (2) de l'auteur) est l'humain appelé, hors échantillon, parce qu'un juge a renvoyé une question d'attribution qu'aucun texte ne permet de noter (schema/renvoi-humain.schema.json) ; il n'est admis que dans ce cas."
+      "description": "Pourquoi CE notateur a noté CET objet. §8(a) recalcule les métriques sur la seule notation humaine de l'échantillon aléatoire : ce recalcul exige de distinguer un humain tiré au sort d'un humain appelé en renfort sur un désaccord, qui n'est pas un échantillon aléatoire. arbitrage_echantillon_10 est le troisième humain du §7 qui arbitre une réponse de l'échantillon quand les deux notations echantillon_aleatoire_10 divergent ; c'est sa note que retient le recalcul (a). À ne pas confondre avec arbitrage_panel, le panel des contestations (§4, annexe E). extrait_invalide (décision D15 de l'auteur) est l'humain appelé, hors échantillon, parce que l'extrait justificatif d'un juge a échoué au test verbatim (§7 : « invalide la notation du juge ; la réponse est alors notée par un humain ») ; il est exigé dans ce cas, même si un drapeau grave est aussi posé (pipeline/notation/decision.ts). accord_partiel_juges (décision D15 de l'auteur : « accord partiel → humain ») est l'humain appelé, hors échantillon, parce que les deux juges s'accordent au sens de analysis/note-lue.ts:notationsConcordent mais diffèrent sur un champ porté par la note retenue (motif d'inexactitude, citation d'une source, existence d'un lien) ; il n'est admis que dans ce cas. attribution_indecidable (décision D30 (2) de l'auteur) est l'humain appelé, hors échantillon, parce qu'un juge a renvoyé une question d'attribution qu'aucun texte ne permet de noter (schema/renvoi-humain.schema.json) ; il n'est admis que dans ce cas. regle_refus_api (décision D32 de l'auteur) est le motif de la notation par règle d'un refus de l'API, et de nulle autre."
     }
   },
 
   "allOf": [
     {
-      "$comment": "D29 (4) et D30 (4) : la version de la charge est exigée d'une notation de réponse, interdite pour une lecture de comparateur, qui ne reçoit pas la charge du juge de réponse.",
-      "if": { "properties": { "objet_note": { "properties": { "type": { "const": "reponse" } }, "required": ["type"] } }, "required": ["objet_note"] },
+      "$comment": "D29 (4) et D30 (4) : la version de la charge est exigée d'une notation de réponse, interdite pour une lecture de comparateur, qui ne reçoit pas la charge du juge de réponse. D32 : interdite aussi pour une notation par règle, qui n'a reçu aucune charge.",
+      "if": {
+        "properties": {
+          "objet_note": { "properties": { "type": { "const": "reponse" } }, "required": ["type"] },
+          "notateur": { "properties": { "type": { "not": { "const": "regle" } } }, "required": ["type"] }
+        },
+        "required": ["objet_note", "notateur"]
+      },
       "then": { "required": ["version_charge"] },
       "else": { "not": { "required": ["version_charge"] } }
     },
@@ -299,6 +310,38 @@
       "then": { "properties": { "notateur": { "properties": { "type": { "const": "humain" } } } } }
     },
     {
+      "$comment": "D32 : une notation par règle est celle d'un refus de l'API (D12), et rien d'autre : réponse de contexte run, non-réponse, sans source citée (un refus n'a pas de lien), sans extrait (rien à recopier), sous le motif regle_refus_api et l'identifiant de la règle ; elle ne porte aucun des champs d'un juge ou d'un humain, qu'elle n'a pas.",
+      "if": { "properties": { "notateur": { "properties": { "type": { "const": "regle" } }, "required": ["type"] } }, "required": ["notateur"] },
+      "then": {
+        "required": ["motif_notation"],
+        "properties": {
+          "contexte": { "const": "run" },
+          "objet_note": { "properties": { "type": { "const": "reponse" } } },
+          "categorie": { "const": "non_reponse" },
+          "motif_notation": { "const": "regle_refus_api" },
+          "sourcage": { "properties": { "cite": { "const": false } } },
+          "notateur": {
+            "properties": { "id": { "enum": ["d12-refus-api"] } },
+            "not": {
+              "anyOf": [
+                { "required": ["famille_modele"] },
+                { "required": ["modele"] },
+                { "required": ["version_prompt"] },
+                { "required": ["sensibilite_declaree_famille"] },
+                { "required": ["a_vu_identite_outil"] }
+              ]
+            }
+          }
+        },
+        "not": { "anyOf": [{ "required": ["extrait_justificatif"] }, { "required": ["duree_ms"] }] }
+      }
+    },
+    {
+      "$comment": "D32 : le motif regle_refus_api n'appartient qu'à la notation par règle ; un juge ou un humain sous ce motif se ferait passer pour elle.",
+      "if": { "properties": { "motif_notation": { "const": "regle_refus_api" } }, "required": ["motif_notation"] },
+      "then": { "properties": { "notateur": { "properties": { "type": { "const": "regle" } } } } }
+    },
+    {
       "$comment": "§7 : les drapeaux portent sur les réponses inexactes.",
       "if": { "properties": { "categorie": { "not": { "const": "inexacte" } } }, "required": ["categorie"] },
       "then": {
@@ -308,8 +351,14 @@
       "else": { "required": ["motif_inexactitude"] }
     },
     {
-      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte.",
-      "if": { "properties": { "categorie": { "not": { "const": "exacte" } } }, "required": ["categorie"] },
+      "$comment": "Annexe C : extrait justificatif obligatoire pour toute note autre qu'exacte, de juge comme d'humain. D32 : seule la notation par règle d'un refus de l'API en est exemptée (elle n'a rien à recopier, et la règle ne justifie pas : elle applique D12).",
+      "if": {
+        "properties": {
+          "categorie": { "not": { "const": "exacte" } },
+          "notateur": { "properties": { "type": { "not": { "const": "regle" } } }, "required": ["type"] }
+        },
+        "required": ["categorie", "notateur"]
+      },
       "then": { "required": ["extrait_justificatif"] }
     },
     {

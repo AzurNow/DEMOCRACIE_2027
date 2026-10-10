@@ -3,7 +3,12 @@
  * par défaut (juge exacte, sans lien) : chaque test pose ce qui compte. Aucun contenu réel.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { empreinte, ulid } from "../analysis/fabriques.ts";
+import { RACINE_PROJET } from "../aides/depot.ts";
+import type { ReponseObtenue } from "../../pipeline/interrogation/types.ts";
+import { notationParRegle } from "../../pipeline/notation/regle-refus.ts";
 import { GENERATEUR_DU_TIRAGE } from "../../pipeline/questions/tirage.ts";
 import type { MotifNotation } from "../../analysis/types.ts";
 import type { CandidatDuRun, LienNotation, NotationIndividuelle, RenvoiHumain, RunDeNotation } from "../../pipeline/notation/types.ts";
@@ -45,6 +50,27 @@ export function notationJuge(juge_id: string, surcharges: Surcharges = {}): Nota
     motif_notation: "notation_juge",
     ...surcharges,
   };
+}
+
+/** Un refus de l'API (D12), d'après l'exemple valide du schéma de réponse, sous l'identifiant voulu. */
+export function refusApi(id: string = REPONSE_ID): ReponseObtenue {
+  const exemple = JSON.parse(readFileSync(join(RACINE_PROJET, "schema/exemples/reponse/valide-03-api-obtenue-refus-api.json"), "utf8")) as ReponseObtenue;
+  return { ...exemple, id };
+}
+
+/** La notation par règle d'un refus de l'API (D32), sur la réponse de test ou sur l'objet surchargé. */
+export function notationRegle(surcharges: Surcharges = {}): NotationIndividuelle {
+  const objet = objetDe(surcharges);
+  const regle = notationParRegle({
+    id: ulid(`notation-regle-${objet}`),
+    run_id: RUN_ID,
+    reponse: refusApi(objet),
+    gabarit: "Q-DIR",
+    references_item: [ITEM_REF],
+    attribution: null,
+    date: "2026-12-03T11:00:00+01:00",
+  });
+  return { ...regle, ...surcharges };
 }
 
 /** Un renvoi de juge vers l'humain (D30 (2)), conforme à `schema/renvoi-humain.schema.json`. */

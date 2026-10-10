@@ -11,7 +11,7 @@ import { decider } from "../../pipeline/notation/decision.ts";
 import { tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
 import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "../../pipeline/notation/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
-import { inexacte, notationHumaine, notationJuge, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
+import { inexacte, notationHumaine, notationJuge, notationRegle, REPONSE_PROJETEE, runDeNotation } from "./fabriques.ts";
 
 const REPONSES = Array.from({ length: 30 }, (_, i) => ulid(`reponse-croise-${i}`));
 
@@ -192,4 +192,50 @@ describe("violations", () => {
     const propre = runPropre(runDeNotation());
     const run = { ...propre.run, taux_echantillon_humain: 0.25 as const };
     expect(codes({ ...propre, run, verdicts: [] })).toEqual(["taux_echantillon_incoherent"]);  });
+});
+
+/** D32 : un refus de l'API hors échantillon, noté par règle, dans un run par ailleurs propre. */
+function avecRefusParRegle(propre: EntreeControleCroise, i: number): EntreeControleCroise {
+  const id = verdictA(propre, i).objet_note.id;
+  const regle = notationRegle(surObjet(id));
+  const decision = decider({
+    run: propre.run,
+    objet_note: { type: "reponse", id },
+    notations: [regle],
+    renvois: [],
+    dans_echantillon_humain: false,
+    textes: { reponse: "", citations_reference: [] },
+    verdict_id: ulid(`verdict-${id}`),
+    date: "2026-12-06T12:00:00+01:00",
+  });
+  if (decision.statut !== "verdict") throw new Error(`refus ${id} en attente`);
+  const notations = [...propre.notations.filter((n) => n.objet_note.id !== id), regle];
+  return { ...propre, notations, verdicts: propre.verdicts.map((v, j) => (j === i ? valider<VerdictProduit>("verdict", decision.verdict, "verdict par règle") : v)) };
+}
+
+describe("D32 : verdict d'un refus de l'API noté par règle", () => {
+  it("un run propre avec un refus noté par règle, juge retiré ou non : aucune violation", () => {
+    for (const run of [runDeNotation(), runDeNotation(["j2"])]) {
+      const propre = runPropre(run);
+      expect(codes(avecRefusParRegle(propre, indiceHorsEchantillon(propre)))).toEqual([]);
+    }
+  });
+
+  it("un verdict regle_refus_api dont la source n'est pas la notation par règle : violation", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const avecRegle = avecRefusParRegle(propre, i);
+    const id = verdictA(avecRegle, i).objet_note.id;
+    const juge = notationJuge("j1", { ...surObjet(id), id: ulid(`juge-sur-refus-${id}`) });
+    const entree = { ...avecRegle, notations: [...avecRegle.notations, juge], verdicts: avecRegle.verdicts.map((v, j) => (j === i ? { ...v, notations_sources: [juge.id] } : v)) };
+    expect(codes(entree)).toEqual(["notation_par_regle_incoherente"]);
+  });
+
+  it("une notation par règle citée par un verdict qui n'est pas regle_refus_api hors échantillon : violation", () => {
+    const propre = runPropre(runDeNotation());
+    const i = indiceHorsEchantillon(propre);
+    const avecRegle = avecRefusParRegle(propre, i);
+    const entree = avecVerdict(avecRegle, i, (v) => ({ ...v, mode_resolution: "juge_unique_apres_retrait" }));
+    expect(codes(entree)).toEqual(expect.arrayContaining(["notation_par_regle_incoherente"]));
+  });
 });

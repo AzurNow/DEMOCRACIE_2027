@@ -8,6 +8,10 @@
  *
  * Les règles, dans l'ordre où elles s'appliquent :
  *
+ * 0. **Refus de l'API** (D32 du 2026-10-10). Une réponse qui porte la notation par règle
+ *    (`regle-refus.ts`) n'a aucune note de juge : hors échantillon, la règle donne la note
+ *    (`regle_refus_api`) ; dans l'échantillon, la double notation humaine reste exigée et prévaut,
+ *    la règle restant parmi les sources (`deciderParRegle`).
  * 1. **Juge retiré** (§7 ; D13 du 2026-10-03). Ses notations sont écartées partout : elles ne
  *    comptent ni dans l'accord, ni dans le désaccord, ni dans les drapeaux graves, et ne figurent
  *    jamais dans `notations_sources`.
@@ -109,6 +113,8 @@ export class JugeIndetermine extends Error {
 
 /** Les notations d'un objet, rangées par rôle. */
 interface Tri {
+  /** D32 : la notation par règle d'un refus de l'API (`regle-refus.ts`). */
+  readonly regles: readonly NotationIndividuelle[];
   readonly juges: readonly NotationIndividuelle[];
   readonly echantillon: readonly NotationIndividuelle[];
   readonly arbitrages: readonly NotationIndividuelle[];
@@ -131,6 +137,7 @@ interface BilanJuges {
 export function decider(entree: EntreeDecision): Decision {
   const juges = jugesDuRun(entree.run, entree.objet_note.id);
   const tri = trier(entree, juges);
+  if (tri.regles.length > 0) return deciderParRegle(entree, tri);
   const renvoyes = jugesRenvoyes(entree, juges, tri.juges);
   const bilan = bilanDesJuges(tri.juges, juges.actifs, renvoyes, entree.textes);
   return entree.dans_echantillon_humain ? deciderEchantillon(entree, tri, bilan) : deciderHorsEchantillon(entree, tri, bilan);
@@ -150,10 +157,11 @@ export function jugesDuRun(run: RunDeNotation, objet_id: Ulid): { readonly actif
 /* ------------------------------------------------------------------ tri des entrées */
 
 function trier(entree: EntreeDecision, juges: { readonly actifs: readonly string[]; readonly retires: ReadonlySet<string> }): Tri {
-  const tri: Record<keyof Tri, NotationIndividuelle[]> = { juges: [], echantillon: [], arbitrages: [], appeles: [] };
+  const tri: Record<keyof Tri, NotationIndividuelle[]> = { regles: [], juges: [], echantillon: [], arbitrages: [], appeles: [] };
   for (const notation of entree.notations) {
     verifierAppartenance(notation, entree);
     if (notation.notateur.type === "juge") classerJuge(notation, juges, tri.juges, entree.objet_note.id);
+    else if (notation.notateur.type === "regle") tri.regles.push(notation);
     else casierHumain(notation, tri, entree.objet_note.id).push(notation);
   }
   verifierUnParNotateur(tri.juges, entree.objet_note.id);
@@ -355,6 +363,38 @@ function accordDesJuges(entree: EntreeDecision, premiere: NotationIndividuelle, 
 /** D13 : hors échantillon, le juge restant seul donne la note. */
 function jugeUnique(entree: EntreeDecision, restant: NotationIndividuelle): Decision {
   return verdict(entree, { note: noteDe(restant), mode: "juge_unique_apres_retrait", sources: [restant], humains: [], desaccord: false });
+}
+
+/* ------------------------------------------------------------------ règle (D32) */
+
+/**
+ * Un refus de l'API noté par règle (D32). Aucun juge ne l'a noté ni renvoyé : une notation ou un
+ * renvoi de juge, même d'un juge retiré, est incohérent. Hors échantillon, la règle donne la note
+ * (`regle_refus_api`), sans humain. Dans l'échantillon, le §7 exige la double notation humaine
+ * « quel que soit l'accord des juges » : elle reste exigée, et la note humaine prévaut ; la règle
+ * figure parmi les sources, comme les juges d'une réponse ordinaire, pour que la comparaison reste
+ * lisible. Le retrait d'un juge (D13) ne change rien ici.
+ */
+function deciderParRegle(entree: EntreeDecision, tri: Tri): Decision {
+  const regle = regleUnique(entree, tri);
+  if (entree.dans_echantillon_humain) {
+    return deciderEchantillon(entree, tri, { manquants: [], renvoyes: [], comptees: [regle], invalides: [], desaccord: false, grave: false });
+  }
+  if (tri.appeles.length + tri.echantillon.length + tri.arbitrages.length > 0) {
+    throw new NotationsIncoherentes(entree.objet_note.id, "notation humaine sur un refus de l'API noté par règle hors de l'échantillon : rien ne l'appelle (D32).");
+  }
+  return verdict(entree, { note: noteDe(regle), mode: "regle_refus_api", sources: [regle], humains: [], desaccord: false });
+}
+
+function regleUnique(entree: EntreeDecision, tri: Tri): NotationIndividuelle {
+  const id = entree.objet_note.id;
+  const [regle, ...autres] = tri.regles;
+  if (regle === undefined || autres.length > 0) throw new NotationsIncoherentes(id, `${tri.regles.length} notations par règle au lieu d'une.`);
+  if (regle.motif_notation !== "regle_refus_api") throw new NotationsIncoherentes(id, `la notation par règle ${regle.id} porte le motif ${String(regle.motif_notation)}.`);
+  if (entree.notations.some((n) => n.notateur.type === "juge") || entree.renvois.length > 0) {
+    throw new NotationsIncoherentes(id, "notation ou renvoi de juge sur un refus de l'API noté par règle : aucun juge ne note un refus (D32).");
+  }
+  return regle;
 }
 
 /* ------------------------------------------------------------------ échantillon */

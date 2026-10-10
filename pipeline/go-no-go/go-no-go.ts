@@ -107,6 +107,7 @@ export interface ResultatGoNoGo {
   readonly go_no_go: GoNoGo;
   readonly kappas: readonly KappaDeJuge[];
   readonly indeterminees: number;
+  readonly refus_api: number;
   readonly checklist: Checklist;
   readonly run_json: IssueEcriture;
   readonly checklist_json: IssueEcriture;
@@ -119,6 +120,8 @@ interface Calcul {
   readonly indeterminees: number;
   /** D30 (2) : renvois de juge vers l'humain pour une Q-ATT indécidable, contexte run. */
   readonly renvois: number;
+  /** D32 : refus de l'API de l'échantillon, notés par règle, écartés du kappa de chaque juge. */
+  readonly refus_api: number;
   readonly checklist: Checklist;
 }
 
@@ -152,7 +155,7 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
-  const { kappas, indeterminees } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
+  const { kappas, indeterminees, refus_api } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
   const go_no_go = deciderPublication([
     critereKappaJugesHumains(kappas),
     critereTestContrefactuel(run.juges),
@@ -169,7 +172,14 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     constatInterrogationDansLaFenetre(vue.fenetre, reponses),
     constatRobustesseCalculee(),
   ];
-  return { go_no_go, kappas, indeterminees, renvois: renvois.filter((r) => r.contexte === "run").length, checklist: construireChecklist(run.id, go_no_go.criteres, constats) };
+  return {
+    go_no_go,
+    kappas,
+    indeterminees,
+    renvois: renvois.filter((r) => r.contexte === "run").length,
+    refus_api,
+    checklist: construireChecklist(run.id, go_no_go.criteres, constats),
+  };
 }
 
 /* ------------------------------------------------------------------ run.json */
@@ -193,6 +203,7 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
     ...(motif === undefined ? {} : { motif_provisoire: motif }),
     indeterminees_echantillon_humain: calcul.indeterminees,
     renvois_attribution_indecidable: calcul.renvois,
+    refus_api_echantillon_humain: calcul.refus_api,
     go_no_go: calcul.go_no_go,
   };
 }
@@ -205,6 +216,7 @@ function partEcrite(run: Objet): string {
     motif_provisoire: run["motif_provisoire"],
     indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
     renvois_attribution_indecidable: run["renvois_attribution_indecidable"],
+    refus_api_echantillon_humain: run["refus_api_echantillon_humain"],
     juges: Array.isArray(juges)
       ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"], juge["renvois_ecartes_kappa_echantillon"]])
       : null,

@@ -12,12 +12,13 @@ import {
   NotationDeJugeIntrouvable,
   ReferenceHumaineIndefinie,
   referenceHumaine,
+  RefusNoteParUnJuge,
 } from "../../pipeline/go-no-go/kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
 import type { JugeDuRun } from "../../pipeline/notation/types.ts";
 import { comptesKappa, kappaCohen } from "../../validation/domaine/kappa.ts";
-import { notationJuge, renvoiJuge } from "../notation/fabriques.ts";
+import { notationJuge, notationRegle, renvoiJuge } from "../notation/fabriques.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { echantillonSynthetique, fois, type LigneEchantillon } from "./aides.ts";
 
@@ -195,6 +196,51 @@ describe("juges retirés (D13)", () => {
     const kappas = kappasEchantillon({ juges: DEUX_JUGES.map((j) => ({ ...j, retire: true })), echantillon, notations, renvois: [] }).kappas;
     expect(kappas).toEqual([]);
     expect(critereKappaJugesHumains(kappas)).toEqual({ code: "kappa_juges_humains", statut: "rouge", valeur: AUCUN_JUGE_RETENU, seuil: 0.75 });
+  });
+});
+
+/**
+ * D32 : un refus de l'API n'a aucune note de juge, seulement la notation par règle. Comme un renvoi
+ * (D31 (2) : aucun accord ne se mesure là où le juge n'a rendu aucune note), il est écarté du kappa,
+ * ici de chaque juge, et leur nombre est publié une fois pour le run.
+ */
+describe("refus de l'API dans l'échantillon (D32)", () => {
+  const regle = (reponse_id: string) => notationRegle({ id: ulid(`regle-kappa-${reponse_id}`), objet_note: { type: "reponse", id: reponse_id } });
+
+  it("écarté du kappa de chaque juge, compté une fois ; le kappa porte sur le reste", () => {
+    const lignes: LigneEchantillon[] = [...matrice("j1", 3, 0, 1, 4).map((l) => ({ ...l, juges: { ...l.juges, j2: "exacte" as const } })), { juges: {}, humains: ["non_reponse", "non_reponse"] }];
+    const { echantillon, notations } = echantillonSynthetique(lignes);
+    const refus = echantillon[echantillon.length - 1] as string;
+    const resultat = kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations: [...notations, regle(refus)], renvois: [] });
+    expect(resultat.kappas[0]).toMatchObject({ juge_id: "j1", kappa: 0.75, n: 8, renvois_ecartes: 0 });
+    expect(resultat.kappas[1]).toMatchObject({ juge_id: "j2", n: 8, renvois_ecartes: 0 });
+    expect(resultat.refus_api).toBe(1);
+    expect(resultat.indeterminees).toBe(0);
+  });
+
+  it("écarté avant la référence humaine : sa double notation encore absente ne bloque pas le kappa", () => {
+    const { echantillon, notations } = echantillonSynthetique(matrice("j1", 3, 0, 1, 4));
+    const refus = ulid("reponse-echantillon-refus-sans-humain");
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon: [...echantillon, refus], notations: [...notations, regle(refus)], renvois: [] });
+    expect(resultat.kappas[0]).toMatchObject({ kappa: 0.75, n: 8 });
+    expect(resultat.refus_api).toBe(1);
+  });
+
+  it("tout l'échantillon refusé : aucune_reponse_comparable, critère rouge (D24 (2))", () => {
+    const refus = [ulid("refus-kappa-1"), ulid("refus-kappa-2")];
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon: refus, notations: refus.map(regle), renvois: [] });
+    expect(resultat.kappas[0]).toMatchObject({ kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0 });
+    expect(resultat.refus_api).toBe(2);
+    expect(critereKappaJugesHumains(resultat.kappas).statut).toBe("rouge");
+  });
+
+  it("un refus noté par règle ET par un juge, ou renvoyé par un juge : incohérent, aucun kappa", () => {
+    const { echantillon, notations } = echantillonSynthetique([{ juges: { j1: "non_reponse" }, humains: ["non_reponse", "non_reponse"] }]);
+    const id = echantillon[0] as string;
+    expect(() => kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations: [...notations, regle(id)], renvois: [] })).toThrow(RefusNoteParUnJuge);
+    const sansJuge = notations.filter((n) => n.notateur.type !== "juge");
+    const renvoi = renvoiJuge("j1", { id: ulid("renvoi-refus"), objet_note: { type: "reponse", id } });
+    expect(() => kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations: [...sansJuge, regle(id)], renvois: [renvoi] })).toThrow(RefusNoteParUnJuge);
   });
 });
 
