@@ -122,7 +122,7 @@ Aucune décision en attente.
 
 ### D35 — Relecture de la PR #104 (prompts extraction et reformulation 1.0.0) : page d'une citation demandée au modèle ; item O proposé depuis une seule source ; positions du candidat rapportées par la presse (T3) ; contraction « à le », « à les » dans le gabarit Q-NEG.
 
-**Décision du 2026-10-12 :** Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) à coder (lot questions-tirage-symetrie : remplirTexteNeutre et contrôle de la reformulation), testé avant tout appel du prompt de reformulation.
+**Décision du 2026-10-12 :** Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) remplissage codé dans la PR #111 (majuscule « Le »/« Les » après « à » ⇒ erreur, décision du 2026-10-12) ; contrôle de la reformulation sur la mesure contractée à écrire avec ce contrôle.
 
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
