@@ -46,6 +46,10 @@ export interface JugePublie {
   readonly motif_retrait?: string;
   readonly taux_changement_contrefactuel?: number;
   readonly changements_contrefactuel?: ChangementsContrefactuel;
+  /** D31 (1) : présent pour chaque juge d'un test terminé, 0 compris. */
+  readonly paires_ecartees_contrefactuel?: number;
+  /** D31 (1) : toutes les paires écartées, taux indéfini. */
+  readonly motif_indefini_contrefactuel?: "toutes_paires_ecartees";
 }
 
 export interface PublicationContrefactuel {
@@ -144,9 +148,14 @@ function verifierJuges(juges: readonly ResultatJuge[], run: RunDeNotation): void
   }
 }
 
+/** D31 (1) : dénominateur + paires écartées = taille du sous-ensemble ; tout écarté, aucun effectif. */
 function jugePublie(juge: ResultatJuge, taille: number): JugePublie {
-  if (juge.taux.denominateur !== taille) {
-    throw new ContrefactuelNonPubliable(`juge ${juge.juge_id} : dénominateur ${juge.taux.denominateur} pour un sous-ensemble de ${taille} réponse(s).`);
+  if ("motif_indefini_contrefactuel" in juge) {
+    if (juge.paires_ecartees_contrefactuel !== taille) throw new ContrefactuelNonPubliable(`juge ${juge.juge_id} : taux indéfini avec ${juge.paires_ecartees_contrefactuel} paire(s) écartée(s) sur ${taille}.`);
+    return { juge_id: juge.juge_id, retire: false, paires_ecartees_contrefactuel: juge.paires_ecartees_contrefactuel, motif_indefini_contrefactuel: juge.motif_indefini_contrefactuel };
+  }
+  if (juge.taux.denominateur + juge.paires_ecartees_contrefactuel !== taille) {
+    throw new ContrefactuelNonPubliable(`juge ${juge.juge_id} : dénominateur ${juge.taux.denominateur} et ${juge.paires_ecartees_contrefactuel} paire(s) écartée(s) pour un sous-ensemble de ${taille} réponse(s).`);
   }
   return {
     juge_id: juge.juge_id,
@@ -154,5 +163,6 @@ function jugePublie(juge: ResultatJuge, taille: number): JugePublie {
     ...(juge.motif_retrait === undefined ? {} : { motif_retrait: juge.motif_retrait }),
     taux_changement_contrefactuel: juge.taux_changement_contrefactuel,
     changements_contrefactuel: { numerateur: juge.taux.numerateur, denominateur: juge.taux.denominateur },
+    paires_ecartees_contrefactuel: juge.paires_ecartees_contrefactuel,
   };
 }

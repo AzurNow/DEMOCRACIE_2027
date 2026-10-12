@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:extraction-page-lien",
+  "title": "Extraction du texte d'une copie de page citée",
+  "description": "Décision D27 (E) de l'auteur (2026-10-09, charge-juge-v3) : la charge du juge transmet le texte de chaque page citée. runs/<date>/volume/liens/extractions/<sha256_contenu>.json, écrit une fois par pipeline/liens/textes.py (pnpm liens:textes) et lu par la notation (pipeline/notation/fournisseur-fichiers.ts). Une fiche par copie conservée par le test des liens (page d'un lien qui existe, D20 ; version brute d'un instantané téléchargé, D21), désignée par son empreinte. Extraite : le texte est rangé sous volume/liens/textes/<texte_sha256>.txt, par les extracteurs de la collecte (mêmes outils, versions et options que schema/extraction-texte.schema.json, sauf webvtt). Refusée : le motif est consigné, et la charge dit « extraction_refusee » ; aucun texte n'est jamais supposé.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sha256_contenu", "issue", "date_extraction"],
+  "properties": {
+    "sha256_contenu": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte de la copie conservée (existence-lien.schema.json, sha256_contenu) ; nomme la fiche."
+    },
+    "issue": { "enum": ["extrait", "refuse"] },
+    "texte_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte des octets UTF-8 du texte volume/liens/textes/<texte_sha256>.txt, entier, avant toute borne de la charge."
+    },
+    "longueur": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Nombre de points de code du texte entier. Un texte vide n'est jamais écrit : l'extracteur refuse."
+    },
+    "date_extraction": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "extracteur": {
+      "allOf": [
+        { "$ref": "urn:banc-essai-2027:schema:extraction-texte#/properties/extracteur" },
+        { "properties": { "outil": { "enum": ["pymupdf", "html.parser"] } } }
+      ],
+      "description": "Une page citée est un HTML ou un PDF ; un média n'a pas de transcription ici."
+    },
+    "pages": { "$ref": "urn:banc-essai-2027:schema:extraction-texte#/properties/pages" },
+    "encodage": { "$ref": "urn:banc-essai-2027:schema:extraction-texte#/properties/encodage" },
+    "motif": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Refus de l'extracteur, tel quel (type non pris en charge, Content-Type absent, encodage non déclaré, PDF illisible…)."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "issue": { "const": "extrait" } }, "required": ["issue"] },
+      "then": {
+        "required": ["texte_sha256", "longueur", "extracteur"],
+        "not": { "required": ["motif"] },
+        "oneOf": [{ "required": ["pages"] }, { "required": ["encodage"] }]
+      },
+      "else": {
+        "required": ["motif"],
+        "not": {
+          "anyOf": [
+            { "required": ["texte_sha256"] },
+            { "required": ["longueur"] },
+            { "required": ["extracteur"] },
+            { "required": ["pages"] },
+            { "required": ["encodage"] }
+          ]
+        }
+      }
+    }
+  ]
+}

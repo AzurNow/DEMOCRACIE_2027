@@ -35,6 +35,8 @@ export const CODES_VIOLATION = [
   "retrait_contrefactuel_incoherent",
   "taux_contrefactuel_incoherent",
   "denominateur_contrefactuel_incoherent",
+  "notation_par_regle_incoherente",
+  "marqueur_refus_api_incoherent",
 ] as const;
 export type CodeViolation = (typeof CODES_VIOLATION)[number];
 
@@ -49,6 +51,8 @@ export interface EntreeControleCroise {
   readonly run: RunDeNotation;
   /** Les réponses obtenues du run, population du tirage de l'échantillon humain. */
   readonly reponses_obtenues: readonly Ulid[];
+  /** D33 : celles des réponses obtenues qui sont un refus de l'API (`normalise.refus_api`). */
+  readonly refus_api: readonly Ulid[];
   readonly notations: readonly NotationIndividuelle[];
   readonly verdicts: readonly VerdictProduit[];
 }
@@ -80,7 +84,26 @@ export function controleCroise(entree: EntreeControleCroise): readonly Violation
     echantillon: new Set(tirerEchantillonHumain(entree.reponses_obtenues, entree.run.graines.echantillon_humain, entree.run.taux_echantillon_humain)),
     notations: entree.notations,
   };
-  return [...violationsDuRun(entree.run), ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx))];
+  return [
+    ...violationsDuRun(entree.run),
+    ...marqueursRefus(entree.notations, new Set(entree.refus_api)),
+    ...entree.verdicts.flatMap((verdict) => violationsDuVerdict(verdict, ctx)),
+  ];
+}
+
+/**
+ * D33 : une notation de contexte run sur une réponse porte `sur_refus_api` si et seulement si la
+ * réponse est un refus de l'API. Le marqueur exempte de l'extrait : posé sur une réponse ordinaire,
+ * il ferait passer une note sans justification ; absent sur un refus, la réponse a été notée comme
+ * une autre.
+ */
+function marqueursRefus(notations: readonly NotationIndividuelle[], refus: ReadonlySet<Ulid>): Violation[] {
+  return notations
+    .filter((n) => n.contexte === "run" && n.objet_note.type === "reponse" && (n.sur_refus_api === true) !== refus.has(n.objet_note.id))
+    .map((n) => ({
+      code: "marqueur_refus_api_incoherent" as const,
+      detail: `notation ${n.id} (${n.notateur.type} ${n.notateur.id}) : sur_refus_api ${n.sur_refus_api === true ? "posé" : "absent"}, alors que la réponse ${n.objet_note.id} ${refus.has(n.objet_note.id) ? "est" : "n'est pas"} un refus de l'API.`,
+    }));
 }
 
 function violationsDuRun(run: RunDeNotation): Violation[] {
@@ -128,18 +151,22 @@ function violationsContrefactuelles(juge: JugeDuRun): Violation[] {
 }
 
 /**
- * Le dénominateur du taux d'un juge est la taille du sous-ensemble publiée dans
- * `contrefactuel_candidats.taille`. Contrôlé quand les deux sont présents ; le schéma exige le bloc
- * d'un run publié.
+ * Le dénominateur du taux d'un juge plus ses paires écartées (D31 (1) : paires dont il a renvoyé un
+ * côté vers l'humain) font la taille du sous-ensemble publiée dans `contrefactuel_candidats.taille` ;
+ * un taux indéfini (`toutes_paires_ecartees`) suppose toutes les paires écartées. Contrôlé quand le
+ * bloc est présent et que le juge publie un résultat ; le schéma exige le bloc d'un run publié.
  */
 function denominateurContrefactuel(juge: JugeDuRun, run: RunDeNotation): Violation[] {
-  const changements = juge.changements_contrefactuel;
   const bloc = run.contrefactuel_candidats;
-  if (changements === undefined || bloc === undefined || changements.denominateur === bloc.taille) return [];
+  const resultat = juge.changements_contrefactuel !== undefined || juge.motif_indefini_contrefactuel !== undefined;
+  if (bloc === undefined || !resultat) return [];
+  const ecartees = juge.paires_ecartees_contrefactuel;
+  const comptees = juge.changements_contrefactuel === undefined ? 0 : juge.changements_contrefactuel.denominateur;
+  if (ecartees !== undefined && comptees + ecartees === bloc.taille) return [];
   return [
     {
       code: "denominateur_contrefactuel_incoherent",
-      detail: `juge ${juge.juge_id} : ${changements.denominateur} paires au dénominateur, pour un sous-ensemble de ${bloc.taille} réponse(s) (contrefactuel_candidats.taille).`,
+      detail: `juge ${juge.juge_id} : ${comptees} paire(s) au dénominateur et ${String(ecartees)} écartée(s), pour un sous-ensemble de ${bloc.taille} réponse(s) (contrefactuel_candidats.taille).`,
     },
   ];
 }
@@ -152,7 +179,28 @@ function violationsDuVerdict(verdict: VerdictProduit, ctx: Contexte): Violation[
     ...drapeauGraveIgnore(verdict, ctx),
     ...appartenanceEchantillon(verdict, ctx),
     ...humainsAbsents(verdict, sources.notations),
+    ...regleIncoherente(verdict, sources.notations),
   ].map((violation) => ({ ...violation, verdict_id: verdict.id }));
+}
+
+/** Modes dont un verdict peut citer la notation par règle d'un refus de l'API (D32). */
+const MODES_AVEC_REGLE: ReadonlySet<ModeResolution> = new Set<ModeResolution>(["regle_refus_api", "echantillon_humain_10"]);
+
+/**
+ * D32 : un verdict `regle_refus_api` a pour seule source la notation par règle ; une notation par
+ * règle n'est citée que par lui, ou, dans l'échantillon, à côté des deux humains dont la note prévaut.
+ */
+function regleIncoherente(verdict: VerdictProduit, sources: readonly NotationIndividuelle[]): ViolationSansVerdict[] {
+  const regles = sources.filter((n) => n.notateur.type === "regle");
+  const parRegle = verdict.mode_resolution === "regle_refus_api";
+  const seuleSource = regles.length === 1 && sources.length === 1;
+  if (parRegle ? seuleSource : regles.length === 0 || MODES_AVEC_REGLE.has(verdict.mode_resolution)) return [];
+  return [
+    {
+      code: "notation_par_regle_incoherente",
+      detail: `verdict en ${verdict.mode_resolution} avec ${regles.length} notation(s) par règle parmi ${sources.length} source(s) (D32).`,
+    },
+  ];
 }
 
 type ViolationSansVerdict = Omit<Violation, "verdict_id">;

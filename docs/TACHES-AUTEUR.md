@@ -415,6 +415,71 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
         l'API d'un comparateur quand il en offre une (n° 52 et 62).
 - [x] `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min` retirés (#73).
 
+- [ ] **Écrire aussi en 0.16 : D26 (§3 et §7)**, tranchée le 2026-10-09. Texte proposé au §3,
+      après la règle des candidats : « La liste publiée avec la version 1.0 applique ces règles au
+      15 octobre 2026 ; elles sont réappliquées telles quelles au gel de chaque run, et tout écart
+      avec la liste publiée est rapporté. » Dans le tableau des outils, « figurant dans le top des
+      applications de la catégorie » devient « figurant dans les 50 premières applications gratuites
+      de la catégorie Productivité de l'App Store ou de Google Play en France, classement archivé ».
+      (Point 4 révisé le 2026-10-09 : une telle réponse est « inexacte », motif `ajout_fabrique`,
+      déjà prévu par le schéma ; rien à écrire au §7 pour ce point.) Juges : Claude Sonnet 5.5 et
+      Mistral Large, versions épinglées au gel (l'exemple du §7 reste exact).
+
+  Ligne de révision, à fusionner : « Section 3 : date d'application de la liste publiée, classement
+  des stores précisé. »
+
+- [ ] **Écrire aussi en 0.16 : D27 (§7 et annexe D, charge du juge)**, tranchée le 2026-10-09. Au §7,
+      la liste de ce que reçoit chaque juge s'allonge : « … la date du run, la réponse attendue, la
+      prémisse de la formulation lorsqu'elle est fausse, le texte de chaque page citée tel que conservé
+      ou archivé, et la grille ». Et : « La fraîcheur d'une obsolescence se calcule depuis les dates ;
+      sur une question d'attribution, le juge relève les noms cités, que le code rattache aux
+      candidats. » L'annexe D s'aligne sur `charge-juge-v3` (noms des variables, plusieurs références,
+      forme du sourçage et de l'extrait).
+
+  D29 (2026-10-09), à la suite : « Sur une question d'attribution, la catégorie, le motif et les
+  drapeaux se calculent en comparant les candidats cités, que relève le juge, à la liste attendue. Le
+  taux de changement du test contrefactuel ne compte pas le soutien des pages citées, qui ne sont
+  pas permutées. » (D30 (1) : un changement reste « tout ce que lisent les métriques primaires »,
+  sourçage excepté ; le motif n'en fait pas partie.) D30 (2) : « Quand la règle ne détermine pas
+  la note d'une question d'attribution, la réponse est notée par un humain ; leur nombre est
+  publié. »
+
+  Ligne de révision, à fusionner : « Section 7 et annexe D : contenu de la charge du juge, note
+  d'une question d'attribution calculée, sourçage hors du test contrefactuel. »
+
+- [ ] **Écrire aussi en 0.16 : D28 (§3, §8)**, tranchée le 2026-10-09. Au §3, après la phrase sur
+      les primaires : « Un candidat éliminé à un tour de primaire est retiré dès la proclamation du
+      résultat. Une candidature est déclarée par une déclaration explicite de l'intéressé ou une
+      investiture de son parti ; une intention ou une réflexion annoncée ne suffit pas. » Au §8,
+      après « Les deux modes sont toujours publiés côte à côte » : « sauf pour un outil dont l'API
+      n'offre pas la recherche web : il est mesuré dans le seul mode sans recherche, l'autre est
+      publié sans objet, et aucune comparaison des modes n'est faite pour lui. »
+
+  Ligne de révision, à fusionner : « Section 3 : élimination à une primaire, déclaration de
+  candidature explicite. Section 8 : outil sans recherche web par API. »
+
+- [ ] **Ajouter à la relecture de l'avocat (J1) : conditions de l'API Gemini en mode web** (D28, 4).
+      Elles interdisent d'« analyser » les résultats ancrés, limitent leur conservation à deux ans
+      et en réservent l'affichage à l'utilisateur (citations exactes : `scratch/perimetre/dossier-2026-10-15.md`,
+      §2.3). Question : le projet peut-il mesurer et publier ces réponses (règle 7, §8, §10) ? En
+      attendant, le mode web de Gemini est suspendu ; avis défavorable ⇒ publié « non mesurable ».
+
+- [ ] **Refaire les relevés du périmètre le 15 octobre** (D26, 1) : sondages publiés du 10 au 15
+      (Commission des sondages), résultat du premier tour de la primaire PS–Place publique–GRS
+      (D28, 1), primaire de la gauche unitaire du 11, déclaration éventuelle de Le Maire,
+      classements Productivité des stores (Perplexity, DeepSeek, Grok Bot proches du rang 50) ;
+      preuve d'adhésion de YouGov et Cluster17. Puis archiver (`pnpm preuve --fichier
+      scratch/perimetre/urls-a-archiver.txt`) et remplir `config/perimetre.yaml`.
+
+- [ ] **Écrire aussi en 0.16 : D32 (§7)**, tranchée le 2026-10-10. Après la règle de décision :
+      « Un refus de l'API est noté non-réponse sans être soumis aux juges. » D33 : à l'annexe C,
+      « extrait justificatif obligatoire pour toute note autre qu'exacte, sauf sur un refus de
+      l'API, qui n'a rien à citer » ; au §7, « un refus tiré dans l'échantillon reste doublement
+      noté par des humains et n'entre pas dans l'accord juges-humains ; leur nombre est publié ».
+
+- [ ] **Relire puis inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3),
+      sept choix de rédaction à relire en fin de fichier ; le recopier dans `prompts/judge-1.0.0.md`.
+
 ### Prompts (`prompts/`)
 
 - [ ] **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),

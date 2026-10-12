@@ -13,7 +13,7 @@
 import { lireNotationsDuRun } from "../../analysis/lecture-run.ts";
 import { exigerPseudonyme } from "../../pipeline/notation/notation-humaine.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
-import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
+import type { NotationIndividuelle, RenvoiHumain } from "../../pipeline/notation/types.ts";
 import { validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
 import { instantLocal } from "../../validation/serveur/contexte.ts";
@@ -27,6 +27,8 @@ export interface Contexte {
   readonly existences: FournisseurExistences;
   /** Relues à chaque appel : une notation écrite pendant la session change la file. */
   notations(): readonly NotationIndividuelle[];
+  /** Les renvois de juge (D30 (2)), relus de même. */
+  renvois(): readonly RenvoiHumain[];
   maintenant(): string;
   nouvelId(): string;
 }
@@ -62,6 +64,7 @@ export function creerContexte(options: OptionsContexte): Contexte {
     depot: DepotNotation.ouvrir(options.repertoire_run),
     existences: options.existences,
     notations: () => lireNotationsDuRun(options.repertoire_run, donnees.run.id).notations,
+    renvois: () => lireNotationsDuRun(options.repertoire_run, donnees.run.id).renvois,
     maintenant: () => instantLocal(new Date()),
     nouvelId: () => ulid(),
   };

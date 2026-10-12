@@ -22,13 +22,27 @@
  * place parmi les trois catégories ; elle est écartée du kappa de chaque juge, et leur nombre est
  * publié (`run.json#/indeterminees_echantillon_humain`) : l'échantillon n'est pas amputé en silence.
  * Toutes écartées : aucune réponse comparable, kappa indéfini, critère rouge.
+ *
+ * D31 (2) de l'auteur : une réponse de l'échantillon qu'un juge a renvoyée vers l'humain (D30 (2),
+ * `volume/renvois/`) n'a pas de note de ce juge ; elle est écartée du kappa de CE juge seulement, et
+ * leur nombre est publié par juge (`juges[].renvois_ecartes_kappa_echantillon`). Une note de juge
+ * absente SANS renvoi reste une erreur (`NotationDeJugeIntrouvable`). Les renvois d'un juge retiré
+ * n'entrent nulle part (D13) : il n'a pas de kappa. Tout écarté : `aucune_reponse_comparable`, rouge.
+ *
+ * D32 de l'auteur : un refus de l'API n'est soumis à aucun juge, la règle le note (`regle-refus.ts`).
+ * Une réponse de l'échantillon qui porte cette notation par règle n'a de note d'aucun juge ; par la
+ * raison de D31 (2) (aucun accord ne se mesure là où le juge n'a rendu aucune note), elle est
+ * écartée du kappa de CHAQUE juge, avant toute lecture de sa référence humaine, et leur nombre est
+ * publié une fois pour le run (`run.json#/refus_api_echantillon_humain`), comme D25 (1). Une
+ * notation ou un renvoi de juge sur un tel refus lève `RefusNoteParUnJuge`.
  */
 
 import { notationsConcordent } from "../../analysis/note-lue.ts";
 import type { CategorieRetenue, MotifNotation, Ulid } from "../../analysis/types.ts";
 import { comptesKappa, kappaCohen, type PaireCategories } from "../../validation/domaine/kappa.ts";
 import { JugeIndetermine } from "../notation/decision.ts";
-import type { JugeDuRun, NotationIndividuelle } from "../notation/types.ts";
+import { estNotationParRegle } from "../notation/regle-refus.ts";
+import type { JugeDuRun, NotationIndividuelle, RenvoiHumain } from "../notation/types.ts";
 
 /** Les trois catégories primaires qu'un juge peut rendre (§7), dans un ordre figé. */
 export const CATEGORIES_KAPPA_ECHANTILLON = ["exacte", "inexacte", "non_reponse"] as const;
@@ -48,6 +62,8 @@ export interface KappaDeJuge {
   /** Décidé en entiers sur les comptes du kappa ; faux pour un kappa indéfini. */
   readonly atteint_seuil: boolean;
   readonly n: number;
+  /** D31 (2) : réponses de l'échantillon écartées de ce kappa parce que ce juge les a renvoyées. */
+  readonly renvois_ecartes: number;
 }
 
 export class ReferenceHumaineIndefinie extends Error {
@@ -67,12 +83,21 @@ export class NotationDeJugeIntrouvable extends Error {
   }
 }
 
+export class RefusNoteParUnJuge extends Error {
+  constructor(reponse_id: Ulid, nombre: number) {
+    super(`Réponse ${reponse_id} de l'échantillon humain : notée par règle comme refus de l'API (D32), elle porte aussi ${nombre} notation(s) ou renvoi(s) de juge. Le kappa de l'échantillon n'est pas calculé.`);
+    this.name = "RefusNoteParUnJuge";
+  }
+}
+
 export interface EntreeKappaEchantillon {
   readonly juges: readonly JugeDuRun[];
   /** Les réponses de l'échantillon humain, rejouées par l'appelant. */
   readonly echantillon: readonly Ulid[];
   /** Les notations individuelles du volume ; seules celles de contexte `run` sont lues. */
   readonly notations: readonly NotationIndividuelle[];
+  /** Les renvois de juge du volume (D30 (2)) ; seuls ceux de contexte `run` sont lus. */
+  readonly renvois: readonly RenvoiHumain[];
 }
 
 export interface ResultatEchantillon {
@@ -83,6 +108,11 @@ export interface ResultatEchantillon {
    * du kappa de chaque juge, publiées dans `run.json#/indeterminees_echantillon_humain`.
    */
   readonly indeterminees: number;
+  /**
+   * D32 : réponses de l'échantillon refusées par l'API, notées par règle et par aucun juge, écartées
+   * du kappa de chaque juge, publiées dans `run.json#/refus_api_echantillon_humain`.
+   */
+  readonly refus_api: number;
 }
 
 interface Reference {
@@ -96,13 +126,22 @@ function estComparable(reference: { readonly categorie: CategorieRetenue }): ref
 }
 
 export function kappasEchantillon(entree: EntreeKappaEchantillon): ResultatEchantillon {
-  const parReponse = notationsParReponse(entree.echantillon, entree.notations);
-  const toutes = [...parReponse].map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
+  const parReponse = [...notationsParReponse(entree.echantillon, entree.notations)];
+  const refus = parReponse.filter(([, notations]) => notations.some(estNotationParRegle));
+  for (const [id, notations] of refus) exigerSansJuge(id, notations, entree.renvois);
+  const notees = parReponse.filter(([, notations]) => !notations.some(estNotationParRegle));
+  const toutes = notees.map(([id, notations]) => ({ id, notations, categorie: referenceHumaine(id, notations) }));
   const references = toutes.filter((r): r is Reference => estComparable(r));
   const kappas = entree.juges
     .filter((juge) => !juge.retire)
-    .map((juge) => kappaDuJuge(juge.juge_id, references.map((r) => ({ a: categorieDuJuge(juge.juge_id, r.id, r.notations), b: r.categorie }))));
-  return { kappas, indeterminees: toutes.length - references.length };
+    .map((juge) => kappaAvecRenvois(juge.juge_id, references, renvoyesPar(juge.juge_id, entree.renvois)));
+  return { kappas, indeterminees: toutes.length - references.length, refus_api: refus.length };
+}
+
+/** D32 : un refus noté par règle n'a ni notation ni renvoi de juge, même d'un juge retiré. */
+function exigerSansJuge(reponse_id: Ulid, notations: readonly NotationIndividuelle[], renvois: readonly RenvoiHumain[]): void {
+  const juges = notations.filter((n) => n.notateur.type === "juge").length + renvois.filter((r) => r.contexte === "run" && r.objet_note.id === reponse_id).length;
+  if (juges > 0) throw new RefusNoteParUnJuge(reponse_id, juges);
 }
 
 /** Les notations de contexte `run` de chaque réponse de l'échantillon, dans l'ordre de l'échantillon. */
@@ -143,6 +182,25 @@ function arbitreDe(reponse_id: Ulid, notations: readonly NotationIndividuelle[])
   return arbitre;
 }
 
+/** Les réponses que ce juge a renvoyées vers l'humain, contexte `run`. */
+function renvoyesPar(juge_id: string, renvois: readonly RenvoiHumain[]): ReadonlySet<Ulid> {
+  return new Set(renvois.filter((r) => r.contexte === "run" && r.notateur.id === juge_id).map((r) => r.objet_note.id));
+}
+
+/** D31 (2) : les réponses renvoyées par ce juge sont écartées de son kappa, et comptées. */
+function kappaAvecRenvois(juge_id: string, references: readonly Reference[], renvoyes: ReadonlySet<Ulid>): KappaDeJuge {
+  const gardees = references.filter((r) => !renvoyes.has(r.id));
+  for (const r of references.filter((ref) => renvoyes.has(ref.id))) exigerSansNotation(juge_id, r);
+  const kappa = kappaDuJuge(juge_id, gardees.map((r) => ({ a: categorieDuJuge(juge_id, r.id, r.notations), b: r.categorie })));
+  return { ...kappa, renvois_ecartes: references.length - gardees.length };
+}
+
+/** Un juge qui porte à la fois un renvoi et une notation sur la réponse : deux issues, aucune n'est choisie. */
+function exigerSansNotation(juge_id: string, reference: Reference): void {
+  const siennes = reference.notations.filter((n) => n.notateur.type === "juge" && n.notateur.id === juge_id);
+  if (siennes.length > 0) throw new NotationDeJugeIntrouvable(juge_id, reference.id, siennes.length + 1);
+}
+
 /** La notation du juge retenu sur la réponse : exactement une, jamais « indeterminee » (§7). */
 function categorieDuJuge(juge_id: string, reponse_id: Ulid, notations: readonly NotationIndividuelle[]): CategorieKappaEchantillon {
   const siennes = notations.filter((n) => n.notateur.type === "juge" && n.notateur.id === juge_id);
@@ -152,7 +210,7 @@ function categorieDuJuge(juge_id: string, reponse_id: Ulid, notations: readonly 
   return notation.categorie;
 }
 
-function kappaDuJuge(juge_id: string, paires: readonly PaireCategories<CategorieKappaEchantillon>[]): KappaDeJuge {
+function kappaDuJuge(juge_id: string, paires: readonly PaireCategories<CategorieKappaEchantillon>[]): Omit<KappaDeJuge, "renvois_ecartes"> {
   const resultat = kappaCohen(paires, CATEGORIES_KAPPA_ECHANTILLON);
   if (resultat.kappa === null) {
     const motif = resultat.n === 0 ? "aucune_reponse_comparable" : "accord_attendu_maximal";

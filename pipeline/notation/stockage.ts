@@ -4,6 +4,7 @@
  *   verdicts/<id>.json                          Git        un verdict par objet noté, de contexte run
  *   volume/notations/<id>.json                  hors Git   une notation individuelle par fichier
  *   volume/reponses-contrefactuelles/<id>.json  hors Git   les réponses permutées du test (§7)
+ *   volume/renvois/<id>.json                    hors Git   les renvois de juge vers l'humain (D30 (2))
  *
  * Mêmes garanties que `pipeline/interrogation/stockage.ts:DepotReponses` (règle 7) : chaque objet
  * est validé contre son schéma, puis écrit par ouverture exclusive (`wx`), synchronisé sur disque ;
@@ -30,7 +31,7 @@ import { join } from "node:path";
 import { dispositionRunNote, lireDossier, lireRunJson, lireVerdicts, type DispositionRunNote } from "../../analysis/lecture-run.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { ContexteMesure } from "../../analysis/types.ts";
-import type { NotationIndividuelle, VerdictProduit } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, VerdictProduit } from "./types.ts";
 
 /**
  * Une réponse contrefactuelle telle que l'écrivain la contrôle : le reste de l'objet est validé
@@ -101,7 +102,7 @@ export class DepotNotation {
   static ouvrir(repertoire_run: string): DepotNotation {
     const run = lireRunJson(repertoire_run);
     const disposition = dispositionRunNote(repertoire_run);
-    for (const dossier of [disposition.verdicts, disposition.notations, disposition.reponses_contrefactuelles]) mkdirSync(dossier, { recursive: true });
+    for (const dossier of [disposition.verdicts, disposition.notations, disposition.reponses_contrefactuelles, disposition.renvois]) mkdirSync(dossier, { recursive: true });
     const depot = new DepotNotation(disposition, run.id);
     for (const verdict of lireVerdicts(repertoire_run, run.id)) depot.indexer(depot.verdicts, cleObjet(verdict.objet_note), verdict.id);
     for (const reponse of lireDossier<ReponseAEcrire>(disposition.reponses_contrefactuelles, "reponse", run.id)) {
@@ -132,6 +133,13 @@ export class DepotNotation {
     valider<NotationIndividuelle>("notation", notation, `notation ${notation.id} avant écriture`);
     this.verifierRun(notation, "notation");
     ecrireExclusif(join(this.disposition.notations, `${notation.id}.json`), notation);
+  }
+
+  /** `volume/renvois/<id>.json` (D30 (2)). Lève `ErreurSchema`, `ObjetHorsDeSonDossier` ou `FichierDejaEcrit`. */
+  ecrireRenvoi(renvoi: RenvoiHumain): void {
+    valider<RenvoiHumain>("renvoi-humain", renvoi, `renvoi ${renvoi.id} avant écriture`);
+    this.verifierRun(renvoi, "renvoi");
+    ecrireExclusif(join(this.disposition.renvois, `${renvoi.id}.json`), renvoi);
   }
 
   /** `verdicts/<id>.json`, pour un objet de contexte run, un seul par objet noté. */

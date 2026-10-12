@@ -36,6 +36,16 @@ export function libelleSansMot(libelle: string): boolean {
   return enMots(libelle) === "  ";
 }
 
+/**
+ * Vrai si les deux textes sont la même suite de mots, à la normalisation de ce module près (casse,
+ * accents, ponctuation). Égalité, jamais inclusion : « M. Dupont » n'est pas « Dupont ». Lu par le
+ * rattachement des noms cités sur une question d'attribution (`pipeline/notation/rattachement.ts`),
+ * pour qu'une seule normalisation des noms vive dans le dépôt.
+ */
+export function memesMots(a: string, b: string): boolean {
+  return enMots(a) === enMots(b);
+}
+
 /** Vrai si l'un des libellés figure dans le texte comme suite de mots complète. */
 export function contientLibelle(texte: string, libelles: readonly string[]): boolean {
   return trouverLibelle(texte, libelles) !== null;

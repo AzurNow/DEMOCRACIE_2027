@@ -33,6 +33,12 @@ function messagesDeLEchec(echec: EchecApi): readonly string[] {
   return [`${corps.erreur === undefined ? `HTTP ${echec.statut}` : corps.erreur} — ${detail.join(" ; ")}`];
 }
 
+/** D30 (2) : le serveur demande à l'humain de décider la note d'une Q-ATT indécidable. */
+function exigeNoteDecidee(echec: EchecApi): boolean {
+  const corps = echec.corps as { motifs?: readonly MotifRefus[] } | null;
+  return corps !== null && corps.motifs !== undefined && corps.motifs.some((m) => m.code === "attribution_indecidable");
+}
+
 function afficherFile(file: FileDeTravail): void {
   const ecran = cible("ecran");
   vider(ecran);
@@ -75,6 +81,7 @@ async function soumettre(session: Session, reponse_id: string, formulaire: Retur
     await api.noter(reponse_id, lecture.saisie);
   } catch (erreur) {
     if (!(erreur instanceof EchecApi)) throw erreur;
+    if (exigeNoteDecidee(erreur)) formulaire.revelerNoteDecidee();
     retour.append(afficherErreurs(messagesDeLEchec(erreur)));
     return;
   }

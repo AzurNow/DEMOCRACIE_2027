@@ -1,0 +1,24 @@
+{
+  "id": "6Y4T2N8QK0WZ5RB3XMDC9FHJ7V",
+  "run_id": "W5ZT1TXQV92JTWYQPS5WCF9YAN",
+  "contexte": "run",
+  "objet_note": {
+    "type": "reponse",
+    "id": "7T0C1V3QX8M2NHD6RZ4KJ9PWEA"
+  },
+  "categorie_retenue": "exacte",
+  "drapeaux_retenus": [],
+  "sourcage_retenu": {
+    "cite": false,
+    "au_moins_un_lien_existant": false,
+    "au_moins_un_lien_soutenant": false
+  },
+  "notations_sources": [
+    "8RQ7D2KXRF1V0GMS3ZB5N4CW6E"
+  ],
+  "mode_resolution": "regle_refus_api",
+  "desaccord_juges": false,
+  "dans_echantillon_humain": false,
+  "erreur_grave": false,
+  "date": "2026-12-03T12:00:00+01:00"
+}

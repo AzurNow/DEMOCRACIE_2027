@@ -13,10 +13,18 @@
  *
  * Partagé par l'écran de notation humaine (`notation-humaine/serveur/fournisseur.ts`, qui le
  * réexporte) et par la chaîne de notation des juges (`chaine.ts`).
+ *
+ * **Texte des copies (D27 (E)).** Le même passage conserve la copie d'un lien (page reçue, ou
+ * version brute d'un instantané, D21), puis `pnpm liens:textes` en extrait le texte. `texteDeCopie`
+ * rend ce que l'extraction a donné pour une copie, désignée par son empreinte (`sha256_contenu`) :
+ * le texte, ou le refus d'extraction et son motif. `undefined` : l'extraction n'a pas encore eu lieu,
+ * et la réponse attend comme elle attend un verdict d'existence. Jamais un texte supposé.
  */
 
+import type { TexteDeCopie } from "./pages-citees.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
 
 export interface FournisseurExistences {
   existencesDe(reponse_id: string, liens: readonly string[]): readonly ExistenceEtablie[];
+  texteDeCopie(sha256_contenu: string): TexteDeCopie | undefined;
 }

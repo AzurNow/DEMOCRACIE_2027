@@ -16,6 +16,7 @@ import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import { ulid } from "../analysis/fabriques.ts";
 import { inexacte, notationHumaine, notationJuge } from "../notation/fabriques.ts";
 import { options, parametresDeReference } from "../notation/simulation.ts";
+import { VERSION_CHARGE_JUGE } from "../../pipeline/notation/charge-juge.ts";
 
 type Categorie3 = Extract<CategorieRetenue, "exacte" | "inexacte" | "non_reponse">;
 
@@ -112,10 +113,20 @@ function noterEchantillon(repertoire_run: string): void {
   const depot = DepotNotation.ouvrir(repertoire_run);
   for (const id of echantillon) {
     const juge = notations.find((n) => n.contexte === "run" && n.objet_note.id === id && n.notateur.type === "juge");
-    if (juge === undefined) throw new Error(`réponse ${id} de l'échantillon sans notation de juge dans le run simulé.`);
-    depot.ecrireNotation(humaineDepuis(juge, "annotateur-1"));
-    depot.ecrireNotation(humaineDepuis(juge, "annotateur-2"));
+    const regle = notations.find((n) => n.contexte === "run" && n.objet_note.id === id && n.notateur.type === "regle");
+    const modele = juge ?? (regle === undefined ? undefined : nonReponseHumaineSurRefus(regle));
+    if (modele === undefined) throw new Error(`réponse ${id} de l'échantillon sans notation de juge ni de règle dans le run simulé.`);
+    depot.ecrireNotation(humaineDepuis(modele, "annotateur-1"));
+    depot.ecrireNotation(humaineDepuis(modele, "annotateur-2"));
   }
+}
+
+/**
+ * D32 et D33 : un refus de l'API de l'échantillon n'a pas de notation de juge à recopier. Les humains
+ * le notent non-réponse, sans extrait : leur notation porte sur_refus_api, comme la règle.
+ */
+function nonReponseHumaineSurRefus(regle: NotationIndividuelle): NotationIndividuelle {
+  return { ...regle, version_charge: VERSION_CHARGE_JUGE };
 }
 
 let reference: Promise<string> | undefined;

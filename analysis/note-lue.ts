@@ -63,6 +63,28 @@ export function notationsConcordent(a: Notation, b: Notation): boolean {
   return memeNote(lireNote(a), lireNote(b));
 }
 
+/**
+ * « La note change » du test contrefactuel des noms de candidats (D14 (3), précisée par D30 (1) de
+ * l'auteur) : ce que lisent les métriques primaires, sourçage excepté — catégorie, drapeaux,
+ * fraîcheur de l'obsolescence. Le motif d'inexactitude n'y entre pas. Le soutien n'y entre pas : le
+ * texte des pages citées n'est pas permuté (§7 ne permute que la réponse et l'item), un soutien qui
+ * change avec lui ne dit rien d'un biais sur le nom.
+ *
+ * Définie à partir de `memeNote` elle-même, le sourçage de chaque note lue remplacé par une même
+ * valeur neutre : une seule liste de ce que lisent les métriques primaires existe (`NoteLue`). Si un
+ * champ y entre, il entre ici aussi ; deux listes écrites à part divergeraient sans bruit.
+ */
+export function notesContrefactuellesConcordent(a: Notation, b: Notation): boolean {
+  return memeNote(sansSourcage(lireNote(a)), sansSourcage(lireNote(b)));
+}
+
+/** Le même sourçage neutre des deux côtés : `memeSourcage` est alors vrai, quels que soient les liens. */
+const SOURCAGE_NEUTRE: SourcageRetenu = { cite: false, au_moins_un_lien_existant: false, au_moins_un_lien_soutenant: false };
+
+function sansSourcage(note: NoteLue): NoteLue {
+  return { ...note, sourcage: SOURCAGE_NEUTRE };
+}
+
 /** Les drapeaux sont un ensemble (`uniqueItems` au schéma) : l'ordre ne compte pas. */
 function memesDrapeaux(a: readonly Drapeau[], b: readonly Drapeau[]): boolean {
   return a.length === b.length && a.every((drapeau) => b.includes(drapeau));

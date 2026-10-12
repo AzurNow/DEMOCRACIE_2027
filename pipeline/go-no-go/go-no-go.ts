@@ -107,6 +107,7 @@ export interface ResultatGoNoGo {
   readonly go_no_go: GoNoGo;
   readonly kappas: readonly KappaDeJuge[];
   readonly indeterminees: number;
+  readonly refus_api: number;
   readonly checklist: Checklist;
   readonly run_json: IssueEcriture;
   readonly checklist_json: IssueEcriture;
@@ -117,6 +118,10 @@ interface Calcul {
   readonly kappas: readonly KappaDeJuge[];
   /** D25 (1) : réponses de l'échantillon à note humaine indéterminée, écartées du kappa. */
   readonly indeterminees: number;
+  /** D30 (2) : renvois de juge vers l'humain pour une Q-ATT indécidable, contexte run. */
+  readonly renvois: number;
+  /** D32 : refus de l'API de l'échantillon, notés par règle, écartés du kappa de chaque juge. */
+  readonly refus_api: number;
   readonly checklist: Checklist;
 }
 
@@ -146,11 +151,11 @@ function graineDuFichierTirage(repertoire_run: string, run: RunLu): GraineTirage
 
 function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
   const reponses = lireReponses<Reponse & DemarragesDeReponse>(repertoire_run, run.id);
-  const { notations } = lireNotationsDuRun(repertoire_run, run.id);
+  const { notations, renvois } = lireNotationsDuRun(repertoire_run, run.id);
   const verdicts = lireVerdicts(repertoire_run, run.id);
   const obtenues = reponses.filter((r) => estDuRun(r) && r.statut_reponse === "obtenue").map((r) => r.id);
   const echantillon = tirerEchantillonHumain(obtenues, run.graines.echantillon_humain, run.taux_echantillon_humain);
-  const { kappas, indeterminees } = kappasEchantillon({ juges: run.juges, echantillon, notations });
+  const { kappas, indeterminees, refus_api } = kappasEchantillon({ juges: run.juges, echantillon, notations, renvois });
   const go_no_go = deciderPublication([
     critereKappaJugesHumains(kappas),
     critereTestContrefactuel(run.juges),
@@ -167,7 +172,14 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
     constatInterrogationDansLaFenetre(vue.fenetre, reponses),
     constatRobustesseCalculee(),
   ];
-  return { go_no_go, kappas, indeterminees, checklist: construireChecklist(run.id, go_no_go.criteres, constats) };
+  return {
+    go_no_go,
+    kappas,
+    indeterminees,
+    renvois: renvois.filter((r) => r.contexte === "run").length,
+    refus_api,
+    checklist: construireChecklist(run.id, go_no_go.criteres, constats),
+  };
 }
 
 /* ------------------------------------------------------------------ run.json */
@@ -175,8 +187,10 @@ function calculer(repertoire_run: string, run: RunLu, vue: VueGoNoGo): Calcul {
 function jugeAvecKappa(juge: Objet, kappas: readonly KappaDeJuge[]): Objet {
   const kappa = kappas.find((k) => k.juge_id === juge["juge_id"]);
   if (kappa === undefined) return juge;
-  if (kappa.kappa === null) return { ...juge, motif_indefini_kappa_echantillon_humain: kappa.motif_indefini };
-  return { ...juge, kappa_echantillon_humain: kappa.kappa };
+  // D31 (2) : le nombre de réponses écartées de ce kappa par les renvois du juge, 0 compris.
+  const ecartes = { renvois_ecartes_kappa_echantillon: kappa.renvois_ecartes };
+  if (kappa.kappa === null) return { ...juge, motif_indefini_kappa_echantillon_humain: kappa.motif_indefini, ...ecartes };
+  return { ...juge, kappa_echantillon_humain: kappa.kappa, ...ecartes };
 }
 
 function fusionner(brut: Objet, calcul: Calcul): Objet {
@@ -188,6 +202,8 @@ function fusionner(brut: Objet, calcul: Calcul): Objet {
     juges: juges.map((juge: Objet) => jugeAvecKappa(juge, calcul.kappas)),
     ...(motif === undefined ? {} : { motif_provisoire: motif }),
     indeterminees_echantillon_humain: calcul.indeterminees,
+    renvois_attribution_indecidable: calcul.renvois,
+    refus_api_echantillon_humain: calcul.refus_api,
     go_no_go: calcul.go_no_go,
   };
 }
@@ -199,15 +215,17 @@ function partEcrite(run: Objet): string {
     go_no_go: run["go_no_go"],
     motif_provisoire: run["motif_provisoire"],
     indeterminees_echantillon_humain: run["indeterminees_echantillon_humain"],
+    renvois_attribution_indecidable: run["renvois_attribution_indecidable"],
+    refus_api_echantillon_humain: run["refus_api_echantillon_humain"],
     juges: Array.isArray(juges)
-      ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"]])
+      ? juges.map((juge: Objet) => [juge["kappa_echantillon_humain"], juge["motif_indefini_kappa_echantillon_humain"], juge["renvois_ecartes_kappa_echantillon"]])
       : null,
   });
 }
 
 function partVide(run: Objet): string {
   const juges = run["juges"];
-  return canoniser({ juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined]) : null });
+  return canoniser({ juges: Array.isArray(juges) ? juges.map(() => [undefined, undefined, undefined]) : null });
 }
 
 function issueRun(chemin: string, actuel: Objet, fusionne: Objet): IssueEcriture | null {

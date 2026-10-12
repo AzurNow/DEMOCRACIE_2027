@@ -92,7 +92,11 @@ describe("1. aveuglement : aucune route ne sert l'outil, un juge ni un autre ann
   it("la vue d'une réponse est celle d'un juge : ni outil, ni mode, ni requête, ni brut", () => {
     monde = jeuAveugle();
     const vue = appeler(monde.contexte("a1"), "vue", [monde.dans.id]).corps as Record<string, unknown>;
-    expect(Object.keys(vue).sort()).toEqual(["date_run", "question", "reponse", "reponse_id", "references", "version_grille", "version_normalisation_verbatim", "version_vue"].sort());
+    // D27 (charge-juge-v3) : réponse attendue, pages citées et leur borne ; rien qui désigne l'outil.
+    expect(Object.keys(vue).sort()).toEqual(
+      ["date_run", "longueur_max_texte_page", "pages_citees", "question", "reponse", "reponse_attendue", "reponse_id", "references", "version_grille", "version_normalisation_verbatim", "version_vue"].sort(),
+    );
+    expect(Object.keys(vue["question"] as object).sort()).toEqual(["gabarit", "registre", "texte"]);
     expect(Object.keys(vue["reponse"] as object).sort()).toEqual(["citations", "liens", "normalisation", "refus_api", "texte", "troncature"]);
   });
 

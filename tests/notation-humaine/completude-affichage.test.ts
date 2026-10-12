@@ -57,12 +57,36 @@ function vueComplete(): VueAnnotateur {
   if (o === undefined) throw new Error("itemO sans obsolescence.");
   return construireVue({
     reponse: r,
-    question: { gabarit: "Q-DIR", texte: "SENTINELLE-TEXTE-QUESTION" },
+    question: { gabarit: "Q-DIR", registre: "oriente", texte: "SENTINELLE-TEXTE-QUESTION" },
     references: [
       { item: itemP({ valide_au: "2027-03-15" }), role: "principal" },
       { item: itemO({ obsolescence: { ...o, etat_anterieur: { ...o.etat_anterieur, quantification: quantification(60) }, etat_posterieur: { ...o.etat_posterieur, quantification: quantification(62) } } }), role: "contexte" },
     ],
     date_run: "2026-12-01T06:00:00+01:00",
+    // Une réponse attendue où chaque champ optionnel est présent : aucune nature n'en porte autant,
+    // mais la garde porte sur l'affichage de chaque champ, pas sur une réponse attendue réelle.
+    resolu_au_gel: {
+      reponse_attendue: {
+        nature: "position_anterieure",
+        position: "conditionnel",
+        etat_attendu: "anterieur",
+        candidats_attendus: ["sentinelle-candidat-a", "sentinelle-candidat-b"],
+        resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", date_changement: "2026-11-03", regle: "semi_ouvert" },
+      },
+      premisse_fausse: true,
+    },
+    pages_citees: [
+      {
+        url_citee: LIEN_A,
+        texte_disponible: true,
+        origine: "copie_archivee",
+        texte: "SENTINELLE-TEXTE-PAGE",
+        texte_sha256: "cd".repeat(32),
+        tronque: true,
+        longueur_totale: 54321,
+      },
+      { url_citee: LIEN_B, texte_disponible: false, raison: "lien_mort" },
+    ],
     existences,
   });
 }
@@ -74,9 +98,11 @@ function vueMinimale(): VueAnnotateur {
   const r = { ...lue, normalise: { ...sansCitations, liens: [LIEN_A], troncature: false, refus_api: false } } as ReponseObtenue;
   return construireVue({
     reponse: r,
-    question: { gabarit: "Q-DIR", texte: "Question ?" },
+    question: { gabarit: "Q-DIR", registre: "neutre", texte: "Question ?" },
     references: [{ item: itemP(), role: "principal" }],
     date_run: "2026-12-01T06:00:00+01:00",
+    resolu_au_gel: { reponse_attendue: { nature: "oui", resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } }, premisse_fausse: false },
+    pages_citees: [{ url_citee: LIEN_A, texte_disponible: false, raison: "sans_copie" }],
     existences: [{ url_citee: LIEN_A, verdict_existence: "existe", date_test: "2026-12-03T11:05:00+01:00" }],
   });
 }
@@ -164,6 +190,25 @@ describe("complétude de l'affichage de la notation humaine", () => {
       "references[].item_version",
       "references[].item_empreinte",
       "references[].valide_au",
+      // D27, charge-juge-v3 : registre, prémisse, réponse attendue, pages citées et leur borne.
+      "question.registre",
+      "question.premisse_fausse",
+      "reponse_attendue.nature",
+      "reponse_attendue.position",
+      "reponse_attendue.etat_attendu",
+      "reponse_attendue.candidats_attendus[]",
+      "reponse_attendue.resolution_temporelle.date_gel",
+      "reponse_attendue.resolution_temporelle.date_changement",
+      "reponse_attendue.resolution_temporelle.regle",
+      "pages_citees[].url_citee",
+      "pages_citees[].texte_disponible",
+      "pages_citees[].origine",
+      "pages_citees[].texte",
+      "pages_citees[].texte_sha256",
+      "pages_citees[].tronque",
+      "pages_citees[].longueur_totale",
+      "pages_citees[].raison",
+      "longueur_max_texte_page",
     ]) {
       expect(chemins, attendu).toContain(attendu);
     }

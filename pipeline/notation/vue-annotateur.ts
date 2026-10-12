@@ -21,15 +21,19 @@
  *
  * Les liens soumis sont `reponse.normalise.liens`, dans leur ordre, comme pour le juge ; un lien
  * cité deux fois apparaît deux fois, avec son unique verdict.
+ *
+ * **Charge v3 (D27).** Tout le reste est le contenu soumis au juge (`charge-juge.ts:contenuSoumis`),
+ * tel quel : registre et prémisse de la formulation, réponse attendue, texte des pages citées et sa
+ * borne. Un champ ajouté à la charge l'est donc à la vue sans autre code, et la garde de complétude
+ * de l'écran (`tests/notation-humaine/completude-affichage.test.ts`) exige qu'il soit affiché.
  */
 
 import type { Instant, VerdictExistence } from "../../analysis/types.ts";
 import type { ReponseObtenue } from "../interrogation/types.ts";
-import { VERSION_NORMALISATION } from "../../validation/domaine/normalisation.ts";
-import { itemSoumis, reponseSoumise, type CitationSoumise, type DemandeCharge, type ItemSoumis, type QuestionPosee } from "./charge-juge.ts";
+import { contenuSoumis, type CitationSoumise, type ContenuSoumis, type DemandeCharge } from "./charge-juge.ts";
 
-/** Version du format de la vue : un champ ajouté ou retiré la change. */
-export const VERSION_VUE_ANNOTATEUR = "vue-annotateur-v1";
+/** Version du format de la vue : un champ ajouté ou retiré la change. v2 : la charge v3 (D27). */
+export const VERSION_VUE_ANNOTATEUR = "vue-annotateur-v2";
 
 /**
  * Version de la grille de notation humaine : la grille du §7 telle que la saisie la porte
@@ -67,15 +71,10 @@ export interface ReponseVue {
   readonly normalisation: { readonly fonction: string; readonly version: string };
 }
 
-export interface VueAnnotateur {
+export interface VueAnnotateur extends Omit<ContenuSoumis, "reponse"> {
   readonly version_vue: string;
   readonly version_grille: string;
-  readonly date_run: Instant;
-  readonly reponse_id: string;
-  readonly question: QuestionPosee;
   readonly reponse: ReponseVue;
-  readonly references: readonly ItemSoumis[];
-  readonly version_normalisation_verbatim: string;
 }
 
 export class LienSansVerdictExistence extends Error {
@@ -96,17 +95,13 @@ export class ExistencesIncoherentes extends Error {
 }
 
 export function construireVue(demande: DemandeVue): VueAnnotateur {
-  if (demande.references.length === 0) {
-    throw new Error(`Réponse ${demande.reponse.id} : aucun item de référence, rien contre quoi noter (notation.schema.json, references_item).`);
-  }
-  const soumise = reponseSoumise(demande.reponse);
+  const { existences: _existences, ...demandeCharge } = demande;
+  const { reponse: soumise, ...contenu } = contenuSoumis(demandeCharge);
   const existences = indexerExistences(demande.reponse.id, soumise.liens, demande.existences);
   return {
     version_vue: VERSION_VUE_ANNOTATEUR,
     version_grille: VERSION_GRILLE_HUMAINE,
-    date_run: demande.date_run,
-    reponse_id: demande.reponse.id,
-    question: { gabarit: demande.question.gabarit, texte: demande.question.texte },
+    ...contenu,
     reponse: {
       texte: soumise.texte,
       liens: soumise.liens.map((url) => existenceDe(demande.reponse.id, url, existences)),
@@ -115,8 +110,6 @@ export function construireVue(demande: DemandeVue): VueAnnotateur {
       refus_api: soumise.refus_api,
       normalisation: soumise.normalisation,
     },
-    references: demande.references.map(itemSoumis),
-    version_normalisation_verbatim: VERSION_NORMALISATION,
   };
 }
 

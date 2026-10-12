@@ -18,7 +18,7 @@ import type { NotationIndividuelle } from "../../pipeline/notation/types.ts";
 import type { ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
 import { valider, validerFragment } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { ITEM_REF, REPONSE_ID, REPONSE_PROJETEE, RUN_ID, runDeNotation } from "./fabriques.ts";
+import { CADRE_V3, ITEM_REF, REPONSE_ID, REPONSE_PROJETEE, RUN_ID, runDeNotation } from "./fabriques.ts";
 
 const MORT = "https://mort.invalid/page";
 const EXISTANT = "https://existant.invalid/page";
@@ -61,6 +61,7 @@ function noter(soutiens: readonly (readonly [string, VerdictSoutien])[], juge_id
     liens: soutiens.map(([url]) => url),
     existences: EXISTENCES,
     textes: { reponse: REPONSE_PROJETEE, citations_reference: [] },
+    ...CADRE_V3,
   });
   valider("notation", notation, `notation de juge ${juge_id}`);
   return notation;
@@ -183,6 +184,7 @@ function decisionDe(a: NotationIndividuelle, b: NotationIndividuelle): ReturnTyp
     run: runDeNotation(),
     objet_note: { type: "reponse", id: REPONSE_ID },
     notations: [a, b],
+    renvois: [],
     dans_echantillon_humain: false,
     textes: { reponse: REPONSE_PROJETEE, citations_reference: [] },
     verdict_id: ulid("verdict-lien-mort"),

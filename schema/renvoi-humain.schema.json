@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:renvoi-humain",
+  "title": "Renvoi d'un juge vers la notation humaine",
+  "description": "Décision D30 (2) de l'auteur (2026-10-10). Sur une question d'attribution, la note se calcule depuis les noms que le juge relève (D29 (1), pipeline/notation/note-attribution.ts). Trois cas ne sont déterminés par aucun texte : candidat du périmètre non interrogé cité sur une mesure réelle ; nom ambigu dont un candidat possible est attendu ; formulation orientée à prémisse fausse avec un nom cité. Le juge n'y rend alors aucune note : ce renvoi la remplace et la réponse part en notation humaine sous le motif attribution_indecidable. runs/<date>/volume/renvois/<id>.json, écrit une fois par la chaîne (pipeline/notation/chaine.ts), publié avec les notations ; une relance le retrouve et ne redemande pas le juge. Leur nombre est publié dans run.json (renvois_attribution_indecidable).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "run_id", "contexte", "objet_note", "notateur", "version_charge", "gabarit", "references_item", "motif", "raison", "noms_cites", "attribution", "date"],
+  "properties": {
+    "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "run_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+    "contexte": { "enum": ["run", "contrefactuel_candidat"], "description": "Celui de la notation que le juge aurait rendue." },
+    "objet_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "const": "reponse" },
+        "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" }
+      }
+    },
+    "notateur": {
+      "allOf": [
+        { "$ref": "urn:banc-essai-2027:schema:notation#/properties/notateur" },
+        { "properties": { "type": { "const": "juge" } }, "required": ["famille_modele", "modele", "version_prompt"] }
+      ]
+    },
+    "version_charge": { "$ref": "urn:banc-essai-2027:schema:notation#/properties/version_charge" },
+    "gabarit": { "const": "Q-ATT" },
+    "references_item": { "$ref": "urn:banc-essai-2027:schema:notation#/properties/references_item" },
+    "motif": { "const": "attribution_indecidable" },
+    "raison": { "type": "string", "minLength": 1, "description": "Lequel des trois cas, en clair (note-attribution.ts)." },
+    "noms_cites": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Les noms relevés par le juge, tels qu'il les a rendus."
+    },
+    "attribution": { "$ref": "urn:banc-essai-2027:schema:notation#/properties/attribution" },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }
+  }
+}

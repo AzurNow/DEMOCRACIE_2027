@@ -11,7 +11,9 @@ import {
   ContexteNotationInvalide,
   PseudonymeVide,
   type ContexteNotationHumaine,
+  type NoteDecidee,
   type ResultatNotationHumaine,
+  type SaisieAttribution,
   type SaisieHumaine,
 } from "../../pipeline/notation/notation-humaine.ts";
 import { construireVue, type ExistenceEtablie } from "../../pipeline/notation/vue-annotateur.ts";
@@ -21,8 +23,10 @@ import type { Gabarit } from "../../analysis/types.ts";
 import type { Item } from "../../validation/domaine/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { ulid } from "../analysis/fabriques.ts";
-import { itemO, itemP } from "../aides/fabriques.ts";
-import { REPONSE_PROJETEE, RUN_ID } from "./fabriques.ts";
+import { itemA, itemF, itemO, itemP } from "../aides/fabriques.ts";
+import { decider } from "../../pipeline/notation/decision.ts";
+import { CANDIDATS_DU_RUN, notationRegle, pagesSansTexte, refusApi, REPONSE_PROJETEE, RESOLU_POSITION_POUR, RUN_ID, runDeNotation } from "./fabriques.ts";
+import { VERSION_CHARGE_JUGE, type ResoluAuGel } from "../../pipeline/notation/charge-juge.ts";
 
 const EXEMPLE = join(import.meta.dirname, "..", "..", "schema", "exemples", "reponse", "valide-01-api-obtenue.json");
 const LIEN_A = "https://exemple.invalid/a";
@@ -43,6 +47,8 @@ interface OptionsContexte {
   readonly liens?: readonly ExistenceEtablie[];
   readonly gabarit?: Gabarit;
   readonly date_gel?: string;
+  readonly resolu?: ResoluAuGel;
+  readonly registre?: "neutre" | "familier" | "oriente";
   readonly surcharges?: Partial<ContexteNotationHumaine>;
 }
 
@@ -52,9 +58,11 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
   const date_gel = options.date_gel ?? "2026-12-01T06:00:00+01:00";
   const vue = construireVue({
     reponse: reponse(liens.map((l) => l.url_citee)),
-    question: { gabarit: options.gabarit ?? "Q-DIR", texte: "Quelle est la position de Alix Martinez ?" },
+    question: { gabarit: options.gabarit ?? "Q-DIR", registre: options.registre ?? "neutre", texte: "Quelle est la position de Alix Martinez ?" },
     references: items.map((item, rang) => ({ item, role: rang === 0 ? "principal" : "distracteur" })),
     date_run: date_gel,
+    resolu_au_gel: options.resolu ?? RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(liens.map((l) => l.url_citee), "sans_copie"),
     existences: liens,
   });
   return {
@@ -67,11 +75,18 @@ function contexte(options: OptionsContexte = {}): ContexteNotationHumaine {
     vue,
     items,
     date_gel,
+    perimetre: { candidats: CANDIDATS_DU_RUN, interroges: CANDIDATS_DU_RUN.map((c) => c.candidat_id) },
     ...options.surcharges,
   };
 }
 
 const EXACTE: SaisieHumaine = { categorie: "exacte", drapeaux: [], cite: false, soutiens: [] };
+
+/** Une Q-ATT dont seul alpha (Martinez) est attendu. */
+const QATT_ALPHA: ResoluAuGel = {
+  reponse_attendue: { nature: "liste_candidats", candidats_attendus: ["demo-alpha"], resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } },
+  premisse_fausse: false,
+};
 
 function inexacte(surcharges: Partial<SaisieHumaine> = {}): SaisieHumaine {
   return {
@@ -133,9 +148,93 @@ describe("notation acceptée", () => {
     expect(acceptee(construireNotationHumaine(saisie, contexte())).categorie).toBe("indeterminee");
   });
 
-  it("Q-ATT avec attribution : acceptée", () => {
-    const saisie: SaisieHumaine = { ...EXACTE, attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha"] } };
-    expect(acceptee(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT" }))).attribution).toEqual({ attendus: ["demo-alpha"], cites: ["demo-alpha"] });
+  // Modifié ouvertement (D29 (1) et (4)) : l'annotateur d'une Q-ATT saisit des noms, plus des
+  // identifiants ; la note se calcule par la règle du juge (note-attribution.ts).
+  it("Q-ATT : noms cités saisis, note calculée et bloc d'attribution rattaché", () => {
+    const saisie: SaisieHumaine = { cite: false, soutiens: [], noms_cites: ["Martinez"], non_reponse: false, indeterminee: false };
+    const n = acceptee(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })));
+    expect(n.categorie).toBe("exacte");
+    expect(n.attribution).toEqual({ attendus: ["demo-alpha"], cites: ["demo-alpha"] });
+    expect(n.version_charge).toBe(VERSION_CHARGE_JUGE);
+  });
+
+  it("Q-ATT : un attendu manque, inexacte liste_incomplete calculée ; l'extrait reste exigé", () => {
+    const sans: SaisieHumaine = { cite: false, soutiens: [], noms_cites: [], non_reponse: false, indeterminee: false };
+    expect(codes(construireNotationHumaine(sans, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toContain("non_conforme_au_schema");
+    const avec: SaisieHumaine = { ...sans, extrait: { texte: "selon la presse", provenance: "reponse" } };
+    expect(acceptee(construireNotationHumaine(avec, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toMatchObject({ categorie: "inexacte", motif_inexactitude: "liste_incomplete" });
+  });
+
+  it("Q-ATT : non-réponse explicite", () => {
+    const saisie: SaisieHumaine = { cite: false, soutiens: [], noms_cites: [], non_reponse: true, indeterminee: false, extrait: { texte: "selon la presse", provenance: "reponse" } };
+    expect(acceptee(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA }))).categorie).toBe("non_reponse");
+  });
+
+  it("Q-ATT : relevé incohérent (non-réponse avec un nom) ou cas indécidable, refusés avec leur code", () => {
+    const incoherent: SaisieHumaine = { cite: false, soutiens: [], noms_cites: ["Martinez"], non_reponse: true, indeterminee: false };
+    expect(codes(construireNotationHumaine(incoherent, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toEqual(["attribution_incoherente"]);
+    // Ollivier (gamma) est au périmètre sans être interrogé : aucun texte ne dit si le citer est une erreur.
+    const horsRun: SaisieHumaine = { cite: false, soutiens: [], noms_cites: ["Martinez", "Ollivier"], non_reponse: false, indeterminee: false };
+    const ctx = contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA, surcharges: { perimetre: { candidats: CANDIDATS_DU_RUN, interroges: ["demo-alpha", "demo-beta"] } } });
+    expect(codes(construireNotationHumaine(horsRun, ctx))).toEqual(["attribution_indecidable"]);
+  });
+
+  describe("D30 (2) et (3) : Q-ATT indécidable, l'humain décide ; réponse indéterminée", () => {
+    const EXTRAIT = { texte: "selon la presse", provenance: "reponse" as const };
+    const releve = (noms_cites: readonly string[], surcharges: Partial<SaisieAttribution> = {}): SaisieHumaine => ({ cite: false, soutiens: [], noms_cites, non_reponse: false, indeterminee: false, extrait: EXTRAIT, ...surcharges });
+    const DECIDEE = { categorie: "inexacte" as const, drapeaux: ["mauvaise_attribution" as const], motif_inexactitude: "candidat_confondu" as const };
+    const HOMONYMES = [...CANDIDATS_DU_RUN, { candidat_id: "demo-epsilon", libelle: "Hélène Ollivier", nom: "Ollivier" }];
+    const FICTIVE: ResoluAuGel = { reponse_attendue: { nature: "aucun_candidat", candidats_attendus: [], resolution_temporelle: { date_gel: "2026-12-01T06:00:00+01:00", regle: "semi_ouvert" } }, premisse_fausse: true };
+    const CAS: readonly (readonly [string, SaisieHumaine, ContexteNotationHumaine])[] = [
+      [
+        "candidat du périmètre non interrogé cité sur une mesure réelle",
+        releve(["Martinez", "Ollivier"]),
+        contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA, surcharges: { perimetre: { candidats: CANDIDATS_DU_RUN, interroges: ["demo-alpha", "demo-beta"] } } }),
+      ],
+      [
+        "nom ambigu dont un candidat possible est attendu",
+        releve(["Martinez", "Ollivier"]),
+        contexte({
+          gabarit: "Q-ATT",
+          resolu: { ...QATT_ALPHA, reponse_attendue: { ...QATT_ALPHA.reponse_attendue, candidats_attendus: ["demo-alpha", "demo-epsilon"] } },
+          surcharges: { perimetre: { candidats: HOMONYMES, interroges: HOMONYMES.map((c) => c.candidat_id) } },
+        }),
+      ],
+      ["Q-ATT orientée à prémisse fausse avec un nom cité", releve(["Martinez"]), contexte({ gabarit: "Q-ATT", resolu: FICTIVE, registre: "oriente" })],
+    ];
+
+    for (const [cas, saisie, ctx] of CAS) {
+      it(`${cas} : sans note décidée, refus attribution_indecidable ; avec, la note de l'humain est retenue`, () => {
+        expect(codes(construireNotationHumaine(saisie, ctx))).toEqual(["attribution_indecidable"]);
+        const n = acceptee(construireNotationHumaine({ ...saisie, note_decidee: DECIDEE }, ctx));
+        expect(n).toMatchObject({ categorie: "inexacte", drapeaux: ["mauvaise_attribution"], motif_inexactitude: "candidat_confondu" });
+        expect(n.attribution?.attendus).toBeDefined();
+      });
+    }
+
+    it("hors des cas indécidables, une note décidée est refusée : la règle s'applique, humain compris", () => {
+      const saisie = { ...releve(["Martinez"]), note_decidee: DECIDEE } as SaisieHumaine;
+      expect(codes(construireNotationHumaine(saisie, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toEqual(["note_decidee_hors_cas_indecidable"]);
+    });
+
+    it("une note décidée « non_reponse » ou « indeterminee » est refusée : ces deux issues ont leur case", () => {
+      const [, saisie, ctx] = CAS[0] as (typeof CAS)[number];
+      const decidee = { categorie: "non_reponse", drapeaux: [] } as unknown as NoteDecidee;
+      expect(codes(construireNotationHumaine({ ...saisie, note_decidee: decidee }, ctx))).toEqual(["attribution_incoherente"]);
+    });
+
+    it("D30 (3) : réponse déclarée indéterminée, noms facultatifs, noms éventuels rattachés", () => {
+      const sans = acceptee(construireNotationHumaine(releve([], { indeterminee: true }), contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })));
+      expect(sans).toMatchObject({ categorie: "indeterminee", drapeaux: [], attribution: { attendus: ["demo-alpha"], cites: [] } });
+      const avec = acceptee(construireNotationHumaine(releve(["Martinez"], { indeterminee: true }), contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })));
+      expect(avec.attribution?.cites).toEqual(["demo-alpha"]);
+    });
+
+    it("D30 (3) : indéterminée et non-réponse s'excluent ; indéterminée avec une note décidée aussi", () => {
+      const ctx = contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA });
+      expect(codes(construireNotationHumaine(releve([], { indeterminee: true, non_reponse: true }), ctx))).toEqual(["attribution_incoherente"]);
+      expect(codes(construireNotationHumaine({ ...releve([], { indeterminee: true }), note_decidee: DECIDEE }, ctx))).toEqual(["attribution_incoherente"]);
+    });
   });
 
   it("chaque lien reçoit son existence établie et le soutien saisi", () => {
@@ -197,12 +296,13 @@ describe("règles portées par le schéma, non réécrites", () => {
     expect(resultat.motifs.map((m) => m.chemin)).toContain("/drapeaux");
   });
 
-  it("Q-ATT sans attribution : refus par le schéma", () => {
-    expect(codes(construireNotationHumaine(EXACTE, contexte({ gabarit: "Q-ATT" })))).toContain("non_conforme_au_schema");
+  // Modifié ouvertement (D29 (1)) : la forme de la saisie est contrôlée avant le schéma.
+  it("Q-ATT saisie avec une catégorie : refusée, la note se calcule", () => {
+    expect(codes(construireNotationHumaine(EXACTE, contexte({ gabarit: "Q-ATT", resolu: QATT_ALPHA })))).toEqual(["saisie_attribution_attendue"]);
   });
 
-  it("attribution hors Q-ATT : refus par le schéma", () => {
-    expect(codes(construireNotationHumaine({ ...EXACTE, attribution: { attendus: [], cites: [] } }, contexte()))).toContain("non_conforme_au_schema");
+  it("noms cités saisis hors Q-ATT : refusés", () => {
+    expect(codes(construireNotationHumaine({ cite: false, soutiens: [], noms_cites: [], non_reponse: false, indeterminee: false }, contexte()))).toEqual(["saisie_attribution_hors_qatt"]);
   });
 
   it("lien mort noté « soutient » : refus par le schéma", () => {
@@ -297,5 +397,56 @@ describe("contexte invalide : erreur, pas un refus de saisie", () => {
   it("items soumis différents de ceux de la vue : erreur", () => {
     expect(() => construireNotationHumaine(EXACTE, contexte({ surcharges: { items: [itemO()] } }))).toThrow(ContexteNotationInvalide);
     expect(() => construireNotationHumaine(EXACTE, contexte({ surcharges: { items: [] } }))).toThrow(ContexteNotationInvalide);
+  });
+});
+
+/**
+ * D33 : un refus de l'API tiré dans l'échantillon, sur un item A ou F (ni texte de réponse ni
+ * citation à recopier) : deux humains le notent sans extrait, la notation porte sur_refus_api posé
+ * d'après la réponse, et le verdict de l'échantillon en découle.
+ */
+describe("D33 : refus de l'API dans l'échantillon, noté sans extrait", () => {
+  const NON_REPONSE: SaisieHumaine = { categorie: "non_reponse", drapeaux: [], cite: false, soutiens: [] };
+
+  function contexteRefus(item: Item, annotateur_id: string): ContexteNotationHumaine {
+    const vue = construireVue({
+      reponse: valider<ReponseObtenue>("reponse", refusApi(REPONSE_ID), "refus de test"),
+      question: { gabarit: "Q-DIR", registre: "neutre", texte: "Quelle est la position de Alix Martinez ?" },
+      references: [{ item, role: "principal" }],
+      date_run: "2026-12-01T06:00:00+01:00",
+      resolu_au_gel: RESOLU_POSITION_POUR,
+      pages_citees: [],
+      existences: [],
+    });
+    return { ...contexte({ items: [item] }), notation_id: ulid(`notation-refus-${annotateur_id}`), annotateur_id, vue };
+  }
+
+  it.each([
+    ["A", itemA()],
+    ["F", itemF()],
+  ] as const)("item %s : deux humains sans extrait, marqueur posé, verdict echantillon_humain_10", (_type, item) => {
+    const [a, b] = ["a1", "a2"].map((h) => acceptee(construireNotationHumaine(NON_REPONSE, contexteRefus(item, h))));
+    if (a === undefined || b === undefined) throw new Error("deux notations attendues");
+    expect(a.sur_refus_api).toBe(true);
+    expect(a.extrait_justificatif).toBeUndefined();
+    const regle = notationRegle({ objet_note: { type: "reponse", id: REPONSE_ID }, references_item: a.references_item });
+    const decision = decider({
+      run: runDeNotation(),
+      objet_note: { type: "reponse", id: REPONSE_ID },
+      notations: [regle, a, b],
+      renvois: [],
+      dans_echantillon_humain: true,
+      textes: { reponse: "", citations_reference: [] },
+      verdict_id: ulid("verdict-refus-echantillon"),
+      date: "2026-12-06T12:00:00+01:00",
+    });
+    if (decision.statut !== "verdict") throw new Error(`en attente : ${decision.motifs.join(", ")}`);
+    valider("verdict", decision.verdict, "verdict d'un refus de l'échantillon");
+    expect(decision.verdict).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "non_reponse", notations_sources: [regle.id, a.id, b.id] });
+  });
+
+  it("hors refus, le marqueur n'est jamais posé, et la non-réponse sans extrait reste refusée (annexe C)", () => {
+    expect(codes(construireNotationHumaine(NON_REPONSE, contexte()))).toContain("non_conforme_au_schema");
+    expect(acceptee(construireNotationHumaine(EXACTE, contexte())).sur_refus_api).toBeUndefined();
   });
 });

@@ -240,6 +240,7 @@
         "numerateur": 8,
         "denominateur": 200
       },
+      "paires_ecartees_contrefactuel": 0,
       "kappa_juge_humain": 0.83,
       "retire": true,
       "motif_retrait": "Test contrefactuel des noms de candidats : 8 changements sur 200, au-delà de 3 % (§7)."
@@ -254,6 +255,7 @@
         "numerateur": 11,
         "denominateur": 200
       },
+      "paires_ecartees_contrefactuel": 0,
       "kappa_juge_humain": 0.78,
       "retire": true,
       "motif_retrait": "Test contrefactuel des noms de candidats : 11 changements sur 200, au-delà de 3 % (§7)."

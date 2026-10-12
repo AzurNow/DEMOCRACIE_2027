@@ -21,6 +21,7 @@ import { valider } from "../../outils/schemas/valider.ts";
 import { RACINE_PROJET } from "../aides/depot.ts";
 import { ITEM_P } from "./run-fictif.ts";
 import { FIXTURES_INTERROGATION, FIXTURES_NOTATION, parametresDeReference } from "./simulation.ts";
+import { CADRE_V3, pagesSansTexte, RESOLU_POSITION_POUR } from "./fabriques.ts";
 
 const temporaires: string[] = [];
 
@@ -44,17 +45,18 @@ function reponse(surcharges: Partial<ReponseObtenue["normalise"]>): ReponseObten
 function charge(r: ReponseObtenue, gabarit: ChargeJuge["question"]["gabarit"] = "Q-DIR"): ChargeJuge {
   return construireCharge({
     reponse: r,
-    question: { gabarit, texte: "Question simulée, sans contenu réel." },
+    question: { gabarit, registre: "neutre", texte: "Question simulée, sans contenu réel." },
     references: [{ item: ITEM_P, role: "principal" }],
     date_run: "2026-12-01T06:00:00+01:00",
     prompt: REGLES_JUGE_SIMULE.prompt,
+    resolu_au_gel: RESOLU_POSITION_POUR,
+    pages_citees: pagesSansTexte(r.normalise.liens),
   });
 }
 
 /** Les paramètres de référence, avec une répartition qui ne laisse qu'un scénario. */
-function seul(nature: "ordinaire" | "refus_api", scenario: string): ParametresJugeSimule {
-  const reference = parametresDeReference().juge_simule;
-  return { ...reference, repartition: { ...reference.repartition, [nature]: { [scenario]: 1 } } };
+function seul(scenario: string): ParametresJugeSimule {
+  return { ...parametresDeReference().juge_simule, repartition: { [scenario]: 1 } };
 }
 
 function notationValide(juge: Juge, sortie: SortieJuge, c: ChargeJuge, r: ReponseObtenue): void {
@@ -70,6 +72,7 @@ function notationValide(juge: Juge, sortie: SortieJuge, c: ChargeJuge, r: Repons
     liens: c.reponse.liens,
     existences: new Map([[LIEN, { url_citee: LIEN, verdict_existence: "existe" as const, date_test: "2026-12-04T09:00:00+01:00" }]]),
     textes: { reponse: r.normalise.texte, citations_reference: citationsDeReference([ITEM_P]) },
+    ...CADRE_V3,
   });
   valider("notation", notation, `notation simulée ${juge.identite.juge_id}`);
 }
@@ -80,16 +83,32 @@ describe("le juge simulé", () => {
   });
 
   it("rend, pour chaque scénario et chaque rôle, une notation conforme au schéma", async () => {
-    const cas = [
-      ...Object.keys(REGLES_JUGE_SIMULE.scenarios.ordinaire).map((s) => ({ nature: "ordinaire" as const, scenario: s, r: reponse({}) })),
-      ...Object.keys(REGLES_JUGE_SIMULE.scenarios.refus_api).map((s) => ({ nature: "refus_api" as const, scenario: s, r: reponse({ texte: "", liens: [], refus_api: true }) })),
-    ];
-    for (const { nature, scenario, r } of cas) {
-      for (const juge of jugesSimules(seul(nature, scenario), temporaire())) {
-        const c = charge(r);
-        notationValide(juge, await juge.noter(c), c, r);
+    // D32 : une réponse ordinaire, avec texte, et une réponse au texte vide, dont l'extrait vient de la référence.
+    for (const r of [reponse({}), reponse({ texte: "", liens: [] })]) {
+      for (const scenario of Object.keys(REGLES_JUGE_SIMULE.scenarios)) {
+        for (const juge of jugesSimules(seul(scenario), temporaire())) {
+          const c = charge(r);
+          notationValide(juge, await juge.noter(c), c, r);
+        }
       }
     }
+  });
+
+  it("D32 : la table propre à un item soumis remplace la table commune, pour cette charge seulement", async () => {
+    const reference = parametresDeReference().juge_simule;
+    const propre = { ...reference, repartition: { accord: 1 }, repartition_par_item: { [ITEM_P.id]: { extrait_invalide: 1 } } };
+    const [a] = jugesSimules(propre, temporaire());
+    const c = charge(reponse({}));
+    expect((await a?.noter(c))?.extrait_justificatif?.texte).toBe(REGLES_JUGE_SIMULE.extrait_introuvable);
+    const [autre] = jugesSimules({ ...propre, repartition_par_item: { "item-absent": { extrait_invalide: 1 } } }, temporaire());
+    expect(await autre?.noter(c)).toMatchObject({ categorie: "exacte" });
+    expect(() => jugesSimules({ ...propre, repartition_par_item: { [ITEM_P.id]: { inconnu: 1 } } }, temporaire())).toThrow(JugeSimuleMalRegle);
+  });
+
+  it("D32 : refuse un refus de l'API, que la chaîne note par règle sans juge", async () => {
+    const [juge] = jugesSimules(parametresDeReference().juge_simule, temporaire());
+    const refus = charge(reponse({ texte: "", liens: [], citations: [], refus_api: true }));
+    await expect(Promise.resolve().then(() => juge?.noter(refus))).rejects.toThrow(/aucun juge.*D32/);
   });
 
   it("est déterministe : même charge, même graine, même sortie", async () => {
@@ -100,9 +119,9 @@ describe("le juge simulé", () => {
   });
 
   it("le scénario extrait invalide cite un extrait absent de la charge, l'autre rôle un extrait présent", async () => {
-    const r = reponse({ texte: "", liens: [], refus_api: true });
+    const r = reponse({ texte: "", liens: [] });
     const c = charge(r);
-    const [a, b] = jugesSimules(seul("refus_api", "extrait_invalide"), temporaire());
+    const [a, b] = jugesSimules(seul("extrait_invalide"), temporaire());
     const sortieA = a && (await a.noter(c));
     const sortieB = b && (await b.noter(c));
     expect(sortieA?.extrait_justificatif?.texte).toBe(REGLES_JUGE_SIMULE.extrait_introuvable);
@@ -123,8 +142,9 @@ describe("le juge simulé", () => {
 
   it("refuse une répartition qui nomme un scénario inconnu, sans poids, ou un biais hors de [0, 1]", () => {
     const reference = parametresDeReference().juge_simule;
-    expect(() => jugesSimules({ ...reference, repartition: { ...reference.repartition, ordinaire: { inconnu: 1 } } }, temporaire())).toThrow(JugeSimuleMalRegle);
-    expect(() => jugesSimules({ ...reference, repartition: { ...reference.repartition, refus_api: { accord: 0 } } }, temporaire())).toThrow(JugeSimuleMalRegle);
+    expect(() => jugesSimules({ ...reference, repartition: { ...reference.repartition, inconnu: 1 } }, temporaire())).toThrow(JugeSimuleMalRegle);
+    expect(() => jugesSimules({ ...reference, repartition: { accord: 0 } }, temporaire())).toThrow(JugeSimuleMalRegle);
+    expect(() => jugesSimules({ ...reference, repartition: { accord: 1.5 } }, temporaire())).toThrow(JugeSimuleMalRegle);
     const biaise = { ...reference, juges: reference.juges.map((j) => ({ ...j, biais: { candidats: ["demo-beta"], taux: 1.5 } })) };
     expect(() => jugesSimules(biaise, temporaire())).toThrow(JugeSimuleMalRegle);
   });
@@ -132,7 +152,7 @@ describe("le juge simulé", () => {
 
 describe("le fournisseur d'existences simulé", () => {
   it("rend les verdicts de sa table, rien pour un lien inconnu", () => {
-    const fournisseur = fournisseurSimule(parametresDeReference().existences, temporaire());
+    const fournisseur = fournisseurSimule(parametresDeReference().existences, [], temporaire());
     expect(fournisseur.existencesDe("r", [LIEN, "https://inconnu.invalid/"])).toEqual([expect.objectContaining({ url_citee: LIEN, verdict_existence: "mort" })]);
     expect(fournisseur.existencesDe("r", ["https://inconnu.invalid/"])).toEqual([]);
   });
@@ -140,8 +160,22 @@ describe("le fournisseur d'existences simulé", () => {
   it("refuse une table où un lien a deux verdicts, ou un verdict hors du schéma", () => {
     const [existence] = parametresDeReference().existences;
     if (existence === undefined) throw new Error("table de référence vide");
-    expect(() => fournisseurSimule([existence, existence], temporaire())).toThrow(TableExistencesInvalide);
-    expect(() => fournisseurSimule([{ ...existence, verdict_existence: "peut-etre" as never }], temporaire())).toThrow(/non conforme/);
+    expect(() => fournisseurSimule([existence, existence], [], temporaire())).toThrow(TableExistencesInvalide);
+    expect(() => fournisseurSimule([{ ...existence, verdict_existence: "peut-etre" as never }], [], temporaire())).toThrow(/non conforme/);
+  });
+
+  it("D27 (E) : rend le texte d'une copie de sa table, son empreinte calculée ; rien pour une copie inconnue", () => {
+    const sha = "a".repeat(64);
+    const fournisseur = fournisseurSimule([], [{ sha256_contenu: sha, issue: "extrait", texte: "abc" }, { sha256_contenu: "b".repeat(64), issue: "refuse", motif: "image/png" }], temporaire());
+    expect(fournisseur.texteDeCopie(sha)).toEqual({ issue: "extrait", texte: "abc", texte_sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" });
+    expect(fournisseur.texteDeCopie("b".repeat(64))).toEqual({ issue: "refuse", motif: "image/png" });
+    expect(fournisseur.texteDeCopie("c".repeat(64))).toBeUndefined();
+  });
+
+  it("D27 (E) : refuse deux textes pour une copie, ou une empreinte qui n'en est pas une", () => {
+    const texte = { sha256_contenu: "a".repeat(64), issue: "extrait" as const, texte: "abc" };
+    expect(() => fournisseurSimule([], [texte, texte], temporaire())).toThrow(TableExistencesInvalide);
+    expect(() => fournisseurSimule([], [{ ...texte, sha256_contenu: "pas-une-empreinte" }], temporaire())).toThrow(TableExistencesInvalide);
   });
 });
 
@@ -150,7 +184,7 @@ describe("7. garde-fou : jamais sous runs/", () => {
 
   it("le juge simulé et le fournisseur simulé refusent un répertoire de run sous runs/", () => {
     expect(() => jugesSimules(parametresDeReference().juge_simule, sousRuns)).toThrow(SimuleSousRuns);
-    expect(() => fournisseurSimule(parametresDeReference().existences, sousRuns)).toThrow(SimuleSousRuns);
+    expect(() => fournisseurSimule(parametresDeReference().existences, [], sousRuns)).toThrow(SimuleSousRuns);
     expect(() => jugesSimules(parametresDeReference().juge_simule, RUNS_DU_DEPOT)).toThrow(SimuleSousRuns);
   });
 

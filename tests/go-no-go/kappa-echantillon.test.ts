@@ -12,12 +12,14 @@ import {
   NotationDeJugeIntrouvable,
   ReferenceHumaineIndefinie,
   referenceHumaine,
+  RefusNoteParUnJuge,
 } from "../../pipeline/go-no-go/kappa-echantillon.ts";
 import { AUCUN_JUGE_RETENU } from "../../pipeline/go-no-go/types.ts";
 import { JugeIndetermine } from "../../pipeline/notation/decision.ts";
 import type { JugeDuRun } from "../../pipeline/notation/types.ts";
 import { comptesKappa, kappaCohen } from "../../validation/domaine/kappa.ts";
-import { notationJuge } from "../notation/fabriques.ts";
+import { notationJuge, notationRegle, renvoiJuge } from "../notation/fabriques.ts";
+import { ulid } from "../analysis/fabriques.ts";
 import { echantillonSynthetique, fois, type LigneEchantillon } from "./aides.ts";
 
 const DEUX_JUGES: readonly JugeDuRun[] = [
@@ -37,7 +39,7 @@ function matrice(juge: string, a: number, b: number, c: number, d: number): read
 
 function kappaUnJuge(lignes: readonly LigneEchantillon[]) {
   const { echantillon, notations } = echantillonSynthetique(lignes);
-  return kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations }).kappas;
+  return kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations, renvois: [] }).kappas;
 }
 
 describe("noyau partagé du kappa (validation/domaine/kappa.ts)", () => {
@@ -78,7 +80,7 @@ describe("kappa de l'échantillon, seuil de 0,75 (§12)", () => {
       ...fois(8, { juges: { j1: "inexacte", j2: "inexacte" }, humains: ["inexacte", "inexacte"] }),
     ];
     const { echantillon, notations } = echantillonSynthetique(lignes);
-    const kappas = kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations }).kappas;
+    const kappas = kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations, renvois: [] }).kappas;
     expect(kappas.map((k) => [k.juge_id, k.kappa])).toEqual([
       ["j1", 0.9],
       ["j2", 0.7],
@@ -97,7 +99,7 @@ describe("kappa indéfini (D24 (2)) : rouge, absent avec son motif", () => {
   });
 
   it("échantillon vide : aucune réponse comparable, rouge", () => {
-    const kappas = kappasEchantillon({ juges: DEUX_JUGES, echantillon: [], notations: [] }).kappas;
+    const kappas = kappasEchantillon({ juges: DEUX_JUGES, echantillon: [], notations: [], renvois: [] }).kappas;
     expect(kappas.map((k) => [k.kappa, k.motif_indefini])).toEqual([
       [null, "aucune_reponse_comparable"],
       [null, "aucune_reponse_comparable"],
@@ -126,7 +128,7 @@ describe("note humaine retenue (D24 (1))", () => {
   it("double notation incomplète : erreur visible", () => {
     const { echantillon, notations } = echantillonSynthetique([{ juges: { j1: "exacte" }, humains: ["exacte", "exacte"] }]);
     const sansSeconde = notations.filter((n) => n.notateur.id !== "annotateur-2");
-    expect(() => kappasEchantillon({ juges: DEUX_JUGES.slice(0, 1), echantillon, notations: sansSeconde })).toThrow(/double notation incomplète/);
+    expect(() => kappasEchantillon({ juges: DEUX_JUGES.slice(0, 1), echantillon, notations: sansSeconde, renvois: [] })).toThrow(/double notation incomplète/);
   });
 
   it("note humaine retenue « indeterminee » : c'est la référence lue, pas une erreur (D25 (1))", () => {
@@ -146,14 +148,14 @@ describe("réponses à note humaine indéterminée (D25 (1)) : écartées du kap
     // noté la réponse écartée : elle n'est pas lue du tout.
     const lignes: LigneEchantillon[] = [...matrice("j1", 3, 0, 1, 4), { juges: {}, humains: ["indeterminee", "indeterminee"] }];
     const { echantillon, notations } = echantillonSynthetique(lignes);
-    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations });
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations, renvois: [] });
     expect(resultat.indeterminees).toBe(1);
     expect(resultat.kappas[0]).toMatchObject({ kappa: 0.75, n: 8, atteint_seuil: true });
   });
 
   it("toutes indéterminées : aucune réponse comparable, critère rouge", () => {
     const { echantillon, notations } = echantillonSynthetique(fois(3, { juges: { j1: "exacte" }, humains: ["indeterminee", "indeterminee"] }));
-    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations });
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations, renvois: [] });
     expect(resultat.indeterminees).toBe(3);
     expect(resultat.kappas[0]).toMatchObject({ kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0 });
     expect(critereKappaJugesHumains(resultat.kappas)).toMatchObject({ statut: "rouge", valeur: "kappa indéfini pour j1 : aucune_reponse_comparable" });
@@ -161,20 +163,20 @@ describe("réponses à note humaine indéterminée (D25 (1)) : écartées du kap
 
   it("aucune indéterminée : compte 0, publié tel quel", () => {
     const { echantillon, notations } = echantillonSynthetique(matrice("j1", 3, 0, 1, 4));
-    expect(kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations }).indeterminees).toBe(0);
+    expect(kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations, renvois: [] }).indeterminees).toBe(0);
   });
 });
 
 describe("notations des juges sur l'échantillon", () => {
   it("notation du juge retenu absente sur une réponse de l'échantillon : erreur visible", () => {
     const { echantillon, notations } = echantillonSynthetique([{ juges: { j1: "exacte" }, humains: ["exacte", "exacte"] }]);
-    expect(() => kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations })).toThrow(NotationDeJugeIntrouvable);
+    expect(() => kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations, renvois: [] })).toThrow(NotationDeJugeIntrouvable);
   });
 
   it("un juge qui rend « indeterminee » est rejeté (§7)", () => {
     const { echantillon, notations } = echantillonSynthetique([{ juges: { j1: "exacte" }, humains: ["exacte", "exacte"] }]);
     const indetermine = notationJuge("j2", { objet_note: { type: "reponse", id: echantillon[0] as string }, categorie: "indeterminee" });
-    expect(() => kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations: [...notations, indetermine] })).toThrow(JugeIndetermine);
+    expect(() => kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations: [...notations, indetermine], renvois: [] })).toThrow(JugeIndetermine);
   });
 });
 
@@ -183,7 +185,7 @@ describe("juges retirés (D13)", () => {
     // j2 (retiré) n'a noté que la moitié de l'échantillon, en désaccord partout : sans effet.
     const lignes = matrice("j1", 3, 0, 1, 4).map((ligne, rang) => (rang % 2 === 0 ? { ...ligne, juges: { ...ligne.juges, j2: "non_reponse" as const } } : ligne));
     const { echantillon, notations } = echantillonSynthetique(lignes);
-    const kappas = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }, { juge_id: "j2", retire: true }], echantillon, notations }).kappas;
+    const kappas = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }, { juge_id: "j2", retire: true }], echantillon, notations, renvois: [] }).kappas;
     expect(kappas).toHaveLength(1);
     expect(kappas[0]).toMatchObject({ juge_id: "j1", kappa: 0.75 });
     expect(critereKappaJugesHumains(kappas).statut).toBe("vert");
@@ -191,8 +193,88 @@ describe("juges retirés (D13)", () => {
 
   it("tous les juges retirés : aucun kappa, critère rouge", () => {
     const { echantillon, notations } = echantillonSynthetique(matrice("j1", 3, 0, 1, 4));
-    const kappas = kappasEchantillon({ juges: DEUX_JUGES.map((j) => ({ ...j, retire: true })), echantillon, notations }).kappas;
+    const kappas = kappasEchantillon({ juges: DEUX_JUGES.map((j) => ({ ...j, retire: true })), echantillon, notations, renvois: [] }).kappas;
     expect(kappas).toEqual([]);
     expect(critereKappaJugesHumains(kappas)).toEqual({ code: "kappa_juges_humains", statut: "rouge", valeur: AUCUN_JUGE_RETENU, seuil: 0.75 });
+  });
+});
+
+/**
+ * D32 : un refus de l'API n'a aucune note de juge, seulement la notation par règle. Comme un renvoi
+ * (D31 (2) : aucun accord ne se mesure là où le juge n'a rendu aucune note), il est écarté du kappa,
+ * ici de chaque juge, et leur nombre est publié une fois pour le run.
+ */
+describe("refus de l'API dans l'échantillon (D32)", () => {
+  const regle = (reponse_id: string) => notationRegle({ id: ulid(`regle-kappa-${reponse_id}`), objet_note: { type: "reponse", id: reponse_id } });
+
+  it("écarté du kappa de chaque juge, compté une fois ; le kappa porte sur le reste", () => {
+    const lignes: LigneEchantillon[] = [...matrice("j1", 3, 0, 1, 4).map((l) => ({ ...l, juges: { ...l.juges, j2: "exacte" as const } })), { juges: {}, humains: ["non_reponse", "non_reponse"] }];
+    const { echantillon, notations } = echantillonSynthetique(lignes);
+    const refus = echantillon[echantillon.length - 1] as string;
+    const resultat = kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations: [...notations, regle(refus)], renvois: [] });
+    expect(resultat.kappas[0]).toMatchObject({ juge_id: "j1", kappa: 0.75, n: 8, renvois_ecartes: 0 });
+    expect(resultat.kappas[1]).toMatchObject({ juge_id: "j2", n: 8, renvois_ecartes: 0 });
+    expect(resultat.refus_api).toBe(1);
+    expect(resultat.indeterminees).toBe(0);
+  });
+
+  it("écarté avant la référence humaine : sa double notation encore absente ne bloque pas le kappa", () => {
+    const { echantillon, notations } = echantillonSynthetique(matrice("j1", 3, 0, 1, 4));
+    const refus = ulid("reponse-echantillon-refus-sans-humain");
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon: [...echantillon, refus], notations: [...notations, regle(refus)], renvois: [] });
+    expect(resultat.kappas[0]).toMatchObject({ kappa: 0.75, n: 8 });
+    expect(resultat.refus_api).toBe(1);
+  });
+
+  it("tout l'échantillon refusé : aucune_reponse_comparable, critère rouge (D24 (2))", () => {
+    const refus = [ulid("refus-kappa-1"), ulid("refus-kappa-2")];
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon: refus, notations: refus.map(regle), renvois: [] });
+    expect(resultat.kappas[0]).toMatchObject({ kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0 });
+    expect(resultat.refus_api).toBe(2);
+    expect(critereKappaJugesHumains(resultat.kappas).statut).toBe("rouge");
+  });
+
+  it("un refus noté par règle ET par un juge, ou renvoyé par un juge : incohérent, aucun kappa", () => {
+    const { echantillon, notations } = echantillonSynthetique([{ juges: { j1: "non_reponse" }, humains: ["non_reponse", "non_reponse"] }]);
+    const id = echantillon[0] as string;
+    expect(() => kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations: [...notations, regle(id)], renvois: [] })).toThrow(RefusNoteParUnJuge);
+    const sansJuge = notations.filter((n) => n.notateur.type !== "juge");
+    const renvoi = renvoiJuge("j1", { id: ulid("renvoi-refus"), objet_note: { type: "reponse", id } });
+    expect(() => kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations: [...sansJuge, regle(id)], renvois: [renvoi] })).toThrow(RefusNoteParUnJuge);
+  });
+});
+
+/** D31 (2) : une réponse de l'échantillon renvoyée par un juge est écartée du kappa de CE juge. */
+describe("renvois d'attribution dans l'échantillon (D31 (2))", () => {
+  const renvoi = (juge_id: string, reponse_id: string) => renvoiJuge(juge_id, { id: ulid(`renvoi-kappa-${juge_id}-${reponse_id}`), objet_note: { type: "reponse", id: reponse_id } });
+
+  it("un renvoi parmi d'autres : écarté de ce juge seulement, compté, kappa sur le reste", () => {
+    // La réponse renvoyée par j1 n'a pas de notation de j1 ; j2 l'a notée et la garde.
+    const lignes: LigneEchantillon[] = [...matrice("j1", 3, 0, 1, 4).map((l) => ({ ...l, juges: { ...l.juges, j2: "exacte" as const } })), { juges: { j2: "exacte" }, humains: ["exacte", "exacte"] }];
+    const { echantillon, notations } = echantillonSynthetique(lignes);
+    const renvoyee = echantillon[echantillon.length - 1] as string;
+    const resultat = kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations, renvois: [renvoi("j1", renvoyee)] });
+    expect(resultat.kappas[0]).toMatchObject({ juge_id: "j1", kappa: 0.75, n: 8, renvois_ecartes: 1 });
+    expect(resultat.kappas[1]).toMatchObject({ juge_id: "j2", n: 9, renvois_ecartes: 0 });
+    expect(resultat.indeterminees).toBe(0);
+  });
+
+  it("tout écarté : aucune_reponse_comparable, critère rouge (D24 (2))", () => {
+    const { echantillon, notations } = echantillonSynthetique(fois(2, { juges: {}, humains: ["exacte", "exacte"] }));
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }], echantillon, notations, renvois: echantillon.map((id) => renvoi("j1", id)) });
+    expect(resultat.kappas[0]).toMatchObject({ kappa: null, motif_indefini: "aucune_reponse_comparable", n: 0, renvois_ecartes: 2 });
+    expect(critereKappaJugesHumains(resultat.kappas).statut).toBe("rouge");
+  });
+
+  it("renvoi d'un juge retiré : déjà écarté par D13, compté nulle part", () => {
+    const { echantillon, notations } = echantillonSynthetique(matrice("j1", 3, 0, 1, 4));
+    const resultat = kappasEchantillon({ juges: [{ juge_id: "j1", retire: false }, { juge_id: "j2", retire: true }], echantillon, notations, renvois: [renvoi("j2", echantillon[0] as string)] });
+    expect(resultat.kappas).toHaveLength(1);
+    expect(resultat.kappas[0]).toMatchObject({ juge_id: "j1", renvois_ecartes: 0 });
+  });
+
+  it("note de juge absente sans renvoi : l'erreur est maintenue ; renvoi et notation du même juge : erreur aussi", () => {
+    const { echantillon, notations } = echantillonSynthetique([{ juges: { j1: "exacte" }, humains: ["exacte", "exacte"] }]);
+    expect(() => kappasEchantillon({ juges: DEUX_JUGES, echantillon, notations, renvois: [renvoi("j1", echantillon[0] as string)] })).toThrow(NotationDeJugeIntrouvable);
   });
 });

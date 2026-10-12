@@ -13,11 +13,13 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
 import { bilanNotation, ReponsePerdue } from "../../pipeline/notation/bilan-notation.ts";
-import { JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { identifiantDerive, JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { DepotNotation } from "../../pipeline/notation/stockage.ts";
+import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
 import { controleCroise } from "../../pipeline/notation/controle-croise.ts";
-import { tailleEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
-import type { ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
+import { tailleEchantillonHumain, tirerEchantillonHumain } from "../../pipeline/notation/echantillons.ts";
+import { VERSION_CHARGE_JUGE, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import type { FournisseurExistences } from "../../pipeline/notation/fournisseur-existences.ts";
 import type { SortieJuge } from "../../pipeline/notation/juge.ts";
 import { ContrefactuelDejaInscrit } from "../../pipeline/notation/inscription-contrefactuel.ts";
@@ -96,12 +98,13 @@ function issuesDe(execution: Execution): ReadonlySet<string> {
 
 function violations(repertoire_run: string): readonly unknown[] {
   const run = lireRunJson(repertoire_run);
+  const obtenues = readdirSync(dispositionRunNote(repertoire_run).reponses)
+    .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string; normalise?: { refus_api: boolean } })
+    .filter((r) => r.statut_reponse === "obtenue");
   return controleCroise({
     run: runDeNotationDe(run),
-    reponses_obtenues: readdirSync(dispositionRunNote(repertoire_run).reponses)
-      .map((f) => JSON.parse(readFileSync(join(dispositionRunNote(repertoire_run).reponses, f), "utf8")) as { id: string; statut_reponse: string })
-      .filter((r) => r.statut_reponse === "obtenue")
-      .map((r) => r.id),
+    reponses_obtenues: obtenues.map((r) => r.id),
+    refus_api: obtenues.filter((r) => r.normalise?.refus_api === true).map((r) => r.id),
     notations: lireNotationsDuRun(repertoire_run, run.id).notations,
     verdicts: lireVerdicts(repertoire_run, run.id),
   });
@@ -116,6 +119,7 @@ function sansExistencePour(reponse_ids: ReadonlySet<string>): (env: Environnemen
   return (env) => {
     const fournisseur: FournisseurExistences = {
       existencesDe: (reponse_id, liens) => (reponse_ids.has(reponse_id) ? [] : env.existences.existencesDe(reponse_id, liens)),
+      texteDeCopie: (sha256_contenu) => env.existences.texteDeCopie(sha256_contenu),
     };
     return { ...env, existences: fournisseur };
   };
@@ -144,6 +148,8 @@ describe("2. chaque issue de decider() qu'une notation sans humain peut atteindr
   /** Run de référence : aucun juge retiré. */
   const SANS_RETRAIT = [
     "verdict:accord_juges",
+    // D32 : un refus de l'API hors échantillon, noté par règle.
+    "verdict:regle_refus_api",
     "attente:desaccord_juges",
     "attente:extrait_invalide",
     "attente:drapeau_grave",
@@ -193,16 +199,22 @@ describe("3. un juge simulé réglé au-delà de SEUIL_RETRAIT", () => {
     const taille = execution.bilan.contrefactuel_inscrit?.taille;
     expect(b?.notations_run).toBe(taille);
     expect(b?.notations_contrefactuel).toBe(taille);
-    expect(a?.notations_run).toBe(execution.bilan.reponses_obtenues);
+    // D32 : le juge restant note toute réponse obtenue sauf les refus de l'API, que la règle note.
+    const refus = new Set(execution.prepare.reponses.filter((r) => r.reponse.normalise.refus_api).map((r) => r.reponse.id));
+    expect(refus.size).toBeGreaterThan(0);
+    expect(a?.notations_run).toBe(execution.bilan.reponses_obtenues - refus.size);
+    expect(execution.bilan.notations_par_regle).toBe(refus.size);
 
-    // Aucune note retenue ne cite le juge retiré ; hors échantillon, le juge restant donne la note.
+    // Aucune note retenue ne cite le juge retiré ; hors échantillon, le juge restant donne la note,
+    // sauf sur un refus de l'API, où la règle la donne, sans effet du retrait (D32).
     const notations = new Map(lireNotationsDuRun(repertoire_run, run.id).notations.map((n) => [n.id, n]));
     const verdicts = lireVerdicts(repertoire_run, run.id);
-    expect(verdicts.length).toBeGreaterThan(0);
+    expect(verdicts.filter((v) => !refus.has(v.objet_note.id)).length).toBeGreaterThan(0);
     for (const verdict of verdicts) {
+      const deRefus = refus.has(verdict.objet_note.id);
       expect(verdict.dans_echantillon_humain).toBe(false);
-      expect(verdict.mode_resolution).toBe("juge_unique_apres_retrait");
-      expect(verdict.notations_sources.map((id) => notations.get(id)?.notateur.id)).toEqual(["juge-simule-a"]);
+      expect(verdict.mode_resolution).toBe(deRefus ? "regle_refus_api" : "juge_unique_apres_retrait");
+      expect(verdict.notations_sources.map((id) => notations.get(id)?.notateur.id)).toEqual([deRefus ? "d12-refus-api" : "juge-simule-a"]);
     }
     expect(execution.bilan.attentes_par_motif.double_notation_humaine_incomplete).toBe(tailleEchantillonHumain(execution.bilan.reponses_obtenues, 0.25));
     expect(violations(repertoire_run)).toEqual([]);
@@ -245,23 +257,77 @@ describe("4. le test contrefactuel passe avant la notation de masse", () => {
 });
 
 describe("5. réponse refusée par l'API, réponse tronquée", () => {
-  it("un refus est noté par les deux juges comme toute réponse, hors du test contrefactuel (rien à permuter), sans valeur inventée", async () => {
-    const execution = await noter(nouvelleSortie());
+  it("D32 : un refus n'est soumis à aucun juge ; la règle inscrit non_reponse sans extrait, hors du test contrefactuel, et le verdict en découle sans humain hors échantillon", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
     const { repertoire_run } = execution.prepare;
     const refus = execution.prepare.reponses.filter((r) => r.reponse.normalise.refus_api);
     expect(refus.length).toBeGreaterThan(0);
     const notations = lireNotationsDuRun(repertoire_run, execution.resultat.run_id).notations;
     const derivees = new Set(contrefactuellesDerivees(repertoire_run, execution.resultat.run_id).values());
     const verdicts = new Map(lireVerdicts(repertoire_run, execution.resultat.run_id).map((v) => [v.objet_note.id, v]));
+    const echantillon = new Set(tirerEchantillonHumain(execution.prepare.reponses.map((r) => r.reponse.id), runDeNotationDe(lireRunJson(repertoire_run)).graines.echantillon_humain, 0.1));
     for (const { reponse } of refus) {
+      expect(appels.some((a) => a.charge.reponse_id === reponse.id)).toBe(false);
       const surElle = notations.filter((n) => n.objet_note.id === reponse.id);
-      expect(surElle.map((n) => n.notateur.id).sort()).toEqual(["juge-simule-a", "juge-simule-b"]);
-      expect(surElle.every((n) => n.categorie === "non_reponse" && n.sourcage.liens.length === 0)).toBe(true);
+      expect(surElle).toHaveLength(1);
+      const [regle] = surElle;
+      expect(regle).toMatchObject({ notateur: { type: "regle", id: "d12-refus-api" }, motif_notation: "regle_refus_api", categorie: "non_reponse", drapeaux: [], sourcage: { cite: false, liens: [] } });
+      expect(regle?.extrait_justificatif).toBeUndefined();
       expect(derivees.has(reponse.id)).toBe(false);
       const verdict = verdicts.get(reponse.id);
-      if (verdict === undefined) expect(execution.resultat.attentes.some((a) => a.reponse_id === reponse.id)).toBe(true);
-      else expect(verdict.categorie_retenue).toBe("non_reponse");
+      if (echantillon.has(reponse.id)) {
+        expect(verdict).toBeUndefined();
+        expect(execution.resultat.attentes).toContainEqual({ reponse_id: reponse.id, motifs: ["double_notation_humaine_incomplete"] });
+      } else {
+        expect(verdict).toMatchObject({ mode_resolution: "regle_refus_api", categorie_retenue: "non_reponse", notations_sources: [regle?.id], dans_echantillon_humain: false });
+      }
     }
+    expect(refus.some((r) => !echantillon.has(r.reponse.id))).toBe(true);
+    expect(execution.bilan.notations_par_regle).toBe(refus.length);
+    expect(violations(repertoire_run)).toEqual([]);
+  });
+
+  it("D33 : un refus tiré dans l'échantillon, noté par deux humains sans extrait, reçoit son verdict à la relance", async () => {
+    const sortie = nouvelleSortie();
+    const premiere = await noter(sortie);
+    const { repertoire_run } = premiere.prepare;
+    const run_id = premiere.resultat.run_id;
+    const echantillon = new Set(tirerEchantillonHumain(premiere.prepare.reponses.map((r) => r.reponse.id), runDeNotationDe(lireRunJson(repertoire_run)).graines.echantillon_humain, 0.1));
+    const regles = lireNotationsDuRun(repertoire_run, run_id).notations.filter((n) => n.notateur.type === "regle" && echantillon.has(n.objet_note.id));
+    expect(regles.length).toBeGreaterThan(0);
+    const depot = DepotNotation.ouvrir(repertoire_run);
+    for (const regle of regles) {
+      for (const annotateur of ["annotateur-1", "annotateur-2"]) {
+        const { notateur: _regle, ...reste } = regle;
+        depot.ecrireNotation({
+          ...reste,
+          id: identifiantDerive([run_id, "humain-test", regle.objet_note.id, annotateur]),
+          notateur: { type: "humain", id: annotateur, sensibilite_declaree_famille: "famille-1", a_vu_identite_outil: false },
+          version_charge: VERSION_CHARGE_JUGE,
+          motif_notation: "echantillon_aleatoire_10",
+          date: "2026-12-05T09:30:00+01:00",
+        });
+      }
+    }
+    const seconde = await noter(sortie);
+    const verdicts = new Map(lireVerdicts(repertoire_run, run_id).map((v) => [v.objet_note.id, v]));
+    for (const regle of regles) {
+      expect(seconde.resultat.attentes.some((a) => a.reponse_id === regle.objet_note.id)).toBe(false);
+      expect(verdicts.get(regle.objet_note.id)).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "non_reponse", dans_echantillon_humain: true });
+    }
+    expect(violations(repertoire_run)).toEqual([]);
+  });
+
+  it("D32 : reprise, la notation par règle déjà écrite n'est ni recalculée ni réécrite", async () => {
+    const sortie = nouvelleSortie();
+    const premiere = await noter(sortie);
+    const { repertoire_run } = premiere.prepare;
+    const avant = contenus(dispositionRunNote(repertoire_run).notations);
+    const autreDate = { ...parametresDeReference(), date_notation: "2026-12-05T10:00:00+01:00" };
+    const seconde = await noter(sortie, autreDate);
+    expect(contenus(dispositionRunNote(repertoire_run).notations)).toEqual(avant);
+    expect(seconde.bilan.notations_par_regle).toBe(premiere.bilan.notations_par_regle);
   });
 
   it("une réponse tronquée est soumise telle quelle, troncature dite au juge, et notée sur ce qu'elle contient (§8)", async () => {
@@ -387,6 +453,92 @@ describe("10. la charge reçue par le juge", () => {
         expect(texte.includes(sentinelle), sentinelle).toBe(false);
       }
     }
+  });
+});
+
+describe("D27 : la charge v3 reçue par le juge dans la chaîne", () => {
+  const LIEN_SIMULE = "https://source-simulee.invalid/page";
+  const SHA_COPIE = "c".repeat(64);
+  const existeAvecCopie = (reference: ParametresNotationSimulee): ParametresNotationSimulee => ({
+    ...reference,
+    existences: reference.existences.map((e) => (e.url_citee === LIEN_SIMULE ? { url_citee: e.url_citee, verdict_existence: "existe" as const, code_http: 200, date_test: e.date_test, sha256_contenu: SHA_COPIE } : e)),
+  });
+
+  it("chaque charge porte la réponse attendue et la prémisse du tirage, le registre de sa formulation", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const tirage = JSON.parse(readFileSync(join(execution.prepare.repertoire_run, "tirage.json"), "utf8")) as { entrees: { question_id: string; reponse_attendue: unknown }[] };
+    const parId = new Map(execution.prepare.reponses.map((r) => [r.reponse.id, r]));
+    const origines = contrefactuellesDerivees(execution.prepare.repertoire_run, execution.resultat.run_id);
+    for (const { charge } of appels.filter((a) => !origines.has(a.charge.reponse_id))) {
+      const r = parId.get(charge.reponse_id);
+      const entree = tirage.entrees.find((e) => e.question_id === r?.reponse.question_id);
+      expect(charge.reponse_attendue).toEqual(entree?.reponse_attendue);
+      expect(charge.question.registre).toBe(r?.question.registre);
+      expect("premisse_fausse" in charge.question).toBe(charge.question.registre === "oriente");
+    }
+  });
+
+  it("le lien mort du run de référence arrive sans texte, raison lien_mort", async () => {
+    const appels: Appel[] = [];
+    await noter(nouvelleSortie(), parametresDeReference(), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
+    expect(avecLien.length).toBeGreaterThan(0);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([{ url_citee: LIEN_SIMULE, texte_disponible: false, raison: "lien_mort" }]);
+  });
+
+  it("une page conservée dont le texte est extrait arrive dans la charge, avec son empreinte", async () => {
+    const appels: Appel[] = [];
+    const parametres = { ...existeAvecCopie(parametresDeReference()), textes_copies: [{ sha256_contenu: SHA_COPIE, issue: "extrait" as const, texte: "Texte simulé de la page citée." }] };
+    await noter(nouvelleSortie(), parametres, (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    const avecLien = appels.filter((a) => a.charge.reponse.liens.length > 0);
+    expect(avecLien.length).toBeGreaterThan(0);
+    for (const { charge } of avecLien) expect(charge.pages_citees).toEqual([expect.objectContaining({ url_citee: LIEN_SIMULE, texte_disponible: true, origine: "page_conservee", texte: "Texte simulé de la page citée.", tronque: false })]);
+  });
+
+  it("une page conservée sans texte extrait : la réponse attend le test des liens, jamais notée sur un texte vide", async () => {
+    const appels: Appel[] = [];
+    const execution = await noter(nouvelleSortie(), existeAvecCopie(parametresDeReference()), (env) => ({ ...env, juges: enregistreurs(env.juges, appels) }));
+    expect(appels.filter((a) => a.charge.reponse.liens.length > 0)).toEqual([]);
+    const citent = execution.prepare.reponses.filter((r) => r.reponse.normalise.liens.length > 0).map((r) => r.reponse.id);
+    expect(citent.length).toBeGreaterThan(0);
+    for (const id of citent) expect(execution.resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toEqual(["test_liens"]);
+  });
+});
+
+describe("D30 (2) : un renvoi déjà écrit pour une réponse", () => {
+  function poserRenvoi(prepare: RunSimulePrepare, question_id: string): string {
+    const cible = prepare.reponses.find((r) => r.reponse.question_id === question_id);
+    if (cible === undefined) throw new Error("réponse attendue");
+    const run_id = lireRunJson(prepare.repertoire_run).id;
+    const id = identifiantDerive([run_id, "notation", "run", cible.reponse.id, "juge-simule-a"]);
+    const renvoi = renvoiJuge("juge-simule-a", { id, run_id, objet_note: { type: "reponse", id: cible.reponse.id }, notateur: { type: "juge", id: "juge-simule-a", famille_modele: "famille-simulee-a", modele: "simule/juge-a", version_prompt: "simule://juge-simule@1.0.0", a_vu_identite_outil: false } });
+    DepotNotation.ouvrir(prepare.repertoire_run).ecrireRenvoi(renvoi);
+    return cible.reponse.id;
+  }
+
+  it("hors du sous-ensemble contrefactuel : le juge n'est pas redemandé, la réponse attend un humain sous attribution_indecidable", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    const id = poserRenvoi(prepare, QUESTION_SANS_NOM);
+    const appels: Appel[] = [];
+    const env = environnementSimule(prepare.repertoire_run, parametresDeReference());
+    const resultat = await noterRun(prepare.reponses, { ...env, juges: enregistreurs(env.juges, appels) });
+    expect(appels.filter((a) => a.juge_id === "juge-simule-a" && a.charge.reponse_id === id)).toEqual([]);
+    expect(resultat.attentes.find((a) => a.reponse_id === id)?.motifs).toContain("attribution_indecidable");
+    expect(lireNotationsDuRun(prepare.repertoire_run, resultat.run_id).notations.filter((n) => n.objet_note.id === id && n.notateur.id === "juge-simule-a")).toEqual([]);
+  });
+
+  it("dans le sous-ensemble contrefactuel (D31 (1)) : la paire est écartée du taux de ce juge seulement, et le nombre est inscrit", async () => {
+    const prepare = await preparerNotationSimulee(options(nouvelleSortie()));
+    poserRenvoi(prepare, QUESTION_NOMMANTE);
+    const resultat = await noterRun(prepare.reponses, environnementSimule(prepare.repertoire_run, parametresDeReference()));
+    expect(resultat.contrefactuel.statut).toBe("inscrit");
+    const run = lireRunJson(prepare.repertoire_run);
+    const taille = run.contrefactuel_candidats?.taille as number;
+    const [a, b] = ["juge-simule-a", "juge-simule-b"].map((id) => run.juges.find((j) => j.juge_id === id));
+    expect(a).toMatchObject({ paires_ecartees_contrefactuel: 1, changements_contrefactuel: { denominateur: taille - 1 } });
+    expect(b).toMatchObject({ paires_ecartees_contrefactuel: 0, changements_contrefactuel: { denominateur: taille } });
+    expect(violations(prepare.repertoire_run)).toEqual([]);
   });
 });
 

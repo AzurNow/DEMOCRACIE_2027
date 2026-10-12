@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-09.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-10.
 
 ## Décisions en attente
 
@@ -80,9 +80,41 @@ Aucune décision en attente.
 
 **Décision du 2026-10-09 :** Option 1 sur les quatre points. Le point 1 est à écrire en 0.16 avec D24 (1).
 
+### D26 — Quatre points du lot perimetre-prompts que le protocole laisse ouverts : date d'application de la règle pour la liste publiée à J1 ; « top des applications de la catégorie » des stores ; choix des deux juges ; note d'une réponse juste qui ajoute une position inventée non contradictoire (schema/README.md, point ouvert 3).
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points (l'auteur a d'abord envisagé GPT pour (3), puis retenu Mistral Large). Points 1 et 2 à écrire au §3 en 0.16, point 4 au §7 et dans le prompt juge. Point 4 RÉVISÉ par l'auteur le 2026-10-09 : « exacte » avec drapeau fabrication contredisait le §7 (drapeaux sur les seules réponses inexactes, fabrication réservée aux items A et F) et schema/notation.schema.json ; retenu : « inexacte », motif d'inexactitude ajout_fabrique, que le schéma prévoyait déjà. Aucun texte du §7 à écrire pour ce point.
+
+### D27 — Ce que la charge du juge doit transmettre et ce que le code calcule à sa place, pour que le prompt juge ne fasse rien deviner de ce qu'un fichier sait déjà.
+
+**Décision du 2026-10-09 :** Option 1, les cinq points. Le §7 doit énumérer en 0.16 ce que reçoit le juge (réponse attendue, prémisse, texte de la page citée), et l'annexe D s'aligner sur la charge.
+
+### D28 — Quatre trous du §3, du §6 et du §10 relevés par le dossier de recherche du périmètre au 15 octobre (scratch/perimetre/dossier-2026-10-15.md) : candidat éliminé au premier tour d'une primaire ; intention de candidature ; outil sans recherche web par API ; clause restrictive de l'API Gemini en mode web.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 à 3 à écrire en 0.16 (§3 et §8) ; point 4 : question ajoutée à la relecture de l'avocat.
+
+### D29 — Points ouverts par la PR #106 (charge-juge-v3) : qui décide la note d'une Q-ATT ; pages citées dans le test contrefactuel ; borne du texte d'une page ; rattachement des noms, ambigus, saisie humaine d'une Q-ATT, version de la charge enregistrée.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points. Points 1 et 2 à écrire au §7 en 0.16. Point 2 précisé par D30 (1) : la formulation « catégorie, drapeaux et motif » ajoutait par erreur le motif, contre D14 (3).
+
 ### D3 — Quels SDK d'API autoriser pour l'extraction, l'interrogation et la notation ?
 
 **Décision du 2026-09-20 :** SDK officiels, un par éditeur, versions épinglées. La réponse brute stockée reste le corps HTTP tel que reçu, jamais l'objet du SDK (règle 7).
+
+### D30 — Points ouverts par le codage de D29 dans la PR #106 : définition d'un changement contrefactuel ; trois cas de Q-ATT qu'aucun texte ne tranche ; « indéterminée » humaine sur une Q-ATT ; version de la charge d'une lecture de comparateur.
+
+**Décision du 2026-10-09 :** Option 1 sur les quatre points.
+
+### D31 — Renvoi d'un juge (Q-ATT indécidable, D30) dans le test contrefactuel et dans le kappa juge-humain de l'échantillon.
+
+**Décision du 2026-10-10 :** Option 1 sur les deux points.
+
+### D32 — Notation d'un refus de l'API : D12 le classe non-réponse, mais l'annexe C exige un extrait justificatif pour toute note autre qu'exacte, et sur un item A ou F (ou une Q-ATT dont la référence n'a que des items F) il n'y a ni texte de réponse ni citation à recopier ; la chaîne s'arrêtait (schéma de notation, SortieJugeIncoherente).
+
+**Décision du 2026-10-10 :** Option 1. À écrire au §7 en 0.16 : un refus de l'API est noté non-réponse sans juge.
+
+### D33 — Deux points ouverts par la PR #108 (D32) : extrait humain d'un refus de l'API tiré dans l'échantillon sur un item A ou F ; refus de l'échantillon dans le kappa juge-humain.
+
+**Décision du 2026-10-10 :** Option 1 sur les deux points. À écrire en 0.16 avec D32 (§7, annexe C).
 
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 

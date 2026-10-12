@@ -14,6 +14,8 @@ import {
   lien,
   notationHumaine,
   notationJuge,
+  notationRegle,
+  renvoiJuge,
   REPONSE_ID,
   REPONSE_PROJETEE,
   runDeNotation,
@@ -27,6 +29,7 @@ function entree(notations: readonly NotationIndividuelle[], options: Partial<Ent
     run: runDeNotation(),
     objet_note: { type: "reponse", id: REPONSE_ID },
     notations,
+    renvois: [],
     dans_echantillon_humain: false,
     textes: TEXTES,
     verdict_id: VERDICT_ID,
@@ -149,6 +152,47 @@ describe("extrait justificatif", () => {
     });
     const b = notationJuge("j2", inexacte());
     expect(verdictDe(decide([a, b])).mode_resolution).toBe("accord_juges");
+  });
+});
+
+describe("D30 (2) : renvoi d'un juge sur une Q-ATT indécidable → humain sous attribution_indecidable", () => {
+  const QATT = { gabarit: "Q-ATT" as const, attribution: { attendus: ["demo-alpha"], cites: ["demo-alpha"] } };
+  const J2_QATT = notationJuge("j2", QATT);
+
+  it("un juge renvoie, l'autre note : en attente d'un humain, motif attribution_indecidable", () => {
+    expect(decide([J2_QATT], { renvois: [renvoiJuge("j1")] })).toEqual({ statut: "en_attente", attend: "humain", motifs: ["attribution_indecidable"] });
+  });
+
+  it("les deux juges renvoient : en attente d'un humain, jamais d'un juge manquant", () => {
+    expect(decide([], { renvois: [renvoiJuge("j1"), renvoiJuge("j2")] })).toEqual({ statut: "en_attente", attend: "humain", motifs: ["attribution_indecidable"] });
+  });
+
+  it("l'humain appelé sous attribution_indecidable tranche ; le renvoi n'est pas une source", () => {
+    const humain = notationHumaine("a1", "attribution_indecidable", QATT);
+    const v = verdictDe(decide([J2_QATT, humain], { renvois: [renvoiJuge("j1")] }));
+    expect(v.mode_resolution).toBe("tranche_humain");
+    expect(v.notations_sources).toEqual([J2_QATT.id, humain.id]);
+  });
+
+  it("le renvoi prime sur un extrait invalide de l'autre juge : seul attribution_indecidable est admis", () => {
+    const invalide = notationJuge("j2", { ...QATT, ...inexacte(), extrait_justificatif: { provenance: "reponse", texte: "absent", verifie_deterministe: true } });
+    expect(decide([invalide], { renvois: [renvoiJuge("j1")] })).toMatchObject({ statut: "en_attente", motifs: ["attribution_indecidable", "extrait_invalide"] });
+    expect(() => decide([invalide, notationHumaine("a1", "extrait_invalide", QATT)], { renvois: [renvoiJuge("j1")] })).toThrow(NotationsIncoherentes);
+  });
+
+  it("le renvoi d'un juge retiré est écarté comme ses notations (D13)", () => {
+    expect(verdictDe(decide([J2_QATT], { run: runDeNotation(["j1"]), renvois: [renvoiJuge("j1")] })).mode_resolution).toBe("juge_unique_apres_retrait");
+  });
+
+  it("un juge qui porte une notation et un renvoi sur l'objet, ou un renvoi d'un autre objet : incohérent", () => {
+    expect(() => decide([notationJuge("j1", QATT), J2_QATT], { renvois: [renvoiJuge("j1")] })).toThrow(NotationsIncoherentes);
+    expect(() => decide([J2_QATT], { renvois: [renvoiJuge("j1", { objet_note: { type: "reponse", id: ulid("autre") } })] })).toThrow(NotationsIncoherentes);
+  });
+
+  it("dans l'échantillon, le renvoi ne compte pas et les humains d'échantillon décident", () => {
+    const humains = ["a1", "a2"].map((a) => notationHumaine(a, "echantillon_aleatoire_10", QATT));
+    const v = verdictDe(decide([J2_QATT, ...humains], { renvois: [renvoiJuge("j1")], dans_echantillon_humain: true }));
+    expect(v.mode_resolution).toBe("echantillon_humain_10");
   });
 });
 
@@ -445,5 +489,75 @@ describe("entrées rejetées", () => {
 
   it("aucune notation de juge : en attente des juges", () => {
     expect(decider(entree([]))).toEqual({ statut: "en_attente", attend: "juge", motifs: ["notation_juge_manquante"] });
+  });
+});
+
+describe("D32 : refus de l'API noté par règle, sans juge", () => {
+  const REGLE = notationRegle();
+  const NON_REPONSE_HUMAINE = {
+    categorie: "non_reponse" as const,
+    extrait_justificatif: { provenance: "reference" as const, texte: "Nous ne toucherons pas", verifie_deterministe: true },
+  };
+  const REFUS_TEXTES = { reponse: "", citations_reference: TEXTES.citations_reference };
+
+  it("hors échantillon, la notation par règle seule donne le verdict regle_refus_api, sans humain ni juge", () => {
+    const v = verdictDe(decide([REGLE], { textes: REFUS_TEXTES }));
+    expect(v).toMatchObject({
+      mode_resolution: "regle_refus_api",
+      categorie_retenue: "non_reponse",
+      drapeaux_retenus: [],
+      sourcage_retenu: { cite: false, au_moins_un_lien_existant: false, au_moins_un_lien_soutenant: false },
+      notations_sources: [REGLE.id],
+      desaccord_juges: false,
+      dans_echantillon_humain: false,
+      erreur_grave: false,
+    });
+    expect(v.revue_humaine).toBeUndefined();
+  });
+
+  it("un juge retiré (D13) est sans effet sur la règle : même verdict", () => {
+    const run = runDeNotation(["j2"]);
+    expect(decide([REGLE], { run, textes: REFUS_TEXTES })).toEqual(decide([REGLE], { textes: REFUS_TEXTES }));
+  });
+
+  it("dans l'échantillon, la double notation humaine reste exigée (§7, « quel que soit l'accord des juges ») : en attente des humains", () => {
+    expect(decide([REGLE], { dans_echantillon_humain: true, textes: REFUS_TEXTES })).toEqual({
+      statut: "en_attente",
+      attend: "humain",
+      motifs: ["double_notation_humaine_incomplete"],
+    });
+    const une = notationHumaine("a1", "echantillon_aleatoire_10", NON_REPONSE_HUMAINE);
+    expect(decide([REGLE, une], { dans_echantillon_humain: true, textes: REFUS_TEXTES })).toMatchObject({ statut: "en_attente", attend: "humain" });
+  });
+
+  it("dans l'échantillon, deux humains d'accord : leur note prévaut, la règle reste parmi les sources pour la comparaison", () => {
+    const a = notationHumaine("a1", "echantillon_aleatoire_10", NON_REPONSE_HUMAINE);
+    const b = notationHumaine("a2", "echantillon_aleatoire_10", NON_REPONSE_HUMAINE);
+    const v = verdictDe(decide([REGLE, a, b], { dans_echantillon_humain: true, textes: REFUS_TEXTES }));
+    expect(v).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "non_reponse", notations_sources: [REGLE.id, a.id, b.id], dans_echantillon_humain: true });
+    expect(v.revue_humaine?.annotateurs).toEqual(["a1", "a2"]);
+  });
+
+  it("dans l'échantillon, des humains qui divergent entre eux : l'arbitre tranche, même contre la règle", () => {
+    const a = notationHumaine("a1", "echantillon_aleatoire_10", NON_REPONSE_HUMAINE);
+    const b = notationHumaine("a2", "echantillon_aleatoire_10", { ...NON_REPONSE_HUMAINE, categorie: "indeterminee" });
+    const arbitre = notationHumaine("a3", "arbitrage_echantillon_10", { ...NON_REPONSE_HUMAINE, categorie: "indeterminee" });
+    const v = verdictDe(decide([REGLE, a, b, arbitre], { dans_echantillon_humain: true, textes: REFUS_TEXTES }));
+    expect(v).toMatchObject({ mode_resolution: "echantillon_humain_10", categorie_retenue: "indeterminee", notations_sources: [REGLE.id, a.id, b.id, arbitre.id] });
+  });
+
+  it("une notation de juge, même d'un juge retiré, ou un renvoi, sur une réponse notée par règle : incohérent", () => {
+    const juge = notationJuge("j1", NON_REPONSE_HUMAINE);
+    expect(() => decider(entree([REGLE, juge], { textes: REFUS_TEXTES }))).toThrow(NotationsIncoherentes);
+    expect(() => decider(entree([REGLE, notationJuge("j2", NON_REPONSE_HUMAINE)], { run: runDeNotation(["j2"]), textes: REFUS_TEXTES }))).toThrow(NotationsIncoherentes);
+    expect(() => decider(entree([REGLE], { renvois: [renvoiJuge("j1")], textes: REFUS_TEXTES }))).toThrow(NotationsIncoherentes);
+  });
+
+  it("deux notations par règle, ou un humain appelé hors échantillon sur une réponse notée par règle : incohérent", () => {
+    expect(() => decider(entree([REGLE, { ...REGLE, id: ulid("autre-regle") }], { textes: REFUS_TEXTES }))).toThrow(NotationsIncoherentes);
+    const appele = notationHumaine("a1", "desaccord_juges", NON_REPONSE_HUMAINE);
+    expect(() => decider(entree([REGLE, appele], { textes: REFUS_TEXTES }))).toThrow(NotationsIncoherentes);
+    const echantillon = notationHumaine("a1", "echantillon_aleatoire_10", NON_REPONSE_HUMAINE);
+    expect(() => decider(entree([REGLE, echantillon], { textes: REFUS_TEXTES }))).toThrow(NotationsIncoherentes);
   });
 });

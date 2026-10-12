@@ -219,6 +219,66 @@ describe("18. fournisseur adossé aux fichiers du test des liens", () => {
   });
 });
 
+/** D27 (E) : fiches de `extractions/` et textes de `textes/`, tels que les écrit `pnpm liens:textes`. */
+describe("texte des copies conservées (D27 (E))", () => {
+  const TEXTE = "Programme — « éducation »";
+  const SHA_TEXTE = empreinte(Buffer.from(TEXTE, "utf8"));
+
+  function poserExtraction(run: string, sha_copie: string, fiche: Record<string, unknown>, texte: string | null = TEXTE): void {
+    mkdirSync(join(repertoireLiens(run), "extractions"), { recursive: true });
+    mkdirSync(join(repertoireLiens(run), "textes"), { recursive: true });
+    writeFileSync(join(repertoireLiens(run), "extractions", `${sha_copie}.json`), `${JSON.stringify(fiche, null, 2)}\n`, "utf8");
+    if (texte !== null) writeFileSync(join(repertoireLiens(run), "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
+  }
+
+  function ficheExtraite(sha_copie: string): Record<string, unknown> {
+    const doree = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
+    return { ...doree, sha256_contenu: sha_copie, texte_sha256: SHA_TEXTE, longueur: Array.from(TEXTE).length };
+  }
+
+  it("rend le texte extrait d'une copie, vérifié contre l'empreinte et la longueur de sa fiche", () => {
+    const run = runTeste();
+    poserExtraction(run, empreinte(PAGE), ficheExtraite(empreinte(PAGE)));
+    expect(fournisseurFichiers(run).texteDeCopie(empreinte(PAGE))).toEqual({ issue: "extrait", texte: TEXTE, texte_sha256: SHA_TEXTE });
+  });
+
+  it("rend le refus consigné d'une extraction", () => {
+    const run = runTeste();
+    const refus = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-refus.json"), "utf8")) as Record<string, unknown>;
+    poserExtraction(run, empreinte(COPIE), { ...refus, sha256_contenu: empreinte(COPIE) }, null);
+    expect(fournisseurFichiers(run).texteDeCopie(empreinte(COPIE))).toEqual({ issue: "refuse", motif: "type de contenu non pris en charge : image/png" });
+  });
+
+  it("une copie sans fiche n'a pas encore de texte : undefined, jamais un texte vide", () => {
+    expect(fournisseurFichiers(runTeste()).texteDeCopie(empreinte(PAGE))).toBeUndefined();
+  });
+
+  it("une fiche dont le nom n'est pas l'empreinte de la copie est refusée", () => {
+    const run = runTeste();
+    poserExtraction(run, "f".repeat(64), ficheExtraite(empreinte(PAGE)));
+    expect(() => fournisseurFichiers(run)).toThrow(/n'est pas l'empreinte de la copie/);
+  });
+
+  it("une fiche « extrait » dont le texte manque est refusée à la construction", () => {
+    const run = runTeste();
+    poserExtraction(run, empreinte(PAGE), ficheExtraite(empreinte(PAGE)), null);
+    expect(() => fournisseurFichiers(run)).toThrow(/est absent/);
+  });
+
+  it("un texte altéré est refusé à la lecture, jamais transmis", () => {
+    const run = runTeste();
+    poserExtraction(run, empreinte(PAGE), ficheExtraite(empreinte(PAGE)));
+    writeFileSync(join(repertoireLiens(run), "textes", `${SHA_TEXTE}.txt`), `${TEXTE}!`, "utf8");
+    expect(() => fournisseurFichiers(run).texteDeCopie(empreinte(PAGE))).toThrow(/empreinte de sa fiche/);
+  });
+
+  it("une fiche invalide au schéma lève ErreurSchema", () => {
+    const run = runTeste();
+    poserExtraction(run, empreinte(PAGE), { ...ficheExtraite(empreinte(PAGE)), motif: "contradictoire" });
+    expect(() => fournisseurFichiers(run)).toThrow(ErreurSchema);
+  });
+});
+
 /** Toutes les réponses citent `LIEN` ; sans notation, la seule tâche de l'annotateur est la réponse tirée. */
 describe("18. branchement dans l'écran de notation humaine", () => {
   let monde: Monde | null = null;
@@ -243,6 +303,34 @@ describe("18. branchement dans l'écran de notation humaine", () => {
     const etat = etatDesTaches(monde.contexte("a1", fournisseurDuRun(monde.repertoire_run)));
 
     expect(etat.en_attente_test_des_liens).toBe(0);
+  });
+
+  it("D27 (E), D18 : la vue de l'annotateur porte le texte de la page conservée, comme la charge du juge", () => {
+    monde = monter({ avec_lien: [0, 1, 2, 3] });
+    const liens = repertoireLiens(monde.repertoire_run);
+    mkdirSync(join(liens, "pages"), { recursive: true });
+    mkdirSync(join(liens, "extractions"), { recursive: true });
+    mkdirSync(join(liens, "textes"), { recursive: true });
+    writeFileSync(join(liens, "pages", `${empreinte(PAGE)}.html`), PAGE);
+    poser(monde.repertoire_run, LIEN, { ...lireDore("existe.json"), url_citee: LIEN, url_finale: LIEN });
+    const texte = "Programme — « éducation »";
+    const fiche = JSON.parse(readFileSync(resolve(import.meta.dirname, "../liens/dore-textes/extraction-html.json"), "utf8")) as Record<string, unknown>;
+    writeFileSync(join(liens, "extractions", `${empreinte(PAGE)}.json`), JSON.stringify({ ...fiche, sha256_contenu: empreinte(PAGE), texte_sha256: empreinte(Buffer.from(texte, "utf8")), longueur: Array.from(texte).length }), "utf8");
+    writeFileSync(join(liens, "textes", `${empreinte(Buffer.from(texte, "utf8"))}.txt`), texte, "utf8");
+
+    const etat = etatDesTaches(monde.contexte("a1", fournisseurDuRun(monde.repertoire_run)));
+
+    expect(etat.en_attente_test_des_liens).toBe(0);
+    expect(etat.notables[0]?.vue.pages_citees).toEqual([expect.objectContaining({ url_citee: LIEN, texte_disponible: true, origine: "page_conservee", texte })]);
+  });
+
+  it("D27 (E) : page conservée sans texte extrait, la réponse reste en attente du test des liens", () => {
+    monde = monter({ avec_lien: [0, 1, 2, 3] });
+    const liens = repertoireLiens(monde.repertoire_run);
+    mkdirSync(join(liens, "pages"), { recursive: true });
+    writeFileSync(join(liens, "pages", `${empreinte(PAGE)}.html`), PAGE);
+    poser(monde.repertoire_run, LIEN, { ...lireDore("existe.json"), url_citee: LIEN, url_finale: LIEN });
+    expect(etatDesTaches(monde.contexte("a1", fournisseurDuRun(monde.repertoire_run))).en_attente_test_des_liens).toBe(1);
   });
 
   it("répertoire présent mais vide (passage interrompu avant tout résultat) : les réponses restent en attente", () => {

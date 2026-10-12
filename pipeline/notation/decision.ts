@@ -8,6 +8,10 @@
  *
  * Les règles, dans l'ordre où elles s'appliquent :
  *
+ * 0. **Refus de l'API** (D32 du 2026-10-10). Une réponse qui porte la notation par règle
+ *    (`regle-refus.ts`) n'a aucune note de juge : hors échantillon, la règle donne la note
+ *    (`regle_refus_api`) ; dans l'échantillon, la double notation humaine reste exigée et prévaut,
+ *    la règle restant parmi les sources (`deciderParRegle`).
  * 1. **Juge retiré** (§7 ; D13 du 2026-10-03). Ses notations sont écartées partout : elles ne
  *    comptent ni dans l'accord, ni dans le désaccord, ni dans les drapeaux graves, et ne figurent
  *    jamais dans `notations_sources`.
@@ -22,6 +26,12 @@
  *    par un juge non retiré ou par cet humain). Accord des deux juges sans note commune : un humain
  *    tranche aussi, sous `accord_partiel_juges` (D15). Sinon, accord des deux juges
  *    (`accord_juges`), ou juge restant seul après un retrait (`juge_unique_apres_retrait`).
+ *
+ * **Renvoi d'attribution (D30 (2)).** Sur une Q-ATT qu'aucun texte ne permet de noter, un juge ne rend
+ * pas de note mais un renvoi (`schema/renvoi-humain.schema.json`) : il n'est pas manquant, il ne
+ * compte pas, et un humain est requis sous le motif `attribution_indecidable`, qui prime sur
+ * `extrait_invalide` (l'humain y décide lui-même la catégorie si son relevé est indécidable aussi).
+ * Le renvoi d'un juge retiré est écarté comme ses notations (D13).
  *
  * « S'accorder » est `analysis/note-lue.ts:notationsConcordent` (D14 (3)), seule égalité du dépôt.
  *
@@ -45,13 +55,15 @@ import type { Instant, MotifNotation, ObjetNote, Ulid } from "../../analysis/typ
 import { comparerChaines } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
 import { construireVerdict, noteCommune, noteDe, porteDrapeauGrave, type NoteRetenue, type Resolution } from "./note-retenue.ts";
-import type { NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
+import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, VerdictProduit } from "./types.ts";
 
 export interface EntreeDecision {
   readonly run: RunDeNotation;
   readonly objet_note: ObjetNote;
   /** Toutes les notations du run portant sur l'objet, juges retirés compris. */
   readonly notations: readonly NotationIndividuelle[];
+  /** Les renvois de juge portant sur l'objet (D30 (2)), juges retirés compris. */
+  readonly renvois: readonly RenvoiHumain[];
   readonly dans_echantillon_humain: boolean;
   readonly textes: TextesDeVerification;
   /** Fournis par l'appelant : le noyau n'engendre ni identifiant ni date. */
@@ -67,6 +79,7 @@ export const MOTIFS_ATTENTE = [
   "double_notation_humaine_incomplete",
   "arbitrage_echantillon_manquant",
   "accord_sans_note_commune",
+  "attribution_indecidable",
 ] as const;
 export type MotifAttente = (typeof MOTIFS_ATTENTE)[number];
 
@@ -100,6 +113,8 @@ export class JugeIndetermine extends Error {
 
 /** Les notations d'un objet, rangées par rôle. */
 interface Tri {
+  /** D32 : la notation par règle d'un refus de l'API (`regle-refus.ts`). */
+  readonly regles: readonly NotationIndividuelle[];
   readonly juges: readonly NotationIndividuelle[];
   readonly echantillon: readonly NotationIndividuelle[];
   readonly arbitrages: readonly NotationIndividuelle[];
@@ -110,6 +125,8 @@ interface Tri {
 /** Ce que disent les juges non retirés. */
 interface BilanJuges {
   readonly manquants: readonly string[];
+  /** Juges non retirés qui ont renvoyé la question vers l'humain (D30 (2)). */
+  readonly renvoyes: readonly string[];
   /** Notations à extrait valide : les seules qui comptent. */
   readonly comptees: readonly NotationIndividuelle[];
   readonly invalides: readonly NotationIndividuelle[];
@@ -120,7 +137,9 @@ interface BilanJuges {
 export function decider(entree: EntreeDecision): Decision {
   const juges = jugesDuRun(entree.run, entree.objet_note.id);
   const tri = trier(entree, juges);
-  const bilan = bilanDesJuges(tri.juges, juges.actifs, entree.textes);
+  if (tri.regles.length > 0) return deciderParRegle(entree, tri);
+  const renvoyes = jugesRenvoyes(entree, juges, tri.juges);
+  const bilan = bilanDesJuges(tri.juges, juges.actifs, renvoyes, entree.textes);
   return entree.dans_echantillon_humain ? deciderEchantillon(entree, tri, bilan) : deciderHorsEchantillon(entree, tri, bilan);
 }
 
@@ -138,10 +157,11 @@ export function jugesDuRun(run: RunDeNotation, objet_id: Ulid): { readonly actif
 /* ------------------------------------------------------------------ tri des entrées */
 
 function trier(entree: EntreeDecision, juges: { readonly actifs: readonly string[]; readonly retires: ReadonlySet<string> }): Tri {
-  const tri: Record<keyof Tri, NotationIndividuelle[]> = { juges: [], echantillon: [], arbitrages: [], appeles: [] };
+  const tri: Record<keyof Tri, NotationIndividuelle[]> = { regles: [], juges: [], echantillon: [], arbitrages: [], appeles: [] };
   for (const notation of entree.notations) {
     verifierAppartenance(notation, entree);
     if (notation.notateur.type === "juge") classerJuge(notation, juges, tri.juges, entree.objet_note.id);
+    else if (notation.notateur.type === "regle") tri.regles.push(notation);
     else casierHumain(notation, tri, entree.objet_note.id).push(notation);
   }
   verifierUnParNotateur(tri.juges, entree.objet_note.id);
@@ -187,6 +207,7 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
   ["erreur_grave", "appeles"],
   ["extrait_invalide", "appeles"],
   ["accord_partiel_juges", "appeles"],
+  ["attribution_indecidable", "appeles"],
 ]);
 
 /**
@@ -200,6 +221,7 @@ const CASIER_DU_MOTIF: ReadonlyMap<MotifNotation, Casier> = new Map<MotifNotatio
  * `accord_partiel_juges` est alors le seul motif admis.
  */
 function motifsHumainsAdmis(bilan: BilanJuges): readonly MotifNotation[] {
+  if (bilan.renvoyes.length > 0) return ["attribution_indecidable"];
   if (bilan.invalides.length > 0) return ["extrait_invalide"];
   return bilan.desaccord || bilan.grave ? ["desaccord_juges", "erreur_grave"] : ["accord_partiel_juges"];
 }
@@ -225,17 +247,49 @@ function verifierUnParNotateur(notations: readonly NotationIndividuelle[], objet
 
 /* ------------------------------------------------------------------ juges */
 
+/**
+ * Les juges non retirés qui ont renvoyé l'objet (D30 (2)). Un renvoi d'un autre run, d'un autre
+ * objet, d'un juge inconnu, en double, ou d'un juge qui a aussi noté l'objet est incohérent.
+ */
+function jugesRenvoyes(
+  entree: EntreeDecision,
+  juges: { readonly actifs: readonly string[]; readonly retires: ReadonlySet<string> },
+  notations: readonly NotationIndividuelle[],
+): readonly string[] {
+  const renvoyes: string[] = [];
+  for (const renvoi of entree.renvois) {
+    const juge = renvoi.notateur.id;
+    verifierRenvoi(renvoi, entree, juges);
+    if (juges.retires.has(juge)) continue;
+    if (renvoyes.includes(juge) || notations.some((n) => n.notateur.id === juge)) {
+      throw new NotationsIncoherentes(entree.objet_note.id, `le juge ${juge} porte à la fois plusieurs issues (notation ou renvoi) sur l'objet.`);
+    }
+    renvoyes.push(juge);
+  }
+  return renvoyes;
+}
+
+function verifierRenvoi(renvoi: RenvoiHumain, entree: EntreeDecision, juges: { readonly actifs: readonly string[]; readonly retires: ReadonlySet<string> }): void {
+  const juge = renvoi.notateur.id;
+  const connu = juges.actifs.includes(juge) || juges.retires.has(juge);
+  if (renvoi.run_id !== entree.run.id || renvoi.objet_note.id !== entree.objet_note.id || renvoi.contexte !== "run" || !connu) {
+    throw new NotationsIncoherentes(entree.objet_note.id, `le renvoi ${renvoi.id} porte sur ${renvoi.objet_note.id}, run ${renvoi.run_id}, contexte ${renvoi.contexte}, juge ${juge}.`);
+  }
+}
+
 function bilanDesJuges(
   notations: readonly NotationIndividuelle[],
   actifs: readonly string[],
+  renvoyes: readonly string[],
   textes: TextesDeVerification,
 ): BilanJuges {
-  const presents = new Set(notations.map((n) => n.notateur.id));
+  const presents = new Set([...notations.map((n) => n.notateur.id), ...renvoyes]);
   const triees = [...notations].sort((a, b) => comparerChaines(a.notateur.id, b.notateur.id));
   const comptees = triees.filter((n) => controlerExtrait(n, textes).valide);
   const [premiere, seconde] = comptees;
   return {
     manquants: actifs.filter((id) => !presents.has(id)),
+    renvoyes,
     comptees,
     invalides: triees.filter((n) => !comptees.includes(n)),
     desaccord: premiere !== undefined && seconde !== undefined && !notationsConcordent(premiere, seconde),
@@ -265,6 +319,7 @@ function deciderHorsEchantillon(entree: EntreeDecision, tri: Tri, bilan: BilanJu
 
 function motifsHumainRequis(bilan: BilanJuges): MotifAttente[] {
   const motifs: MotifAttente[] = [];
+  if (bilan.renvoyes.length > 0) motifs.push("attribution_indecidable");
   if (bilan.desaccord) motifs.push("desaccord_juges");
   if (bilan.invalides.length > 0) motifs.push("extrait_invalide");
   if (bilan.grave) motifs.push("drapeau_grave");
@@ -308,6 +363,38 @@ function accordDesJuges(entree: EntreeDecision, premiere: NotationIndividuelle, 
 /** D13 : hors échantillon, le juge restant seul donne la note. */
 function jugeUnique(entree: EntreeDecision, restant: NotationIndividuelle): Decision {
   return verdict(entree, { note: noteDe(restant), mode: "juge_unique_apres_retrait", sources: [restant], humains: [], desaccord: false });
+}
+
+/* ------------------------------------------------------------------ règle (D32) */
+
+/**
+ * Un refus de l'API noté par règle (D32). Aucun juge ne l'a noté ni renvoyé : une notation ou un
+ * renvoi de juge, même d'un juge retiré, est incohérent. Hors échantillon, la règle donne la note
+ * (`regle_refus_api`), sans humain. Dans l'échantillon, le §7 exige la double notation humaine
+ * « quel que soit l'accord des juges » : elle reste exigée, et la note humaine prévaut ; la règle
+ * figure parmi les sources, comme les juges d'une réponse ordinaire, pour que la comparaison reste
+ * lisible. Le retrait d'un juge (D13) ne change rien ici.
+ */
+function deciderParRegle(entree: EntreeDecision, tri: Tri): Decision {
+  const regle = regleUnique(entree, tri);
+  if (entree.dans_echantillon_humain) {
+    return deciderEchantillon(entree, tri, { manquants: [], renvoyes: [], comptees: [regle], invalides: [], desaccord: false, grave: false });
+  }
+  if (tri.appeles.length + tri.echantillon.length + tri.arbitrages.length > 0) {
+    throw new NotationsIncoherentes(entree.objet_note.id, "notation humaine sur un refus de l'API noté par règle hors de l'échantillon : rien ne l'appelle (D32).");
+  }
+  return verdict(entree, { note: noteDe(regle), mode: "regle_refus_api", sources: [regle], humains: [], desaccord: false });
+}
+
+function regleUnique(entree: EntreeDecision, tri: Tri): NotationIndividuelle {
+  const id = entree.objet_note.id;
+  const [regle, ...autres] = tri.regles;
+  if (regle === undefined || autres.length > 0) throw new NotationsIncoherentes(id, `${tri.regles.length} notations par règle au lieu d'une.`);
+  if (regle.motif_notation !== "regle_refus_api") throw new NotationsIncoherentes(id, `la notation par règle ${regle.id} porte le motif ${String(regle.motif_notation)}.`);
+  if (entree.notations.some((n) => n.notateur.type === "juge") || entree.renvois.length > 0) {
+    throw new NotationsIncoherentes(id, "notation ou renvoi de juge sur un refus de l'API noté par règle : aucun juge ne note un refus (D32).");
+  }
+  return regle;
 }
 
 /* ------------------------------------------------------------------ échantillon */
