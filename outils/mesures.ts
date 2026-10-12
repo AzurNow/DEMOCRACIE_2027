@@ -43,6 +43,22 @@ import { ajouterAuRegistre, cheminRegistre, lireRegistre } from "../validation/i
 import { chargerStaging, mesureDe, type Staging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
+const OPTIONS: readonly string[] = [
+  "racine",
+  "ecrire",
+  "staging",
+  "lots",
+  "decisions",
+  "mesures",
+  "data",
+  "mesure",
+  "renvoyer",
+  "theme",
+  "date",
+  "decision",
+  "motif",
+];
+
 interface Options {
   readonly ecrire: boolean;
   /** Dépôt dont l'arbre doit être propre et dont HEAD est inscrit par `--renvoyer --ecrire`. */
@@ -209,7 +225,7 @@ function enregistrer(table: Arguments, options: Options): void {
 }
 
 function principal(): void {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const options = lireOptions(table);
   if (options.renvoyer.length > 0) {
     renvoyer({ ...options, mesure_id: options.renvoyer });

@@ -20,8 +20,7 @@ import { analyserArguments } from "./arguments.ts";
 const USAGE = "usage : pnpm go-no-go <repertoire_run>";
 
 function repertoireDemande(bruts: readonly string[]): string {
-  const options = analyserArguments(bruts);
-  if (options.size > 0) throw new Error(`option(s) inconnue(s) : ${[...options.keys()].map((cle) => `--${cle}`).join(", ")}. ${USAGE}`);
+  analyserArguments(bruts, []);
   const positionnels = bruts.filter((argument) => !argument.startsWith("--"));
   const [repertoire] = positionnels;
   if (repertoire === undefined || positionnels.length > 1) throw new Error(`un seul répertoire de run est attendu. ${USAGE}`);

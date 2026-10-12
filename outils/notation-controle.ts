@@ -25,8 +25,7 @@ const USAGE = "usage : pnpm notation:controle <repertoire_run>";
 
 /** Un seul argument positionnel, le répertoire du run ; aucune option n'est reconnue. */
 function repertoireDemande(bruts: readonly string[]): string {
-  const options = analyserArguments(bruts);
-  if (options.size > 0) throw new Error(`option(s) inconnue(s) : ${[...options.keys()].map((cle) => `--${cle}`).join(", ")}. ${USAGE}`);
+  analyserArguments(bruts, []);
   const positionnels = bruts.filter((argument) => !argument.startsWith("--"));
   const [repertoire] = positionnels;
   if (repertoire === undefined || positionnels.length > 1) throw new Error(`un seul répertoire de run est attendu. ${USAGE}`);

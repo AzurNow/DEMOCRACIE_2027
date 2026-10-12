@@ -58,6 +58,8 @@ import type {
   Tirage,
 } from "../pipeline/questions/types.ts";
 
+const OPTIONS: readonly string[] = ["tirage", "questions", "items", "mesures", "run"];
+
 /** Ce que la commande lit du run, en plus de ce que la symétrie en lit. */
 interface RunLu extends RunAuGel {
   readonly versions: { readonly donnees_commit?: string };
@@ -72,8 +74,15 @@ interface Entrees {
   readonly run: RunLu;
 }
 
+/** Une erreur de syntaxe nomme le fichier qui la porte : la barrière lit cinq entrées. */
 function lireJson(chemin: string): unknown {
-  return JSON.parse(readFileSync(chemin, "utf8"));
+  const contenu = readFileSync(chemin, "utf8");
+  try {
+    return JSON.parse(contenu);
+  } catch (erreur) {
+    if (!(erreur instanceof SyntaxError)) throw erreur;
+    throw new SyntaxError(`${chemin} : JSON illisible (${erreur.message}).`, { cause: erreur });
+  }
 }
 
 function lireObjet<T>(nom: NomSchema, chemin: string): T {
@@ -103,7 +112,7 @@ function lireRepertoireItems(repertoire: string): readonly Item[] {
 }
 
 function lireEntrees(): Entrees {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const chemins = {
     tirage: obligatoire(table, "tirage", "le tirage gelé du run"),
     questions: obligatoire(table, "questions", "le jeu complet des questions engendrées au gel, publié avec le run"),

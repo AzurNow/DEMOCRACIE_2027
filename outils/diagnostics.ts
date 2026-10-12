@@ -22,9 +22,11 @@ import { lireDiagnostics } from "../validation/io/diagnostics-fichier.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
+const OPTIONS: readonly string[] = ["staging", "data", "lots", "decisions", "diagnostics"];
+
 function lireChemins(): Chemins {
   const racine = resolve(import.meta.dirname, "..");
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   return {
     staging: texte(table, "staging", resolve(racine, "staging")),
     data: texte(table, "data", resolve(racine, "data/items")),

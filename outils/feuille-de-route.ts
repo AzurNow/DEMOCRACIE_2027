@@ -19,6 +19,8 @@ import { validerFeuilleDeRoute } from "./feuille-de-route/lecture.ts";
 import { genererMarkdown } from "./feuille-de-route/markdown.ts";
 import { estAJour } from "./feuille-de-route/verification.ts";
 
+const OPTIONS: readonly string[] = ["verifier"];
+
 interface Chemins {
   readonly json: string;
   readonly markdown: string;
@@ -55,7 +57,7 @@ function ecrire(cheminMarkdown: string, genere: string): void {
 }
 
 function principal(): void {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const chemins = cheminsParDefaut();
   const genere = engendrerMarkdown(chemins.json);
 

@@ -42,6 +42,18 @@ import { instantLocal } from "../validation/serveur/contexte.ts";
 import { evaluerLots, type Introuvable, type RenvoyeDuLot, type Verdict } from "./evaluation-lots.ts";
 import { erreurDeSchema } from "./schemas/valider.ts";
 
+const OPTIONS: readonly string[] = [
+  "racine",
+  "ecrire",
+  "staging",
+  "lots",
+  "decisions",
+  "mesures",
+  "data",
+  "arbitrage",
+  "notifications",
+];
+
 interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
@@ -62,7 +74,7 @@ interface NonConforme {
 }
 
 function lireOptions(): Options {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   // `--racine` : le dépôt dont l'arbre doit être propre et dont HEAD est inscrit (bac d'essai des tests).
   const racine = texte(table, "racine", resolve(import.meta.dirname, ".."));
   return {

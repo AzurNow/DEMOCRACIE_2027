@@ -38,10 +38,9 @@ function repertoireDe(bruts: readonly string[]): string {
 function principal(): void {
   try {
     const bruts = process.argv.slice(2);
-    const inconnues = [...analyserArguments(bruts).keys()].filter((cle) => cle !== "nom" && cle !== "case");
-    if (inconnues.length > 0) throw new Error(`option(s) inconnue(s) : ${inconnues.map((cle) => `--${cle}`).join(", ")}. ${USAGE}`);
+    const options = analyserArguments(bruts, ["nom", "case"]);
     const repertoire = repertoireDe(bruts);
-    const nom = obligatoire(analyserArguments(bruts), "nom", "le nom de l'auteur qui contresigne (annexe F).");
+    const nom = obligatoire(options, "nom", "le nom de l'auteur qui contresigne (annexe F).");
     const signee = contresignerFichier(repertoire, { nom, declarations: multiples(bruts, "case").map(declarationDe), date: new Date().toISOString() });
     process.stdout.write(`Checklist de l'annexe F contresignée par ${nom} le ${String(signee.contreseing?.date)} — ${repertoire}/checklist.json\n`);
   } catch (erreur) {

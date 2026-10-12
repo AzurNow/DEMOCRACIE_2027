@@ -21,6 +21,8 @@ import { resolve } from "node:path";
 import { parse } from "yaml";
 import { analyserArguments, texte } from "./arguments.ts";
 
+const OPTIONS: readonly string[] = ["perimetre"];
+
 export interface PreuveContact {
   readonly url: string;
   readonly date: string;
@@ -100,7 +102,7 @@ export function contactsDuPerimetre(perimetre: unknown): readonly ContactCampagn
 }
 
 function principal(): void {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const chemin = texte(table, "perimetre", resolve(import.meta.dirname, "..", "config/perimetre.yaml"));
   const contacts = contactsDuPerimetre(parse(readFileSync(chemin, "utf8")) as unknown);
   process.stdout.write(`${JSON.stringify({ perimetre: chemin, candidats: contacts })}\n`);

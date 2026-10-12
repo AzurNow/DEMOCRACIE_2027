@@ -14,6 +14,8 @@ import { join, resolve } from "node:path";
 import { analyserArguments, drapeau } from "./arguments.ts";
 import { estAnalysable, rapport, type FichierSource } from "./proprete/rapport.ts";
 
+const OPTIONS: readonly string[] = ["tout"];
+
 const RACINE = resolve(import.meta.dirname, "..");
 
 function fichiersSuivis(): string[] {
@@ -23,7 +25,7 @@ function fichiersSuivis(): string[] {
 }
 
 function principal(): void {
-  const options = analyserArguments(process.argv.slice(2));
+  const options = analyserArguments(process.argv.slice(2), OPTIONS);
   const sources: FichierSource[] = fichiersSuivis()
     .filter(estAnalysable)
     .sort()

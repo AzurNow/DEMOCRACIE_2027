@@ -35,6 +35,22 @@ import { lireTexteCanonique } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { accesTexteCorrections } from "../validation/serveur/emplacements.ts";
 
+const OPTIONS: readonly string[] = [
+  "racine",
+  "ecrire",
+  "data",
+  "notifications",
+  "staging",
+  "item",
+  "contestation",
+  "decision",
+  "version-jugee",
+  "corrections",
+  "motivation-fichier",
+  "dissidence-fichier",
+  "arbitre-seul",
+];
+
 interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
@@ -91,7 +107,7 @@ function construire(table: Arguments, bruts: readonly string[], date: string): D
 
 function principal(): void {
   const bruts = process.argv.slice(2);
-  const table = analyserArguments(bruts);
+  const table = analyserArguments(bruts, OPTIONS);
   const options = lireOptions(table);
   if (options.ecrire && !ecriturePermise(options.racine)) return;
   const item_id = obligatoire(table, "item", "seul un item publié porte une contestation.");
