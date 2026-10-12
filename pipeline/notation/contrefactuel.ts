@@ -31,8 +31,8 @@
  *    comptée à part (`paires_ecartees`). Un côté renvoyé n'est pas manquant. Toutes les paires
  *    écartées : le taux du juge est indéfini (`toutes_paires_ecartees`), jamais 0 %, et il n'est pas
  *    retiré (rien ne mesure son biais) ; le critère go/no-go est alors rouge (effectifs absents).
- * 4. **Taux et retrait.** Taux = changements / taille du sous-ensemble. Retrait si
- *    `changements × 100 > 3 × n`, en entiers : « au-delà de 3 % » est strict (6 sur 200 n'est pas
+ * 4. **Taux et retrait.** Taux = changements / paires comptées (le sous-ensemble moins les paires
+ *    écartées au 3 bis). Retrait si `changements × 100 > 3 × n`, `n` les paires comptées, en entiers : « au-delà de 3 % » est strict (6 sur 200 n'est pas
  *    retiré, 7 l'est).
  * 5. **Issue.** Aucun retrait : échantillon humain à 10 % ; un seul : 25 %. Les deux : le run est
  *    invalide, avec sa raison, et aucun juge n'est retenu (D16 (3)).

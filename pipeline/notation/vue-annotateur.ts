@@ -13,8 +13,8 @@
  * - **la version de la grille** (`VERSION_GRILLE_HUMAINE`), sans aucun texte de consigne : la grille
  *   elle-même (catégories, drapeaux, sourçage) est celle du §7, et un texte destiné à l'humain
  *   vivrait dans `prompts/` ou dans l'écran, pas ici (règle 6) ;
- * - **le verdict d'existence de chaque lien**, établi par le test HTTP déterministe du §7 (lot
- *   `test-liens`, à venir) et reçu tout fait. L'humain juge seulement le soutien. Un lien de la
+ * - **le verdict d'existence de chaque lien**, établi par le test HTTP déterministe du §7
+ *   (`pipeline/liens`) et reçu tout fait. L'humain juge seulement le soutien. Un lien de la
  *   réponse sans verdict d'existence empêche la vue (`LienSansVerdictExistence`) : jamais un
  *   « existe » par défaut. Un verdict en double, ou pour un lien que la réponse ne cite pas, est une
  *   entrée incohérente (`ExistencesIncoherentes`).

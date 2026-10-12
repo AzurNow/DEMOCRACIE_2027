@@ -44,8 +44,8 @@ function imprimerAvertissementsStrict(avertissementsStrict: readonly string[]): 
 }
 
 /**
- * Imprime le rapport complet et retourne `true` si tout est conforme : méta-schéma, les 45
- * exemples, et aucun fichier orphelin. L'appelant décide seul du code de sortie.
+ * Imprime le rapport complet et retourne `true` si tout est conforme : méta-schéma, chaque
+ * exemple, et aucun fichier orphelin. L'appelant décide seul du code de sortie.
  */
 export function imprimerRapport(
   rapport: RapportValidation,

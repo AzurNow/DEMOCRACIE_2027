@@ -223,7 +223,8 @@ export interface RunDeNotation {
   };
   /**
    * `run.schema.json#/properties/contrefactuel_candidats`, réduit à la taille du sous-ensemble :
-   * le dénominateur du taux de chaque juge. Absent tant que le test n'est pas publié.
+   * le dénominateur du taux de chaque juge plus ses paires écartées (D31 (1)). Absent tant que le
+   * test n'est pas publié.
    */
   readonly contrefactuel_candidats?: { readonly taille: number };
 }

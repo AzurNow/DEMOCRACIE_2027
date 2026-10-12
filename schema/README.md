@@ -6,7 +6,7 @@ qu'il fallait combler pour pouvoir implémenter les sections 4 à 8 ; chaque com
 dans le champ `description` du schéma concerné, et les comblements qui touchent une **règle de
 mesure** sont listés plus bas comme candidats à un amendement (§9).
 
-## Les vingt-quatre fichiers
+## Les fichiers
 
 | Fichier | Objet | Pourquoi il existe |
 | --- | --- | --- |
@@ -35,6 +35,7 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `perimetre.schema.json` | périmètre saisi d'un run | §3, §5, §6, §10 : `config/perimetre.yaml`, écrit à la main par l'auteur seul, aux noms de `run.perimetre` (décision de l'auteur du 2026-10-02). Valide le brouillon (clés à null, listes vides) comme le périmètre complet ; `pipeline/questions/charger-perimetre.ts` refuse un brouillon pour un run, applique la règle d'inclusion du §3, compte les items P au gel et rend l'instantané `run.perimetre`, revalidé contre `run.schema.json`, et les `ParametresTirage`. Aucune clé calculée au gel n'y est admise. Pas d'exemples au manifeste : ses cas limites sont dans `tests/questions/charger-perimetre.test.ts` |
 | `existence-lien.schema.json` | résultat du test HTTP d'un lien cité | §7, « le lien cité existe (test HTTP déterministe) », décisions D20 et D21 : `runs/<date>/volume/liens/<sha256 de l'URL>.json`, un par URL citée, écrit une fois par `pipeline/liens` (Python) et lu par la notation (`pipeline/notation/fournisseur-fichiers.ts`). Les champs d'un lien de notation (verdict, date du test, URL finale, code HTTP, empreinte, lien d'archive) renvoient à `notation.schema.json` ; s'y ajoutent la version de la table `config/test-liens.toml`, le journal des tentatives, la page conservée et l'issue Wayback (Save Page Now, recherche d'instantané avec téléchargement de sa version brute, ou rien). Vérifié comme la collecte : fichiers dorés de `tests/liens/dore/` |
 | `extraction-page-lien.schema.json` | texte d'une copie de page citée | §7, « la page citée contient bien l'affirmation (juge, puis audit humain) », décision D27 (E) (charge-juge-v3) : `runs/<date>/volume/liens/extractions/<sha256_contenu>.json`, une fiche par copie conservée par le test des liens (page d'un lien qui existe, version brute d'un instantané téléchargé, D21), écrite une fois par `pipeline/liens/textes.py` (`pnpm liens:textes`) et lue par la notation. Extraite : le texte `volume/liens/textes/<texte_sha256>.txt` et l'extracteur de la collecte qui l'a produit (`html.parser` ou `pymupdf`, version, options, pages ou encodage, renvoyés à `extraction-texte.schema.json`) ; refusée : le motif. Vérifié comme la collecte : fichiers dorés de `tests/liens/dore-textes/` |
+| `checklist.schema.json` | checklist de run de l'annexe F | Annexe F, décision D24 (4) : `runs/<date>/checklist.json`, écrite par `pnpm go-no-go` (cases calculées, avec leurs appuis et leur état) et contresignée par `pnpm go-no-go:contresigner` (état de chaque case déclarée, motif de chaque case non faite, nom et instant du contreseing). Le texte de chaque case est celui du protocole, mot pour mot |
 | `renvoi-humain.schema.json` | renvoi d'un juge vers la notation humaine | §7, décision D30 (2) : `runs/<date>/volume/renvois/<id>.json`, écrit une fois par la chaîne de notation à la place de la note d'un juge, sur une question d'attribution qu'aucun texte ne permet de noter (candidat du périmètre non interrogé cité, nom ambigu dont un candidat possible est attendu, formulation orientée à prémisse fausse avec un nom cité). Porte les noms relevés, le bloc d'attribution rattaché et la raison ; la réponse part en notation humaine sous `attribution_indecidable`, et le nombre de renvois est publié dans `run.json` (`renvois_attribution_indecidable`) |
 
 Quatre objets étaient demandés ; il en a fallu neuf. Les quatre ajoutés ne sont pas des commodités :
@@ -140,11 +141,11 @@ exactement un `principal` — au plus un pour une question d'attribution, aucun 
 
 ## Exemples et table de vérité
 
-`exemples/manifeste.json` liste les 212 exemples avec, pour chacun, le résultat attendu de la
+`exemples/manifeste.json` liste les exemples avec, pour chacun, le résultat attendu de la
 validation et la règle du protocole qu'il teste. Les fichiers `invalide-*` **doivent** être rejetés :
 ce sont eux les tests. Les rejets attendus, objet par objet :
 
-| Objet | Ce que les trois exemples invalides vérifient |
+| Objet | Ce que les exemples invalides vérifient |
 | --- | --- |
 | item | source T3 déclarée vérifiée · item vérifié avec une seule validation · item d'absence portant une citation de position · item O vérifié dont l'état postérieur est T3 · item vérifié dont la source T2 n'a pas d'attestation d'écoute · item en attente dont la source T2 porte déjà une attestation · site de parti non déclaré de campagne déclaré T1 · citation tirée d'un PDF sans page (0.13) · source sans `format` (0.13) · item rejeté portant une attestation d'écoute (0.13) · item non évaluable portant une attestation d'écoute (0.13) · décision du panel sans statut antérieur · item portant son thème · item sans `mesure_version` · quantification hors de `dimensions[]` · contestation portant l'adresse du contestataire |
 | mesure | mesure fictive sans vérification contre les corpus T1 · thème hors des dix · identifiant lisible au lieu d'opaque |
@@ -169,7 +170,8 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | renvoi-humain | renvoi sur une question qui n'est pas d'attribution (D30) |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
-depuis, `pnpm check` rejoue le tout : 24 schémas au registre, 212/212 exemples conformes au manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
+depuis, `pnpm check` rejoue le tout et imprime les comptes : chaque schéma au registre, chaque exemple
+contre le manifeste. Le runner vit dans `outils/schemas.ts` (ajv 8.20.0 et
 ajv-formats 3.0.1, draft 2020-12) : `pnpm schemas` le lance seul, `pnpm check` l'exécute avec les
 types et ESLint.
 

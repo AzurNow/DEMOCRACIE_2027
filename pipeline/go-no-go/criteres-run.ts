@@ -10,7 +10,7 @@
  *   prévoit (« répartition par thème identique quand les items le permettent ; sinon, l'écart est
  *   imprimé »), `pnpm symmetry` laisse partir le run, et le §12 n'oppose aux tests « restés verts »
  *   que le run invalide, que seule une symétrie rouge produit. La valeur publiée garde
- *   `ecart_tolere`, visible. Lecture à confirmer par l'auteur.
+ *   `ecart_tolere`, visible. Lecture confirmée par l'auteur (D25 (4)).
  * - `reponses_manquantes` : `analysis/seuils.ts` (`partReponsesManquantes`, `runIncomplet`), seule
  *   définition du seuil de 20 % (en entiers : 5 × manquantes > total, donc 20 % exactement passe).
  * - `erreurs_graves_revues` : un verdict `erreur_grave` sans revue humaine effectuée, ou une réponse

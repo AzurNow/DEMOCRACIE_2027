@@ -122,11 +122,6 @@ function soutiensDe(brut: readonly Objet[]): readonly SoutienSaisi[] {
   return brut.map((s) => ({ url_citee: s["url_citee"] as string, verdict_soutien: s["verdict_soutien"] as SoutienSaisi["verdict_soutien"] }));
 }
 
-/**
- * La saisie reconstruite champ par champ, après contrôle de forme. Les assertions de type portent sur
- * des champs que `erreursDemande` vient de vérifier ; les valeurs d'énumération restent à contrôler
- * par le schéma, dans `construireNotationHumaine`.
- */
 /** Recopie champ par champ ; la valeur de la catégorie décidée est contrôlée par le domaine. */
 function saisieAttributionDe(brut: Objet, commune: Pick<SaisieHumaine, "cite" | "soutiens" | "extrait">): SaisieAttribution {
   const note = brut["note_decidee"] as Objet | undefined;
@@ -147,6 +142,11 @@ function saisieAttributionDe(brut: Objet, commune: Pick<SaisieHumaine, "cite" | 
   };
 }
 
+/**
+ * La saisie reconstruite champ par champ, après contrôle de forme. Les assertions de type portent sur
+ * des champs que `erreursDemande` vient de vérifier ; les valeurs d'énumération restent à contrôler
+ * par le schéma, dans `construireNotationHumaine`.
+ */
 function saisieDe(brut: Objet): SaisieHumaine {
   const extrait = brut["extrait"] as Objet | undefined;
   const commune = {

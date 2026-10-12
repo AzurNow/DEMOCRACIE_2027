@@ -504,7 +504,7 @@
   "lots": [
     {
       "id": "protocole",
-      "titre": "Protocole v0.2, à geler en v1.0",
+      "titre": "Protocole (0.15 au 2026-10-12), à geler en v1.0",
       "jalon": "J1",
       "niveau": "T1",
       "agent": "auteur",
@@ -519,7 +519,7 @@
     },
     {
       "id": "schemas",
-      "titre": "Schémas JSON et 45 exemples",
+      "titre": "Schémas JSON et leurs exemples",
       "jalon": "J2",
       "niveau": "T2",
       "agent": "fait",
@@ -555,7 +555,7 @@
     },
     {
       "id": "outillage",
-      "titre": "ajv sur les 45 exemples, ESLint à deux règles de complexité",
+      "titre": "ajv sur les exemples de schéma, ESLint à deux règles de complexité",
       "jalon": "J2",
       "niveau": "T3",
       "agent": "sonnet puis opus",
@@ -600,7 +600,7 @@
       "id": "perimetre-prompts",
       "titre": "config/perimetre.yaml et prompts/ versionnés",
       "jalon": "J1",
-      "niveau": "T0",
+      "niveau": "T1",
       "agent": "auteur avec fable",
       "taille": "S",
       "temps_auteur_h": 5,
@@ -611,7 +611,7 @@
         "D5",
         "D35"
       ],
-      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur. Le 2026-10-09 : dossier de recherche au 15 octobre produit (relevés du 9, à refaire le 15) ; D28 tranchée (primaire, intention, outil sans web, clause Gemini). Prompts d'extraction et de reformulation en PR #104 (brouillon, relecture de l'auteur) ; prompt juge après charge-juge-v3 (D27). Le 2026-10-12 : D35 tranchée à la relecture de la PR #104 (page calculée par le code seul, positions rapportées par la presse extraites)."
+      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ contient les gabarits, et depuis #104 les prompts d'extraction et de reformulation (1.0.0) ; les prompts des juges restent à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur. Le 2026-10-09 : dossier de recherche au 15 octobre produit (relevés du 9, à refaire le 15) ; D28 tranchée (primaire, intention, outil sans web, clause Gemini). Prompts d'extraction et de reformulation en PR #104 (fusionnée le 2026-10-12) ; prompt juge après charge-juge-v3 (D27). Le 2026-10-12 : D35 tranchée à la relecture de la PR #104 (page calculée par le code seul, positions rapportées par la presse extraites)."
     },
     {
       "id": "collecte",
@@ -664,7 +664,7 @@
         "D7",
         "D35"
       ],
-      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas. Conformité n° 2 et 3 (2026-09-24, protocole 0.6) : liste d'attribution au gel sur les candidats interrogés, noms des candidats portés par le run (libelle, nom). Alignement 0.9 (2026-09-25, #30) : tirage.exclusions (n° 36), reprise par identifiant et trois empreintes dans signature.ts (n° 35), une Q-ATT par mesure avec son propre quota (n° 39), strates vides compensées et publiées (n° 38). Le 2026-09-27 : symétrie rouge ⇒ planifié ou invalide, seuil de couverture dans les deux sens, items P comptés au gel, régime et fenêtre d'inclusion (#39, n° 10, 19, 21) ; répartition par thème jugée sur les tirables, graine vérifiée, prémisse résolue au gel (#41, n° 23, 24, 27, 37) ; quotas publiés, sens préservé, tirage vide rouge (#42, n° 58, 59, 60). Le 2026-09-27 (#49, protocole 0.13) : pnpm symmetry refuse un jeu de questions incomplet ; run invalide sans go/no-go, avec publication et dépôt ; échantillon humain et contrefactuel sur SplitMix64. Reste : vérifier que les items reçus sont ceux du gel (DETTE 2026-09-28, point 2). Le 2026-10-01 : septième condition quota_par_strate_respecte, donnees_commit obligatoire (#59). Le 2026-10-02 : itemsPAuGel, liste des items P comptés au gel figée dans le run (#66) ; URL de sondage normalisées, normalisation-url-v1 (#68, n° 36). Reste : chargeur du périmètre (n° 23, 25). Le 2026-10-12 (D35 (4), #111) : « à le » ⇒ « au », « à les » ⇒ « aux » au remplissage des gabarits, « Le »/« Les » après « à » ⇒ ArticleMajusculeApresA. Reste : contrôle de la reformulation sur la mesure contractée (DETTE 2026-10-12 après-midi, point 1)."
+      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas. Conformité n° 2 et 3 (2026-09-24, protocole 0.6) : liste d'attribution au gel sur les candidats interrogés, noms des candidats portés par le run (libelle, nom). Alignement 0.9 (2026-09-25, #30) : tirage.exclusions (n° 36), reprise par identifiant et trois empreintes dans signature.ts (n° 35), une Q-ATT par mesure avec son propre quota (n° 39), strates vides compensées et publiées (n° 38). Le 2026-09-27 : symétrie rouge ⇒ planifié ou invalide, seuil de couverture dans les deux sens, items P comptés au gel, régime et fenêtre d'inclusion (#39, n° 10, 19, 21) ; répartition par thème jugée sur les tirables, graine vérifiée, prémisse résolue au gel (#41, n° 23, 24, 27, 37) ; quotas publiés, sens préservé, tirage vide rouge (#42, n° 58, 59, 60). Le 2026-09-27 (#49, protocole 0.13) : pnpm symmetry refuse un jeu de questions incomplet ; run invalide sans go/no-go, avec publication et dépôt ; échantillon humain et contrefactuel sur SplitMix64. Les items reçus sont ceux du gel depuis #57 (DETTE 2026-09-28, point 2, rayé). Le 2026-10-01 : septième condition quota_par_strate_respecte, donnees_commit obligatoire (#59). Le 2026-10-02 : itemsPAuGel, liste des items P comptés au gel figée dans le run (#66) ; URL de sondage normalisées, normalisation-url-v1 (#68, n° 36). Chargeur du périmètre livré par #72 (n° 23, 25). Le 2026-10-12 (D35 (4), #111) : « à le » ⇒ « au », « à les » ⇒ « aux » au remplissage des gabarits, « Le »/« Les » après « à » ⇒ ArticleMajusculeApresA. Reste : contrôle de la reformulation sur la mesure contractée (DETTE 2026-10-12 après-midi, point 1)."
     },
     {
       "id": "interrogation",
@@ -899,9 +899,9 @@
     }
   ],
   "anomalies": [
-    "README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.",
-    "CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.",
-    "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.",
+    "README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre. Encodage réglé le 2026-09-23 (bc6b3e7, lot 1 de la revue : UTF-8, fins de ligne LF) ; le contenu reste un titre seul (revue du 2026-10-12, constat 55).",
+    "CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site. Au 2026-10-12, symmetry et run:dry existent ; run:live, analyze et build:site manquent toujours (revue du 2026-10-12, constat 54).",
+    "L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md. Réglé le 2026-09-25 par le protocole 0.11 (7f60986), et gardé depuis par tests/protocole-annexe-a.test.ts.",
     "Le suivi du taux de « non évaluable » par annotateur était donné pour manquant par docs/DETTE.md alors qu'il était implémenté depuis le 2026-09-17 : entrée corrigée le 2026-09-19.",
     "schema/commun.schema.json, $defs/theme : la description dit qu'une position hors des dix thèmes « est enregistrée mais n'entre pas dans le tirage », alors que le §3 (0.11) dit qu'elle n'est pas enregistrée. Relevé le 2026-10-12."
   ]
