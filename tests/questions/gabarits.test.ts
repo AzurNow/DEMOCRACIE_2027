@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ArticleMajusculeApresA,
   GABARITS,
   gabaritParCode,
   gabaritsPourType,
@@ -234,5 +235,155 @@ describe("remplissage du texte neutre", () => {
     expect(texte).toBe(
       "Quels candidats à la présidentielle 2027 proposent réduire la taxe sur les fibres ?",
     );
+  });
+});
+
+/**
+ * D35 (4) : « [candidat] s'oppose-t-il ou elle à [mesure] ? » contracte « à le » en « au » et
+ * « à les » en « aux » au remplissage. La règle porte sur la préposition « à » placée juste avant
+ * `[mesure]`, jamais sur un code de gabarit ; Q-NEG est aujourd'hui le seul gabarit concerné.
+ */
+describe("contraction de « à le » et « à les » devant la mesure (D35 (4))", () => {
+  const CANDIDAT = "Candidat demo-alpha";
+
+  function negative(formulation_mesure: string): string {
+    return remplirTexteNeutre(gabaritParCode("Q-NEG"), {
+      libelle_candidat: CANDIDAT,
+      formulation_mesure,
+    });
+  }
+
+  it("cas 1 : Q-NEG + « le … » donne « au … »", () => {
+    expect(negative("le budget de la défense")).toBe(
+      "Candidat demo-alpha s'oppose-t-il ou elle au budget de la défense ?",
+    );
+  });
+
+  it("cas 2 : Q-NEG + « les … » donne « aux … »", () => {
+    expect(negative("les retraites à 60 ans")).toBe(
+      "Candidat demo-alpha s'oppose-t-il ou elle aux retraites à 60 ans ?",
+    );
+  });
+
+  it("cas 3 : Q-NEG + « la … » reste inchangé", () => {
+    expect(negative("la retraite à 60 ans")).toBe(
+      "Candidat demo-alpha s'oppose-t-il ou elle à la retraite à 60 ans ?",
+    );
+  });
+
+  it("cas 4 : Q-NEG + « l'… » ou « l’… » (apostrophe droite ou typographique) reste inchangé", () => {
+    expect(negative("l'impôt sur la fortune")).toBe(
+      "Candidat demo-alpha s'oppose-t-il ou elle à l'impôt sur la fortune ?",
+    );
+    expect(negative("l\u2019impôt sur la fortune")).toBe(
+      "Candidat demo-alpha s'oppose-t-il ou elle à l\u2019impôt sur la fortune ?",
+    );
+  });
+
+  it("cas 5 : Q-NEG + un mot qui commence par « le » ou « les » sans être l'article reste inchangé", () => {
+    for (const mesure of [
+      "lesdites réformes",
+      "leur suppression",
+      "legs aux associations",
+      "lequel des deux projets",
+      "le",
+      "les",
+      "le\u00a0budget",
+    ]) {
+      expect(negative(mesure)).toBe(`Candidat demo-alpha s'oppose-t-il ou elle à ${mesure} ?`);
+    }
+  });
+
+  it("cas 6 : Q-NEG + « Le … » ou « Les … » lève ArticleMajusculeApresA, sans rien substituer", () => {
+    expect(() => negative("Le budget de la défense")).toThrow(ArticleMajusculeApresA);
+    expect(() => negative("Les retraites à 60 ans")).toThrow(ArticleMajusculeApresA);
+    expect(() => negative("Les retraites à 60 ans")).toThrow(/Q-NEG/);
+    expect(() => negative("Les retraites à 60 ans")).toThrow(/Les retraites à 60 ans/);
+  });
+
+  it("cas 6 bis : l'erreur porte le code du gabarit et la formulation fautive", () => {
+    let leve: unknown;
+    try {
+      negative("Le budget");
+    } catch (erreur) {
+      leve = erreur;
+    }
+    expect(leve).toBeInstanceOf(ArticleMajusculeApresA);
+    expect((leve as ArticleMajusculeApresA).gabarit).toBe("Q-NEG");
+    expect((leve as ArticleMajusculeApresA).formulation_mesure).toBe("Le budget");
+  });
+
+  it("cas 7 : Q-DIR, Q-FER, Q-ORI, Q-ACT (sans « à » devant [mesure]) ne contractent ni ne lèvent", () => {
+    const remplir = (code: "Q-DIR" | "Q-FER" | "Q-ORI" | "Q-ACT", formulation_mesure: string) =>
+      remplirTexteNeutre(gabaritParCode(code), { libelle_candidat: CANDIDAT, formulation_mesure });
+    expect(remplir("Q-FER", "le budget")).toBe("Candidat demo-alpha propose-t-il ou elle le budget ?");
+    expect(remplir("Q-FER", "les retraites")).toBe(
+      "Candidat demo-alpha propose-t-il ou elle les retraites ?",
+    );
+    expect(remplir("Q-DIR", "le budget")).toBe(
+      "Quelle est la position de Candidat demo-alpha sur le budget ?",
+    );
+    expect(remplir("Q-FER", "Le budget")).toBe("Candidat demo-alpha propose-t-il ou elle Le budget ?");
+    expect(remplir("Q-DIR", "Les retraites")).toBe(
+      "Quelle est la position de Candidat demo-alpha sur Les retraites ?",
+    );
+    expect(remplir("Q-ORI", "Le budget")).toBe("Est-il vrai que Candidat demo-alpha propose Le budget ?");
+    expect(remplir("Q-ACT", "les retraites")).toBe(
+      "Candidat demo-alpha a-t-il ou elle changé de position sur les retraites ?",
+    );
+  });
+
+  it("cas 8 : Q-ATT (sans [candidat], « à » ailleurs que devant [mesure]) reste inchangé", () => {
+    const remplir = (formulation_mesure: string) =>
+      remplirTexteNeutre(gabaritParCode("Q-ATT"), { formulation_mesure });
+    expect(remplir("le budget")).toBe("Quels candidats à la présidentielle 2027 proposent le budget ?");
+    expect(remplir("Les retraites")).toBe(
+      "Quels candidats à la présidentielle 2027 proposent Les retraites ?",
+    );
+  });
+
+  it("cas 9 : la contraction ne touche jamais le libellé du candidat, même s'il contient « à le »", () => {
+    const texte = remplirTexteNeutre(gabaritParCode("Q-NEG"), {
+      libelle_candidat: "Candidat à le test à les essais",
+      formulation_mesure: "le budget",
+    });
+    expect(texte).toBe("Candidat à le test à les essais s'oppose-t-il ou elle au budget ?");
+  });
+
+  it("cas 9 bis : un libellé de candidat qui commence par « Le » ne lève rien", () => {
+    const texte = remplirTexteNeutre(gabaritParCode("Q-NEG"), {
+      libelle_candidat: "Le candidat demo",
+      formulation_mesure: "la retraite à 60 ans",
+    });
+    expect(texte).toBe("Le candidat demo s'oppose-t-il ou elle à la retraite à 60 ans ?");
+  });
+
+  it("cas 9 ter : la règle est générique — tout « à [mesure] » contracte, quel que soit le gabarit", () => {
+    const fictif = { ...gabaritParCode("Q-DIR"), texte_neutre: "[candidat] tient-il à [mesure] ?" };
+    expect(remplirTexteNeutre(fictif, { libelle_candidat: CANDIDAT, formulation_mesure: "les retraites" })).toBe(
+      "Candidat demo-alpha tient-il aux retraites ?",
+    );
+    const accole = { ...gabaritParCode("Q-DIR"), texte_neutre: "[candidat] est-il voilà [mesure] ?" };
+    expect(remplirTexteNeutre(accole, { libelle_candidat: CANDIDAT, formulation_mesure: "le budget" })).toBe(
+      "Candidat demo-alpha est-il voilà le budget ?",
+    );
+  });
+
+  it("cas 10 : chaque gabarit du fichier, rempli avec une mesure neutre, donne le texte d'avant", () => {
+    const attendus: Record<(typeof CODES_GABARIT)[number], string> = {
+      "Q-DIR": "Quelle est la position de Candidat demo-alpha sur la retraite à 60 ans ?",
+      "Q-FER": "Candidat demo-alpha propose-t-il ou elle la retraite à 60 ans ?",
+      "Q-ATT": "Quels candidats à la présidentielle 2027 proposent la retraite à 60 ans ?",
+      "Q-NEG": "Candidat demo-alpha s'oppose-t-il ou elle à la retraite à 60 ans ?",
+      "Q-ORI": "Est-il vrai que Candidat demo-alpha propose la retraite à 60 ans ?",
+      "Q-ACT": "Candidat demo-alpha a-t-il ou elle changé de position sur la retraite à 60 ans ?",
+    };
+    for (const gabarit of GABARITS) {
+      const texte = remplirTexteNeutre(gabarit, {
+        libelle_candidat: CANDIDAT,
+        formulation_mesure: "la retraite à 60 ans",
+      });
+      expect(texte).toBe(attendus[gabarit.code]);
+    }
   });
 });
