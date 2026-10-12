@@ -562,12 +562,6 @@ function aucunNomCandidatDansQAtt(contexte: Contexte): ConditionSymetrie {
 }
 
 /**
- * §5 : les items A et F « constituent au moins 20 % des questions de chaque run ». Un tirage vide
- * n'a pas de part : 0/0 n'est pas une part atteinte, et un run sans question n'est pas un run
- * (conformité n° 60). La condition est rouge, sans mesure, et le refus ne dépend plus du seul
- * `tirage.schema.json`, que `verifierSymetrie` ne lit pas.
- */
-/**
  * §5 : « Tirage stratifié par candidat × thème × gabarit », le quota par strate étant publié avec le
  * tirage (`parametres.questions_par_strate`). Décision de l'auteur du 2026-10-01 : aucune strate ne
  * reçoit plus de questions propres que ce quota. Sans ce contrôle, un tirage qui déplace une question
@@ -604,6 +598,12 @@ function quotaParStrateRespecte(contexte: Contexte): ConditionSymetrie {
   };
 }
 
+/**
+ * §5 : les items A et F « constituent au moins 20 % des questions de chaque run ». Un tirage vide
+ * n'a pas de part : 0/0 n'est pas une part atteinte, et un run sans question n'est pas un run
+ * (conformité n° 60). La condition est rouge, sans mesure, et le refus ne dépend plus du seul
+ * `tirage.schema.json`, que `verifierSymetrie` ne lit pas.
+ */
 function partItemsAFMinimale(contexte: Contexte): ConditionSymetrie {
   const total = contexte.entrees.length;
   if (total === 0) {

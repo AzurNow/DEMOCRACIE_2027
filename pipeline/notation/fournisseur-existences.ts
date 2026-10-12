@@ -1,11 +1,10 @@
 /**
  * Le fournisseur d'existences : ce que la notation sait du test HTTP des liens (§7).
  *
- * Le test des liens (§7 : « test HTTP déterministe », lot `test-liens`) n'existe pas encore : il
- * attend une décision de l'auteur, car il ouvre un appel réseau nouveau. La notation ne l'attend pas
- * et ne l'invente pas : elle reçoit, par cette interface, les verdicts d'existence déjà établis,
- * réponse par réponse. Brancher le test des liens plus tard, c'est fournir une autre implémentation,
- * sans toucher à la notation.
+ * Le test des liens (§7 : « test HTTP déterministe », `pipeline/liens`, `pnpm liens`) tourne à part.
+ * La notation ne l'appelle pas et n'invente aucun verdict : elle reçoit, par cette interface, les
+ * verdicts d'existence déjà établis, réponse par réponse. Deux implémentations : les fichiers du test
+ * des liens d'un run (`fournisseur-fichiers.ts`) et le simulé des tests (`fournisseur-simule.ts`).
  *
  * Contrat : `existencesDe` rend les verdicts connus pour les liens demandés, ni plus ni moins. Un lien
  * sans verdict dans le résultat n'a pas de verdict : la réponse n'est ni notée ni proposée à un

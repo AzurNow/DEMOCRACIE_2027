@@ -10,8 +10,8 @@
  *
  * - un test `en_attente` (une paire incomplète) n'a pas de taux : `ContrefactuelNonPubliable` ;
  * - le résultat doit être celui du sous-ensemble reçu : même `sous_effectif`, dénominateur de
- *   chaque juge égal à la taille du sous-ensemble, sous-ensemble vide si et seulement si le test
- *   est indéfini ; et ses juges doivent être ceux du run.
+ *   chaque juge plus ses paires écartées égal à la taille du sous-ensemble (D31 (1)), sous-ensemble
+ *   vide si et seulement si le test est indéfini ; et ses juges doivent être ceux du run.
  *
  * `cle_graine` est la clé lisible du sous-ensemble (`CLE_SOUS_ENSEMBLE_CONTREFACTUEL`), celle que
  * le §7 dit publiée avec le résultat ; `cle_graine_derangement` est celle du dérangement

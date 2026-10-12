@@ -7,7 +7,7 @@ import { cheminSchema, type NomSchema } from "./noms.ts";
  * couplage assumé par `commun.schema.json` (`docs/DETTE.md`, entrée du 2026-09-17,
  * « commun.schema.json crée un couplage fort », point 4) : « tout validateur doit charger les dix
  * fichiers dans un registre ; un schéma pris isolément ne se résout pas ». Jamais utilisée pour
- * valider un exemple réel — `registre.ts` fait cela avec les dix fichiers.
+ * valider un exemple réel — `registre.ts` fait cela avec le registre complet.
  *
  * Lève l'erreur ajv (`MissingRefError`, qui nomme la référence non résolue) si le schéma en
  * dépend d'un autre ; sinon retourne normalement (cas de `commun` lui-même, qui ne référence rien

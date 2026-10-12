@@ -3,7 +3,7 @@
  *
  * Ils transcrivent `schema/reponse.schema.json` pour la part que ce lot écrit : une réponse du
  * canal API, contexte « run ». Aucun nom de champ n'est inventé ici. Les listes fermées recopient
- * un `enum` du schéma ; `tests/interrogation/enumerations.test.ts` les y confronte.
+ * un `enum` du schéma ; `tests/interrogation/schema-reponse.test.ts` les y confronte.
  */
 
 export const MODES = ["web_activee", "web_desactivee"] as const;

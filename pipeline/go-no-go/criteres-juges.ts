@@ -3,7 +3,7 @@
  * l'échantillon humain et le test contrefactuel. Fonctions pures.
  *
  * Aucun juge retenu (tous retirés) : les deux critères sont rouges. Une absence de mesure n'est
- * jamais un succès, dans l'esprit de D24 (2) ; choix dérivé, à confirmer par l'auteur. En pratique,
+ * jamais un succès, dans l'esprit de D24 (2) ; choix confirmé par l'auteur (D25 (4)). En pratique,
  * deux juges retirés rendent le run invalide (D16 (3)), que `pnpm go-no-go` refuse avant d'en arriver là.
  */
 

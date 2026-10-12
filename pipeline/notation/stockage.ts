@@ -1,5 +1,5 @@
 /**
- * Le stockage de la notation d'un run : trois écrivains, sur la disposition de `runs/README.md`.
+ * Le stockage de la notation d'un run : quatre écrivains, sur la disposition de `runs/README.md`.
  *
  *   verdicts/<id>.json                          Git        un verdict par objet noté, de contexte run
  *   volume/notations/<id>.json                  hors Git   une notation individuelle par fichier
@@ -98,7 +98,7 @@ export class DepotNotation {
     this.contrefactuelles = new Map();
   }
 
-  /** Lit `run.json`, crée au besoin les trois dossiers, relit et indexe ce qui est déjà écrit. */
+  /** Lit `run.json`, crée au besoin les quatre dossiers, relit et indexe ce qui est déjà écrit. */
   static ouvrir(repertoire_run: string): DepotNotation {
     const run = lireRunJson(repertoire_run);
     const disposition = dispositionRunNote(repertoire_run);

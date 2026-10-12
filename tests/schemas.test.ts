@@ -1,5 +1,5 @@
 /**
- * Cas limites du validateur des 45 exemples, un test par cas listé dans le brief. Les cas 1 et 2
+ * Cas limites du validateur des exemples, un test par cas listé dans le brief. Les cas 1 et 2
  * tournent sur les vrais fichiers de `schema/` : ce sont eux la garantie que `pnpm check` couvre
  * réellement le manifeste. Les cas 3 à 7 construisent un répertoire d'exemples jetable, pour
  * isoler chaque désaccord entre le manifeste et le schéma sans dépendre du contenu réel de

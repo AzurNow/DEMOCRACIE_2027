@@ -155,17 +155,17 @@ Légende : couleur par niveau de preuve — T0 gris, T1 ambre, T2 bleu, T3 vert,
 ```mermaid
 flowchart LR
   subgraph jalon_J1["J1 · 15 oct. 2026"]
-    lot_perimetre_prompts["perimetre-prompts<br/>config/perimetre.yaml et prompts/ versionnés<br/>T0"]:::T0
-    lot_protocole["protocole<br/>Protocole v0.2, à geler en v1.0<br/>T1"]:::T1
+    lot_perimetre_prompts["perimetre-prompts<br/>config/perimetre.yaml et prompts/ versionnés<br/>T1"]:::T1
+    lot_protocole["protocole<br/>Protocole (0.15 au 2026-10-12), à geler en v1.0<br/>T1"]:::T1
   end
   subgraph jalon_J2["J2 · 31 oct. 2026"]
     lot_ci["ci<br/>Intégration continue : check et test sur chaque PR<br/>T3"]:::T3
     lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T2"]:::T2
     lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T0"]:::T0
     lot_feuille_de_route["feuille-de-route<br/>Feuille de route générée depuis ce fichier<br/>T2"]:::T2
-    lot_outillage["outillage<br/>ajv sur les 45 exemples, ESLint à deux règles de complexité<br/>T3"]:::T3
+    lot_outillage["outillage<br/>ajv sur les exemples de schéma, ESLint à deux règles de complexité<br/>T3"]:::T3
     lot_questions_tirage_symetrie["questions-tirage-symetrie<br/>Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers<br/>T2"]:::T2
-    lot_schemas["schemas<br/>Schémas JSON et 45 exemples<br/>T2"]:::T2
+    lot_schemas["schemas<br/>Schémas JSON et leurs exemples<br/>T2"]:::T2
     lot_validation_interface["validation-interface<br/>Interface de validation humaine, pnpm lots, pnpm promote<br/>T3"]:::T3
   end
   subgraph jalon_J3["J3 · 15 nov. 2026"]
@@ -216,15 +216,15 @@ flowchart LR
 
 | Lot | Titre | Jalon | Niveau | État | Agent | Taille | Temps auteur (h) | Dépend de |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| perimetre-prompts | config/perimetre.yaml et prompts/ versionnés | J1 | T0 | débloqué | auteur avec fable | S | 5 | — |
-| protocole | Protocole v0.2, à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
+| perimetre-prompts | config/perimetre.yaml et prompts/ versionnés | J1 | T1 | débloqué | auteur avec fable | S | 5 | — |
+| protocole | Protocole (0.15 au 2026-10-12), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
 | ci | Intégration continue : check et test sur chaque PR | J2 | T3 | atteint | sonnet | S | 0.25 | — |
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T0 | bloqué par perimetre-prompts | opus | L | 1 | collecte (informe), perimetre-prompts |
 | feuille-de-route | Feuille de route générée depuis ce fichier | J2 | T2 | débloqué | sonnet | S | 0.5 | — |
-| outillage | ajv sur les 45 exemples, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
+| outillage | ajv sur les exemples de schéma, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
 | questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T2 | débloqué | opus | L | 2 | — |
-| schemas | Schémas JSON et 45 exemples | J2 | T2 | débloqué | fait | S | 0 | — |
+| schemas | Schémas JSON et leurs exemples | J2 | T2 | débloqué | fait | S | 0 | — |
 | validation-interface | Interface de validation humaine, pnpm lots, pnpm promote | J2 | T3 | atteint | fait | L | 0 | — |
 | contestation-notification | Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18) | J3 | T2 | débloqué | opus | L | 2 | validation-interface |
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
@@ -250,7 +250,7 @@ flowchart LR
 
 ### J1
 
-- perimetre-prompts (T0)
+- perimetre-prompts (T1)
 - protocole (T1)
 
 ### J2
@@ -296,8 +296,8 @@ flowchart LR
 
 ## Anomalies relevées
 
-- README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre.
-- CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.
-- L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.
+- README.md est encodé en UTF-16 avec BOM et ne contient qu'un titre. Encodage réglé le 2026-09-23 (bc6b3e7, lot 1 de la revue : UTF-8, fins de ligne LF) ; le contenu reste un titre seul (revue du 2026-10-12, constat 55).
+- CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site. Au 2026-10-12, symmetry et run:dry existent ; run:live, analyze et build:site manquent toujours (revue du 2026-10-12, constat 54).
+- L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md. Réglé le 2026-09-25 par le protocole 0.11 (7f60986), et gardé depuis par tests/protocole-annexe-a.test.ts.
 - Le suivi du taux de « non évaluable » par annotateur était donné pour manquant par docs/DETTE.md alors qu'il était implémenté depuis le 2026-09-17 : entrée corrigée le 2026-09-19.
 - schema/commun.schema.json, $defs/theme : la description dit qu'une position hors des dix thèmes « est enregistrée mais n'entre pas dans le tirage », alors que le §3 (0.11) dit qu'elle n'est pas enregistrée. Relevé le 2026-10-12.

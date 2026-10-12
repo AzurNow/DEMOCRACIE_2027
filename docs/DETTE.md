@@ -524,7 +524,7 @@ d'en sortir tant que l'auteur n'a pas dit ce que deviennent ces items (question 
 **Ce qu'il faut faire.** Décision de l'auteur, recommandé : retour en attente et nouvelle
 validation. Puis un chemin outillé (par exemple `pnpm lots --revalider-mesure`), testé.
 
-### 5. Le nombre d'exemples de schéma est écrit en dur à cinq endroits — *basse*
+### 5. Le nombre d'exemples de schéma est écrit en dur à cinq endroits — *basse* — à moitié réglé le 2026-10-12 (revue de code, constat 15 du 2026-09-23) : les comptes sont retirés des commentaires de `outils/schemas*` et de `schema/README.md` ; restent trois assertions de compte dans les tests (`tests/schemas.test.ts`, deux, et `tests/questions/invariants.test.ts`)
 
 `outils/schemas.ts`, `outils/schemas/registre.ts`, `schema/README.md`, `tests/schemas.test.ts` et
 `tests/questions/invariants.test.ts` répètent le total d'exemples.
@@ -1051,7 +1051,7 @@ personne dans le projet ne l'aurait vu.
 **Ce qu'il faut faire.** Un lot « alignement 0.3 » avant le run pilote du 22 novembre, en
 commençant par les tests : un test par phrase du §8 révisée, rouge sur le code actuel.
 
-### 2. Les dix thèmes sont écrits deux fois et aucun test ne vérifie qu'ils concordent — *moyenne*
+### ~~2. Les dix thèmes sont écrits deux fois et aucun test ne vérifie qu'ils concordent~~ — réglé le 2026-10-02 par #72 (`schema/perimetre.schema.json` référence `commun#/$defs/theme`, et `charger-perimetre.ts` exige exactement l'ensemble du schéma) ; constaté par la revue du 2026-10-12
 
 `config/perimetre.yaml` énumère les thèmes, `schema/commun.schema.json#/$defs/theme` aussi. Le
 commentaire du YAML exige qu'ils restent identiques, mais aucun lecteur du périmètre n'existe
@@ -1250,7 +1250,8 @@ interrogation, et faire lire ces fichiers par `assembler()` sans couche intermé
 
 `outils/schemas/registre.ts` passe ajv en `strict: "log"` parce que le mode strict refuse des
 combinaisons `if`/`then`/`not`/`contains` légitimes du draft 2020-12 utilisées par six schémas. Les
-135 avertissements sont comptés dans le rapport, jamais catégorisés.
+135 avertissements sont comptés dans le rapport, jamais catégorisés. (598 au 2026-10-12, revue de
+code : le compte croît avec chaque schéma, ce qui rend une coquille nouvelle d'autant moins visible.)
 
 **Pourquoi ça casse.** Une coquille dans un mot-clé de schéma (`requird`, `additionalProperty`)
 est exactement ce que le mode strict attrape. En `log`, elle rejoint les 135 autres et `pnpm check`
@@ -1455,7 +1456,7 @@ contourne.
 `confirmation_initiale` requise) en même temps que le validateur de schémas du point 3 de l'entrée
 « JSON Schema » ci-dessous : même lot, et les exemples se corrigent une seule fois.
 
-### 4. La facture de la règle de complexité est désormais exigible — *basse*
+### ~~4. La facture de la règle de complexité est désormais exigible~~ — réglé le 2026-09-18 par le lot outillage (`eslint.config.js` : `complexity` à 9, `sonarjs/cognitive-complexity` à 15, sur `pnpm check`) ; constaté par la revue du 2026-10-12
 
 L'entrée « Règle de complexité » ci-dessous annonçait le risque du report. Il s'est réalisé : le
 dépôt contient maintenant 8 900 lignes écrites sans qu'aucun outil ne mesure quoi que ce soit.
@@ -1506,7 +1507,7 @@ est l'unique actif.
 
 ## 2026-09-17 — Règle de complexité (`CLAUDE.md`, `.claude/skills/complexite-maitrisee/`)
 
-### 1. Aucun outil ne mesure la complexité, et la règle porte sur du code qui n'existe pas — *basse*
+### ~~1. Aucun outil ne mesure la complexité, et la règle porte sur du code qui n'existe pas~~ — réglé le 2026-09-18 par le lot outillage (ESLint, `eslint.config.js`) et par Ruff (`C901` à 9, `pyproject.toml`) ; constaté par la revue du 2026-10-12
 
 Les seuils — 9 en cyclomatique, 15 en cognitive — sont écrits dans `CLAUDE.md`, et la façon de s'y
 conformer dans la compétence `complexite-maitrisee`. Rien ne le mesure : il n'y a ni `package.json`, ni ESLint, ni Ruff dans le
@@ -1570,7 +1571,7 @@ reprise à 80 % du §5. Reste vrai, et voulu : corriger une citation ou une quan
 l'empreinte, parce que c'est contre elles qu'une réponse a été jugée. Implémentation :
 `validation/domaine/empreinte.ts:empreinteContenuNotant()`.
 
-### 3. Les exemples ne sont pas encore exécutés en intégration continue — *moyenne*
+### ~~3. Les exemples ne sont pas encore exécutés en intégration continue~~ — réglé le 2026-09-18 par `outils/schemas.ts` sur `pnpm check`, rejoué en CI (`.github/workflows/`, décision D1) ; constaté par la revue du 2026-10-12
 
 `schema/exemples/manifeste.json` est une table de vérité complète (45 exemples, résultat attendu et
 règle du protocole testée), vérifiée une fois à la main avec `jsonschema` 4.26. Aucun runner n'est

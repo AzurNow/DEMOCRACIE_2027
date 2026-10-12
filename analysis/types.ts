@@ -6,10 +6,9 @@
  * qui manque ici manque à l'analyse, et c'est voulu — une réponse porte bien plus de champs que
  * ceux lus par une métrique (même principe que `validation/domaine/types.ts`).
  *
- * Aucune validation de schéma à l'exécution n'est faite ici : le dépôt n'a pas encore de
- * validateur JSON Schema côté TypeScript, et en ajouter un est un ajout de dépendance
- * (schema/README.md : « le runner n'est pas encore dans le dépôt »). La frontière d'entrée de ce
- * lot est donc typée, pas validée ; le point est signalé dans le rapport de lot.
+ * Ces types ne valident rien par eux-mêmes : la frontière d'entrée est `lecture-run.ts`, qui valide
+ * chaque fichier d'un run contre son schéma (`outils/schemas/valider.ts`) avant de le rendre sous
+ * ces types.
  */
 
 export type Ulid = string;
