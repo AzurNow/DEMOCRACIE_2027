@@ -201,6 +201,13 @@ tests affiché ensuite venait d'une commande lancée après un `;`, et il a fail
 vérification du commit. Dans un worktree : `pnpm install --frozen-lockfile --offline`, puis
 `git log -1` après tout enchaînement qui commite.
 
+**Avant de retirer un worktree, comparer ses fichiers non suivis à ceux du dépôt, pas leurs noms.**
+Le 2026-10-12, le worktree de #104 gardait un `scratch/prompts/judge-1.0.0.md` du même nom que le
+prompt validé par D34 dans le `scratch/` principal ; `cmp` a montré une autre version (09-10, charge
+v2, points ouverts). Un `--force` sur la foi du nom perdait un texte, une copie dans le mauvais sens
+remplaçait le prompt validé. `git status --porcelain` puis `cmp` fichier par fichier, et archiver
+plutôt que supprimer.
+
 ## Méthode
 
 **Clôturer chaque session, et écrire dans chaque PR ce qui pourrait casser.** Du 7 au 10 octobre,
@@ -419,3 +426,9 @@ choisi de forcer `non_applicable` quand un juge dit « soutient » sur un lien m
 pour la 0.16 disait « quelle que soit la note du juge », ce qui forçait aussi `ne_soutient_pas` et
 `indetermine`. Le code (#91) suivait la question, le texte allait plus loin : l'agent l'a relevé.
 Relire le texte d'amendement contre la question posée, mot pour mot, avant de le commiter.
+
+**Rédiger le brief d'un sous-agent depuis `.claude/briefs/GABARIT.md`, sans en changer les règles.**
+Le 2026-10-12, le brief de la contraction (#111) demandait un commit ; le gabarit et la définition de
+`codeur-opus` l'interdisent. L'agent a tenu sa définition et l'a signalé, sans dégât, mais un agent
+moins strict aurait commité un diff que personne n'avait relu. La relecture du diff avant commit
+reste à la session principale.

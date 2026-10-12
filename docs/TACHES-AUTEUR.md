@@ -11,10 +11,8 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ## 0. Fusions en attente
 
-- [ ] **Fusionner #109 (D34) puis #104 (prompts 1.0.0, D35)**, CI verte. La seconde aura un conflit
-      sur `docs/feuille-de-route.json` (D34 et D35 ajoutées toutes deux en fin de liste) : garder les
-      deux entrées. Le contrôle automatique de Claude Code refuse `gh pr merge` à l'agent ; une règle
-      de permission dans les réglages le rétablit.
+- [x] (2026-10-12) #109, #104, #110 et #111 fusionnées. Conflit de #104 réglé par l'agent (D34 et
+      D35 gardées toutes deux). Le contrôle de Claude Code refuse toujours `gh pr merge` à l'agent.
 - [ ] Supprimer les branches locales `worktree-agent-a691960d77994bec2` et
       `worktree-agent-a6f6673166d1cef6a` (contenu déjà dans `main` par #95, mais `-d` les refuse) :
       `git branch -D`, que l'agent n'emploie pas.
@@ -486,7 +484,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 - [ ] **Inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3). Les sept
       choix de rédaction sont validés (D34, 2026-10-12) ; reste à recopier le prompt dans
-      `prompts/judge-1.0.0.md`.
+      `prompts/judge-1.0.0.md`. Recopier ce fichier-là, daté du 2026-10-12 : la proposition
+      du 2026-10-09, à points ouverts, est rangée dans `scratch/prompts/archives/` et ne sert plus.
 
 - [ ] **Écrire aussi en 0.16 : D34 (§7)**, tranchée le 2026-10-12. Au verdict de soutien : « Un lien
       dont le texte transmis est tronqué et ne contient pas l'affirmation, ou dont le texte n'a pu

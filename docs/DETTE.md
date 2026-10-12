@@ -13,6 +13,47 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-12 (après-midi) — Contraction « à le », « à les » au remplissage des gabarits, D35 (4) (PR #111 : `pipeline/questions/gabarits.ts`)
+
+### 1. La mesure contractée n'existe que dans le texte rempli, et le contrôle de la reformulation devra la retrouver — *moyenne*
+
+`remplirTexteNeutre` applique la contraction en interne (`joindreMesure`, non exportée) et ne rend que
+la question entière. D35 (4) exige que le contrôle de la reformulation, encore à écrire, compare la
+recopie à la mesure **contractée** (« au budget »), pas à `formulation_canonique` (« le budget »).
+
+**Pourquoi ça casse.** Si le contrôle lit `formulation_canonique`, les formulations familière et
+orientée correctes d'une Q-NEG en « le »/« les » sont rejetées : deux registres sur trois perdus pour
+ces mesures, visible au rejet. S'il réécrit la contraction de son côté, la règle vit à deux endroits
+et peut diverger sans qu'aucun test ne le voie.
+
+**Ce qu'il faut faire.** En écrivant le contrôle, exporter de `gabarits.ts` une fonction qui rend la
+mesure telle qu'elle est écrite dans le gabarit, et la faire lire par le contrôle et par
+`remplirTexteNeutre`. Un test : Q-NEG + « le budget » accepte « au budget », refuse « le budget ».
+
+### 2. Une mesure en « Le »/« Les » derrière « à » bloque l'engendrement de ses questions — *basse*
+
+`ArticleMajusculeApresA` est levée au remplissage, donc à l'engendrement des questions du run, pas à
+la validation de la mesure (`schema/mesure.schema.json` n'a aucun motif sur `formulation_canonique`).
+
+**Pourquoi ça casse.** Une faute de saisie validée des semaines plus tôt se découvre la veille d'un
+run, et arrête l'engendrement de toute la batterie. Erreur visible, mais tardive.
+
+**Ce qu'il faut faire.** Faire contrôler la même règle par `pnpm check` sur `data/mesures/`, ou par
+l'interface de validation à la saisie, quand la première mesure y entre.
+
+### 3. « LE … » en capitales et un « le » suivi d'une espace insécable passent sans contraction ni erreur — *basse*
+
+Le déclencheur suit la décision à la lettre : `/^le /`, `/^les /`, `/^Les? /`, espace ASCII.
+
+**Pourquoi ça casse.** La question neutre part avec « à LE … » ou « à le … » (insécable), sans
+alerte. La formulation est unique pour tous les candidats (§5), la symétrie tient ; seule la question
+est fautive.
+
+**Ce qu'il faut faire.** Rien tant qu'aucune mesure ne s'écrit ainsi ; le point 2 réglé, étendre la
+règle si l'auteur le souhaite.
+
+---
+
 ## 2026-10-07 au 2026-10-12 — Test des liens, go/no-go, `pnpm preuve`, charge-juge-v3, refus de l'API, prompts 1.0.0, D20 à D35 (PR #93 à #109 : `pipeline/liens/`, `pipeline/go-no-go/`, `pipeline/notation/`, `notation-humaine/`, `prompts/`, `scratch/prompts/`)
 
 Clôture tardive : les sessions du 7 au 10 octobre n'avaient pas été clôturées, et leurs PR ne
@@ -34,7 +75,7 @@ longueur des pages citées, et rien ne le signale.
 `indetermine` par cause (page tronquée, extraction refusée, page lue). L'auteur décide s'il faut
 aussi relever la borne ou découper la page autour de l'affirmation (amendement : §7, charge).
 
-### 2. Le gabarit Q-NEG écrit « à le » et « à les » devant une mesure en « le » ou « les » — *moyenne*
+### ~~2. Le gabarit Q-NEG écrit « à le » et « à les » devant une mesure en « le » ou « les »~~ — réglé le 2026-10-12 par la PR #111 (contraction au remplissage) ; le contrôle de la reformulation sur la mesure contractée reste à écrire (entrée du 2026-10-12 après-midi, point 1)
 
 `pipeline/questions/gabarits.ts:remplirTexteNeutre` substitue `formulation_canonique` telle quelle
 dans « s'oppose-t-il ou elle à [mesure] ? ». Défaut antérieur, rendu exigible par le prompt de
