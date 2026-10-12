@@ -3,9 +3,9 @@
 | Champ | Valeur |
 | --- | --- |
 | Version | `prompts/extraction-1.0.0` |
-| Date | 2026-10-09 |
+| Date | 2026-10-09, révisé le 2026-10-12 (D35) |
 | Statut | Proposé, à relire par l'auteur avant tout usage réel |
-| Protocole appliqué | §3 (dix thèmes, exclusions explicites) ; §4 (définition d'un item, types P et O, hiérarchie T1/T2/T3, position explicite sans inférence, citation verbatim et page comptée comme rang dans le fichier, test verbatim déterministe, contrat des artefacts) ; règles 3, 5 et 6 de `CLAUDE.md` |
+| Protocole appliqué | §3 (dix thèmes, exclusions explicites) ; §4 (définition d'un item, types P et O, hiérarchie T1/T2/T3, position explicite sans inférence, citation verbatim, page comptée comme rang dans le fichier et calculée par le code, test verbatim déterministe, contrat des artefacts) ; règles 3, 5 et 6 de `CLAUDE.md` |
 | Contrat d'entrée | Texte canonique d'**une** source, `docs/CONTRATS.md` §1 (UTF-8, NFC, LF ; pages d'un PDF jointes par `\f`, U+000C) |
 | Modèles | Deux modèles de familles différentes reçoivent **ce même texte** (§4, extraction double) ; leurs sorties sont comparées par le code, jamais par un modèle |
 
@@ -36,7 +36,6 @@ Un seul objet JSON, sans texte autour, sans bloc de code Markdown :
       "mesure_proposee": { "libelle": "…", "theme": "…" },
       "position": "pour",
       "citation_verbatim": "…",
-      "page": 1,
       "paraphrase": "…",
       "quantification": { "dimensions": [ { "type": "taux", "valeur": 0, "unite": "%", "operateur": "exact" } ] }
     }
@@ -52,7 +51,8 @@ Un seul objet JSON, sans texte autour, sans bloc de code Markdown :
 - `position` : `pour`, `contre` ou `conditionnel` (`commun#/$defs/position`, `sans_objet` exclu : il
   est réservé aux types A et F, qui ne s'extraient pas).
 - `citation_verbatim` : `item#/$defs/etat_positionnel/properties/citation_verbatim`.
-- `page` : présent si et seulement si `{format}` vaut `pdf`.
+- Pas de champ `page` : le code la calcule seul (ci-dessous). Le modèle compterait mal les sauts de
+  page d'un long document et créerait de faux désaccords entre les deux extractions (D35).
 - `paraphrase` : `item#/$defs/etat_positionnel/properties/paraphrase`.
 - `quantification` : facultatif, forme de `commun#/$defs/quantification`.
 
@@ -93,7 +93,7 @@ FIN_TEXTE>>>
 CE QU'EST UN ITEM
 Un item est une position atomique du candidat : une seule proposition, attribuable au candidat, vérifiable, accompagnée d'une citation recopiée du texte.
 - Atomique : une seule mesure par item. Une phrase qui porte deux mesures donne deux items ; ils peuvent partager la même citation.
-- Attribuable : la position est celle du candidat ou de sa campagne, dite en son nom. Ce que le document rapporte d'autres personnes (adversaires, journalistes, experts, citations de tiers) n'est pas extrait. Dans une transcription orale, où les interlocuteurs ne sont pas nommés, n'extrais que ce qui est sans ambiguïté dit par le candidat lui-même ; au moindre doute sur qui parle, n'extrais pas.
+- Attribuable : la position est celle du candidat ou de sa campagne. Un article de presse qui rapporte une position du candidat (« X veut supprimer… ») est extrait comme position du candidat, en recopiant la phrase de l'article. Ce que des tiers disent en leur nom propre (adversaires, journalistes, experts) n'est pas extrait, ni ce qu'ils attribuent au candidat sous forme d'hypothèse, de critique ou d'interprétation. Dans une transcription orale, où les interlocuteurs ne sont pas nommés, n'extrais que ce qui est sans ambiguïté dit par le candidat lui-même ; au moindre doute sur qui parle, n'extrais pas.
 - Explicite : le texte énonce la position. Rien n'est inféré d'une allusion, d'un sous-entendu, d'un ton, d'une critique ou d'un diagnostic. « La situation des hôpitaux est inacceptable » n'est pas une position ; « nous recruterons des infirmiers » en est une.
 - Vérifiable : la mesure est assez précise pour qu'on puisse dire si quelqu'un d'autre la propose ou non. Une intention générale (« agir pour l'école », « une France plus juste ») n'est pas une mesure.
 
@@ -126,10 +126,6 @@ CITATION VERBATIM : la règle la plus stricte.
 - Si la position ne se lit qu'en réunissant des passages séparés, n'extrais pas.
 - Le passage ne franchit jamais un caractère de saut de page (U+000C) : une citation à cheval sur deux pages est refusée.
 
-PAGE (format "pdf" seulement)
-- Les pages du texte sont séparées par le caractère U+000C. La page d'une citation est 1 plus le nombre de caractères U+000C qui la précèdent dans le texte. C'est le rang de la page dans le fichier, jamais le numéro imprimé sur la page.
-- Pour tout autre format, n'écris pas le champ "page".
-
 PARAPHRASE
 - Une phrase courte, neutre, qui dit la mesure et la position sans rien ajouter qui ne soit dans la citation : ni motif, ni conséquence, ni chiffre absent, ni qualificatif.
 - Ne nomme pas le candidat.
@@ -147,7 +143,7 @@ Une position manquée coûte un item ; une position mal attribuée ou inventée 
 
 SORTIE
 Réponds par un seul objet JSON, sans aucun texte avant ni après, sans bloc de code :
-{"items": [ {"type": "P" ou "O", "candidat_id": "{candidat_id}", "mesure_proposee": {"libelle": "…", "theme": "<un des dix codes>"}, "position": "pour" | "contre" | "conditionnel", "citation_verbatim": "…", "page": <entier, format pdf seulement>, "paraphrase": "…", "quantification": {…} facultatif } ]}
+{"items": [ {"type": "P" ou "O", "candidat_id": "{candidat_id}", "mesure_proposee": {"libelle": "…", "theme": "<un des dix codes>"}, "position": "pour" | "contre" | "conditionnel", "citation_verbatim": "…", "paraphrase": "…", "quantification": {…} facultatif } ]}
 N'ajoute aucun autre champ.
 
 EXEMPLE FICTIF (texte inventé pour illustrer la forme ; il ne vient d'aucun programme réel)
@@ -155,8 +151,8 @@ Texte, format "pdf", deux pages séparées par U+000C :
 « Notre constat : les centres de santé ferment trop tôt.[U+000C]Nous ouvrirons tous les centres de santé municipaux le dimanche. Nous créeront une prime de 150 euros pour chaque apprenti de première année. Nous rénoverons les musées de province. »
 Sortie :
 {"items": [
- {"type": "P", "candidat_id": "{candidat_id}", "mesure_proposee": {"libelle": "Ouvrir les centres de santé municipaux le dimanche", "theme": "sante"}, "position": "pour", "citation_verbatim": "Nous ouvrirons tous les centres de santé municipaux le dimanche.", "page": 2, "paraphrase": "Ouvrir tous les centres de santé municipaux le dimanche."},
- {"type": "P", "candidat_id": "{candidat_id}", "mesure_proposee": {"libelle": "Créer une prime pour les apprentis de première année", "theme": "travail_emploi"}, "position": "pour", "citation_verbatim": "Nous créeront une prime de 150 euros pour chaque apprenti de première année.", "page": 2, "paraphrase": "Créer une prime de 150 euros pour chaque apprenti de première année.", "quantification": {"dimensions": [{"type": "montant", "valeur": 150, "unite": "EUR", "operateur": "exact"}, {"type": "perimetre", "valeur": "apprentis de première année"}]}}
+ {"type": "P", "candidat_id": "{candidat_id}", "mesure_proposee": {"libelle": "Ouvrir les centres de santé municipaux le dimanche", "theme": "sante"}, "position": "pour", "citation_verbatim": "Nous ouvrirons tous les centres de santé municipaux le dimanche.", "paraphrase": "Ouvrir tous les centres de santé municipaux le dimanche."},
+ {"type": "P", "candidat_id": "{candidat_id}", "mesure_proposee": {"libelle": "Créer une prime pour les apprentis de première année", "theme": "travail_emploi"}, "position": "pour", "citation_verbatim": "Nous créeront une prime de 150 euros pour chaque apprenti de première année.", "paraphrase": "Créer une prime de 150 euros pour chaque apprenti de première année.", "quantification": {"dimensions": [{"type": "montant", "valeur": 150, "unite": "EUR", "operateur": "exact"}, {"type": "perimetre", "valeur": "apprentis de première année"}]}}
 ]}
 Le constat de la page 1 n'est pas extrait : c'est un diagnostic, pas une position. Les musées ne relèvent d'aucun des dix thèmes : pas d'item. La coquille « créeront » est recopiée telle quelle.
 ```

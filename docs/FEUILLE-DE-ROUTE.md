@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-10.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-12.
 
 ## Décisions en attente
 
@@ -115,6 +115,10 @@ Aucune décision en attente.
 ### D33 — Deux points ouverts par la PR #108 (D32) : extrait humain d'un refus de l'API tiré dans l'échantillon sur un item A ou F ; refus de l'échantillon dans le kappa juge-humain.
 
 **Décision du 2026-10-10 :** Option 1 sur les deux points. À écrire en 0.16 avec D32 (§7, annexe C).
+
+### D35 — Relecture de la PR #104 (prompts extraction et reformulation 1.0.0) : page d'une citation demandée au modèle ; item O proposé depuis une seule source ; positions du candidat rapportées par la presse (T3) ; contraction « à le », « à les » dans le gabarit Q-NEG.
+
+**Décision du 2026-10-12 :** Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) à coder (lot questions-tirage-symetrie : remplirTexteNeutre et contrôle de la reformulation), testé avant tout appel du prompt de reformulation.
 
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 

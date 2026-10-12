@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-10",
+  "date_maj": "2026-10-12",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -473,6 +473,19 @@
       "recommandation": "Option 1 sur les deux points : il n'y a rien à citer dans un refus ; le §7 et D15 restent intacts ; aucun accord ne se mesure là où aucun juge n'a noté (comme D31 (2)).",
       "retenu": "Option 1 sur les deux points. À écrire en 0.16 avec D32 (§7, annexe C).",
       "date_decision": "2026-10-10"
+    },
+    {
+      "id": "D35",
+      "statut": "tranchee",
+      "question": "Relecture de la PR #104 (prompts extraction et reformulation 1.0.0) : page d'une citation demandée au modèle ; item O proposé depuis une seule source ; positions du candidat rapportées par la presse (T3) ; contraction « à le », « à les » dans le gabarit Q-NEG.",
+      "contexte": "La page d'une citation est recalculée par le code depuis les offsets (CONTRATS §1.1) ; les deux extractions sont comparées. Un item O exige deux états sourcés (§4) ; la source qui déclare un changement n'en établit qu'un. Le §4 conserve les items T3 « à confirmer », sans question ; le prompt excluait « ce que le document rapporte » des journalistes, ambigu sur une position du candidat rapportée. Q-NEG s'écrit « s'oppose-t-il ou elle à [mesure] » : une formulation canonique en « le » ou « les » donne « à le », « à les », et la reformulation exige la mesure recopiée à l'identique.",
+      "options": [
+        "(1) Page retirée de la sortie du modèle, calculée par le code seul ; (2) item O proposé avec la seule position nouvelle, l'annotateur source l'état antérieur ; (3) position du candidat rapportée par un article extraite, propos des tiers en leur nom exclus ; (4) contraction « à le » ⇒ « au », « à les » ⇒ « aux » par le remplissage des gabarits, contrôle de la reformulation sur la mesure contractée.",
+        "(1) Page gardée comme contrôle ; (2) extraction en P seulement ; (3) rien d'extrait de la presse hors citation entre guillemets ; (4) formulation canonique interdite en « le » ou « les »."
+      ],
+      "recommandation": "Option 1 sur les quatre points : la page calculée ne peut pas se tromper ; le changement déclaré reste signalé sans que le modèle le déduise ; les items T3 servent de pistes et ne sont jamais tirés ; la contraction est une règle fixe, identique pour tous les candidats, qui ne contraint pas la rédaction des mesures.",
+      "retenu": "Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) à coder (lot questions-tirage-symetrie : remplirTexteNeutre et contrôle de la reformulation), testé avant tout appel du prompt de reformulation.",
+      "date_decision": "2026-10-12"
     }
   ],
   "lots": [
@@ -582,9 +595,10 @@
       "decisions": [
         "D26",
         "D28",
-        "D5"
+        "D5",
+        "D35"
       ],
-      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur. Le 2026-10-09 : dossier de recherche au 15 octobre produit (relevés du 9, à refaire le 15) ; D28 tranchée (primaire, intention, outil sans web, clause Gemini). Prompts d'extraction et de reformulation en PR #104 (brouillon, relecture de l'auteur) ; prompt juge après charge-juge-v3 (D27)."
+      "note": "Modèle 0.2.0 de config/perimetre.yaml (#73) aux noms de run.schema, lu par pipeline/questions/charger-perimetre.ts (#72, conformité n° 23 et 25), qui refuse le fichier pour un run tant que l'auteur ne l'a pas rempli : candidats, outils, quotas, preuves archivées. prompts/ ne contient que les gabarits ; prompts d'extraction, de reformulation et des juges à venir. Bloque l'extraction, l'interrogation réelle et la notation. Le 2026-10-09 : D26 tranchée (liste J1 au 15 octobre réappliquée au gel, top 50 Productivité, juges Claude Sonnet 5.5 et Mistral Large, ajout inventé exact avec drapeau fabrication). Lancés : dossier de recherche du périmètre (scratch/perimetre/), prompts d'extraction et de reformulation, proposition du prompt juge, commande pnpm preuve autorisée par l'auteur. Le 2026-10-09 : dossier de recherche au 15 octobre produit (relevés du 9, à refaire le 15) ; D28 tranchée (primaire, intention, outil sans web, clause Gemini). Prompts d'extraction et de reformulation en PR #104 (brouillon, relecture de l'auteur) ; prompt juge après charge-juge-v3 (D27). Le 2026-10-12 : D35 tranchée à la relecture de la PR #104 (page calculée par le code seul, positions rapportées par la presse extraites)."
     },
     {
       "id": "collecte",
@@ -634,9 +648,10 @@
       "depend_de": [],
       "decisions": [
         "D11",
-        "D7"
+        "D7",
+        "D35"
       ],
-      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas. Conformité n° 2 et 3 (2026-09-24, protocole 0.6) : liste d'attribution au gel sur les candidats interrogés, noms des candidats portés par le run (libelle, nom). Alignement 0.9 (2026-09-25, #30) : tirage.exclusions (n° 36), reprise par identifiant et trois empreintes dans signature.ts (n° 35), une Q-ATT par mesure avec son propre quota (n° 39), strates vides compensées et publiées (n° 38). Le 2026-09-27 : symétrie rouge ⇒ planifié ou invalide, seuil de couverture dans les deux sens, items P comptés au gel, régime et fenêtre d'inclusion (#39, n° 10, 19, 21) ; répartition par thème jugée sur les tirables, graine vérifiée, prémisse résolue au gel (#41, n° 23, 24, 27, 37) ; quotas publiés, sens préservé, tirage vide rouge (#42, n° 58, 59, 60). Le 2026-09-27 (#49, protocole 0.13) : pnpm symmetry refuse un jeu de questions incomplet ; run invalide sans go/no-go, avec publication et dépôt ; échantillon humain et contrefactuel sur SplitMix64. Reste : vérifier que les items reçus sont ceux du gel (DETTE 2026-09-28, point 2). Le 2026-10-01 : septième condition quota_par_strate_respecte, donnees_commit obligatoire (#59). Le 2026-10-02 : itemsPAuGel, liste des items P comptés au gel figée dans le run (#66) ; URL de sondage normalisées, normalisation-url-v1 (#68, n° 36). Reste : chargeur du périmètre (n° 23, 25)."
+      "note": "Livré le 2026-09-18 : gabarits en données, engendrement neutre, réponse attendue, tirage à graine, pnpm symmetry, invariants, 95 tests. Formulations familière et orientée attendent D3 et D5. Sept décisions de tirage en attente (D7), à trancher avant le run pilote. Le 2026-09-24 (D11) : pnpm symmetry exige --mesures et lit --items comme un répertoire. Lot 4 de la revue (2026-09-24) : règle « item tirable » écrite une fois, attribution reconnue par nomme_candidat, 44 listes fermées confrontées aux schémas. Conformité n° 2 et 3 (2026-09-24, protocole 0.6) : liste d'attribution au gel sur les candidats interrogés, noms des candidats portés par le run (libelle, nom). Alignement 0.9 (2026-09-25, #30) : tirage.exclusions (n° 36), reprise par identifiant et trois empreintes dans signature.ts (n° 35), une Q-ATT par mesure avec son propre quota (n° 39), strates vides compensées et publiées (n° 38). Le 2026-09-27 : symétrie rouge ⇒ planifié ou invalide, seuil de couverture dans les deux sens, items P comptés au gel, régime et fenêtre d'inclusion (#39, n° 10, 19, 21) ; répartition par thème jugée sur les tirables, graine vérifiée, prémisse résolue au gel (#41, n° 23, 24, 27, 37) ; quotas publiés, sens préservé, tirage vide rouge (#42, n° 58, 59, 60). Le 2026-09-27 (#49, protocole 0.13) : pnpm symmetry refuse un jeu de questions incomplet ; run invalide sans go/no-go, avec publication et dépôt ; échantillon humain et contrefactuel sur SplitMix64. Reste : vérifier que les items reçus sont ceux du gel (DETTE 2026-09-28, point 2). Le 2026-10-01 : septième condition quota_par_strate_respecte, donnees_commit obligatoire (#59). Le 2026-10-02 : itemsPAuGel, liste des items P comptés au gel figée dans le run (#66) ; URL de sondage normalisées, normalisation-url-v1 (#68, n° 36). Reste : chargeur du périmètre (n° 23, 25). Le 2026-10-12 (D35) : contracter « à le », « à les » au remplissage des gabarits (Q-NEG), à coder avant le premier appel du prompt de reformulation."
     },
     {
       "id": "interrogation",

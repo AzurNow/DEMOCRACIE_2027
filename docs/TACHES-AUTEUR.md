@@ -485,8 +485,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 - [ ] **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
       et le prompt doit dire comment classer une réponse qui donne la bonne position et y ajoute une
       position inventée non contradictoire (`schema/README.md`, points ouverts, 3).
-- [ ] **Relire les prompts d'extraction et de reformulation** quand le lot perimetre-prompts les aura
-      proposés (formulations familière et orientée).
+- [x] **Relire les prompts d'extraction et de reformulation** (PR #104) : relus le 2026-10-12,
+      choix tranchés en D35 ; fusion de la PR après la CI.
 
 ---
 
