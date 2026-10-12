@@ -250,11 +250,59 @@ export interface Substitutions {
   readonly formulation_mesure: string;
 }
 
+/**
+ * Levée quand la mesure commence par « Le » ou « Les » juste après « à » : la contraction ne
+ * s'applique qu'à l'article en minuscule, et une majuscule à cet endroit est presque certainement
+ * une faute de saisie (décision de l'auteur du 2026-10-12). Ni contraction, ni texte brut.
+ */
+export class ArticleMajusculeApresA extends Error {
+  readonly gabarit: CodeGabarit;
+  readonly formulation_mesure: string;
+
+  constructor(gabarit: CodeGabarit, formulation_mesure: string) {
+    super(
+      `Le gabarit ${gabarit} place « à » devant ${EMPLACEMENT_MESURE} et la formulation ` +
+        `« ${formulation_mesure} » commence par un article en majuscule. Ni contraction ni ` +
+        `substitution brute : la formulation canonique est à corriger.`,
+    );
+    this.name = "ArticleMajusculeApresA";
+    this.gabarit = gabarit;
+    this.formulation_mesure = formulation_mesure;
+  }
+}
+
+/** « à » mot entier, suivi d'une espace, en fin du texte qui précède l'emplacement. */
+const PREPOSITION_A_EN_FIN = /(?:^|\s)à $/u;
+const PREPOSITION_A = "à ";
+/** L'article doit être un mot entier suivi d'une espace : « lesdites », « leur », « l'… » ne bougent pas. */
+const CONTRACTIONS: readonly (readonly [RegExp, string])[] = [
+  [/^le /u, "au "],
+  [/^les /u, "aux "],
+];
+const ARTICLE_MAJUSCULE = /^Les? /u;
+
+/**
+ * D35 (4) : « à le » devient « au », « à les » devient « aux ». La règle porte sur la
+ * préposition qui précède l'emplacement, jamais sur un code de gabarit.
+ */
+function joindreMesure(avant: string, gabarit: Gabarit, mesure: string): string {
+  if (!PREPOSITION_A_EN_FIN.test(avant)) return avant + mesure;
+  if (ARTICLE_MAJUSCULE.test(mesure)) throw new ArticleMajusculeApresA(gabarit.code, mesure);
+  const contraction = CONTRACTIONS.find(([article]) => article.test(mesure));
+  if (contraction === undefined) return avant + mesure;
+  const [article, contracte] = contraction;
+  return avant.slice(0, -PREPOSITION_A.length) + mesure.replace(article, contracte);
+}
+
+/** Chaque `[mesure]` est substitué à son tour, la contraction lisant le texte qui le précède. */
+function substituerMesure(gabarit: Gabarit, mesure: string): string {
+  const [tete, ...suites] = gabarit.texte_neutre.split(EMPLACEMENT_MESURE);
+  if (tete === undefined) throw new Error(`Gabarit ${gabarit.code} : texte neutre illisible.`);
+  return suites.reduce((avant, suite) => joindreMesure(avant, gabarit, mesure) + suite, tete);
+}
+
 export function remplirTexteNeutre(gabarit: Gabarit, substitutions: Substitutions): string {
-  const avecMesure = gabarit.texte_neutre.replaceAll(
-    EMPLACEMENT_MESURE,
-    substitutions.formulation_mesure,
-  );
+  const avecMesure = substituerMesure(gabarit, substitutions.formulation_mesure);
   if (!gabarit.nomme_candidat) return avecMesure;
   if (substitutions.libelle_candidat === undefined) throw new LibelleCandidatAbsent(gabarit.code);
   return avecMesure.replaceAll(EMPLACEMENT_CANDIDAT, substitutions.libelle_candidat);
