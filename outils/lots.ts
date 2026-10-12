@@ -45,6 +45,20 @@ import { chargerItemsEffectifs } from "../validation/io/items-effectifs.ts";
 import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
+const OPTIONS: readonly string[] = [
+  "nature",
+  "taille",
+  "annotateurs",
+  "graine",
+  "prefixe",
+  "ecrire",
+  "staging",
+  "data",
+  "lots",
+  "reannote",
+  "calibration",
+];
+
 interface Options {
   readonly nature: NatureLot;
   /** Valeur de `--taille`, `null` si l'option est absente. Jamais une taille par défaut. */
@@ -67,7 +81,7 @@ interface Options {
 const DATE_CIVILE = /^\d{4}-\d{2}-\d{2}$/;
 
 function lireOptions(bruts: readonly string[]): Options {
-  const table = analyserArguments(bruts);
+  const table = analyserArguments(bruts, OPTIONS);
   const racine = resolve(import.meta.dirname, "..");
   const nature = texte(table, "nature", "reel") as NatureLot;
   const entrainement = nature === "entrainement";

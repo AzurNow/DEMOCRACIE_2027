@@ -187,6 +187,14 @@ describe("7. pnpm symmetry", () => {
     for (const referent of jeu.mesures) expect(() => valider("mesure", referent, referent.id)).not.toThrow();
   });
 
+  it("un fichier d'entrée illisible est nommé dans l'erreur (revue du 2026-10-12, constat 33)", () => {
+    const chemins = poser(jeuNominal());
+    writeFileSync(chemins.tirage, "{ pas du JSON", "utf8");
+    const resultat = symmetry(chemins);
+    expect(resultat.status).not.toBe(0);
+    expect(resultat.erreur).toContain(`${chemins.tirage} : JSON illisible`);
+  });
+
   it("cas nominal : contrôles verts, code 0", () => {
     const resultat = symmetry(poser(jeuNominal()));
     expect(resultat.status).toBe(0);

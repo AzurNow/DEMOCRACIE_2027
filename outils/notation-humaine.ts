@@ -37,9 +37,7 @@ interface Demande {
 }
 
 function demandeDe(bruts: readonly string[]): Demande {
-  const options = analyserArguments(bruts);
-  const inconnues = [...options.keys()].filter((cle) => !CLES_CONNUES.includes(cle));
-  if (inconnues.length > 0) throw new Error(`option(s) inconnue(s) : ${inconnues.map((cle) => `--${cle}`).join(", ")}. ${USAGE}`);
+  const options = analyserArguments(bruts, CLES_CONNUES);
   const positionnels = bruts.filter((argument) => !argument.startsWith("--"));
   const [repertoire_run] = positionnels;
   if (repertoire_run === undefined || positionnels.length > 1) throw new Error(`un seul répertoire de run est attendu. ${USAGE}`);

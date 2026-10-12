@@ -43,6 +43,23 @@ import { chargerStaging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { lireTexteAuteur } from "./texte-auteur.ts";
 
+const OPTIONS: readonly string[] = [
+  "racine",
+  "ecrire",
+  "staging",
+  "lots",
+  "decisions",
+  "mesures",
+  "arbitrage",
+  "data",
+  "item",
+  "retenu",
+  "issue",
+  "arbitre",
+  "arbitre-seul",
+  "motivation-fichier",
+];
+
 interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
@@ -182,7 +199,7 @@ function enregistrer(table: Arguments, options: Options): void {
 }
 
 function principal(): void {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const options = lireOptions(table);
   if (options.item.length === 0) lister(options);
   else enregistrer(table, options);

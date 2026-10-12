@@ -36,6 +36,19 @@ import { lireItem, reecrireItem } from "../validation/io/data-items.ts";
 import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
+const OPTIONS: readonly string[] = [
+  "racine",
+  "ecrire",
+  "data",
+  "notifications",
+  "item",
+  "type",
+  "sources",
+  "texte-fichier",
+  "recu-le",
+  "caviardage",
+];
+
 interface Options {
   readonly ecrire: boolean;
   readonly racine: string;
@@ -79,7 +92,7 @@ function construire(table: Arguments): Contestation {
 }
 
 function principal(): void {
-  const table = analyserArguments(process.argv.slice(2));
+  const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const options = lireOptions(table);
   if (options.ecrire && !ecriturePermise(options.racine)) return;
   const item_id = obligatoire(table, "item", "seul un item publié se conteste.");
