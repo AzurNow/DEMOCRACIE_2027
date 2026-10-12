@@ -5,7 +5,7 @@
  * évaluable compris ; ajout seul, identifiants uniques, ligne interrompue refusée.
  */
 
-import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -120,6 +120,105 @@ describe("une ligne due par événement, au même --ecrire", () => {
   it("panel : exactement une ligne « decision_panel »", () => {
     expect(panel.status, panel.erreur).toBe(0);
     expect(apresPanel.slice(3).map((due) => [due.item_id, due.evenement])).toEqual([[verifie.id, "decision_panel"]]);
+  });
+});
+
+/**
+ * Revue du 2026-10-12, constat 8 : chaque commande écrivait l'item dans `data/`, puis ajoutait sa
+ * notification. Une file illisible entre les deux laissait un item publié sans notification, et la
+ * relance ne la réparait pas (l'item était déjà dans `data/`, ou déjà dans son nouvel état). La file
+ * est désormais lue et la notification préparée avant toute écriture dans `data/`.
+ */
+describe("une file des notifications illisible arrête la commande avant toute écriture dans data/", () => {
+  const bac = creerBac();
+  const item = itemP({ id: "01JBANCESSA1000000000TEM83", candidat_id: "demo-83" });
+  bac.ecrireItem(item);
+  bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
+  bac.ecrireLot(lotDe("lot-083", [item]));
+  for (const annotateur_id of ["a1", "a2"]) {
+    bac.journal(annotateur_id).ajouter("lot-083", decision({ annotateur_id, item, decision: "accepter", lot_id: "lot-083" }));
+  }
+  writeFileSync(join(bac.racine, "contestation.txt"), "Contestation.\n", "utf8");
+  writeFileSync(join(bac.racine, "motivation.txt"), "Motivation.\n", "utf8");
+  initialiserDepot(bac.racine);
+  const notifications = join(bac.racine, "validation/notifications");
+  const publie = join(bac.racine, "data/items", `${item.id}.json`);
+  const racine = [`--racine=${bac.racine}`, `--data=${join(bac.racine, "data/items")}`];
+  const promote = [
+    ...racine,
+    `--staging=${join(bac.racine, "staging")}`,
+    `--lots=${join(bac.racine, "validation/lots")}`,
+    `--decisions=${join(bac.racine, "validation/decisions")}`,
+    `--mesures=${join(bac.racine, "validation/mesures")}`,
+    `--arbitrage=${join(bac.racine, "validation/arbitrage")}`,
+    "--ecrire",
+  ];
+  const contester = [...racine, `--item=${item.id}`, `--texte-fichier=${join(bac.racine, "contestation.txt")}`, "--recu-le=2026-10-01T09:00:00+02:00", "--type=campagne", "--ecrire"];
+
+  /** Une dernière ligne interrompue, commitée : le garde-fou de l'arbre propre ne peut pas refuser à sa place. */
+  function corrompre(): string {
+    const valide = existsSync(cheminDues(notifications)) ? readFileSync(cheminDues(notifications), "utf8") : "";
+    mkdirSync(notifications, { recursive: true });
+    appendFileSync(cheminDues(notifications), '{"id":', "utf8");
+    commiterTout(bac.racine, "file corrompue");
+    return valide;
+  }
+  function restaurer(valide: string): void {
+    writeFileSync(cheminDues(notifications), valide, "utf8");
+    commiterTout(bac.racine, "file restaurée");
+  }
+
+  let valide = corrompre();
+  const promotionRefusee = executerOutil("promote.ts", promote);
+  const publieApresRefus = existsSync(publie);
+  restaurer(valide);
+  const promotion = executerOutil("promote.ts", promote);
+  commiterTout(bac.racine, "promotion");
+
+  const avantContestation = readFileSync(publie, "utf8");
+  valide = corrompre();
+  const contestationRefusee = executerOutil("contester.ts", contester);
+  const apresContestationRefusee = readFileSync(publie, "utf8");
+  restaurer(valide);
+  const contestation = executerOutil("contester.ts", contester);
+  commiterTout(bac.racine, "contestation");
+
+  const avantPanel = readFileSync(publie, "utf8");
+  const contestation_id = (lireItem(publie).contestations?.[0] as { id: string } | undefined)?.id ?? "contestation absente";
+  corrompre();
+  const panelRefuse = executerOutil("panel.ts", [
+    ...racine,
+    `--item=${item.id}`,
+    `--contestation=${contestation_id}`,
+    "--decision=maintien",
+    "--version-jugee=1",
+    `--motivation-fichier=${join(bac.racine, "motivation.txt")}`,
+    "--arbitre-seul",
+    "--ecrire",
+  ]);
+  const apresPanelRefuse = readFileSync(publie, "utf8");
+  afterAll(() => bac.detruire());
+
+  it("promote : refus nommé, aucun item créé ; la relance sur une file saine promeut", () => {
+    expect(promotionRefusee.status).not.toBe(0);
+    expect(promotionRefusee.erreur).toContain("File des notifications illisible");
+    expect(publieApresRefus).toBe(false);
+    expect(promotion.status, promotion.erreur).toBe(0);
+    expect(existsSync(publie)).toBe(true);
+  });
+
+  it("contester : refus nommé, l'item publié est inchangé", () => {
+    expect(contestationRefusee.status).not.toBe(0);
+    expect(contestationRefusee.erreur).toContain("File des notifications illisible");
+    expect(apresContestationRefusee).toBe(avantContestation);
+    expect(contestation.status, contestation.erreur).toBe(0);
+  });
+
+  it("panel : refus nommé, l'item publié est inchangé", () => {
+    expect(contestation_id).not.toBe("contestation absente");
+    expect(panelRefuse.status).not.toBe(0);
+    expect(panelRefuse.erreur).toContain("File des notifications illisible");
+    expect(apresPanelRefuse).toBe(avantPanel);
   });
 });
 

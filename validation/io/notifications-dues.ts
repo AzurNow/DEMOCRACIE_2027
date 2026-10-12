@@ -3,7 +3,10 @@
  * ajout seul (protocole 0.10, §4 « Droit de réponse »).
  *
  * Écrite au même `--ecrire` que l'item publié, juste après lui, par `pnpm promote` (création),
- * `pnpm contester` (contestation) et `pnpm panel` (décision du panel). Lue par `pnpm notifier`
+ * `pnpm contester` (contestation) et `pnpm panel` (décision du panel). Chacune prépare ses
+ * notifications et les passe à `controlerAjout` **avant** d'écrire dans `data/` : une file illisible
+ * arrête la commande quand rien n'est encore publié, au lieu de laisser un item publié sans
+ * notification, que la relance ne réparerait pas (revue du 2026-10-12, constat 8). Lue par `pnpm notifier`
  * (Python), qui résout l'adresse au moment de l'envoi et journalise dans `envois.jsonl`.
  *
  * Comme le journal des annotateurs : aucune fonction de modification ; chaque ligne est confrontée
@@ -76,8 +79,11 @@ export function lireDues(repertoire: string): readonly NotificationDue[] {
     .map((ligne, rang) => analyserLigne(ligne, `${chemin}, ligne ${rang + 1}`, chemin));
 }
 
-/** Ajoute des notifications en fin de file ; les lignes existantes ne sont jamais réécrites. */
-export function ajouterDues(repertoire: string, dues: readonly NotificationDue[]): void {
+/**
+ * Lève si `ajouterDues` refuserait ces notifications : file illisible, notification non conforme,
+ * identifiant déjà présent. N'écrit rien.
+ */
+export function controlerAjout(repertoire: string, dues: readonly NotificationDue[]): void {
   const chemin = cheminDues(repertoire);
   const connus = new Set(lireDues(repertoire).map((due) => due.id));
   for (const due of dues) {
@@ -85,6 +91,12 @@ export function ajouterDues(repertoire: string, dues: readonly NotificationDue[]
     if (connus.has(due.id)) throw new FileNotificationsIllisible(chemin, `identifiant déjà présent : ${due.id}`);
     connus.add(due.id);
   }
+}
+
+/** Ajoute des notifications en fin de file ; les lignes existantes ne sont jamais réécrites. */
+export function ajouterDues(repertoire: string, dues: readonly NotificationDue[]): void {
+  const chemin = cheminDues(repertoire);
+  controlerAjout(repertoire, dues);
   if (dues.length === 0) return;
   mkdirSync(repertoire, { recursive: true });
   appendFileSync(chemin, dues.map((due) => `${JSON.stringify(due)}\n`).join(""), { encoding: "utf8", flag: "a" });

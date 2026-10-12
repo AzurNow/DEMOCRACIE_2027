@@ -3,7 +3,7 @@
  * validées, run complet contre l'éditeur simulé, réponses conformes et immuables, reprise, bilan.
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -88,5 +88,21 @@ describe("pnpm run:dry, la commande", () => {
     expect(sortieTexte).toContain("taux de manquantes");
     const runsApres = existsSync(join(RACINE, "runs")) ? readdirSync(join(RACINE, "runs")).sort() : [];
     expect(runsApres).toEqual(runsAvant);
+  });
+
+  it("--sortie sous runs/ : refus nommé, code non nul, rien n'est écrit (revue du 2026-10-12, constat 9)", () => {
+    const runs = join(RACINE, "runs");
+    const runsAvant = existsSync(runs) ? readdirSync(runs).sort() : [];
+    for (const argument of [["--sortie", join(runs, "essai-run-dry")], ["--sortie=runs/essai-run-dry"]]) {
+      const resultat = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", join(RACINE, "outils/run-dry.ts"), ...argument], {
+        cwd: RACINE,
+        encoding: "utf8",
+      });
+      expect(resultat.status).not.toBe(0);
+      expect(resultat.stderr).toContain("SimuleSousRuns");
+      expect(resultat.stdout).toBe("");
+    }
+    expect(existsSync(join(runs, "essai-run-dry"))).toBe(false);
+    expect(existsSync(runs) ? readdirSync(runs).sort() : []).toEqual(runsAvant);
   });
 });

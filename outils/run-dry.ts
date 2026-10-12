@@ -4,7 +4,8 @@
  *   pnpm run:dry                     écrit dans un répertoire temporaire neuf
  *   pnpm run:dry --sortie <chemin>   écrit sous <chemin> (relancer sur le même chemin reprend le run)
  *
- * Jamais dans `runs/` par défaut : un run simulé n'est pas un run. Chaque réponse est validée contre
+ * Jamais dans `runs/`, ni par défaut ni sur demande : un run simulé n'est pas un run, et `--sortie`
+ * sous `runs/` est refusé (`exigerHorsDeRuns`) avant toute écriture. Chaque réponse est validée contre
  * `schema/reponse.schema.json` au moment de son écriture ; le bilan imprimé est relu du disque.
  */
 
@@ -13,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { LigneBilan } from "../pipeline/interrogation/bilan.ts";
 import { lancerRunSimule } from "../pipeline/interrogation/run-simule.ts";
+import { exigerHorsDeRuns } from "../pipeline/notation/garde-simule.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
 
@@ -25,7 +27,9 @@ function sortieDemandee(argv: readonly string[]): string {
   if (valeur === undefined || valeur.length === 0 || valeur.startsWith("--")) {
     throw new Error("--sortie attend un chemin.");
   }
-  return resolve(valeur);
+  const sortie = resolve(valeur);
+  exigerHorsDeRuns(sortie);
+  return sortie;
 }
 
 function pourcentage(ligne: LigneBilan): string {

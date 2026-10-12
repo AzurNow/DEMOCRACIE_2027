@@ -30,7 +30,7 @@ import {
 } from "../validation/domaine/contestation-item.ts";
 import type { Correction } from "../validation/domaine/types.ts";
 import { lireItem, reecrireItem } from "../validation/io/data-items.ts";
-import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
+import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/notifications-dues.ts";
 import { lireTexteCanonique } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { accesTexteCorrections } from "../validation/serveur/emplacements.ts";
@@ -121,9 +121,12 @@ function principal(): void {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire.\n");
     return;
   }
+  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item,
+  // et contrôlée avant lui, pour qu'un item ne soit jamais publié sans sa notification.
+  const dues = [notificationDue(item, "decision_panel")];
+  controlerAjout(options.notifications, dues);
   reecrireItem(options.data, lu, item, autorisation);
-  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item.
-  ajouterDues(options.notifications, [notificationDue(item, "decision_panel")]);
+  ajouterDues(options.notifications, dues);
   process.stdout.write(
     `\nDécision du panel enregistrée sur l'item ${item_id}.\n\n` +
       commandeGit([`data/items/${item_id}.json`, "validation/notifications/dues.jsonl"], `data: décision du panel sur l'item ${item_id}`, [

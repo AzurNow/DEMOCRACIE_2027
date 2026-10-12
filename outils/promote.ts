@@ -33,7 +33,7 @@ import type { Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
 import { ecrireFileArbitrage } from "../validation/io/file-arbitrage.ts";
-import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
+import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/notifications-dues.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
@@ -310,14 +310,19 @@ function imprimerNonEvaluables(lots: readonly Lot[], options: Options): void {
 
 function ecrire(verdicts: readonly Verdict[], options: Options): void {
   const promus: string[] = [];
-  for (const verdict of verdicts) {
-    if (verdict.issue.sort !== "promouvoir" || dejaDansData(verdict, options)) continue;
+  // §4 (0.10) : tout ce qui est publié est notifié, rejeté et non évaluable compris. Toutes les
+  // notifications sont préparées et la file contrôlée avant le premier item écrit : une file
+  // illisible arrête la commande quand rien n'est encore publié.
+  const aPromouvoir = verdicts.flatMap((verdict) =>
+    verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options) ? [{ item: verdict.issue.item, due: notificationDue(verdict.issue.item, "creation") }] : [],
+  );
+  controlerAjout(options.notifications, aPromouvoir.map(({ due }) => due));
+  for (const { item, due } of aPromouvoir) {
     // Seule écriture vers `data/items/` : `creerItem` revalide contre le schéma, quel que soit le
     // chemin qui y mène, et refuse d'écraser un item déjà publié.
-    creerItem(options.data, verdict.issue.item);
-    // §4 (0.10) : tout ce qui est publié est notifié, rejeté et non évaluable compris.
-    ajouterDues(options.notifications, [notificationDue(verdict.issue.item, "creation")]);
-    promus.push(verdict.issue.item.id);
+    creerItem(options.data, item);
+    ajouterDues(options.notifications, [due]);
+    promus.push(item.id);
   }
 
   const file = verdicts

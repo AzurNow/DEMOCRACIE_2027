@@ -1,6 +1,6 @@
 /**
- * Le garde-fou des simulés de la notation : le juge simulé et le fournisseur d'existences simulé ne
- * se branchent jamais sur un répertoire de `runs/`. Un run simulé n'est pas un run (`runs/README.md`,
+ * Le garde-fou des simulés : le run d'interrogation simulé (`pnpm run:dry`), le juge simulé et le
+ * fournisseur d'existences simulé n'écrivent ni ne se branchent jamais sous `runs/`. Un run simulé n'est pas un run (`runs/README.md`,
  * `pnpm run:dry`), et une notation simulée écrite à côté d'un vrai run serait indiscernable d'une
  * vraie à la lecture du volume.
  *
@@ -16,7 +16,7 @@ export const RUNS_DU_DEPOT = resolve(import.meta.dirname, "../../runs");
 
 export class SimuleSousRuns extends Error {
   constructor(chemin: string) {
-    super(`${chemin} est sous ${RUNS_DU_DEPOT} : un juge ou un fournisseur simulé ne s'y branche jamais (un run simulé n'est pas un run).`);
+    super(`${chemin} est sous ${RUNS_DU_DEPOT} : un simulé (run, juge ou fournisseur d'existences) n'y écrit ni ne s'y branche jamais (un run simulé n'est pas un run).`);
     this.name = "SimuleSousRuns";
   }
 }
