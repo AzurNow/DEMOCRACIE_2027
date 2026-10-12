@@ -33,7 +33,7 @@ import {
 import type { Source } from "../validation/domaine/types.ts";
 import { ulid } from "../validation/domaine/ulid.ts";
 import { lireItem, reecrireItem } from "../validation/io/data-items.ts";
-import { ajouterDues, notificationDue } from "../validation/io/notifications-dues.ts";
+import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/notifications-dues.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 
 const OPTIONS: readonly string[] = [
@@ -104,9 +104,12 @@ function principal(): void {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire.\n");
     return;
   }
+  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item,
+  // et contrôlée avant lui, pour qu'un item ne soit jamais publié sans sa notification.
+  const dues = [notificationDue(apres, "contestation")];
+  controlerAjout(options.notifications, dues);
   reecrireItem(options.data, lu, apres, { corrections: false });
-  // §4 (0.10) : la campagne est notifiée ; la file est écrite au même --ecrire, juste après l'item.
-  ajouterDues(options.notifications, [notificationDue(apres, "contestation")]);
+  ajouterDues(options.notifications, dues);
   process.stdout.write(
     `\nItem ${item_id} contesté : il sort du tirage du run suivant jusqu'à la décision du panel.\n\n` +
       commandeGit([`data/items/${item_id}.json`, "validation/notifications/dues.jsonl"], `data: contestation de l'item ${item_id}`, [`contestation ${contestation.id}`]),

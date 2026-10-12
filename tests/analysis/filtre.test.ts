@@ -10,6 +10,7 @@ import {
   assembler,
   estDuRun,
   filtrerContexteRun,
+  IdentifiantEnDouble,
   ReponsesNonNotees,
   SourcageIncoherent,
   VerdictEnDouble,
@@ -327,5 +328,46 @@ describe("sourçage retenu incohérent", () => {
   it("un même lien vivant et soutenant : sourçage valide ; vivant mais non soutenant : non valide", () => {
     expect(sourcageValide(assembler(avecSourcage(true, true, true)))).toEqual({ numerateur: 1, denominateur: 1, valeur: 1 });
     expect(sourcageValide(assembler(avecSourcage(true, true, false)))).toEqual({ numerateur: 0, denominateur: 1, valeur: 0 });
+  });
+});
+
+/**
+ * Revue du 2026-10-12, constat 10 : l'index de l'assemblage gardait la dernière entrée d'un
+ * identifiant en double. Deux entrées de tirage d'une même question, aux `premisse_fausse`
+ * différentes, faisaient dépendre le dénominateur de la confirmation de prémisse (§8) de l'ordre du
+ * fichier, sans aucun signal.
+ */
+describe("un identifiant en double dans les entrées de l'analyse", () => {
+  const unVerdict = () => [verdict({ id: ulid("v1"), objet_note: { type: "reponse", id: ulid("r1") } })];
+
+  it("deux entrées de tirage pour une même question : levée, quel que soit l'ordre", () => {
+    const base = entrees([reponse({ id: ulid("r1") })], unVerdict());
+    for (const ordre of [
+      [entreeTirage({ premisse_fausse: false }), entreeTirage({ premisse_fausse: true })],
+      [entreeTirage({ premisse_fausse: true }), entreeTirage({ premisse_fausse: false })],
+    ]) {
+      const appel = () => assembler({ ...base, entrees_tirage: ordre });
+      expect(appel).toThrow(IdentifiantEnDouble);
+      expect(appel).toThrow(`entrée de tirage ${idQuestion("question")} présente 2 fois`);
+    }
+  });
+
+  it("une question en double : levée", () => {
+    const base = entrees([reponse({ id: ulid("r1") })], unVerdict());
+    expect(() => assembler({ ...base, questions: [question(), question()] })).toThrow(`question ${idQuestion("question")} présente 2 fois`);
+  });
+
+  it("un item en double : levée", () => {
+    const base = entrees([reponse({ id: ulid("r1") })], unVerdict());
+    expect(() => assembler({ ...base, items: [item(), item()] })).toThrow(IdentifiantEnDouble);
+  });
+
+  it("une réponse en double : levée", () => {
+    const base = entrees([reponse({ id: ulid("r1") }), reponse({ id: ulid("r1") })], unVerdict());
+    expect(() => assembler(base)).toThrow(`réponse ${ulid("r1")} présente 2 fois`);
+  });
+
+  it("des identifiants distincts passent", () => {
+    expect(assembler(entrees([reponse({ id: ulid("r1") })], unVerdict()))).toHaveLength(1);
   });
 });

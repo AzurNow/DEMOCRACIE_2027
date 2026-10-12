@@ -111,6 +111,18 @@ export class VerdictEnDouble extends Error {
 }
 
 /**
+ * Un identifiant présent deux fois dans une entrée de l'analyse : garder l'une des deux ferait
+ * dépendre la mesure de l'ordre du fichier. Deux entrées de tirage d'une même question aux
+ * `premisse_fausse` différentes déplaceraient le dénominateur de la confirmation de prémisse (§8).
+ */
+export class IdentifiantEnDouble extends Error {
+  constructor(nature: string, id: string, occurrences: number) {
+    super(`${nature} ${id} présente ${occurrences} fois dans les entrées de l'analyse : laquelle compte n'est pas à deviner.`);
+    this.name = "IdentifiantEnDouble";
+  }
+}
+
+/**
  * Conformité n° 64 (§7, §8) : `au_moins_un_lien_soutenant` dit qu'un MÊME lien est vivant et
  * soutient l'affirmation (schema/verdict.schema.json) ; un lien vivant est un lien cité. Un verdict
  * qui conclut au soutien sans lien existant, ou qui trouve un lien existant sans citation, se
@@ -194,11 +206,21 @@ export function assembler(entrees: EntreesAnalyse): UniteAnalyse[] {
 
 function indexer(entrees: EntreesAnalyse): IndexEntrees {
   return {
-    reponses: new Map(entrees.reponses.map((r) => [r.id, r])),
-    questions: new Map(entrees.questions.map((q) => [q.id, q])),
-    tirage: new Map(entrees.entrees_tirage.map((e) => [e.question_id, e])),
-    items: new Map(entrees.items.map((i) => [i.id, i])),
+    reponses: indexUnique(entrees.reponses, (r) => r.id, "réponse"),
+    questions: indexUnique(entrees.questions, (q) => q.id, "question"),
+    tirage: indexUnique(entrees.entrees_tirage, (e) => e.question_id, "entrée de tirage"),
+    items: indexUnique(entrees.items, (i) => i.id, "item"),
   };
+}
+
+function indexUnique<T>(objets: readonly T[], cle: (objet: T) => string, nature: string): ReadonlyMap<string, T> {
+  const index = new Map<string, T>();
+  for (const objet of objets) {
+    const id = cle(objet);
+    if (index.has(id)) throw new IdentifiantEnDouble(nature, id, objets.filter((autre) => cle(autre) === id).length);
+    index.set(id, objet);
+  }
+  return index;
 }
 
 /**
