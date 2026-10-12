@@ -300,3 +300,4 @@ flowchart LR
 - CLAUDE.md promet cinq commandes absentes de package.json : symmetry, run:dry, run:live, analyze, build:site.
 - L'annexe A du protocole montre l'identifiant 2027-LEP-FISC-0012, contredit par la convention d'identifiants opaques de schema/README.md.
 - Le suivi du taux de « non évaluable » par annotateur était donné pour manquant par docs/DETTE.md alors qu'il était implémenté depuis le 2026-09-17 : entrée corrigée le 2026-09-19.
+- schema/commun.schema.json, $defs/theme : la description dit qu'une position hors des dix thèmes « est enregistrée mais n'entre pas dans le tirage », alors que le §3 (0.11) dit qu'elle n'est pas enregistrée. Relevé le 2026-10-12.

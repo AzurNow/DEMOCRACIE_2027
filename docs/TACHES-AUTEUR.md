@@ -11,6 +11,13 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 ## 0. Fusions en attente
 
+- [ ] **Fusionner #109 (D34) puis #104 (prompts 1.0.0, D35)**, CI verte. La seconde aura un conflit
+      sur `docs/feuille-de-route.json` (D34 et D35 ajoutées toutes deux en fin de liste) : garder les
+      deux entrées. Le contrôle automatique de Claude Code refuse `gh pr merge` à l'agent ; une règle
+      de permission dans les réglages le rétablit.
+- [ ] Supprimer les branches locales `worktree-agent-a691960d77994bec2` et
+      `worktree-agent-a6f6673166d1cef6a` (contenu déjà dans `main` par #95, mais `-d` les refuse) :
+      `git branch -D`, que l'agent n'emploie pas.
 - [x] #67 à #75 fusionnées le 2026-10-02 (protocole 0.15, décisions du 2026-10-02, clôture,
       chargeur du périmètre, modèle 0.2.0 de `config/perimetre.yaml`, D12, lot interrogation en
       mode simulé).
@@ -524,6 +531,12 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 ## 4. Avant le premier run (J4, 22 novembre 2026)
 
+- [ ] **Sourçage des pages tronquées** (DETTE 2026-10-12, point 1) : dire si le compteur publié des
+      soutiens indéterminés par cause suffit, ou s'il faut relever la borne de 50 000 caractères
+      ou découper la page citée (amendement du §7).
+- [ ] **Âge de la copie archivée d'un lien** : `pipeline/liens/instantanes.py` retient l'instantané
+      Wayback le plus proche de l'instant du run, sans limite d'âge. Le §7 et D21 ne la fixent pas :
+      une copie de 2019 peut « soutenir » une réponse de 2027. Trou du protocole, à trancher.
 - [ ] **Obtenir les clés API** de chaque éditeur inclus. Elles se passent en variables
       d'environnement, jamais dans le dépôt.
 - [ ] **Fixer `date_gel`** dans `config/perimetre.yaml` au moment du gel du run.

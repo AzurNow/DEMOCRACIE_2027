@@ -203,6 +203,18 @@ vérification du commit. Dans un worktree : `pnpm install --frozen-lockfile --of
 
 ## Méthode
 
+**Clôturer chaque session, et écrire dans chaque PR ce qui pourrait casser.** Du 7 au 10 octobre,
+seize PR (#93 à #108) ont été fusionnées sans clôture, et leurs descriptions ne disaient presque
+jamais ce qui pourrait casser. Le 12, le tri a dû repartir de 21 000 lignes de diff. C'est là
+seulement qu'est apparu le biais de sourçage des pages tronquées (DETTE 2026-10-12, point 1), créé
+par D27 le 9. La ligne « ce qui pourrait casser » de la définition de terminé va dans le corps de
+la PR, pas seulement dans la conversation.
+
+**Une autorisation en mémoire ne lève pas une garde de l'outil.** Le 2026-10-12, `gh pr merge` a été
+refusé par le contrôle automatique de Claude Code malgré l'autorisation de fusion du 2026-10-02.
+Les PR #104 et #109 attendent la fusion de l'auteur. Ne pas contourner : le dire, et laisser
+l'auteur ajouter une règle de permission.
+
 **Une dette marquée « réglée » se vérifie dans le code, pas dans le récit.** Le point de dette du
 2026-09-20 sur l'exactitude des comparateurs a été barré avec la mention « jamais implémentée » ; la
 fonction existait depuis deux jours et gardait les indéterminées au dénominateur. Seule la passe de

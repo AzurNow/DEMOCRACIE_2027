@@ -13,6 +13,52 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-07 au 2026-10-12 — Test des liens, go/no-go, `pnpm preuve`, charge-juge-v3, refus de l'API, prompts 1.0.0, D20 à D35 (PR #93 à #109 : `pipeline/liens/`, `pipeline/go-no-go/`, `pipeline/notation/`, `notation-humaine/`, `prompts/`, `scratch/prompts/`)
+
+Clôture tardive : les sessions du 7 au 10 octobre n'avaient pas été clôturées, et leurs PR ne
+disaient pas ce qui pourrait casser. Le tri ci-dessous repart du diff et du code.
+
+### 1. Le soutien d'une page de plus de 50 000 caractères tombe en « indéterminé » sans compteur publié — *haute*
+
+`pipeline/notation/pages-citees.ts` coupe le texte d'une page citée à `LONGUEUR_MAX_TEXTE_PAGE`
+(D27). Le prompt juge 1.0.0 (D34 (1), (2)) rend `indetermine` quand l'affirmation n'est pas dans la
+partie transmise, ou quand l'extraction a été refusée. Seul `soutient` compte pour le sourçage valide
+du §8, et `analysis/` ne publie aucune répartition des verdicts `indetermine` par cause.
+
+**Pourquoi ça casse.** Un programme en PDF dépasse souvent 50 000 caractères. Un outil qui cite le
+programme officiel, la meilleure source possible, voit son sourçage valide baisser chaque fois que
+la mesure est au-delà de la coupure. Le lecteur lit un écart de sourçage entre outils qui tient à la
+longueur des pages citées, et rien ne le signale.
+
+**Ce qu'il faut faire.** Avant le pilote (J4) : publier par outil et par mode le nombre de soutiens
+`indetermine` par cause (page tronquée, extraction refusée, page lue). L'auteur décide s'il faut
+aussi relever la borne ou découper la page autour de l'affirmation (amendement : §7, charge).
+
+### 2. Le gabarit Q-NEG écrit « à le » et « à les » devant une mesure en « le » ou « les » — *moyenne*
+
+`pipeline/questions/gabarits.ts:remplirTexteNeutre` substitue `formulation_canonique` telle quelle
+dans « s'oppose-t-il ou elle à [mesure] ? ». Défaut antérieur, rendu exigible par le prompt de
+reformulation 1.0.0 (PR #104), qui exige la mesure recopiée à l'identique.
+
+**Pourquoi ça casse.** La formulation neutre, que personne ne relit, part aux outils avec une faute.
+Les formulations familière et orientée correctes (« au relèvement ») sont rejetées par le contrôle
+de recopie : la question perd deux registres sur trois. La perte se voit au rejet.
+
+**Ce qu'il faut faire.** D35 (4) : contracter « à le » en « au » et « à les » en « aux » au
+remplissage, et contrôler la reformulation sur la mesure contractée. Tests d'abord. À faire avant
+le premier appel du prompt de reformulation.
+
+### 3. Le prompt juge validé (D34) ne vit que dans `scratch/`, hors Git — *basse*
+
+`scratch/prompts/judge-1.0.0.md` n'est suivi par aucun commit ; D34 le cite par ce chemin.
+
+**Pourquoi ça casse.** Un nettoyage de `scratch/` perd le texte validé. Il faudrait le réécrire et
+le faire revalider, et rien ne prouverait que ce soit le même.
+
+**Ce qu'il faut faire.** L'auteur le recopie dans `prompts/judge-1.0.0.md` (`docs/TACHES-AUTEUR.md`).
+
+---
+
 ## 2026-10-06 (soir) — Notation humaine, chaîne de notation simulée, D19 (PR #87 à #91 : `pipeline/notation/`, `notation-humaine/`, `outils/notation-humaine.ts`, `outils/notation-dry.ts`)
 
 ### ~~1. L'écran de notation humaine affiche la vue champ par champ, et rien ne garde qu'il montre tout ce que voit le juge~~ — réglé le 2026-10-08 par la PR #94 (`tests/notation-humaine/completude-affichage.test.ts`, `notation-humaine/client/contenu-vue.ts`)
