@@ -4,7 +4,7 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-10-09. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
 `docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
@@ -477,8 +477,16 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       l'API, qui n'a rien à citer » ; au §7, « un refus tiré dans l'échantillon reste doublement
       noté par des humains et n'entre pas dans l'accord juges-humains ; leur nombre est publié ».
 
-- [ ] **Relire puis inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3),
-      sept choix de rédaction à relire en fin de fichier ; le recopier dans `prompts/judge-1.0.0.md`.
+- [ ] **Inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3). Les sept
+      choix de rédaction sont validés (D34, 2026-10-12) ; reste à recopier le prompt dans
+      `prompts/judge-1.0.0.md`.
+
+- [ ] **Écrire aussi en 0.16 : D34 (§7)**, tranchée le 2026-10-12. Au verdict de soutien : « Un lien
+      dont le texte transmis est tronqué et ne contient pas l'affirmation, ou dont le texte n'a pu
+      être extrait, est jugé indéterminé ; ne soutient pas exige la page entière. » Au motif
+      d'inexactitude : « Le juge retient le premier motif applicable dans l'ordre : candidat confondu,
+      position inventée, position opposée, quantification fausse, périmètre faux, omission, ajout
+      fabriqué, autre. »
 
 ### Prompts (`prompts/`)
 
