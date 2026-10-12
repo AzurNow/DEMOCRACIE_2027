@@ -116,6 +116,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-10 :** Option 1 sur les deux points. À écrire en 0.16 avec D32 (§7, annexe C).
 
+### D34 — Sept choix de rédaction du prompt juge 1.0.0 (scratch/prompts/judge-1.0.0.md, charge-juge-v3) : verdict de soutien sur une page tronquée et sur une extraction refusée ; contenu de noms_cites ; ordre de priorité des motifs d'inexactitude ; extrait toujours demandé sur une Q-ATT ; « personne ne la propose » sur une Q-ATT ; confirmation_premisse.
+
+**Décision du 2026-10-12 :** Option 1 sur les sept points. Le prompt est prêt à être recopié par l'auteur dans prompts/judge-1.0.0.md. À écrire en 0.16 (§7) : les deux verdicts indetermine (1, 2) et l'ordre des motifs (6), qui influent sur une mesure publiée.
+
 ### D35 — Relecture de la PR #104 (prompts extraction et reformulation 1.0.0) : page d'une citation demandée au modèle ; item O proposé depuis une seule source ; positions du candidat rapportées par la presse (T3) ; contraction « à le », « à les » dans le gabarit Q-NEG.
 
 **Décision du 2026-10-12 :** Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) à coder (lot questions-tirage-symetrie : remplirTexteNeutre et contrôle de la reformulation), testé avant tout appel du prompt de reformulation.
