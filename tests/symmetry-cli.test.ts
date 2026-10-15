@@ -2,7 +2,8 @@
  * `pnpm symmetry` en ligne de commande (revue du 2026-09-23, constats 2 et 9), cas limite 7 du
  * brief : la barrière bloquante ne sort plus en succès sans avoir contrôlé l'invariant « item F ⇒
  * mesure fictive », lit `--items` comme un répertoire (la disposition de `data/items/`), et
- * confronte chaque fichier lu à son schéma.
+ * confronte chaque fichier lu à son schéma. Lot mesures-validees (décision D38) : `--mesures` est lu
+ * de même, comme un répertoire, la disposition de `data/mesures/`.
  *
  * Le jeu nominal est le plus petit qui rende la symétrie verte : un candidat comparé, une
  * question sur un item P et une sur un item F. Chaque objet est complété jusqu'à la conformité à
@@ -135,7 +136,8 @@ function ecrireJson(chemin: string, valeur: unknown): void {
 type Options = Readonly<Record<"tirage" | "questions" | "items" | "mesures" | "run", string>>;
 
 /**
- * Écrit le jeu sur disque, un fichier par item dans `items/`, et rend les cinq options. Conformité
+ * Écrit le jeu sur disque, un fichier par item dans `items/` et par mesure dans `mesures/`, et rend
+ * les cinq options. Conformité
  * n° 9 : le bac est un dépôt Git, les items y sont commités, et le run inscrit ce commit comme
  * `versions.donnees_commit`, le commit des données lu au gel. `gel` remplace ce commit.
  */
@@ -143,6 +145,9 @@ function poser(jeu: Jeu, gel?: (commit: string) => string | undefined): Options 
   const repertoireItems = join(racine, "items");
   mkdirSync(repertoireItems, { recursive: true });
   for (const item of jeu.items) ecrireJson(join(repertoireItems, `${item.id}.json`), item);
+  const repertoireMesures = join(racine, "mesures");
+  mkdirSync(repertoireMesures, { recursive: true });
+  for (const referent of jeu.mesures) ecrireJson(join(repertoireMesures, `${referent.id}.json`), referent);
   initialiserDepot(racine);
   const commit = head(racine);
   const donnees_commit = gel === undefined ? commit : gel(commit);
@@ -151,13 +156,12 @@ function poser(jeu: Jeu, gel?: (commit: string) => string | undefined): Options 
   else versions["donnees_commit"] = donnees_commit;
   ecrireJson(join(racine, "tirage.json"), jeu.tirage);
   ecrireJson(join(racine, "questions.json"), jeu.questions);
-  ecrireJson(join(racine, "mesures.json"), jeu.mesures);
   ecrireJson(join(racine, "run.json"), { ...jeu.run, versions });
   return {
     tirage: join(racine, "tirage.json"),
     questions: join(racine, "questions.json"),
     items: repertoireItems,
-    mesures: join(racine, "mesures.json"),
+    mesures: repertoireMesures,
     run: join(racine, "run.json"),
   };
 }
@@ -236,7 +240,46 @@ describe("7. pnpm symmetry", () => {
     expect(resultat.erreur).toContain(`${vide} : aucun fichier d'item`);
   });
 
-  it("un item F dont la mesure n'est pas fictive : code 1, violation nommée", () => {
+  it("cas 10 : --mesures vers un répertoire vide : code 1", () => {
+    const options = poser(jeuNominal());
+    const vide = join(racine, "mesures-vides");
+    mkdirSync(vide);
+    const resultat = symmetry({ ...options, mesures: vide });
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(`${vide} : aucun fichier de mesure`);
+    expect(resultat.sortie).not.toContain("Contrôles verts");
+  });
+
+  it("cas 10 : --mesures vers un répertoire absent : code 1", () => {
+    const options = poser(jeuNominal());
+    const absent = join(racine, "mesures-absentes");
+    const resultat = symmetry({ ...options, mesures: absent });
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(`${absent} : répertoire absent`);
+    expect(resultat.sortie).not.toContain("Contrôles verts");
+  });
+
+  it("cas 10 : --mesures vers un tableau JSON (l'ancien format) : code 1, un seul chemin d'entrée", () => {
+    const jeu = jeuNominal();
+    const options = poser(jeu);
+    const tableau = join(racine, "mesures.json");
+    ecrireJson(tableau, jeu.mesures);
+    const resultat = symmetry({ ...options, mesures: tableau });
+    expect(resultat.status).toBe(1);
+    expect(resultat.sortie).not.toContain("Contrôles verts");
+  });
+
+  it("un fichier de mesure non conforme à son schéma : code 1, fichier nommé", () => {
+    const options = poser(jeuNominal());
+    const fichier = join(options.mesures, `${MESURE_P.id}.json`);
+    ecrireJson(fichier, { ...MESURE_P, version: 0 });
+    const resultat = symmetry(options);
+    expect(resultat.status).toBe(1);
+    expect(resultat.erreur).toContain(fichier);
+    expect(resultat.erreur).toContain("« mesure »");
+  });
+
+  it("cas 10 : un item F dont la mesure n'est pas fictive : code 1, violation nommée", () => {
     const jeu = jeuNominal();
     const { origine_fictive: _o, verification_fictivite: _v, ...socle } = MESURE_F;
     const nonFictive = { ...socle, fictive: false };

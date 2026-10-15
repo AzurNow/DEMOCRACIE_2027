@@ -9,14 +9,15 @@
  *   pnpm symmetry --tirage=runs/2026-12-01/tirage.json \
  *                 --questions=runs/2026-12-01/questions.json \
  *                 --items=data/items \
- *                 --mesures=runs/2026-12-01/mesures.json \
+ *                 --mesures=data/mesures \
  *                 --run=runs/2026-12-01/run.json
  *
- * Les cinq options sont obligatoires. `--items` désigne un répertoire, un fichier JSON par item :
- * c'est la disposition de `data/items/`, lue en ordre de nom de fichier. Les questions et les
- * mesures sont des tableaux JSON. `--mesures` n'est pas facultatif : sans lui, l'invariant
- * « un item F pointe une mesure fictive » ne serait pas contrôlé, et la règle 4 de CLAUDE.md
- * interdit qu'un contrôle de la barrière se saute.
+ * Les cinq options sont obligatoires. `--items` et `--mesures` désignent chacun un répertoire, un
+ * fichier JSON par objet : c'est la disposition de `data/items/` et de `data/mesures/` (décision D38,
+ * une mesure validée par fichier, dans sa version courante), lue en ordre de nom de fichier. Un
+ * répertoire absent ou sans fichier `*.json` arrête la commande. Les questions sont un tableau JSON.
+ * `--mesures` n'est pas facultatif : sans lui, l'invariant « un item F pointe une mesure fictive »
+ * ne serait pas contrôlé, et la règle 4 de CLAUDE.md interdit qu'un contrôle de la barrière se saute.
  *
  * `--questions` est le jeu complet des questions engendrées au gel, publié avec le run, et non les
  * seules questions tirées ; `--items`, les items au gel. Ce répertoire est recoupé, fichier par
@@ -33,7 +34,7 @@
  * avant tout contrôle : une entrée non conforme arrête la commande avec le code 1.
  */
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { analyserArguments, obligatoire } from "./arguments.ts";
 import { valider } from "./schemas/valider.ts";
@@ -97,18 +98,21 @@ function lireTableau<T>(nom: NomSchema, chemin: string): readonly T[] {
 }
 
 /**
- * Un répertoire d'items, un fichier par item, en ordre de nom : l'ordre de lecture ne dépend pas
- * du système de fichiers. Un répertoire sans item est une erreur : un contrôle qui ne porte sur
- * rien n'est pas un contrôle vert.
+ * Un répertoire d'objets, un fichier par objet, en ordre de nom : l'ordre de lecture ne dépend pas
+ * du système de fichiers. Un répertoire absent ou sans objet est une erreur : un contrôle qui ne
+ * porte sur rien n'est pas un contrôle vert. `objet` nomme ce qui manque (« d'item », « de mesure »).
  */
-function lireRepertoireItems(repertoire: string): readonly Item[] {
+function lireRepertoire<T>(nom: NomSchema, repertoire: string, objet: string): readonly T[] {
+  if (!existsSync(repertoire)) {
+    throw new Error(`${repertoire} : répertoire absent. Rien à contrôler n'est une erreur.`);
+  }
   const fichiers = readdirSync(repertoire)
-    .filter((nom) => nom.endsWith(".json"))
+    .filter((fichier) => fichier.endsWith(".json"))
     .sort();
   if (fichiers.length === 0) {
-    throw new Error(`${repertoire} : aucun fichier d'item (*.json). Rien à contrôler n'est une erreur.`);
+    throw new Error(`${repertoire} : aucun fichier ${objet} (*.json). Rien à contrôler n'est une erreur.`);
   }
-  return fichiers.map((nom) => lireObjet<Item>("item", join(repertoire, nom)));
+  return fichiers.map((fichier) => lireObjet<T>(nom, join(repertoire, fichier)));
 }
 
 function lireEntrees(): Entrees {
@@ -120,7 +124,7 @@ function lireEntrees(): Entrees {
     mesures: obligatoire(
       table,
       "mesures",
-      "le référentiel des mesures, sans lequel l'invariant « item F ⇒ mesure fictive » n'est pas contrôlé",
+      "le répertoire des mesures validées, un fichier par mesure, sans lequel l'invariant « item F ⇒ mesure fictive » n'est pas contrôlé",
     ),
     run: obligatoire(table, "run", "le périmètre et la date de gel du run"),
   };
@@ -128,8 +132,8 @@ function lireEntrees(): Entrees {
     repertoire_items: chemins.items,
     tirage: lireObjet<Tirage>("tirage", chemins.tirage),
     questions: lireTableau<Question>("question", chemins.questions),
-    items: lireRepertoireItems(chemins.items),
-    mesures: lireTableau<Mesure>("mesure", chemins.mesures),
+    items: lireRepertoire<Item>("item", chemins.items, "d'item"),
+    mesures: lireRepertoire<Mesure>("mesure", chemins.mesures, "de mesure"),
     run: lireObjet<RunLu>("run", chemins.run),
   };
 }

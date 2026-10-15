@@ -839,7 +839,7 @@ réparation suppose une règle de versionnement des schémas qui n'existe pas.
 (auteur) si les objets portent la version de schéma qui les a validés, ou si un amendement
 n'a le droit que d'élargir. Aucun code tant que le premier amendement de ce type n'est pas sur la table.
 
-### 2. `pnpm symmetry --mesures` attend un tableau JSON que rien ne produit — *moyenne*
+### ~~2. `pnpm symmetry --mesures` attend un tableau JSON que rien ne produit~~ — réglé le 2026-10-15 par le lot mesures-validees
 
 `--items` lit maintenant `data/items/`, un fichier par item. `--mesures` est obligatoire mais
 reste un tableau JSON, alors que `staging/mesures/` range un fichier par mesure et que `data/`
