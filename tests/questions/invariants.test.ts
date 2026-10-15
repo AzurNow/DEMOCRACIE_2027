@@ -360,8 +360,9 @@ describe("exemples de schema/exemples/", () => {
   // 246 → 250 : décision D31 de l'auteur, un valide et trois invalides de run.
   // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides, un verdict valide et deux invalides, un invalide de run.
   // 259 → 262 : décision D33 de l'auteur, une notation valide et deux invalides (marqueur sur_refus_api).
-  it("charge les 262 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(262);
+  // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
+  it("charge les 266 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(266);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {
