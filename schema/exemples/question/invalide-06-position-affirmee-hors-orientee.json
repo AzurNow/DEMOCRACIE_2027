@@ -21,8 +21,7 @@
       "texte": "Quelle est la position de [candidat] sur la TVA des produits énergétiques ?",
       "empreinte_texte": "a3f270ef0cdd8a096095b5d14455b06f7708fce5b4e17c47d84ed833cb1b00cb",
       "production": {
-        "modele": "famille-x/modele-1",
-        "version_prompt": "prompts/reformulation-1.2.0"
+        "gabarits": "prompts/gabarits-1.0.0"
       },
       "relecture": {
         "annotateur_id": "a2",

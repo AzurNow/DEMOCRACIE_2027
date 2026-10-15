@@ -241,13 +241,22 @@ export function decidePar(item: Item, etapes: readonly EtapePanel[]): Item {
 
 /* --------------------------------------------------------------- questions */
 
+/** Version de gabarits portée par les questions de fabrique, et par la production de leur neutre (D42 (2)). */
+const VERSION_GABARITS_DE_TEST = "annexe-B-tests";
+
+/** D42 (2) : la neutre vient du gabarit, la familière et l'orientée d'un modèle. */
+function productionDe(registre: Registre): Formulation["production"] {
+  if (registre === "neutre") return { gabarits: VERSION_GABARITS_DE_TEST };
+  return { modele: "famille-x/modele-1", version_prompt: "prompts/reformulation-0.0.0" };
+}
+
 function formulation(registre: Registre, texte: string, position_affirmee?: Position): Formulation {
   const socleFormulation: Formulation = {
     id: identifiant(`formulation:${registre}:${texte}`),
     registre,
     texte,
     empreinte_texte: sha256(texte),
-    production: { modele: "famille-x/modele-1", version_prompt: "prompts/reformulation-0.0.0" },
+    production: productionDe(registre),
     relecture: {
       annotateur_id: "a2",
       date: "2026-11-18T15:00:00+01:00",
@@ -292,7 +301,7 @@ export function question(options: OptionsQuestion): Question {
     grappe_id: options.grappe_id,
     formulations: formulations(options.texte_neutre, options.position_affirmee),
     engendree_le: "2026-11-18T14:00:00+01:00",
-    version_gabarits: "annexe-B-tests",
+    version_gabarits: VERSION_GABARITS_DE_TEST,
   };
   if (options.candidat_id === undefined) return base;
   return { ...base, candidat_id: options.candidat_id };

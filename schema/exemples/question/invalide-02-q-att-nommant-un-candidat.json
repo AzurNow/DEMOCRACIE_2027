@@ -35,8 +35,7 @@
       "texte": "Quels candidats à la présidentielle 2027 proposent de ramener la TVA sur les produits énergétiques à 5,5 % ?",
       "empreinte_texte": "5b9bb246830673a033e3d146f5f3a86abd9ad2cad8cf657507d367a8d8dbf168",
       "production": {
-        "modele": "famille-x/modele-1",
-        "version_prompt": "prompts/reformulation-1.2.0"
+        "gabarits": "prompts/gabarits-1.0.0"
       },
       "relecture": {
         "annotateur_id": "a2",

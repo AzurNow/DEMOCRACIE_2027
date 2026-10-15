@@ -124,6 +124,17 @@ export interface QuestionEngendree {
 
 /* ------------------------------------------------------------------ question */
 
+/** Production de la formulation neutre : la version de la table de gabarits qui l'a écrite (D42 (2)). */
+export interface ProductionGabarit {
+  readonly gabarits: string;
+}
+
+/** Production d'une formulation familière ou orientée : le modèle et la version du prompt (§5, règle 6). */
+export interface ProductionModele {
+  readonly modele: string;
+  readonly version_prompt: string;
+}
+
 export interface Formulation {
   readonly id: string;
   readonly registre: Registre;
@@ -135,7 +146,11 @@ export interface Formulation {
    * le tirage (`EntreeTirage.premisse_fausse`), jamais sur la question.
    */
   readonly position_affirmee?: Position;
-  readonly production: { readonly modele: string; readonly version_prompt: string };
+  /**
+   * Décision D42 (2) : `ProductionGabarit` sur la formulation neutre, écrite par le gabarit ;
+   * `ProductionModele` sur la familière et l'orientée. Le schéma lie la forme au registre.
+   */
+  readonly production: ProductionGabarit | ProductionModele;
   readonly relecture: {
     readonly annotateur_id: string;
     readonly date: string;

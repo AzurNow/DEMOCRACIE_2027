@@ -21,8 +21,7 @@
         "texte": "Question simulée 1, formulation neutre : texte de démonstration, sans contenu réel.",
         "empreinte_texte": "66a525f2d85cf86c722ab7cae8f2f0e72e8bbc57efa0e16103feca9d39678458",
         "production": {
-          "modele": "simule/aucun-modele",
-          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+          "gabarits": "prompts/gabarits-1.0.0"
         },
         "relecture": {
           "annotateur_id": "a-simule",
@@ -86,8 +85,7 @@
         "texte": "Question simulée 2, formulation neutre : texte de démonstration, sans contenu réel.",
         "empreinte_texte": "8b6776dff5d3f735fb4338a606bfec6a4a3542706f45a26f7286e2a21e2da860",
         "production": {
-          "modele": "simule/aucun-modele",
-          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+          "gabarits": "prompts/gabarits-1.0.0"
         },
         "relecture": {
           "annotateur_id": "a-simule",
@@ -151,8 +149,7 @@
         "texte": "Question simulée 3, formulation neutre : texte de démonstration, sans contenu réel.",
         "empreinte_texte": "1632573c854de8905d159037770ad50b6fbe5efca9a5a66b752ef98ee5f7a329",
         "production": {
-          "modele": "simule/aucun-modele",
-          "version_prompt": "prompts/reformulation-simulee-0.0.0"
+          "gabarits": "prompts/gabarits-1.0.0"
         },
         "relecture": {
           "annotateur_id": "a-simule",
