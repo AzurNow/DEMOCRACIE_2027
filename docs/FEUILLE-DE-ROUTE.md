@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-12.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-15.
 
 ## Décisions en attente
 
@@ -124,9 +124,33 @@ Aucune décision en attente.
 
 **Décision du 2026-10-12 :** Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) remplissage codé dans la PR #111 (majuscule « Le »/« Les » après « à » ⇒ erreur, décision du 2026-10-12) ; contrôle de la reformulation sur la mesure contractée à écrire avec ce contrôle.
 
+### D36 — Points ouverts par les relevés du périmètre du 2026-10-15 (scratch/perimetre/dossier-2026-10-15-final.md) : clôture du relevé ; perdants de la primaire PS–Place publique–GRS ; preuve de la proclamation ; trois assistants incertains (Gemini Notebook, Grok Bot, Meta AI).
+
+**Décision du 2026-10-15 :** (1) L'auteur : « La date initiale du 15 est repoussable, le plus important est que le code soit propre et parfaitement complet ! » Lecture retenue par l'agent, à confirmer : la date de référence de la liste reste le 2026-10-15 (D26), le relevé des faits datés du 15 au plus tard est complété sans urgence, et la publication de la liste suit le gel effectif de la 1.0. (2), (3), (4) : option 1.
+
+### D37 — Outil dont l'API n'offre que le mode avec recherche web (cas possible de Perplexity : désactivation du web attestée en secondaire seulement, migration de Sonar vers une « Agent API »). D28 (3) ne couvre que le cas inverse.
+
+**Décision du 2026-10-15 :** Option 1. À écrire en 0.16 au §8, avec D28 (3).
+
+### D38 — Où vivent les mesures validées que lit le gel d'un run ?
+
+**Décision du 2026-10-15 :** Option 1.
+
+### D39 — Où vivent les formulations familière et orientée relues qu'exige chaque question ?
+
+**Décision du 2026-10-15 :** Option 1.
+
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
 **Décision du 2026-09-20 :** Adresse mail dédiée seule pour la v1.0, phrase du §4 ajustée avant gel — révision de texte, pas amendement. Un service de formulaire pourra s'ajouter par amendement quand le volume le justifiera.
+
+### D40 — D'où viennent les graines publiées d'un run (tirage, échantillon humain, contrefactuel, bootstrap, permutation) ? Le protocole ne dit ni qui les choisit ni quand.
+
+**Décision du 2026-10-15 :** Option 1. Nouveau service tiers et appel réseau autorisés pour le gel. À écrire au §5 en 0.16.
+
+### D41 — Qui lance le gel d'un vrai run (écriture de runs/<date>/) ?
+
+**Décision du 2026-10-15 :** Option 1.
 
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
@@ -163,6 +187,7 @@ flowchart LR
     lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T2"]:::T2
     lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T0"]:::T0
     lot_feuille_de_route["feuille-de-route<br/>Feuille de route générée depuis ce fichier<br/>T2"]:::T2
+    lot_mesures_validees["mesures-validees<br/>data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel<br/>T0"]:::T0
     lot_outillage["outillage<br/>ajv sur les exemples de schéma, ESLint à deux règles de complexité<br/>T3"]:::T3
     lot_questions_tirage_symetrie["questions-tirage-symetrie<br/>Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers<br/>T2"]:::T2
     lot_schemas["schemas<br/>Schémas JSON et leurs exemples<br/>T2"]:::T2
@@ -172,9 +197,11 @@ flowchart LR
     lot_contestation_notification["contestation-notification<br/>Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18)<br/>T2"]:::T2
     lot_dette_validation["dette-validation<br/>Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/<br/>T2"]:::T2
     lot_hors_code["hors-code<br/>Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9<br/>T0"]:::T0
+    lot_reformulation["reformulation<br/>Formulations familière et orientée : staging, relecture humaine, data/formulations/<br/>T0"]:::T0
   end
   subgraph jalon_J4["J4 · 22 nov. 2026"]
     lot_alignement_0_3["alignement-0-3<br/>Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)<br/>T2"]:::T2
+    lot_gel["gel<br/>Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider)<br/>T0"]:::T0
     lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo<br/>T3"]:::T3
     lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T3"]:::T3
     lot_notation_humaine["notation-humaine<br/>Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or<br/>T2"]:::T2
@@ -188,6 +215,9 @@ flowchart LR
   lot_validation_interface --> lot_contestation_notification
   lot_collecte -.-> lot_extraction
   lot_perimetre_prompts --> lot_extraction
+  lot_mesures_validees --> lot_gel
+  lot_questions_tirage_symetrie --> lot_gel
+  lot_reformulation --> lot_gel
   lot_analyse --> lot_go_no_go
   lot_interrogation --> lot_go_no_go
   lot_notation --> lot_go_no_go
@@ -195,12 +225,15 @@ flowchart LR
   lot_protocole --> lot_hors_code
   lot_perimetre_prompts --> lot_interrogation
   lot_questions_tirage_symetrie --> lot_interrogation
+  lot_dette_validation --> lot_mesures_validees
   lot_interrogation -.-> lot_notation
   lot_perimetre_prompts --> lot_notation
   lot_test_liens --> lot_notation
   lot_notation --> lot_notation_humaine
   lot_test_liens --> lot_notation_humaine
   lot_validation_interface -.-> lot_notation_humaine
+  lot_mesures_validees --> lot_reformulation
+  lot_perimetre_prompts --> lot_reformulation
   lot_analyse --> lot_site
   lot_go_no_go --> lot_site
   lot_interrogation -.-> lot_test_liens
@@ -222,6 +255,7 @@ flowchart LR
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T0 | bloqué par perimetre-prompts | opus | L | 1 | collecte (informe), perimetre-prompts |
 | feuille-de-route | Feuille de route générée depuis ce fichier | J2 | T2 | débloqué | sonnet | S | 0.5 | — |
+| mesures-validees | data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel | J2 | T0 | bloqué par dette-validation | opus | M | 0.5 | dette-validation |
 | outillage | ajv sur les exemples de schéma, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
 | questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T2 | débloqué | opus | L | 2 | — |
 | schemas | Schémas JSON et leurs exemples | J2 | T2 | débloqué | fait | S | 0 | — |
@@ -229,7 +263,9 @@ flowchart LR
 | contestation-notification | Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18) | J3 | T2 | débloqué | opus | L | 2 | validation-interface |
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
+| reformulation | Formulations familière et orientée : staging, relecture humaine, data/formulations/ | J3 | T0 | bloqué par mesures-validees, perimetre-prompts | opus | L | 2 | mesures-validees, perimetre-prompts |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
+| gel | Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider) | J4 | T0 | bloqué par mesures-validees, questions-tirage-symetrie, reformulation | opus | L | 1 | mesures-validees, questions-tirage-symetrie, reformulation |
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T3 | atteint | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T3 | atteint | opus | L | 2 | interrogation (informe), perimetre-prompts, test-liens |
 | notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T2 | débloqué | sonnet | L | 2 | notation, test-liens, validation-interface (informe) |
@@ -259,6 +295,7 @@ flowchart LR
 - collecte (T2)
 - extraction (T0)
 - feuille-de-route (T2)
+- mesures-validees (T0)
 - outillage (T3)
 - questions-tirage-symetrie (T2)
 - schemas (T2)
@@ -269,10 +306,12 @@ flowchart LR
 - contestation-notification (T2)
 - dette-validation (T2)
 - hors-code (T0)
+- reformulation (T0)
 
 ### J4
 
 - alignement-0-3 (T2)
+- gel (T0)
 - interrogation (T3)
 - notation (T3)
 - notation-humaine (T2)

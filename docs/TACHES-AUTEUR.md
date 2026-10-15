@@ -463,6 +463,25 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
   Ligne de révision, à fusionner : « Section 3 : élimination à une primaire, déclaration de
   candidature explicite. Section 8 : outil sans recherche web par API. »
 
+  D37 (2026-10-15), à la suite du texte du §8 de D28 : « Il en va de même, à l'inverse, d'un outil
+  dont l'API n'offre que la recherche web : il est mesuré dans le seul mode avec recherche. » Ligne
+  de révision : « Section 8 : outil à un seul mode par API, dans un sens comme dans l'autre. »
+
+- [ ] **Écrire aussi en 0.16 : D40 (§5, graines)**, tranchée le 2026-10-15. Texte proposé, au
+      paragraphe « Tirage », après « ce qui rend le tirage reproductible. » : « Les graines d'un run
+      ne sont choisies par personne : elles sont dérivées de la valeur d'une balise publique d'aléa
+      (drand), au premier tour émis à l'instant de gel ou après. La réponse signée de la balise est
+      archivée avec le run ; chacune des graines publiées (tirage, échantillon humain, test
+      contrefactuel, bootstrap, permutation) en est dérivée par une clé lisible, publiée avec elle.
+      Nul, l'auteur compris, ne peut connaître une graine avant le gel, et chacun peut la
+      recalculer. » Ligne de révision : « Section 5 : les graines sont dérivées d'une balise publique
+      d'aléa, au premier tour qui suit le gel. » (Déjà inséré dans le projet de 0.16.)
+
+- [ ] **Relire le projet de 0.16 assemblé** dans `scratch/protocole-0.16/` (2026-10-15) : copie du
+      protocole avec les textes de cette section appliqués, diff, et `NOTES.md` (placements
+      validés le 2026-10-15, textes rédigés par l'agent à relire, corrections minimales de trois
+      phrases de la 0.15). Puis recopier dans `docs/PROTOCOLE.md`.
+
 - [ ] **Ajouter à la relecture de l'avocat (J1) : conditions de l'API Gemini en mode web** (D28, 4).
       Elles interdisent d'« analyser » les résultats ancrés, limitent leur conservation à deux ans
       et en réservent l'affichage à l'utilisateur (citations exactes : `scratch/perimetre/dossier-2026-10-15.md`,
@@ -475,6 +494,12 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       classements Productivité des stores (Perplexity, DeepSeek, Grok Bot proches du rang 50) ;
       preuve d'adhésion de YouGov et Cluster17. Puis archiver (`pnpm preuve --fichier
       scratch/perimetre/urls-a-archiver.txt`) et remplir `config/perimetre.yaml`.
+      *Fait le 2026-10-15 matin* (`scratch/perimetre/dossier-2026-10-15-final.md`, 171 URL dans
+      `urls-a-archiver-2026-10-15.txt`) : 13 candidats inclus, outils inchangés. D36 : la date du
+      15 est repoussable ; le relevé des faits datés du 15 au plus tard reste à compléter
+      (notices publiées avec retard), puis archiver ce fichier-là. Perdants de la primaire exclus,
+      Gemini Notebook, Grok Bot et Meta AI exclus avec motif ; D37 : mode de Perplexity à figer sur
+      sa documentation primaire.
 
 - [ ] **Écrire aussi en 0.16 : D32 (§7)**, tranchée le 2026-10-10. Après la règle de décision :
       « Un refus de l'API est noté non-réponse sans être soumis aux juges. » D33 : à l'annexe C,

@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-12",
+  "date_maj": "2026-10-15",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -499,6 +499,85 @@
       "recommandation": "Option 1 sur les quatre points : la page calculée ne peut pas se tromper ; le changement déclaré reste signalé sans que le modèle le déduise ; les items T3 servent de pistes et ne sont jamais tirés ; la contraction est une règle fixe, identique pour tous les candidats, qui ne contraint pas la rédaction des mesures.",
       "retenu": "Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) remplissage codé dans la PR #111 (majuscule « Le »/« Les » après « à » ⇒ erreur, décision du 2026-10-12) ; contrôle de la reformulation sur la mesure contractée à écrire avec ce contrôle.",
       "date_decision": "2026-10-12"
+    },
+    {
+      "id": "D36",
+      "statut": "tranchee",
+      "question": "Points ouverts par les relevés du périmètre du 2026-10-15 (scratch/perimetre/dossier-2026-10-15-final.md) : clôture du relevé ; perdants de la primaire PS–Place publique–GRS ; preuve de la proclamation ; trois assistants incertains (Gemini Notebook, Grok Bot, Meta AI).",
+      "contexte": "Relevés faits le 15 entre 10 h 34 et 10 h 46 UTC ; une publication datée du 15 compte (minuit UTC) et la Commission des sondages publie ses notices avec un à deux jours de retard. Glucksmann a remporté la primaire dès le premier tour le 11 octobre (place-publique.eu, 66,17 %) ; choisir2027.fr ne sert plus qu'une page de parking. Gemini Notebook est un outil de recherche sur documents ; Grok Bot passe par la même API que Grok ; l'ouverture de l'API Meta en France ou dans l'UE n'est pas établie et ses conditions répondent 404.",
+      "options": [
+        "(1) Relire le 17 puis clore ; (2) perdants exclus, motif « perdant de la primaire » (§3), et non « retirés », statut réservé à un candidat inclus à un run ; (3) proclamation de place-publique.eu (parti co-organisateur) archivée, celle du PS recherchée en plus, écart de chiffres noté sans effet ; (4) Gemini Notebook exclu (pas assistant généraliste, pas d'API propre), Grok Bot doublon de Grok, Meta AI exclu à J1 faute d'API accessible prouvée, réexaminé au gel de chaque run (D26), motifs publiés.",
+        "(1) Clore sur le relevé du matin ; (2)-(3) exiger la proclamation officielle, perdants incertains sinon ; (4) Meta AI inscrit, mesure suspendue jusqu'à preuve de l'accès."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "(1) L'auteur : « La date initiale du 15 est repoussable, le plus important est que le code soit propre et parfaitement complet ! » Lecture retenue par l'agent, à confirmer : la date de référence de la liste reste le 2026-10-15 (D26), le relevé des faits datés du 15 au plus tard est complété sans urgence, et la publication de la liste suit le gel effectif de la 1.0. (2), (3), (4) : option 1.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D37",
+      "statut": "tranchee",
+      "question": "Outil dont l'API n'offre que le mode avec recherche web (cas possible de Perplexity : désactivation du web attestée en secondaire seulement, migration de Sonar vers une « Agent API »). D28 (3) ne couvre que le cas inverse.",
+      "contexte": "Perplexity remplit la règle d'inclusion (App Store, rang 36). Le §8 publie les deux modes côte à côte ; D28 (3) mesure dans le seul mode sans recherche l'outil dont l'API n'offre pas la recherche web.",
+      "options": [
+        "(1) Règle symétrique de D28 (3) : mesuré dans le seul mode offert, l'autre publié sans objet, aucune comparaison des modes ; documentation primaire de Perplexity vérifiée avant de figer son mode.",
+        "(2) Outil exclu."
+      ],
+      "recommandation": "Option 1 : aucun outil remplissant la règle d'inclusion n'est sorti pour une raison technique (esprit de D28).",
+      "retenu": "Option 1. À écrire en 0.16 au §8, avec D28 (3).",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D38",
+      "statut": "tranchee",
+      "question": "Où vivent les mesures validées que lit le gel d'un run ?",
+      "contexte": "Les mesures sont dans staging/mesures/, data/ n'en a pas ; pnpm symmetry --mesures attend un tableau JSON que rien ne produit (docs/DETTE.md).",
+      "options": [
+        "(1) data/mesures/, un fichier par mesure, promu par pnpm promote avec les items qui la citent ; lu en répertoire au commit donnees_commit, comme data/items/.",
+        "(2) Tableau extrait du staging au gel."
+      ],
+      "recommandation": "Option 1 : un seul chemin d'entrée, validé par un humain (règle 3).",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D39",
+      "statut": "tranchee",
+      "question": "Où vivent les formulations familière et orientée relues qu'exige chaque question ?",
+      "contexte": "Le schéma question exige trois formulations produites par un modèle puis relues par un annotateur ; aucun code ne les produit, ne les fait relire ni ne les range.",
+      "options": [
+        "(1) Lot reformulation dédié : staging/formulations/ (prompts/reformulation-1.0.0.md, contrôle sur la mesure contractée, D35 (4)), relecture dans l'interface de validation, promotion vers data/formulations/, clé : identifiant de question et empreinte du texte neutre ; le gel lit seulement, formulation absente ou relue sur un autre texte neutre ⇒ gel refusé.",
+        "(2) Produites et relues au gel."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D40",
+      "statut": "tranchee",
+      "question": "D'où viennent les graines publiées d'un run (tirage, échantillon humain, contrefactuel, bootstrap, permutation) ? Le protocole ne dit ni qui les choisit ni quand.",
+      "contexte": "Une graine choisie après avoir vu les données permettrait de chercher un tirage favorable.",
+      "options": [
+        "(1) Balise publique d'aléa (drand) au tour fixé par date_gel, réponse signée archivée avec le run, cinq graines dérivées par clé lisible ; appel réseau fait par l'auteur seul au gel.",
+        "(2) Dérivées de l'empreinte du contenu gelé et de date_gel.",
+        "(3) Tirées par l'auteur, engagement SHA-256 publié avant le gel."
+      ],
+      "recommandation": "Option 1 : imprévisible avant le gel, vérifiable par tous.",
+      "retenu": "Option 1. Nouveau service tiers et appel réseau autorisés pour le gel. À écrire au §5 en 0.16.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D41",
+      "statut": "tranchee",
+      "question": "Qui lance le gel d'un vrai run (écriture de runs/<date>/) ?",
+      "contexte": "Le gel fige versions, périmètre, questions, tirage et graines d'une mesure publique.",
+      "options": [
+        "(1) L'auteur seul ; un agent seulement sur fixtures vers un répertoire temporaire ; dépôt sale refusé, code_commit et donnees_commit inscrits, runs/<date>/ existant refusé (un gel s'invalide, il ne se refait pas).",
+        "(2) Un agent gèle et ouvre une PR relue."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [
@@ -896,6 +975,78 @@
       ],
       "decisions": [],
       "note": "Rien de tout cela n'est du code, mais tout conditionne J1, J3 et J4."
+    },
+    {
+      "id": "gel",
+      "titre": "Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider)",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 1,
+      "depend_de": [
+        {
+          "lot": "mesures-validees",
+          "type": "bloque"
+        },
+        {
+          "lot": "reformulation",
+          "type": "bloque"
+        },
+        {
+          "lot": "questions-tirage-symetrie",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D38",
+        "D40",
+        "D41"
+      ],
+      "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
+    },
+    {
+      "id": "mesures-validees",
+      "titre": "data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "M",
+      "temps_auteur_h": 0.5,
+      "depend_de": [
+        {
+          "lot": "dette-validation",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D38"
+      ],
+      "note": "Règle la dette « pnpm symmetry --mesures attend un tableau que rien ne produit »."
+    },
+    {
+      "id": "reformulation",
+      "titre": "Formulations familière et orientée : staging, relecture humaine, data/formulations/",
+      "jalon": "J3",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 2,
+      "depend_de": [
+        {
+          "lot": "mesures-validees",
+          "type": "bloque"
+        },
+        {
+          "lot": "perimetre-prompts",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D39",
+        "D35"
+      ],
+      "note": "Inclut le contrôle de la reformulation sur la mesure contractée (D35 (4))."
     }
   ],
   "anomalies": [
