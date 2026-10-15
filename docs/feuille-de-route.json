@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-12",
+  "date_maj": "2026-10-15",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -499,6 +499,32 @@
       "recommandation": "Option 1 sur les quatre points : la page calculée ne peut pas se tromper ; le changement déclaré reste signalé sans que le modèle le déduise ; les items T3 servent de pistes et ne sont jamais tirés ; la contraction est une règle fixe, identique pour tous les candidats, qui ne contraint pas la rédaction des mesures.",
       "retenu": "Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) remplissage codé dans la PR #111 (majuscule « Le »/« Les » après « à » ⇒ erreur, décision du 2026-10-12) ; contrôle de la reformulation sur la mesure contractée à écrire avec ce contrôle.",
       "date_decision": "2026-10-12"
+    },
+    {
+      "id": "D36",
+      "statut": "tranchee",
+      "question": "Points ouverts par les relevés du périmètre du 2026-10-15 (scratch/perimetre/dossier-2026-10-15-final.md) : clôture du relevé ; perdants de la primaire PS–Place publique–GRS ; preuve de la proclamation ; trois assistants incertains (Gemini Notebook, Grok Bot, Meta AI).",
+      "contexte": "Relevés faits le 15 entre 10 h 34 et 10 h 46 UTC ; une publication datée du 15 compte (minuit UTC) et la Commission des sondages publie ses notices avec un à deux jours de retard. Glucksmann a remporté la primaire dès le premier tour le 11 octobre (place-publique.eu, 66,17 %) ; choisir2027.fr ne sert plus qu'une page de parking. Gemini Notebook est un outil de recherche sur documents ; Grok Bot passe par la même API que Grok ; l'ouverture de l'API Meta en France ou dans l'UE n'est pas établie et ses conditions répondent 404.",
+      "options": [
+        "(1) Relire le 17 puis clore ; (2) perdants exclus, motif « perdant de la primaire » (§3), et non « retirés », statut réservé à un candidat inclus à un run ; (3) proclamation de place-publique.eu (parti co-organisateur) archivée, celle du PS recherchée en plus, écart de chiffres noté sans effet ; (4) Gemini Notebook exclu (pas assistant généraliste, pas d'API propre), Grok Bot doublon de Grok, Meta AI exclu à J1 faute d'API accessible prouvée, réexaminé au gel de chaque run (D26), motifs publiés.",
+        "(1) Clore sur le relevé du matin ; (2)-(3) exiger la proclamation officielle, perdants incertains sinon ; (4) Meta AI inscrit, mesure suspendue jusqu'à preuve de l'accès."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "(1) L'auteur : « La date initiale du 15 est repoussable, le plus important est que le code soit propre et parfaitement complet ! » Lecture retenue par l'agent, à confirmer : la date de référence de la liste reste le 2026-10-15 (D26), le relevé des faits datés du 15 au plus tard est complété sans urgence, et la publication de la liste suit le gel effectif de la 1.0. (2), (3), (4) : option 1.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D37",
+      "statut": "tranchee",
+      "question": "Outil dont l'API n'offre que le mode avec recherche web (cas possible de Perplexity : désactivation du web attestée en secondaire seulement, migration de Sonar vers une « Agent API »). D28 (3) ne couvre que le cas inverse.",
+      "contexte": "Perplexity remplit la règle d'inclusion (App Store, rang 36). Le §8 publie les deux modes côte à côte ; D28 (3) mesure dans le seul mode sans recherche l'outil dont l'API n'offre pas la recherche web.",
+      "options": [
+        "(1) Règle symétrique de D28 (3) : mesuré dans le seul mode offert, l'autre publié sans objet, aucune comparaison des modes ; documentation primaire de Perplexity vérifiée avant de figer son mode.",
+        "(2) Outil exclu."
+      ],
+      "recommandation": "Option 1 : aucun outil remplissant la règle d'inclusion n'est sorti pour une raison technique (esprit de D28).",
+      "retenu": "Option 1. À écrire en 0.16 au §8, avec D28 (3).",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [

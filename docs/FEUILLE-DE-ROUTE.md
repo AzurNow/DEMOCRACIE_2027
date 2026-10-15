@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-12.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-15.
 
 ## Décisions en attente
 
@@ -123,6 +123,14 @@ Aucune décision en attente.
 ### D35 — Relecture de la PR #104 (prompts extraction et reformulation 1.0.0) : page d'une citation demandée au modèle ; item O proposé depuis une seule source ; positions du candidat rapportées par la presse (T3) ; contraction « à le », « à les » dans le gabarit Q-NEG.
 
 **Décision du 2026-10-12 :** Option 1 sur les quatre points. (1) et (3) appliqués au prompt d'extraction dans la PR #104 ; (4) remplissage codé dans la PR #111 (majuscule « Le »/« Les » après « à » ⇒ erreur, décision du 2026-10-12) ; contrôle de la reformulation sur la mesure contractée à écrire avec ce contrôle.
+
+### D36 — Points ouverts par les relevés du périmètre du 2026-10-15 (scratch/perimetre/dossier-2026-10-15-final.md) : clôture du relevé ; perdants de la primaire PS–Place publique–GRS ; preuve de la proclamation ; trois assistants incertains (Gemini Notebook, Grok Bot, Meta AI).
+
+**Décision du 2026-10-15 :** (1) L'auteur : « La date initiale du 15 est repoussable, le plus important est que le code soit propre et parfaitement complet ! » Lecture retenue par l'agent, à confirmer : la date de référence de la liste reste le 2026-10-15 (D26), le relevé des faits datés du 15 au plus tard est complété sans urgence, et la publication de la liste suit le gel effectif de la 1.0. (2), (3), (4) : option 1.
+
+### D37 — Outil dont l'API n'offre que le mode avec recherche web (cas possible de Perplexity : désactivation du web attestée en secondaire seulement, migration de Sonar vers une « Agent API »). D28 (3) ne couvre que le cas inverse.
+
+**Décision du 2026-10-15 :** Option 1. À écrire en 0.16 au §8, avec D28 (3).
 
 ### D4 — Comment offrir le formulaire public de contestation (§4, droit de réponse) sur un site statique sans traceur ?
 
