@@ -1,6 +1,16 @@
 /** Appels au serveur local. Aucune URL absolue : tout est relatif à l'origine servie. */
 
-import type { Brouillon, Diagnostic, Raccourcis, Session, VueItem, VueLot } from "./types.ts";
+import type {
+  Brouillon,
+  Diagnostic,
+  ListeFormulations,
+  Raccourcis,
+  RelectureFormulations,
+  Session,
+  VueFormulations,
+  VueItem,
+  VueLot,
+} from "./types.ts";
 
 /** Réponse HTTP en erreur : le statut et le corps renvoyés par le serveur, tels quels. */
 export class EchecApi extends Error {
@@ -40,6 +50,21 @@ export const api = {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ lot_id }),
+    }),
+  formulations: () => demander<ListeFormulations>("/api/formulations"),
+  formulation: (question_id: string) =>
+    demander<VueFormulations>(`/api/formulations/${encodeURIComponent(question_id)}`),
+  promouvoirFormulations: (relecture: RelectureFormulations) =>
+    demander<{ ok: true; question_id: string }>("/api/formulations/promotions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(relecture),
+    }),
+  refuserFormulations: (relecture: RelectureFormulations) =>
+    demander<{ ok: true; question_id: string }>("/api/formulations/refus", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(relecture),
     }),
   lireBrouillon: () => demander<Brouillon | null>("/api/brouillon"),
   ecrireBrouillon: (brouillon: Brouillon) =>

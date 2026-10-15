@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:formulations-validees",
+  "title": "Formulations relues et validées d'une question",
+  "description": "data/formulations/<question_id>.json, un fichier par question (décision D39, option 1). Écrit par la seule relecture de l'interface de validation (validation/io/data-formulations.ts, règle 3), quand un annotateur juge que les trois formulations d'une proposition acceptée (schema/proposition-formulation.schema.json) préservent le sens et que la prémisse de l'orientée affirme bien la position demandée (D42 (3)). Clé : question_id et empreinte_texte_neutre. Une promotion sur une nouvelle empreinte remplace le fichier, l'historique Git garde l'ancien ; une promotion sur la même empreinte est refusée. Le gel lit seulement (pipeline/reformulation/lecture-au-gel.ts) : formulation absente, ou relue sur un autre texte neutre, ⇒ gel refusé. Ce que JSON Schema ne compare pas (production.gabarits de la neutre égale version_gabarits ; empreinte_texte égale le sha256 du texte ; neutre d'empreinte empreinte_texte_neutre) est contrôlé par pipeline/questions/invariants.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["question_id", "empreinte_texte_neutre", "version_gabarits", "proposition_id", "formulations"],
+  "properties": {
+    "question_id": {
+      "$ref": "urn:banc-essai-2027:schema:question#/properties/id",
+      "description": "Question dont ce sont les formulations ; égal au nom du fichier."
+    },
+    "empreinte_texte_neutre": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 (UTF-8) du texte neutre relu. Clé de la relecture avec question_id (D39) : le gel refuse un fichier dont l'empreinte diffère de celle du texte neutre de la question engendrée."
+    },
+    "version_gabarits": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Version de la table qui a écrit le texte neutre, reprise de la proposition ; égale à production.gabarits de la neutre et à la version_gabarits de la question engendrée (invariant hors schéma)."
+    },
+    "proposition_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Proposition de staging/formulations/<question_id>/ relue et promue, dont les textes sont recopiés tels quels (règle 7)."
+    },
+    "formulations": {
+      "$ref": "urn:banc-essai-2027:schema:question#/properties/formulations",
+      "description": "Exactement le tableau des trois formulations du schéma question, recopié tel quel dans la question au gel. Une formulation promue a été jugée fidèle au sens : sens_preserve vaut true sur les trois.",
+      "items": {
+        "properties": {
+          "relecture": {
+            "properties": { "sens_preserve": { "const": true } }
+          }
+        }
+      }
+    }
+  }
+}

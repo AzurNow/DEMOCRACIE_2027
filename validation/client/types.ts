@@ -182,3 +182,35 @@ export interface Correction {
   ancienne_valeur: unknown;
   nouvelle_valeur: unknown;
 }
+
+/* ------------------------------------------- relecture des formulations (D39) */
+
+/** Une question qui a une proposition relisible. `candidat` est nul quand le gabarit ne nomme personne. */
+export interface ResumeFormulations {
+  question_id: string;
+  gabarit: string;
+  candidat: string | null;
+  mesure: string;
+}
+
+export interface ListeFormulations {
+  disponible: true;
+  questions: ResumeFormulations[];
+}
+
+/** La proposition à relire : textes tels quels, dans l'ordre du §5, sans le modèle qui les a écrits. */
+export interface VueFormulations extends ResumeFormulations {
+  proposition_id: string;
+  /** « pour », « contre », « conditionnel », ou « AUCUNE » quand la prémisse n'affirme rien (D42 (3)). */
+  position_demandee: string;
+  textes: { registre: string; texte: string }[];
+}
+
+/** Ce que l'écran envoie, promotion ou refus : chaque case telle que l'annotateur l'a laissée. */
+export interface RelectureFormulations {
+  question_id: string;
+  proposition_id: string;
+  sens_preserve: Record<string, boolean>;
+  premisse_conforme: boolean;
+  commentaire: string;
+}

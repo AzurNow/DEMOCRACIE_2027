@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:refus-formulation",
+  "title": "Refus d'une proposition de formulations à la relecture",
+  "description": "Une ligne de validation/formulations/refus.jsonl, journal en ajout seul écrit par la relecture de l'interface de validation (décisions D39 et D42) quand l'annotateur juge qu'une des trois formulations d'une proposition acceptée change le sens, ou que la prémisse de l'orientée n'affirme pas la position demandée. Une proposition refusée n'est plus jamais relue ; `pnpm reformuler` lit proposition_id pour rappeler le modèle sur la question. Les textes ne sont jamais corrigés (règle 7) : une coquille se refuse.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposition_id", "question_id", "empreinte_texte_neutre", "annotateur_id", "date", "registres", "premisse_conforme", "commentaire"],
+  "properties": {
+    "proposition_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Proposition refusée (staging/formulations/<question_id>/<proposition_id>.json)."
+    },
+    "question_id": { "$ref": "urn:banc-essai-2027:schema:question#/properties/id" },
+    "empreinte_texte_neutre": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte du texte neutre sur lequel la proposition a été relue."
+    },
+    "annotateur_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "registres": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/registre" },
+      "description": "Registres en cause : ceux dont le sens n'est pas préservé, et l'orientée quand sa prémisse n'affirme pas la position demandée. Jamais vide : un refus nomme ce qu'il refuse."
+    },
+    "premisse_conforme": {
+      "type": "boolean",
+      "description": "La case « la prémisse affirme bien la position demandée » (ou « aucune position » quand la demande était AUCUNE), telle que le relecteur l'a laissée (D42 (3))."
+    },
+    "commentaire": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Obligatoire : ce qui change le sens, dit par le relecteur. Une chaîne faite d'espaces n'est pas un commentaire."
+    }
+  }
+}

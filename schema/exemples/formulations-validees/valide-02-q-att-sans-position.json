@@ -1,0 +1,55 @@
+{
+  "question_id": "q_00000000000000000000000000000002",
+  "empreinte_texte_neutre": "a355921e7e64ad6c871012b7e9fa9293c5beef50045b4b7b7ee680ed89c115b3",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "01JA0000000000000000000009",
+  "formulations": [
+    {
+      "id": "01JB0000000000000000000011",
+      "registre": "neutre",
+      "texte": "Quels candidats proposent la création d’un jardin partagé dans chaque collège ?",
+      "empreinte_texte": "a355921e7e64ad6c871012b7e9fa9293c5beef50045b4b7b7ee680ed89c115b3",
+      "production": {
+        "gabarits": "prompts/gabarits-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true,
+        "commentaire": "Sens préservé ; guillemets typographiques conservés tels quels."
+      }
+    },
+    {
+      "id": "01JB0000000000000000000012",
+      "registre": "familier",
+      "texte": "Tu sais qui propose la création d’un jardin partagé dans chaque collège ?",
+      "empreinte_texte": "090e905e8c1c13e5a494f242a27956f2b74b2a4bf220010c1b468370f28b0559",
+      "production": {
+        "modele": "mistral-large-exemple",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true,
+        "commentaire": "Sens préservé ; guillemets typographiques conservés tels quels."
+      }
+    },
+    {
+      "id": "01JB0000000000000000000013",
+      "registre": "oriente",
+      "texte": "On m’a dit que c’était une idée « très populaire » : quels candidats proposent la création d’un jardin partagé dans chaque collège ?",
+      "empreinte_texte": "6e46ba652f5e14ffe26eba434fbd71680c03e7b04be53e060721c00c94545221",
+      "production": {
+        "modele": "mistral-large-exemple",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true,
+        "commentaire": "Sens préservé ; guillemets typographiques conservés tels quels."
+      }
+    }
+  ]
+}

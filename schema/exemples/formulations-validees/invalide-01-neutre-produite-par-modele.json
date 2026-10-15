@@ -1,0 +1,54 @@
+{
+  "question_id": "q_00000000000000000000000000000001",
+  "empreinte_texte_neutre": "3bd870334445edaaeec4e7f932ce1528c918d5b1bb327c3642d03ec67cd365d0",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "proposition_id": "01JA0000000000000000000001",
+  "formulations": [
+    {
+      "id": "01JB0000000000000000000001",
+      "registre": "neutre",
+      "texte": "Camille Exemple propose-t-il ou elle la création d’un jardin partagé dans chaque collège ?",
+      "empreinte_texte": "3bd870334445edaaeec4e7f932ce1528c918d5b1bb327c3642d03ec67cd365d0",
+      "production": {
+        "modele": "mistral-large-exemple",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "01JB0000000000000000000002",
+      "registre": "familier",
+      "texte": "Tu sais si Camille Exemple propose la création d’un jardin partagé dans chaque collège ?",
+      "empreinte_texte": "e3170968510a8ac33d18df7e88e34953195efecdb527bd0f442fc0d35d69f795",
+      "production": {
+        "modele": "mistral-large-exemple",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    },
+    {
+      "id": "01JB0000000000000000000003",
+      "registre": "oriente",
+      "texte": "Camille Exemple propose la création d’un jardin partagé dans chaque collège, n'est-ce pas ? Est-ce bien le cas ?",
+      "empreinte_texte": "c6650d69f879cac50357ca202204665b1d34a042ac2118340c77455fb32c6f62",
+      "position_affirmee": "pour",
+      "production": {
+        "modele": "mistral-large-exemple",
+        "version_prompt": "prompts/reformulation-1.0.0"
+      },
+      "relecture": {
+        "annotateur_id": "a1",
+        "date": "2026-11-03T09:30:00+01:00",
+        "sens_preserve": true
+      }
+    }
+  ]
+}

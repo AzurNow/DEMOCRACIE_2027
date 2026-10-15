@@ -10,6 +10,7 @@
 import { api, urlSource } from "./api.ts";
 import { champsEditables, corrections, type ChampEditable } from "./edition.ts";
 import { CLES_GRILLE } from "../domaine/grille.ts";
+import { ouvrirRelectureFormulations } from "./formulations.ts";
 import { rendreSource } from "./source.ts";
 import type {
   Brouillon,
@@ -105,7 +106,23 @@ async function rendreAccueil(): Promise<void> {
   } else {
     bloc.append(tableauDesLots(session));
   }
+  bloc.append(accesFormulations());
   zone.append(bloc);
+}
+
+/** Relecture des formulations (D39, D42) : un écran à part, qui ne touche ni aux lots ni au journal. */
+function accesFormulations(): HTMLElement {
+  const section = element("section");
+  section.append(sousTitre("Formulations à relire"));
+  const bouton = element("button") as HTMLButtonElement;
+  bouton.type = "button";
+  bouton.textContent = "Relire les formulations";
+  bouton.addEventListener("click", () => {
+    rendreBandeau("Formulations", "");
+    void ouvrirRelectureFormulations(() => void rendreAccueil());
+  });
+  section.append(bouton);
+  return section;
 }
 
 function tableauDesLots(session: Session): HTMLElement {

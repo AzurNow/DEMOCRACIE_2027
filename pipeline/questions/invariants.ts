@@ -1,5 +1,5 @@
 /**
- * Les six invariants inter-fichiers que JSON Schema ne peut pas exprimer.
+ * Les invariants inter-fichiers que JSON Schema ne peut pas exprimer.
  *
  * `docs/DETTE.md`, entrée « JSON Schema », point 1 : JSON Schema valide un fichier à la fois.
  * Une divergence sur `grappe_id` fausse les grappes du bootstrap du §8, donc tous les
@@ -10,6 +10,7 @@
  * seulement « non » oblige à relire tout le corpus pour trouver l'objet fautif.
  */
 
+import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { fictifsEnDouble, type ItemFictifCandidat } from "../../validation/domaine/fictif-unique.ts";
 import { gabaritParCode } from "./gabarits.ts";
 import {
@@ -331,4 +332,90 @@ function refusDePremisse(
     }
   }
   return [];
+}
+
+/* ------------------------------- 6. formulations relues (data/formulations/) */
+
+/** Ce que les deux invariants suivants lisent de `data/formulations/<question_id>.json`. */
+export interface PorteurDeFormulations {
+  readonly question_id: string;
+  readonly empreinte_texte_neutre: string;
+  readonly version_gabarits: string;
+  readonly formulations: readonly {
+    readonly id: string;
+    readonly registre: string;
+    readonly texte: string;
+    readonly empreinte_texte: string;
+    readonly production: object;
+  }[];
+}
+
+const INVARIANT_NEUTRE_GABARITS = "la neutre est produite par la version de gabarits de la question";
+
+/**
+ * Décision D42 (2) : la neutre est écrite par la table de gabarits, et sa production le dit
+ * (`{gabarits}`). Sa version doit égaler `version_gabarits` du fichier, et celle-ci la version de
+ * la question engendrée courante (`versions_courantes` : `question_id` → `version_gabarits`) : une
+ * table de gabarits changée sans que le texte change ne fait pas passer une ancienne relecture
+ * pour une relecture de la table courante. JSON Schema ne compare pas deux champs.
+ */
+export function neutreSuitVersionGabarits(
+  porteurs: readonly PorteurDeFormulations[],
+  versions_courantes: ReadonlyMap<string, string>,
+): readonly Violation[] {
+  return porteurs.flatMap((porteur) => {
+    const detail = defautDeNeutre(porteur, versions_courantes.get(porteur.question_id));
+    return detail === null ? [] : [{ invariant: INVARIANT_NEUTRE_GABARITS, objet: porteur.question_id, detail }];
+  });
+}
+
+function versionDeProduction(production: object): string | null {
+  const gabarits = (production as { readonly gabarits?: unknown }).gabarits;
+  return typeof gabarits === "string" ? gabarits : null;
+}
+
+function defautDeNeutre(porteur: PorteurDeFormulations, courante: string | undefined): string | null {
+  const neutres = porteur.formulations.filter((formulation) => formulation.registre === "neutre");
+  const neutre = neutres[0];
+  if (neutres.length !== 1 || neutre === undefined) return `${neutres.length} formulations neutres au lieu d'une.`;
+  const produite = versionDeProduction(neutre.production);
+  if (produite === null) return `la neutre ${neutre.id} ne nomme pas de table de gabarits.`;
+  if (produite !== porteur.version_gabarits) {
+    return `la neutre ${neutre.id} est produite par ${produite} alors que version_gabarits vaut ${porteur.version_gabarits}.`;
+  }
+  if (courante === undefined) return "aucune question engendrée courante de cet identifiant : la version n'est pas vérifiable.";
+  if (courante !== porteur.version_gabarits) {
+    return `version_gabarits ${porteur.version_gabarits} alors que la question engendrée courante porte ${courante}.`;
+  }
+  return null;
+}
+
+const INVARIANT_EMPREINTES = "chaque empreinte suit son texte, et la neutre est le texte de la clé";
+
+/**
+ * `empreinte_texte` est le sha256 du texte de chaque formulation (§8 : « question commune » = même
+ * id et même empreinte), et la neutre est le texte dont `empreinte_texte_neutre`, clé de la
+ * relecture (D39), est l'empreinte.
+ */
+export function empreintesSuiventTextes(porteurs: readonly PorteurDeFormulations[]): readonly Violation[] {
+  return porteurs.flatMap((porteur) =>
+    porteur.formulations.flatMap((formulation) => {
+      const detail = defautDEmpreinte(porteur, formulation);
+      return detail === null ? [] : [{ invariant: INVARIANT_EMPREINTES, objet: porteur.question_id, detail }];
+    }),
+  );
+}
+
+function defautDEmpreinte(
+  porteur: PorteurDeFormulations,
+  formulation: PorteurDeFormulations["formulations"][number],
+): string | null {
+  const calculee = sha256(formulation.texte);
+  if (calculee !== formulation.empreinte_texte) {
+    return `formulation ${formulation.id} : empreinte_texte ${formulation.empreinte_texte}, sha256 du texte ${calculee}.`;
+  }
+  if (formulation.registre === "neutre" && calculee !== porteur.empreinte_texte_neutre) {
+    return `neutre ${formulation.id} d'empreinte ${calculee} alors que la clé porte ${porteur.empreinte_texte_neutre}.`;
+  }
+  return null;
 }

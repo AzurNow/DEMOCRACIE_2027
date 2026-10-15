@@ -117,12 +117,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides (notation par règle d'un refus de l'API), un verdict valide et deux invalides (regle_refus_api), un invalide de run (go/no-go sans refus_api_echantillon_humain).
   // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
   // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
-  it("1. les 266 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
+  it("1. les 273 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(266);
+    expect(manifeste.exemples).toHaveLength(273);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -134,9 +135,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 25 → 26 : extraction-page-lien (texte d'une copie de page citée), décision D27 de l'auteur.
   // 26 → 27 : renvoi-humain (renvoi d'une Q-ATT indécidable vers l'humain), décision D30 (2) de l'auteur.
   // 27 → 28 : proposition-formulation (staging de la reformulation), décisions D39 et D42 de l'auteur.
-  it("2. les vingt-huit schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 28 → 30 : formulations-validees (data/formulations/) et refus-formulation (validation/formulations/refus.jsonl), décisions D39 et D42 de l'auteur.
+  it("2. les trente schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(28);
+    expect(conformites).toHaveLength(30);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -263,7 +265,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides (notation par règle d'un refus de l'API), un verdict valide et deux invalides (regle_refus_api), un invalide de run (go/no-go sans refus_api_echantillon_humain).
   // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
   // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 266 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(266);
+  // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 273 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(273);
   });
 });

@@ -591,6 +591,20 @@
       "recommandation": "Option 1 sur les quatre points : aucun nouvel éditeur (Mistral Large est déjà juge, D26 (3)) ; aucune valeur inventée dans production ; aucune position choisie à la main ; la contraction reste une règle fixe identique pour tous les candidats, et le relecteur vérifie le sens.",
       "retenu": "Option 1 sur les quatre points. Points 2 et 3 à écrire au §5 à la prochaine révision (0.17), car ils influent sur une mesure (dénominateur de la confirmation de prémisse). Identifiant exact du modèle épinglé fourni par l'auteur avant le premier appel réel.",
       "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D43",
+      "statut": "tranchee",
+      "question": "Une formulation relue reste-t-elle valable quand une validation corrige la position de l'item sans changer le texte neutre (position d'un item P, état antérieur d'un item O) ?",
+      "contexte": "D39 indexe une formulation relue par (question, empreinte du texte neutre) ; D42 (3) lit la position affirmée par la prémisse orientée dans l'item. Une correction de position ne change pas le texte neutre : la formulation relue resterait valable au gel avec une prémisse contraire à la règle. premisseFausseSurItemFOuO attrape le cas P, pas l'état antérieur d'un O.",
+      "options": [
+        "(1) Recalculer la position demandée sur l'item courant à la relecture et au gel ; écart ⇒ proposition non relisible, gel refusé pour la question, pnpm reformuler la rappelle.",
+        "(2) Ajouter la position demandée à la clé de D39 (schéma de data/formulations modifié).",
+        "(3) Ne rien faire avant le lot gel."
+      ],
+      "recommandation": "Option 1 : déterministe, aucune métrique changée, ferme le cas O.",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [
@@ -1058,7 +1072,8 @@
       "decisions": [
         "D39",
         "D35",
-        "D42"
+        "D42",
+        "D43"
       ],
       "note": "Inclut le contrôle de la reformulation sur la mesure contractée (D35 (4))."
     }

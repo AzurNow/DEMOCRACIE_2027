@@ -38,6 +38,7 @@ import { enumerationCommune } from "../io/referentiels.ts";
 import { itemsEffectifs, statutContestationEffectif } from "../io/items-effectifs.ts";
 import type { Contexte } from "./contexte.ts";
 import { accesTexteCorrections, emplacement } from "./emplacements.ts";
+import { GESTIONNAIRES_FORMULATIONS } from "./formulations.ts";
 import { construireVueItem, construireVueLot, projeterLot } from "./vues.ts";
 
 export interface Reponse {
@@ -465,6 +466,26 @@ export const ROUTES: readonly Route[] = [
     methode: "GET",
     motif: /^\/api\/lots\/([^/]+)\/items\/([^/]+)\/source\/([^/]+)$/,
     gestionnaire: servirSource,
+  },
+  // Relecture des formulations (D39, D42) : voir `formulations.ts`.
+  { nom: "formulations", methode: "GET", motif: /^\/api\/formulations$/, gestionnaire: GESTIONNAIRES_FORMULATIONS.liste },
+  {
+    nom: "formulation",
+    methode: "GET",
+    motif: /^\/api\/formulations\/(q_[0-9a-f]{32})$/,
+    gestionnaire: GESTIONNAIRES_FORMULATIONS.detail,
+  },
+  {
+    nom: "formulation-promotion",
+    methode: "POST",
+    motif: /^\/api\/formulations\/promotions$/,
+    gestionnaire: GESTIONNAIRES_FORMULATIONS.promouvoir,
+  },
+  {
+    nom: "formulation-refus",
+    methode: "POST",
+    motif: /^\/api\/formulations\/refus$/,
+    gestionnaire: GESTIONNAIRES_FORMULATIONS.refuser,
   },
 ];
 

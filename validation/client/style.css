@@ -290,3 +290,62 @@ dialog {
   color: #777;
   font-style: italic;
 }
+
+/* -------------------------------------------- relecture des formulations (D39) */
+
+.relecture-formulations {
+  margin: auto;
+  max-width: 72rem;
+  padding: 1.5rem;
+}
+
+.contexte-formulations {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.contexte-formulations dt {
+  font-weight: 600;
+}
+
+.contexte-formulations dd {
+  margin: 0;
+}
+
+.formulations-cote-a-cote {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.formulation {
+  border: 1px solid var(--trait);
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+/* Le texte est montré tel quel : espaces, sauts de ligne et guillemets compris. */
+.texte-formulation {
+  white-space: pre-wrap;
+}
+
+.case-formulation {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.commentaire-formulations {
+  display: block;
+  margin: 1rem 0;
+}
+
+.commentaire-formulations textarea {
+  display: block;
+  width: 100%;
+}
+
+.actions-formulations button {
+  margin-right: 0.75rem;
+}

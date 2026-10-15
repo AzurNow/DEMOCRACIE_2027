@@ -156,6 +156,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-15 :** Option 1 sur les quatre points. Points 2 et 3 à écrire au §5 à la prochaine révision (0.17), car ils influent sur une mesure (dénominateur de la confirmation de prémisse). Identifiant exact du modèle épinglé fourni par l'auteur avant le premier appel réel.
 
+### D43 — Une formulation relue reste-t-elle valable quand une validation corrige la position de l'item sans changer le texte neutre (position d'un item P, état antérieur d'un item O) ?
+
+**Décision du 2026-10-15 :** Option 1.
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.

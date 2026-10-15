@@ -163,3 +163,36 @@ export function instantane(racine: string): ReadonlyMap<string, string> {
   parcourir("");
   return table;
 }
+
+/* ------------------------------------------ fichiers de la relecture (PR C) */
+
+const EXEMPLE_VALIDEES = resolve(import.meta.dirname, "../../schema/exemples/formulations-validees/valide-01-q-fer-position-pour.json");
+
+/**
+ * Un `data/formulations/<question_id>.json` conforme à `schema/formulations-validees.schema.json`
+ * (l'exemple valide du dépôt), porté sur cette question, cette empreinte et cette position affirmée
+ * par l'orientée (absente pour AUCUNE). Le lecteur valide le schéma : un objet partiel est refusé.
+ */
+export function formulationsValideesDeTest(question_id: string, empreinte: string, position = "pour"): unknown {
+  const exemple = JSON.parse(readFileSync(EXEMPLE_VALIDEES, "utf8")) as { formulations: Record<string, unknown>[] };
+  const formulations = exemple.formulations.map((formulation) => {
+    if (formulation["registre"] !== "oriente") return formulation;
+    const { position_affirmee: _remplacee, ...sans } = formulation;
+    return position === AUCUNE ? sans : { ...sans, position_affirmee: position };
+  });
+  return { ...exemple, question_id, empreinte_texte_neutre: empreinte, formulations };
+}
+
+/** Une ligne de `validation/formulations/refus.jsonl` conforme à `schema/refus-formulation.schema.json`. */
+export function ligneRefusDeTest(proposition_id: string, question_id = "q_0123456789abcdef0123456789abcdef"): string {
+  return JSON.stringify({
+    proposition_id,
+    question_id,
+    empreinte_texte_neutre: "a".repeat(64),
+    annotateur_id: "a1",
+    date: "2026-11-03T09:30:00+01:00",
+    registres: ["oriente"],
+    premisse_conforme: false,
+    commentaire: "Refus de test.",
+  });
+}
