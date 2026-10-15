@@ -618,6 +618,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Règle de dérivation et chaîne à écrire au §5 en 0.17.",
       "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D45",
+      "statut": "tranchee",
+      "question": "Quatre points du gel soulevés par la PR 1 (#127) : identifiant du run et reproductibilité du tirage, origine des alias aveugles, run précédent de la reprise à 80 %, ordre entre l'instant du gel, date_gel et la fenêtre.",
+      "contexte": "L'ULID du run amorce le générateur du tirage (tirage.ts:amorce) : aléatoire, il rend le tirage irreproductible et ajoute un aléa qui ne vient pas de la balise (D40). Le §7 ne dit pas qui choisit les alias aveugles. Le gel ne passe aucun tirage précédent à tirer : faux dès le deuxième run (§5, 80 % de reprises). Rien ne refuse un gel avant date_gel ni une fenêtre ouverte avant date_gel.",
+      "options": [
+        "(1) ULID : horodatage = date_gel, partie aléatoire dérivée de la balise par la clé « run_id » ; alias saisis par l'auteur dans config/gel.json, refusés s'ils contiennent le nom ou l'éditeur de l'outil ou s'ils sont partagés ; run précédent = le run de runs/ à la date_gel la plus récente avant la nôtre, hors invalides et pilotes, inscrit dans run.json, absence déclarée ; gel refusé avant date_gel, fenêtre ouverte avant date_gel refusée.",
+        "Variantes : ULID aléatoire ; retrait de run.id de l'amorce (amendement) ; alias tirés par la balise ; dernier run quel qu'il soit, ou nommé par l'auteur ; un seul refus ou aucun."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Alias (§7), run précédent (§5) et ordre des instants (§5, §6) à écrire en 0.17. Identifiant et run précédent dans la PR 2 du lot gel, refus d'ordre et alias dans la PR 2 également.",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [
@@ -1042,7 +1055,8 @@
         "D38",
         "D40",
         "D41",
-        "D44"
+        "D44",
+        "D45"
       ],
       "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
     },
