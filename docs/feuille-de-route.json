@@ -525,6 +525,59 @@
       "recommandation": "Option 1 : aucun outil remplissant la règle d'inclusion n'est sorti pour une raison technique (esprit de D28).",
       "retenu": "Option 1. À écrire en 0.16 au §8, avec D28 (3).",
       "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D38",
+      "statut": "tranchee",
+      "question": "Où vivent les mesures validées que lit le gel d'un run ?",
+      "contexte": "Les mesures sont dans staging/mesures/, data/ n'en a pas ; pnpm symmetry --mesures attend un tableau JSON que rien ne produit (docs/DETTE.md).",
+      "options": [
+        "(1) data/mesures/, un fichier par mesure, promu par pnpm promote avec les items qui la citent ; lu en répertoire au commit donnees_commit, comme data/items/.",
+        "(2) Tableau extrait du staging au gel."
+      ],
+      "recommandation": "Option 1 : un seul chemin d'entrée, validé par un humain (règle 3).",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D39",
+      "statut": "tranchee",
+      "question": "Où vivent les formulations familière et orientée relues qu'exige chaque question ?",
+      "contexte": "Le schéma question exige trois formulations produites par un modèle puis relues par un annotateur ; aucun code ne les produit, ne les fait relire ni ne les range.",
+      "options": [
+        "(1) Lot reformulation dédié : staging/formulations/ (prompts/reformulation-1.0.0.md, contrôle sur la mesure contractée, D35 (4)), relecture dans l'interface de validation, promotion vers data/formulations/, clé : identifiant de question et empreinte du texte neutre ; le gel lit seulement, formulation absente ou relue sur un autre texte neutre ⇒ gel refusé.",
+        "(2) Produites et relues au gel."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D40",
+      "statut": "tranchee",
+      "question": "D'où viennent les graines publiées d'un run (tirage, échantillon humain, contrefactuel, bootstrap, permutation) ? Le protocole ne dit ni qui les choisit ni quand.",
+      "contexte": "Une graine choisie après avoir vu les données permettrait de chercher un tirage favorable.",
+      "options": [
+        "(1) Balise publique d'aléa (drand) au tour fixé par date_gel, réponse signée archivée avec le run, cinq graines dérivées par clé lisible ; appel réseau fait par l'auteur seul au gel.",
+        "(2) Dérivées de l'empreinte du contenu gelé et de date_gel.",
+        "(3) Tirées par l'auteur, engagement SHA-256 publié avant le gel."
+      ],
+      "recommandation": "Option 1 : imprévisible avant le gel, vérifiable par tous.",
+      "retenu": "Option 1. Nouveau service tiers et appel réseau autorisés pour le gel. À écrire au §5 en 0.16.",
+      "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D41",
+      "statut": "tranchee",
+      "question": "Qui lance le gel d'un vrai run (écriture de runs/<date>/) ?",
+      "contexte": "Le gel fige versions, périmètre, questions, tirage et graines d'une mesure publique.",
+      "options": [
+        "(1) L'auteur seul ; un agent seulement sur fixtures vers un répertoire temporaire ; dépôt sale refusé, code_commit et donnees_commit inscrits, runs/<date>/ existant refusé (un gel s'invalide, il ne se refait pas).",
+        "(2) Un agent gèle et ouvre une PR relue."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1.",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [
@@ -922,6 +975,78 @@
       ],
       "decisions": [],
       "note": "Rien de tout cela n'est du code, mais tout conditionne J1, J3 et J4."
+    },
+    {
+      "id": "gel",
+      "titre": "Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider)",
+      "jalon": "J4",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 1,
+      "depend_de": [
+        {
+          "lot": "mesures-validees",
+          "type": "bloque"
+        },
+        {
+          "lot": "reformulation",
+          "type": "bloque"
+        },
+        {
+          "lot": "questions-tirage-symetrie",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D38",
+        "D40",
+        "D41"
+      ],
+      "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
+    },
+    {
+      "id": "mesures-validees",
+      "titre": "data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel",
+      "jalon": "J2",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "M",
+      "temps_auteur_h": 0.5,
+      "depend_de": [
+        {
+          "lot": "dette-validation",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D38"
+      ],
+      "note": "Règle la dette « pnpm symmetry --mesures attend un tableau que rien ne produit »."
+    },
+    {
+      "id": "reformulation",
+      "titre": "Formulations familière et orientée : staging, relecture humaine, data/formulations/",
+      "jalon": "J3",
+      "niveau": "T0",
+      "agent": "opus",
+      "taille": "L",
+      "temps_auteur_h": 2,
+      "depend_de": [
+        {
+          "lot": "mesures-validees",
+          "type": "bloque"
+        },
+        {
+          "lot": "perimetre-prompts",
+          "type": "bloque"
+        }
+      ],
+      "decisions": [
+        "D39",
+        "D35"
+      ],
+      "note": "Inclut le contrôle de la reformulation sur la mesure contractée (D35 (4))."
     }
   ],
   "anomalies": [
