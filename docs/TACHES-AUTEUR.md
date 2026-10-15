@@ -536,6 +536,17 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       valeur de la balise écrite en hexadécimal, du caractère U+0000 et de sa clé. » Ligne de
       révision : « Section 5 : chaîne de la balise et règle de dérivation des graines écrites. »
 
+- [ ] **Écrire en 0.17 : D45 (§5, §6, §7)**, tranchée le 2026-10-15. Rédaction de l'agent, à
+      relire. §5, « Tirage », après la phrase sur la balise : « L'identifiant du run en est dérivé
+      de même, par la clé « run_id ». Le run précédent d'un run est le run publié, hors pilote et
+      hors run invalide, dont l'instant de gel est le plus récent avant le sien ; il est inscrit avec
+      le run, et son absence est déclarée. Un gel ne s'exécute pas avant son instant de gel. » §6 :
+      « La fenêtre d'interrogation ne s'ouvre pas avant l'instant de gel. » §7 : « Les alias
+      aveugles des outils sont choisis par l'auteur et publiés avec le run ; un alias ne contient ni
+      le nom ni l'éditeur d'un outil, et deux outils n'en partagent pas. » Ligne de révision :
+      « Sections 5, 6 et 7 : identifiant du run dérivé de la balise, run précédent, ordre des
+      instants, alias aveugles. »
+
 ### Prompts (`prompts/`)
 
 - [x] (2026-10-15) `prompts/judge-1.0.0.md` ; ajout inventé non contradictoire ⇒ inexacte, `ajout_fabrique` (D26 (4) révisée) : **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
