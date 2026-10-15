@@ -1829,6 +1829,39 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 sans registre en cause : un refus nomme ce qu'il refuse.",
       "regle_protocole": "§5 ; décision D39"
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/valide-01-complete.json",
+      "attendu": "valide",
+      "motif": "D41 : les paramètres du gel remplis par l'auteur ; version du protocole, début de fenêtre à décalage explicite, deux juges, un alias aveugle par assistant inclus."
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/valide-02-brouillon.json",
+      "attendu": "valide",
+      "motif": "Le fichier livré dans le dépôt : chaque champ à null est un brouillon conforme ; pnpm geler le refuse en nommant chaque champ, sans valeur par défaut."
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/invalide-01-cle-inconnue.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 portant taux_echantillon_humain : une clé hors du schéma est refusée, jamais ignorée ni recopiée dans run.json.",
+      "regle_protocole": "§7 (le taux est stocké, jamais supposé) ; décision D41"
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/invalide-02-juge-sans-version-prompt.json",
+      "attendu": "invalide",
+      "motif": "Juge sans version_prompt : run.juges l'exige, et un prompt de juge est un fichier versionné (règle 6 de CLAUDE.md).",
+      "regle_protocole": "§7 ; règle 6 de CLAUDE.md"
+    },
+    {
+      "objet": "config-gel",
+      "fichier": "config-gel/invalide-03-fenetre-sans-decalage.json",
+      "attendu": "invalide",
+      "motif": "Début de fenêtre sans décalage : un instant se lit à l'heure de Paris, décalage explicite (commun#/$defs/instant).",
+      "regle_protocole": "§6, fenêtre ouverte le mardi à 6 h, heure de Paris"
     }
   ]
 }

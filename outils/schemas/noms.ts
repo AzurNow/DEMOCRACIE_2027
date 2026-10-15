@@ -71,6 +71,11 @@
  * d'une question, écrites par le seul `validation/io/data-formulations.ts` et lues par le gel ; et
  * une ligne de `validation/formulations/refus.jsonl`, journal en ajout seul des propositions
  * refusées, relu par `pnpm reformuler`. Le vingt-neuvième et le trentième.
+ *
+ * `config-gel` décrit `config/gel.json`, les paramètres du gel d'un run que run.json exige et
+ * qu'aucune autre source ne porte (version du protocole, début de fenêtre, juges, alias aveugles),
+ * saisis par l'auteur et lus par `pnpm geler` (décision D41) ; il porte aussi, en `$defs`, la forme
+ * du fichier de `--graines-fixes`. Le trente et unième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -103,6 +108,7 @@ export const NOMS_SCHEMAS = [
   "proposition-formulation",
   "formulations-validees",
   "refus-formulation",
+  "config-gel",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

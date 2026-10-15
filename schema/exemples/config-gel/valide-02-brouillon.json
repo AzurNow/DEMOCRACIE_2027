@@ -1,0 +1,7 @@
+{
+  "$commentaire": "Le fichier tel que livré dans le dépôt : conforme, mais pnpm geler refuse de partir tant qu'un champ vaut null.",
+  "version_protocole": null,
+  "fenetre_debut": null,
+  "juges": null,
+  "alias_aveugles": null
+}

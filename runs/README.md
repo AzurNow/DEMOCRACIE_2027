@@ -17,7 +17,6 @@ runs/<date>/
                                     run.json#/tirage/chemin et son sha256
   questions.json              Git   le jeu complet des questions engendrées au gel, un tableau
                                     (schema/question.schema.json ; lu par pnpm symmetry)
-  mesures.json                Git   les mesures au gel, un tableau (lu par pnpm symmetry)
   verdicts/<id>.json          Git   un verdict par objet noté (schema/verdict.schema.json)
   metriques/…                 Git   les sorties d'analysis/ (§8)
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
@@ -32,12 +31,57 @@ runs/<date>/
     liens/pages/<sha256><ext>       la page d'un lien qui existe, octets reçus tels quels
 ```
 
+Les mesures ne sont pas copiées dans `runs/<date>/` : comme les items, elles sont lues dans
+`data/mesures/` (un fichier par mesure, décision D38) au commit `run.json#/versions/donnees_commit`,
+et `pnpm symmetry --mesures=data/mesures` recoupe ce répertoire avec lui-même à ce commit
+(`outils/items-au-gel.ts:exigerMesuresDuGel`) : une mesure en plus, en moins ou modifiée depuis le gel
+arrête la barrière.
+
+`pnpm geler` écrit `run.json`, `tirage.json` et `questions.json` (section suivante).
 L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
 `volume/tentatives/`. La notation (`pipeline/notation/stockage.ts:DepotNotation`) écrit
-`verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`,
-`questions.json` et `mesures.json` suivent l'usage déjà documenté de `pnpm symmetry`
-(`outils/symmetry.ts`). Le nom `metriques/` reste la disposition proposée pour le lot de l'analyse ;
+`verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`
+et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outils/symmetry.ts`). Le nom `metriques/` reste la disposition proposée pour le lot de l'analyse ;
 il n'a pas encore d'écrivain dans le dépôt.
+
+## `pnpm geler` — `run.json`, `tirage.json`, `questions.json`
+
+```
+pnpm geler --type-run=<type> --graines-fixes=<fichier.json> [--sortie=<répertoire>]
+```
+
+Le gel d'un run (décisions D41, D44 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai run**, c'est-à-dire
+lance la commande sans `--sortie` : elle écrit alors sous `runs/<date>/`. Un agent ou un test gèle
+toujours vers une `--sortie` hors de `runs/` (une sortie sous `runs/` est refusée).
+
+Lit `data/items/`, `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`
+(version du protocole, début de fenêtre, juges, alias aveugles ; `schema/config-gel.schema.json`) et
+le commit courant ; écrit, au statut `planifie` et tout ou rien (un temporaire voisin renommé d'un
+geste), les trois fichiers :
+
+- `questions.json` : le jeu complet des questions engendrées au gel, chacune avec ses formulations
+  relues (`data/formulations/`), `engendree_le` égal à `date_gel` (D44) ;
+- `tirage.json` : le tirage (`pipeline/questions/tirage.ts`), graine du tirage et quotas du périmètre ;
+- `run.json` : fenêtre, `versions.code_commit` et `versions.donnees_commit` (HEAD : `data/` est dans le
+  même dépôt), graines, périmètre au gel, juges, symétrie, et `tirage` (`runs/<date>/tirage.json`,
+  SHA-256 de ses octets, nombre de questions tirées) — même quand `--sortie` est donnée.
+
+Refuse, sans rien écrire, code 1 : un dépôt sale (`git status --porcelain` non vide, fichiers non
+suivis compris), vérifié avant toute autre lecture ; un répertoire `<date>/` qui existe déjà, même
+vide (un gel s'invalide, il ne se refait pas) ; un champ de `config/gel.json` à `null` ou absent,
+nommé ; une question sans formulations relues sur son texte neutre et sa position courants
+(`FormulationsEnDefautAuGel`) ; et tout ce que la barrière de `pnpm symmetry` refuse — les mêmes
+fonctions (`pipeline/gel/barriere.ts`), items et mesures recoupés avec le commit inscrit. Une symétrie
+`ecart_tolere` est écrite, l'écart dans `run.json#/symetrie`.
+
+Graines : tant que l'adaptateur de la balise drand (D40) n'existe pas, `--graines-fixes` est
+obligatoire (cinq entiers, `schema/config-gel.schema.json#/$defs/graines_fixes`). Rien dans `run.json`
+ne dit qu'elles viennent d'une balise, et un run gelé ainsi ne remplit pas le §5.
+
+Le tirage dépend de l'identifiant du run (ULID, `validation/domaine/ulid.ts`) : il figure dans
+`tirage.json#/run_id` et amorce le générateur (`tirage.ts:amorce`). Deux gels du même commit et des
+mêmes graines donnent le même `questions.json` ; `tirage.json` et `run.json` ne sont identiques que
+pour le même identifiant.
 
 ## `verdicts/`, `volume/notations/`, `volume/reponses-contrefactuelles/`
 
