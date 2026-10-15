@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:proposition-formulation",
+  "title": "Proposition de formulations familière et orientée",
+  "description": "staging/formulations/<question_id>/<id>.json, écrit une fois par `pnpm reformuler` pour chaque appel au modèle qui a reçu une réponse HTTP (décisions D39 et D42) ; jamais réécrit, jamais lu par le site. Porte la demande envoyée (les six variables de prompts/reformulation-1.0.0), le corps HTTP reçu tel quel (règle 7) et l'issue du contrôle déterministe (pipeline/reformulation/controle.ts). Seule une proposition `acceptee` peut être relue dans l'interface de validation, puis promue vers data/formulations/ ; elle n'y est relue que si empreinte_texte_neutre égale l'empreinte du texte neutre de la question au moment de la relecture. Un appel suivant pour la même question écrit un nouveau fichier : les propositions rejetées restent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "question_id", "texte_neutre", "empreinte_texte_neutre", "version_gabarits", "demande", "production", "appel", "issue"],
+  "properties": {
+    "id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "Identifiant de la proposition ; égal au nom du fichier."
+    },
+    "question_id": {
+      "$ref": "urn:banc-essai-2027:schema:question#/properties/id",
+      "description": "Question reformulée ; égal au nom du répertoire."
+    },
+    "texte_neutre": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Texte neutre envoyé au modèle, tel que rendu par pipeline/questions/gabarits.ts:remplirTexteNeutre."
+    },
+    "empreinte_texte_neutre": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 (UTF-8) de texte_neutre. Clé de la relecture avec question_id (D39) : une proposition faite sur un autre texte neutre n'est ni relue ni promue."
+    },
+    "version_gabarits": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Version de la table qui a écrit le texte neutre (VERSION_GABARITS), reprise dans la production de la neutre à la promotion."
+    },
+    "demande": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gabarit", "type_item", "libelle_candidat", "formulation_mesure", "position_affirmee"],
+      "description": "Les variables du prompt autres que texte_neutre, telles qu'envoyées (pipeline/reformulation/demande.ts:variablesDuPrompt).",
+      "properties": {
+        "gabarit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/gabarit" },
+        "type_item": {
+          "type": "string",
+          "enum": ["P", "A", "O", "F", "AUCUN"],
+          "description": "Type de l'item principal ; AUCUN pour une question d'attribution sans item principal."
+        },
+        "libelle_candidat": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Libellé recopié dans le prompt ; AUCUN quand le gabarit ne nomme personne (Q-ATT)."
+        },
+        "formulation_mesure": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Forme canonique de la mesure (D42 (4))."
+        },
+        "position_affirmee": {
+          "type": "string",
+          "enum": ["pour", "contre", "conditionnel", "AUCUNE"],
+          "description": "Décidée par la règle fixe de pipeline/reformulation/position-affirmee.ts (D42 (3))."
+        }
+      }
+    },
+    "production": {
+      "$ref": "urn:banc-essai-2027:schema:question#/$defs/production_modele",
+      "description": "Modèle épinglé appelé et version du prompt ; recopié tel quel dans la production des formulations familière et orientée à la promotion."
+    },
+    "appel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "statut_http", "brut_octets_sha256"],
+      "description": "La réponse HTTP reçue, stockée telle quelle (règle 7) : ni nettoyée, ni tronquée, ni reformatée. Un échec de transport sans réponse n'écrit aucun fichier.",
+      "properties": {
+        "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+        "statut_http": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "brut": {
+          "type": "object",
+          "description": "Le corps reçu quand c'est un objet JSON, tel quel. Exclusif de brut_texte."
+        },
+        "brut_texte": {
+          "type": "string",
+          "description": "Le corps reçu, décodé en UTF-8, quand ce n'est pas un objet JSON. Exclusif de brut."
+        },
+        "brut_octets_sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Empreinte des octets du corps, prise avant toute lecture."
+        }
+      },
+      "oneOf": [
+        { "required": ["brut"], "not": { "required": ["brut_texte"] } },
+        { "required": ["brut_texte"], "not": { "required": ["brut"] } }
+      ]
+    },
+    "issue": {
+      "description": "Issue de l'appel et du contrôle. echec_http : statut hors 2xx, aucune sortie contrôlée. rejetee : sortie du modèle rejetée en entier par le contrôle, motif nommé. acceptee : sortie conforme, recopiée telle quelle.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut"],
+          "properties": { "statut": { "const": "echec_http" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "motif", "detail"],
+          "properties": {
+            "statut": { "const": "rejetee" },
+            "motif": {
+              "type": "string",
+              "enum": ["corps_illisible", "bloc_de_code", "json_invalide", "cle_dupliquee", "pas_un_objet", "champ_inattendu", "champ_manquant", "champ_non_textuel", "texte_vide", "position_affirmee_inattendue", "position_affirmee_manquante", "position_affirmee_differente", "libelle_candidat", "mesure", "nom_de_candidat_dans_attribution"],
+              "description": "MOTIFS_REJET de pipeline/reformulation/controle.ts, plus corps_illisible : réponse 2xx dont l'enveloppe de l'éditeur ne donne pas le texte du modèle."
+            },
+            "detail": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "familier", "oriente"],
+          "properties": {
+            "statut": { "const": "acceptee" },
+            "familier": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["texte"],
+              "properties": { "texte": { "type": "string", "minLength": 1 } }
+            },
+            "oriente": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["texte"],
+              "properties": {
+                "texte": { "type": "string", "minLength": 1 },
+                "position_affirmee": { "type": "string", "enum": ["pour", "contre", "conditionnel"] }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

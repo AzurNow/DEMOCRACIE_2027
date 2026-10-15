@@ -5,7 +5,9 @@
  * texte autour ni bloc de code, exactement `{"familier": {"texte"}, "oriente": {"texte",
  * "position_affirmee"?}}`. Chaque contrôle est une comparaison de chaînes (règle 5), jamais un
  * jugement de modèle :
- * - forme exacte, aucun champ en plus ni en moins à chaque niveau, textes non vides ;
+ * - forme exacte, aucun champ en plus ni en moins à chaque niveau, aucune clé répétée dans un même
+ *   objet (`JSON.parse` en garderait la dernière sans le dire, `cles-dupliquees.ts`), textes non
+ *   vides ;
  * - `position_affirmee` égale à celle demandée, absente quand la demande vaut `AUCUNE` ;
  * - le libellé du candidat figure caractère pour caractère dans chaque texte (hors Q-ATT) ;
  * - la mesure figure dans chaque texte sous une forme admise (D42 (4), `gabarits.ts`) ;
@@ -19,6 +21,7 @@
 import { mesureFigureSousFormeAdmise } from "../questions/gabarits.ts";
 import { libelleSansMot, trouverLibelle } from "../questions/libelles.ts";
 import type { CandidatNomme } from "../questions/types.ts";
+import { premiereCleDupliquee } from "./cles-dupliquees.ts";
 import type { DemandeReformulation } from "./demande.ts";
 import { AUCUNE } from "./position-affirmee.ts";
 import type { PositionAffirmable, PositionDemandee } from "./position-affirmee.ts";
@@ -26,6 +29,7 @@ import type { PositionAffirmable, PositionDemandee } from "./position-affirmee.t
 export const MOTIFS_REJET = [
   "bloc_de_code",
   "json_invalide",
+  "cle_dupliquee",
   "pas_un_objet",
   "champ_inattendu",
   "champ_manquant",
@@ -63,11 +67,15 @@ const BLOC_DE_CODE = /^\s*```/u;
 
 function lireJson(brut: string): unknown {
   if (BLOC_DE_CODE.test(brut)) throw new SortieRejetee("bloc_de_code", "la sortie est entourée d'un bloc de code.");
+  let valeur: unknown;
   try {
-    return JSON.parse(brut);
+    valeur = JSON.parse(brut);
   } catch (erreur) {
     throw new SortieRejetee("json_invalide", erreur instanceof Error ? erreur.message : String(erreur));
   }
+  const repetee = premiereCleDupliquee(brut);
+  if (repetee !== null) throw new SortieRejetee("cle_dupliquee", `la clé « ${repetee} » figure deux fois dans un même objet.`);
+  return valeur;
 }
 
 function objetDe(valeur: unknown, contexte: string): Objet {

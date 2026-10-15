@@ -60,6 +60,11 @@
  * `renvoi-humain` décrit le renvoi d'une question d'attribution indécidable vers la notation humaine
  * (décision D30 (2)), écrit par la chaîne dans `runs/<date>/volume/renvois/` à la place de la note du
  * juge. Le vingt-septième.
+ *
+ * `proposition-formulation` décrit une proposition de formulations familière et orientée (décisions
+ * D39 et D42), écrite une fois par `pnpm reformuler` dans `staging/formulations/<question_id>/`, avec
+ * le corps HTTP du modèle tel que reçu et l'issue du contrôle déterministe ; lue par la relecture de
+ * l'interface de validation. Le vingt-huitième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -89,6 +94,7 @@ export const NOMS_SCHEMAS = [
   "checklist",
   "extraction-page-lien",
   "renvoi-humain",
+  "proposition-formulation",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

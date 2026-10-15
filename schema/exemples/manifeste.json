@@ -1757,6 +1757,32 @@
       "attendu": "invalide",
       "motif": "Copie de valide-09 sans sur_refus_api. D33 : la notation par règle porte toujours le marqueur, qui seul l'exempte de l'extrait.",
       "regle_protocole": "§7, annexe C ; décision D33 de l'auteur"
+    },
+    {
+      "objet": "proposition-formulation",
+      "fichier": "proposition-formulation/valide-01-acceptee.json",
+      "attendu": "valide",
+      "motif": "D39, D42 : proposition acceptée par le contrôle ; corps HTTP stocké tel quel, sortie recopiée, seule forme relisible et promouvable."
+    },
+    {
+      "objet": "proposition-formulation",
+      "fichier": "proposition-formulation/valide-02-rejetee.json",
+      "attendu": "valide",
+      "motif": "D39 : une proposition rejetée par le contrôle est conservée avec son motif nommé et son corps brut (règle 7) ; elle n'est jamais relue ni réparée."
+    },
+    {
+      "objet": "proposition-formulation",
+      "fichier": "proposition-formulation/invalide-01-brut-et-brut-texte.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 portant aussi brut_texte : le corps reçu est un objet JSON ou un texte, jamais les deux.",
+      "regle_protocole": "Règle 7 de CLAUDE.md ; décision de l'auteur du 2026-10-02 (brut ou brut_texte)"
+    },
+    {
+      "objet": "proposition-formulation",
+      "fichier": "proposition-formulation/invalide-02-aucune-recopiee.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la formulation orientée porte position_affirmee « AUCUNE » : sans prémisse, le champ est absent, jamais rempli par le mot AUCUNE.",
+      "regle_protocole": "§5 ; décision D42 (3) ; prompts/reformulation-1.0.0, « Sortie attendue »"
     }
   ]
 }

@@ -1,0 +1,49 @@
+{
+  "id": "01JA0000000000000000000003",
+  "question_id": "q_00000000000000000000000000000001",
+  "texte_neutre": "Camille Exemple propose-t-il ou elle la création d’un jardin partagé dans chaque collège ?",
+  "empreinte_texte_neutre": "3bd870334445edaaeec4e7f932ce1528c918d5b1bb327c3642d03ec67cd365d0",
+  "version_gabarits": "prompts/gabarits-1.0.0",
+  "demande": {
+    "gabarit": "Q-FER",
+    "type_item": "P",
+    "libelle_candidat": "Camille Exemple",
+    "formulation_mesure": "la création d’un jardin partagé dans chaque collège",
+    "position_affirmee": "pour"
+  },
+  "production": {
+    "modele": "mistral-large-exemple",
+    "version_prompt": "prompts/reformulation-1.0.0"
+  },
+  "appel": {
+    "date": "2026-11-02T10:15:00+01:00",
+    "statut_http": 200,
+    "brut": {
+      "id": "0a1b2c3d4e5f",
+      "object": "chat.completion",
+      "model": "mistral-large-exemple",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"familier\": {\"texte\": \"Tu sais si Camille Exemple propose la création d’un jardin partagé dans chaque collège ?\"}, \"oriente\": {\"texte\": \"Camille Exemple propose la création d’un jardin partagé dans chaque collège, n'est-ce pas ? Est-ce bien le cas ?\", \"position_affirmee\": \"pour\"}}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    },
+    "brut_octets_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "brut_texte": "{}"
+  },
+  "issue": {
+    "statut": "acceptee",
+    "familier": {
+      "texte": "Tu sais si Camille Exemple propose la création d’un jardin partagé dans chaque collège ?"
+    },
+    "oriente": {
+      "texte": "Camille Exemple propose la création d’un jardin partagé dans chaque collège, n'est-ce pas ? Est-ce bien le cas ?",
+      "position_affirmee": "pour"
+    }
+  }
+}
