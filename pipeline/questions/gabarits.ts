@@ -282,16 +282,28 @@ const CONTRACTIONS: readonly (readonly [RegExp, string])[] = [
 const ARTICLE_MAJUSCULE = /^Les? /u;
 
 /**
+ * D35 (4) : la mesure telle qu'elle s'écrit derrière « à » une fois contractée (« le budget »
+ * devient « au budget », « les retraites » devient « aux retraites »), ou `null` quand son article
+ * ne se contracte pas. Seul endroit du dépôt où vit la règle de contraction : le remplissage du
+ * texte neutre et le contrôle de la reformulation (D42 (4)) la lisent ici.
+ */
+function mesureContractee(gabarit: Gabarit, mesure: string): string | null {
+  if (ARTICLE_MAJUSCULE.test(mesure)) throw new ArticleMajusculeApresA(gabarit.code, mesure);
+  const contraction = CONTRACTIONS.find(([article]) => article.test(mesure));
+  if (contraction === undefined) return null;
+  const [article, contracte] = contraction;
+  return mesure.replace(article, contracte);
+}
+
+/**
  * D35 (4) : « à le » devient « au », « à les » devient « aux ». La règle porte sur la
  * préposition qui précède l'emplacement, jamais sur un code de gabarit.
  */
 function joindreMesure(avant: string, gabarit: Gabarit, mesure: string): string {
   if (!PREPOSITION_A_EN_FIN.test(avant)) return avant + mesure;
-  if (ARTICLE_MAJUSCULE.test(mesure)) throw new ArticleMajusculeApresA(gabarit.code, mesure);
-  const contraction = CONTRACTIONS.find(([article]) => article.test(mesure));
-  if (contraction === undefined) return avant + mesure;
-  const [article, contracte] = contraction;
-  return avant.slice(0, -PREPOSITION_A.length) + mesure.replace(article, contracte);
+  const contractee = mesureContractee(gabarit, mesure);
+  if (contractee === null) return avant + mesure;
+  return avant.slice(0, -PREPOSITION_A.length) + contractee;
 }
 
 /** Chaque `[mesure]` est substitué à son tour, la contraction lisant le texte qui le précède. */
@@ -299,6 +311,54 @@ function substituerMesure(gabarit: Gabarit, mesure: string): string {
   const [tete, ...suites] = gabarit.texte_neutre.split(EMPLACEMENT_MESURE);
   if (tete === undefined) throw new Error(`Gabarit ${gabarit.code} : texte neutre illisible.`);
   return suites.reduce((avant, suite) => joindreMesure(avant, gabarit, mesure) + suite, tete);
+}
+
+/* --------------------------------------------- formes admises de la mesure */
+
+/**
+ * D42 (4) : les formes sous lesquelles la mesure peut figurer dans une reformulation de ce gabarit.
+ * `canonique` est toujours admise ; `contractee` ne l'est que si le gabarit place « à » devant
+ * `[mesure]` et que l'article de la mesure se contracte (`mesureContractee`), sinon `null`.
+ */
+export interface FormesDeMesure {
+  readonly canonique: string;
+  readonly contractee: string | null;
+}
+
+/** Vrai si l'un des emplacements `[mesure]` du gabarit suit « à » : là seulement la contraction s'applique. */
+function placeAAvantMesure(gabarit: Gabarit): boolean {
+  const avants = gabarit.texte_neutre.split(EMPLACEMENT_MESURE).slice(0, -1);
+  return avants.some((avant) => PREPOSITION_A_EN_FIN.test(avant));
+}
+
+export function formesAdmisesDeMesure(gabarit: Gabarit, mesure: string): FormesDeMesure {
+  if (!placeAAvantMesure(gabarit)) return { canonique: mesure, contractee: null };
+  return { canonique: mesure, contractee: mesureContractee(gabarit, mesure) };
+}
+
+/** Les positions de début de chaque occurrence de `aiguille` dans `texte`, chevauchements compris. */
+function occurrences(texte: string, aiguille: string): readonly number[] {
+  if (aiguille.length === 0) throw new Error("Recherche d'une mesure vide : aucune occurrence n'a de sens.");
+  const debuts: number[] = [];
+  for (let debut = texte.indexOf(aiguille); debut !== -1; debut = texte.indexOf(aiguille, debut + 1)) {
+    debuts.push(debut);
+  }
+  return debuts;
+}
+
+/**
+ * D42 (4) : vrai si la mesure figure dans le texte, caractère pour caractère, sous une forme admise.
+ * La forme contractée est admise partout où elle figure. La forme canonique l'est aussi, sauf
+ * derrière « à » quand le gabarit la contracte : « à le budget » est la forme que la contraction
+ * remplace, jamais une recopie admise. Comparaison exacte : ni casse, ni accent, ni apostrophe
+ * typographique ne sont rapprochés.
+ */
+export function mesureFigureSousFormeAdmise(texte: string, gabarit: Gabarit, mesure: string): boolean {
+  const { canonique, contractee } = formesAdmisesDeMesure(gabarit, mesure);
+  const debuts = occurrences(texte, canonique);
+  if (contractee === null) return debuts.length > 0;
+  if (texte.includes(contractee)) return true;
+  return debuts.some((debut) => !PREPOSITION_A_EN_FIN.test(texte.slice(0, debut)));
 }
 
 export function remplirTexteNeutre(gabarit: Gabarit, substitutions: Substitutions): string {

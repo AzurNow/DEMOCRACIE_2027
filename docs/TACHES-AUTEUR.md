@@ -519,6 +519,16 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       position inventée, position opposée, quantification fausse, périmètre faux, omission, ajout
       fabriqué, autre. »
 
+- [ ] **Écrire en 0.17 : D42 (§5, formulations)**, tranchée le 2026-10-15. Rédaction de l'agent, à
+      relire. Au paragraphe « Formulations », après « … qui vérifie qu'elles ne changent pas le
+      sens. » : « La formulation neutre est écrite par le gabarit, sans modèle, et relue avec les
+      deux autres. La position que la prémisse d'une formulation orientée affirme suit une règle
+      fixe, identique pour tous les candidats : « pour » sur un item F, la position de l'état
+      antérieur sur un item O, la position de l'item sur un item P, aucune sur un item A ni sur une
+      question d'attribution. » Ligne de révision : « Section 5 : la neutre est relue ; la position
+      affirmée par la prémisse orientée suit une règle fixe par type d'item. » Le modèle (Mistral
+      Large épinglé) n'a pas à figurer au §5 : il est publié dans `production.modele`.
+
 ### Prompts (`prompts/`)
 
 - [x] (2026-10-15) `prompts/judge-1.0.0.md` ; ajout inventé non contradictoire ⇒ inexacte, `ajout_fabrique` (D26 (4) révisée) : **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),

@@ -578,6 +578,19 @@
       "recommandation": "Option 1.",
       "retenu": "Option 1.",
       "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D42",
+      "statut": "tranchee",
+      "question": "Quatre points du lot reformulation que ni le §5 ni D39 ne tranchent : modèle qui reformule ; production et relecture de la formulation neutre, écrite par le gabarit ; position affirmée par la formulation orientée selon le type d'item ; forme de la mesure exigée par le contrôle quand le gabarit la contracte (D35 (4)).",
+      "contexte": "Le §5 dit « produites par un modèle puis relues par un annotateur », sans nommer de modèle. Le schéma question exige production {modele, version_prompt} et relecture sur les trois formulations, alors que la neutre vient du gabarit et que personne ne la relit (DETTE : « à le » parti ainsi jusqu'à #111). Le prompt reformulation 1.0.0 reçoit la position affirmée de l'appelant ; un choix item par item ouvrirait une asymétrie. Il envoie formulation_canonique (« le budget ») alors que la neutre d'une Q-NEG porte la forme contractée (« au budget »).",
+      "options": [
+        "(1) Mistral Large, version épinglée, appel par une commande lancée par l'auteur ; (2) neutre relue avec les deux autres, production {gabarits: version de la table} au lieu de {modele, version_prompt}, modification du schéma ; (3) règle fixe par type : F ⇒ pour, O ⇒ position de l'état antérieur, P ⇒ position de l'item, A et Q-ATT ⇒ aucune ; (4) prompt inchangé (forme canonique envoyée), contrôle qui accepte la forme canonique ou la forme contractée par la règle fixe de gabarits.ts.",
+        "(1) Claude Sonnet 5.5, ou deux modèles comme l'extraction ; (2) champ modele « aucun (gabarit) », ou neutre non relue ; (3) O ⇒ aucune prémisse sur P, ou O ⇒ état en vigueur ; (4) forme du texte neutre seule (prompt 1.0.1), ou forme canonique seule."
+      ],
+      "recommandation": "Option 1 sur les quatre points : aucun nouvel éditeur (Mistral Large est déjà juge, D26 (3)) ; aucune valeur inventée dans production ; aucune position choisie à la main ; la contraction reste une règle fixe identique pour tous les candidats, et le relecteur vérifie le sens.",
+      "retenu": "Option 1 sur les quatre points. Points 2 et 3 à écrire au §5 à la prochaine révision (0.17), car ils influent sur une mesure (dénominateur de la confirmation de prémisse). Identifiant exact du modèle épinglé fourni par l'auteur avant le premier appel réel.",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [
@@ -1044,7 +1057,8 @@
       ],
       "decisions": [
         "D39",
-        "D35"
+        "D35",
+        "D42"
       ],
       "note": "Inclut le contrôle de la reformulation sur la mesure contractée (D35 (4))."
     }

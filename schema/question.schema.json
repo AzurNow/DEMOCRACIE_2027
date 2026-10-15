@@ -68,16 +68,7 @@
           },
           "production": {
             "type": "object",
-            "additionalProperties": false,
-            "required": ["modele", "version_prompt"],
-            "properties": {
-              "modele": { "type": "string", "minLength": 1 },
-              "version_prompt": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Référence au fichier versionné de prompts/. Règle 6 : aucun prompt en dur."
-              }
-            }
+            "description": "Ce qui a produit le texte. Décision D42 (2) de l'auteur du 2026-10-15 : la formulation neutre est écrite par le gabarit (pipeline/questions/gabarits.ts:remplirTexteNeutre), et sa production nomme la table de gabarits, jamais un modèle qui ne l'a pas écrite ; les formulations familière et orientée nomment le modèle et la version du prompt. La forme exacte dépend du registre : voir allOf."
           },
           "relecture": {
             "type": "object",
@@ -96,6 +87,12 @@
             "$comment": "§5 (protocole 0.11) : seule la formulation orientée porte une prémisse.",
             "if": { "properties": { "registre": { "const": "oriente" } }, "required": ["registre"] },
             "else": { "not": { "required": ["position_affirmee"] } }
+          },
+          {
+            "$comment": "Décision D42 (2) : la neutre vient du gabarit, les deux autres d'un modèle. Les trois sont relues (relecture exigée plus haut, sans exception de registre).",
+            "if": { "properties": { "registre": { "const": "neutre" } }, "required": ["registre"] },
+            "then": { "properties": { "production": { "$ref": "#/$defs/production_gabarit" } } },
+            "else": { "properties": { "production": { "$ref": "#/$defs/production_modele" } } }
           }
         ]
       },
@@ -124,6 +121,34 @@
       "type": "string",
       "minLength": 1,
       "description": "Version du fichier de gabarits utilisé (prompts/). Un gabarit modifié est un amendement (§9)."
+    }
+  },
+
+  "$defs": {
+    "production_gabarit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gabarits"],
+      "properties": {
+        "gabarits": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Version de la table de gabarits qui a écrit le texte neutre (pipeline/questions/gabarits.ts:VERSION_GABARITS, par exemple prompts/gabarits-1.0.0)."
+        }
+      }
+    },
+    "production_modele": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modele", "version_prompt"],
+      "properties": {
+        "modele": { "type": "string", "minLength": 1 },
+        "version_prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Référence au fichier versionné de prompts/. Règle 6 : aucun prompt en dur."
+        }
+      }
     }
   },
 
