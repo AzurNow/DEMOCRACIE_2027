@@ -23,7 +23,9 @@
  * seules questions tirées ; `--items`, les items au gel. Ce répertoire est recoupé, fichier par
  * fichier, avec lui-même au commit `versions.donnees_commit` du run (conformité n° 9, décision de
  * l'auteur du 2026-10-01) : un run sans ce commit, un item en plus, en moins ou modifié depuis le gel
- * arrête la commande avec le code 1 (`outils/items-au-gel.ts`). Le tirage doit aussi être celui du
+ * arrête la commande avec le code 1 (`outils/items-au-gel.ts`). `--mesures` est recoupé de même
+ * (dette du 2026-10-15, PR #118) : une mesure en plus, en moins ou modifiée depuis le gel arrête la
+ * commande avec `MesuresHorsDuGel`. Le tirage doit aussi être celui du
  * run, même `run_id`, même `date_gel` (`TirageDUnAutreRun`). §5
  * (protocole 0.13) : « un jeu incomplet est refusé ». S'il manque au jeu une question citée par le
  * tirage (entrées ou exclusions) ou engendrée sur ces items pour une mesure ou un candidat interrogé,
@@ -32,90 +34,20 @@
  *
  * Chaque objet lu — tirage, questions, items, mesures, run — est confronté à son JSON Schema
  * avant tout contrôle : une entrée non conforme arrête la commande avec le code 1.
+ *
+ * Les lectures et les contrôles vivent dans `pipeline/gel/barriere.ts`, que `pnpm geler` appelle
+ * aussi avant d'écrire un run : la barrière n'est écrite qu'une fois.
  */
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { analyserArguments, obligatoire } from "./arguments.ts";
-import { valider } from "./schemas/valider.ts";
-import type { NomSchema } from "./schemas/noms.ts";
-import {
-  grappeSuitItemPrincipal,
-  itemsFictifsPointentMesureFictive,
-  premisseFausseSurItemFOuO,
-  unSeulItemFictifParMesure,
-} from "../pipeline/questions/invariants.ts";
-import type { PorteurDeGrappe, Violation } from "../pipeline/questions/invariants.ts";
-import { JeuDeQuestionsIncomplet, TirageDUnAutreRun } from "../pipeline/questions/completude.ts";
-import { exigerItemsDuGel, ItemsHorsDuGel } from "./items-au-gel.ts";
-import { verifierSymetrie } from "../pipeline/questions/symetrie.ts";
-import type {
-  ConditionSymetrie,
-  Item,
-  Mesure,
-  Question,
-  RunAuGel,
-  Symetrie,
-  Tirage,
-} from "../pipeline/questions/types.ts";
+import { estUnRefus, jugerBarriere, lireObjet, lireRepertoire, lireTableau } from "../pipeline/gel/barriere.ts";
+import type { EntreesBarriere, Refus, RunDeLaBarriere } from "../pipeline/gel/barriere.ts";
+import type { Violation } from "../pipeline/questions/invariants.ts";
+import type { ConditionSymetrie, Item, Mesure, Question, Symetrie, Tirage } from "../pipeline/questions/types.ts";
 
 const OPTIONS: readonly string[] = ["tirage", "questions", "items", "mesures", "run"];
 
-/** Ce que la commande lit du run, en plus de ce que la symétrie en lit. */
-interface RunLu extends RunAuGel {
-  readonly versions: { readonly donnees_commit?: string };
-}
-
-interface Entrees {
-  readonly repertoire_items: string;
-  readonly tirage: Tirage;
-  readonly questions: readonly Question[];
-  readonly items: readonly Item[];
-  readonly mesures: readonly Mesure[];
-  readonly run: RunLu;
-}
-
-/** Une erreur de syntaxe nomme le fichier qui la porte : la barrière lit cinq entrées. */
-function lireJson(chemin: string): unknown {
-  const contenu = readFileSync(chemin, "utf8");
-  try {
-    return JSON.parse(contenu);
-  } catch (erreur) {
-    if (!(erreur instanceof SyntaxError)) throw erreur;
-    throw new SyntaxError(`${chemin} : JSON illisible (${erreur.message}).`, { cause: erreur });
-  }
-}
-
-function lireObjet<T>(nom: NomSchema, chemin: string): T {
-  return valider<T>(nom, lireJson(chemin), chemin);
-}
-
-/** Un tableau JSON dont chaque élément est validé, avec son rang dans la provenance. */
-function lireTableau<T>(nom: NomSchema, chemin: string): readonly T[] {
-  const brut = lireJson(chemin);
-  if (!Array.isArray(brut)) throw new Error(`${chemin} : un tableau JSON de « ${nom} » est attendu.`);
-  return brut.map((valeur: unknown, rang) => valider<T>(nom, valeur, `${chemin}, élément ${rang}`));
-}
-
-/**
- * Un répertoire d'objets, un fichier par objet, en ordre de nom : l'ordre de lecture ne dépend pas
- * du système de fichiers. Un répertoire absent ou sans objet est une erreur : un contrôle qui ne
- * porte sur rien n'est pas un contrôle vert. `objet` nomme ce qui manque (« d'item », « de mesure »).
- */
-function lireRepertoire<T>(nom: NomSchema, repertoire: string, objet: string): readonly T[] {
-  if (!existsSync(repertoire)) {
-    throw new Error(`${repertoire} : répertoire absent. Rien à contrôler n'est une erreur.`);
-  }
-  const fichiers = readdirSync(repertoire)
-    .filter((fichier) => fichier.endsWith(".json"))
-    .sort();
-  if (fichiers.length === 0) {
-    throw new Error(`${repertoire} : aucun fichier ${objet} (*.json). Rien à contrôler n'est une erreur.`);
-  }
-  return fichiers.map((fichier) => lireObjet<T>(nom, join(repertoire, fichier)));
-}
-
-function lireEntrees(): Entrees {
+function lireEntrees(): EntreesBarriere {
   const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const chemins = {
     tirage: obligatoire(table, "tirage", "le tirage gelé du run"),
@@ -130,36 +62,13 @@ function lireEntrees(): Entrees {
   };
   return {
     repertoire_items: chemins.items,
+    repertoire_mesures: chemins.mesures,
     tirage: lireObjet<Tirage>("tirage", chemins.tirage),
     questions: lireTableau<Question>("question", chemins.questions),
     items: lireRepertoire<Item>("item", chemins.items, "d'item"),
     mesures: lireRepertoire<Mesure>("mesure", chemins.mesures, "de mesure"),
-    run: lireObjet<RunLu>("run", chemins.run),
+    run: lireObjet<RunDeLaBarriere>("run", chemins.run),
   };
-}
-
-function porteursDeGrappe(entrees: Entrees): readonly PorteurDeGrappe[] {
-  const questions: readonly PorteurDeGrappe[] = entrees.questions;
-  const tirage: readonly PorteurDeGrappe[] = entrees.tirage.entrees.map((entree) => ({
-    id: entree.question_id,
-    gabarit: entree.gabarit,
-    grappe_id: entree.grappe_id,
-    items: entree.items_au_gel,
-  }));
-  return [...questions, ...tirage];
-}
-
-function violations(entrees: Entrees): readonly Violation[] {
-  const grappes = grappeSuitItemPrincipal(porteursDeGrappe(entrees), entrees.items);
-  // §5 (protocoles 0.3 et 0.11) : une prémisse fausse hors d'un item F ou O, ou une formulation orientée
-  // sur un item O sans position affirmée, fausserait le dénominateur de la confirmation de prémisse (§8).
-  const premisses = premisseFausseSurItemFOuO(entrees.questions, entrees.items);
-  return [
-    ...grappes,
-    ...premisses,
-    ...itemsFictifsPointentMesureFictive(entrees.items, entrees.mesures),
-    ...unSeulItemFictifParMesure(entrees.items),
-  ];
 }
 
 function ligneDeCondition(condition: ConditionSymetrie): string {
@@ -189,42 +98,18 @@ function imprimerInvariants(liste: readonly Violation[]): void {
   process.stderr.write("\n");
 }
 
-type Refus = JeuDeQuestionsIncomplet | TirageDUnAutreRun | ItemsHorsDuGel;
-
-function estUnRefus(erreur: unknown): erreur is Refus {
-  return erreur instanceof JeuDeQuestionsIncomplet || erreur instanceof TirageDUnAutreRun || erreur instanceof ItemsHorsDuGel;
-}
-
-/**
- * La symétrie, ou le refus nommé d'un jeu qui ne permet pas de la juger : items qui ne sont pas ceux
- * du gel, tirage d'un autre run, jeu de questions incomplet (§5, protocole 0.13 ; conformité n° 9).
- * Seuls ces refus-là sont rattrapés, pour que les invariants inter-fichiers soient encore imprimés ;
- * toute autre erreur remonte.
- */
-function evaluerSymetrie(entrees: Entrees): Symetrie | Refus {
-  try {
-    exigerItemsDuGel(entrees.repertoire_items, entrees.run.versions.donnees_commit);
-    return verifierSymetrie(entrees.tirage, entrees.questions, entrees.items, entrees.mesures, entrees.run);
-  } catch (erreur) {
-    if (estUnRefus(erreur)) return erreur;
-    throw erreur;
-  }
-}
-
 function imprimerRefus(refus: Refus): void {
   process.stderr.write(`Symétrie (§5) non évaluée — ${refus.name} :\n  ${refus.message}\n\n`);
 }
 
 function principal(): void {
-  const entrees = lireEntrees();
-  const symetrie = evaluerSymetrie(entrees);
-  const liste = violations(entrees);
+  const { symetrie, violations: liste, bloque } = jugerBarriere(lireEntrees());
 
   if (estUnRefus(symetrie)) imprimerRefus(symetrie);
   else imprimerSymetrie(symetrie);
   imprimerInvariants(liste);
 
-  if (estUnRefus(symetrie) || symetrie.statut_global === "rouge" || liste.length > 0) {
+  if (bloque) {
     process.stderr.write("Le run ne peut pas être lancé : voir ci-dessus (§5).\n");
     process.exitCode = 1;
     return;

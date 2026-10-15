@@ -118,12 +118,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
   // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
   // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
-  it("1. les 273 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 273 → 278 : décision D41 (lot gel), deux valides (complet, brouillon) et trois invalides (clé inconnue ; juge sans version_prompt ; fenêtre sans décalage) du nouveau schéma config-gel.
+  it("1. les 278 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(273);
+    expect(manifeste.exemples).toHaveLength(278);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -136,9 +137,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 26 → 27 : renvoi-humain (renvoi d'une Q-ATT indécidable vers l'humain), décision D30 (2) de l'auteur.
   // 27 → 28 : proposition-formulation (staging de la reformulation), décisions D39 et D42 de l'auteur.
   // 28 → 30 : formulations-validees (data/formulations/) et refus-formulation (validation/formulations/refus.jsonl), décisions D39 et D42 de l'auteur.
-  it("2. les trente schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 30 → 31 : config-gel (config/gel.json), décision D41 de l'auteur.
+  it("2. les trente et un schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(30);
+    expect(conformites).toHaveLength(31);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -266,7 +268,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 259 → 262 : décision D33 de l'auteur, une notation valide (humain sur un refus, sans extrait) et deux invalides (juge marqué sur_refus_api, règle sans le marqueur).
   // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
   // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 273 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(273);
+  // 273 → 278 : décision D41 (lot gel), deux valides (complet, brouillon) et trois invalides (clé inconnue ; juge sans version_prompt ; fenêtre sans décalage) du nouveau schéma config-gel.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 278 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(278);
   });
 });

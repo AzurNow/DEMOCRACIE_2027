@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:config-gel",
+  "title": "Paramètres du gel d'un run",
+  "description": "config/gel.json, rempli à la main par l'auteur avant chaque gel (décision D41) : ce que run.json exige et qu'aucune autre source du dépôt ne porte. La version du protocole (run.versions.protocole), le début de la fenêtre d'interrogation (run.fenetre.debut, §6 : un mardi à 6 h, heure de Paris ; la fin s'en déduit, pipeline/interrogation/fenetre.ts), les juges du run (run.juges, §7) et l'alias aveugle de chaque outil (run.perimetre.outils[].alias_aveugle, §7). Le type du run vient de la ligne de commande (--type-run), le reste du périmètre de config/perimetre.yaml, les graines d'un port (lot gel, PR 2 : balise drand, D40). Un brouillon est conforme : chaque champ admet null, livré tel quel dans le dépôt ; pnpm geler refuse de partir tant qu'un champ vaut null, en le nommant (pipeline/gel/configuration.ts), et n'applique aucune valeur par défaut. Le protocole ne dit pas qui choisit les alias aveugles : ils sont saisis ici, jamais engendrés par le code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version_protocole", "fenetre_debut", "juges", "alias_aveugles"],
+  "properties": {
+    "$commentaire": {
+      "type": "string",
+      "description": "Mode d'emploi pour l'auteur ; jamais recopié dans run.json."
+    },
+    "version_protocole": {
+      "description": "Recopiée dans run.versions.protocole (§9 : la version du protocole utilisée est inscrite en tête de chaque rapport).",
+      "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+    },
+    "fenetre_debut": {
+      "description": "Recopié dans run.fenetre.debut. pipeline/interrogation/fenetre.ts:ouvrirFenetre refuse un début qui n'est pas un mardi à 06:00:00 pile, heure de Paris, et calcule la fin (48 h).",
+      "anyOf": [{ "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" }, { "type": "null" }]
+    },
+    "juges": {
+      "description": "Recopiés dans run.juges, chacun avec retire: false : aucun juge n'est retiré au gel, le retrait suit le test contrefactuel (§7).",
+      "anyOf": [{ "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/juge" } }, { "type": "null" }]
+    },
+    "alias_aveugles": {
+      "description": "outil_id → alias aveugle (§7), fourni à pipeline/questions/charger-perimetre.ts, qui exige un alias pour chaque assistant inclus, refuse un alias d'un outil absent du périmètre et un alias attribué à deux outils.",
+      "anyOf": [
+        {
+          "type": "object",
+          "propertyNames": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        { "type": "null" }
+      ]
+    }
+  },
+  "$defs": {
+    "juge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["juge_id", "famille_modele", "modele", "version_prompt"],
+      "description": "Les champs de run.juges[] connus au gel ; les kappas, le taux contrefactuel et le retrait sont écrits plus tard par la notation et le go/no-go.",
+      "properties": {
+        "juge_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "famille_modele": { "type": "string", "minLength": 1 },
+        "modele": { "type": "string", "minLength": 1 },
+        "version_prompt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "graines_fixes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel"],
+      "description": "Fichier passé à pnpm geler --graines-fixes=<chemin> tant que l'adaptateur de la balise drand (D40, lot gel PR 2) n'existe pas : les cinq valeurs entières des graines de run.graines, rien d'autre. Rien dans run.json ne dit qu'elles viennent d'une balise ; un run gelé ainsi ne remplit pas la règle du §5 (« Nul, l'auteur compris, ne peut connaître une graine avant le gel »).",
+      "properties": {
+        "tirage": { "$ref": "urn:banc-essai-2027:schema:run#/$defs/graine/properties/valeur" },
+        "echantillon_humain": { "$ref": "urn:banc-essai-2027:schema:run#/$defs/graine/properties/valeur" },
+        "bootstrap": { "$ref": "urn:banc-essai-2027:schema:run#/$defs/graine/properties/valeur" },
+        "permutation": { "$ref": "urn:banc-essai-2027:schema:run#/$defs/graine/properties/valeur" },
+        "contrefactuel": { "$ref": "urn:banc-essai-2027:schema:run#/$defs/graine/properties/valeur" }
+      }
+    }
+  }
+}
