@@ -152,6 +152,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-15 :** Option 1.
 
+### D42 — Quatre points du lot reformulation que ni le §5 ni D39 ne tranchent : modèle qui reformule ; production et relecture de la formulation neutre, écrite par le gabarit ; position affirmée par la formulation orientée selon le type d'item ; forme de la mesure exigée par le contrôle quand le gabarit la contracte (D35 (4)).
+
+**Décision du 2026-10-15 :** Option 1 sur les quatre points. Points 2 et 3 à écrire au §5 à la prochaine révision (0.17), car ils influent sur une mesure (dénominateur de la confirmation de prémisse). Identifiant exact du modèle épinglé fourni par l'auteur avant le premier appel réel.
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.
