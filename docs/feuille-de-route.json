@@ -1036,7 +1036,7 @@
       "id": "mesures-validees",
       "titre": "data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel",
       "jalon": "J2",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "opus",
       "taille": "M",
       "temps_auteur_h": 0.5,
@@ -1049,13 +1049,13 @@
       "decisions": [
         "D38"
       ],
-      "note": "Règle la dette « pnpm symmetry --mesures attend un tableau que rien ne produit »."
+      "note": "Livré le 2026-10-15 (PR #118, #120) : data/mesures/ écrit par validation/io/data-mesures.ts seul, promu avec ses items par pnpm promote, lu en répertoire par pnpm symmetry --mesures. Le recoupement avec donnees_commit au gel revient au lot gel."
     },
     {
       "id": "reformulation",
       "titre": "Formulations familière et orientée : staging, relecture humaine, data/formulations/",
       "jalon": "J3",
-      "niveau": "T0",
+      "niveau": "T2",
       "agent": "opus",
       "taille": "L",
       "temps_auteur_h": 2,
@@ -1075,7 +1075,7 @@
         "D42",
         "D43"
       ],
-      "note": "Inclut le contrôle de la reformulation sur la mesure contractée (D35 (4))."
+      "note": "Livré le 2026-10-15 (PR #122 à #124) : règles et contrôles déterministes, pnpm reformuler (Mistral réel ou simulé), staging/formulations/, écran de relecture, data/formulations/, lecture au gel (D43). Inclut le contrôle sur la mesure contractée (D35 (4)). Reste : prompt 1.0.1 aligné sur D42 avec la 0.17 ; délai d'abandon et code de sortie (docs/DETTE.md, 2026-10-15, point 2) ; jamais exercé sur un vrai appel."
     }
   ],
   "anomalies": [
