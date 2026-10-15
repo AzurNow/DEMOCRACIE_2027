@@ -561,7 +561,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 ---
 
 - [ ] **Remplir `config/reformulation.json`** (PR #123) : identifiant épinglé de Mistral Large,
-      `temperature`, `max_tokens`, `random_seed`. Puis `pnpm reformuler --simule`, et seulement
+      `temperature`, `max_tokens`, `random_seed`, et `delai_abandon_ms` (délai d'abandon d'un
+      appel, jamais envoyé à l'API ; ajouté le 2026-10-16). Puis `pnpm reformuler --simule`, et seulement
       ensuite `MISTRAL_API_KEY=… pnpm reformuler --plafond=<n>`, une fois des items dans
       `data/items/` et les candidats dans `config/perimetre.yaml`.
 - [ ] **Dérouler la section « Relecture des formulations » de `docs/CONTROLE-MANUEL.md`** sur un
