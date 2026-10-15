@@ -529,6 +529,13 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       affirmée par la prémisse orientée suit une règle fixe par type d'item. » Le modèle (Mistral
       Large épinglé) n'a pas à figurer au §5 : il est publié dans `production.modele`.
 
+- [ ] **Écrire en 0.17 : D44 (§5, graines)**, tranchée le 2026-10-15. Rédaction de l'agent, à
+      relire. Au paragraphe « Tirage », après « … publiée avec elle. » : « La balise est la chaîne
+      quicknet de drand, dont l'empreinte est publiée avec le run. Une graine est formée des huit
+      premiers octets, lus en gros-boutiste et décalés de 11 bits vers la droite, du SHA-256 de la
+      valeur de la balise écrite en hexadécimal, du caractère U+0000 et de sa clé. » Ligne de
+      révision : « Section 5 : chaîne de la balise et règle de dérivation des graines écrites. »
+
 ### Prompts (`prompts/`)
 
 - [x] (2026-10-15) `prompts/judge-1.0.0.md` ; ajout inventé non contradictoire ⇒ inexacte, `ajout_fabrique` (D26 (4) révisée) : **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),

@@ -160,6 +160,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-15 :** Option 1.
 
+### D44 — Quatre points du gel que le §5 (0.16) ne règle pas : origine de engendree_le, chaîne drand, règle de dérivation des cinq graines, vérification de la réponse de la balise.
+
+**Décision du 2026-10-15 :** Option 1 sur les quatre points. Règle de dérivation et chaîne à écrire au §5 en 0.17.
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.

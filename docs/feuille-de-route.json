@@ -605,6 +605,19 @@
       "recommandation": "Option 1 : déterministe, aucune métrique changée, ferme le cas O.",
       "retenu": "Option 1.",
       "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D44",
+      "statut": "tranchee",
+      "question": "Quatre points du gel que le §5 (0.16) ne règle pas : origine de engendree_le, chaîne drand, règle de dérivation des cinq graines, vérification de la réponse de la balise.",
+      "contexte": "Le §5 dit « une balise publique d'aléa (drand) » et « dérivée par une clé lisible » sans nommer la chaîne ni la règle, alors que schema/run.schema.json exige des entiers de 0 à 2^53 − 1. La PR C du lot reformulation a laissé l'origine de engendree_le au lot gel. Vérifier la signature BLS demande une dépendance cryptographique.",
+      "options": [
+        "(1) engendree_le = date_gel ; chaîne quicknet, empreinte épinglée et publiée ; graine = 8 premiers octets gros-boutistes de SHA-256(aléa hexadécimal ‖ U+0000 ‖ clé), décalés de 11 bits ; deux relais indépendants (api.drand.sh, drand.cloudflare.com) aux réponses identiques, aléa = SHA-256(signature), tour attendu, vérification BLS par un tiers documentée, aucune dépendance.",
+        "Variantes : instant réel d'engendrement ; chaîne default (mainnet) ; réduction modulo 2^53 ; vérification BLS au gel (@noble/curves) ; un seul relais sans vérification."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Règle de dérivation et chaîne à écrire au §5 en 0.17.",
+      "date_decision": "2026-10-15"
     }
   ],
   "lots": [
@@ -1028,7 +1041,8 @@
       "decisions": [
         "D38",
         "D40",
-        "D41"
+        "D41",
+        "D44"
       ],
       "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
     },
