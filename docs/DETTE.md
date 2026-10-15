@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-10-15 — Mesures validées, garde de `data/mesures`, lot reformulation, D38 à D43 (PR #118, #120, #122 à #124 : `validation/io/`, `pipeline/reformulation/`, `validation/serveur/formulations.ts`)
 
-### 1. La liste des noms interdits dans une Q-ATT est construite à deux endroits — *moyenne*
+### ~~1. La liste des noms interdits dans une Q-ATT est construite à deux endroits~~ — réglé le 2026-10-16 par la branche `qualite/dette-reformulation` (`nomsCherchesEnAttribution` dans `pipeline/questions/libelles.ts`, lue par `controle.ts` et `symetrie.ts` ; équivalence testée dans `tests/questions/noms-en-attribution.test.ts`)
 
 `nomsInterdits` (`pipeline/reformulation/controle.ts`) et `libellesDuPerimetre`
 (`pipeline/questions/symetrie.ts`) assemblent chacune `candidat_id`, `libelle` et `nom` du périmètre.
@@ -28,7 +28,7 @@ refusera ensuite : relues pour rien, puis le gel est bloqué la veille du run. V
 **Ce qu'il faut faire.** Exporter une seule fonction depuis `libelles.ts`, lue par les deux, au
 prochain passage sur l'un des deux fichiers.
 
-### 2. `pnpm reformuler` n'a aucun délai d'abandon, et un échec de transport sort à 0 — *basse*
+### ~~2. `pnpm reformuler` n'a aucun délai d'abandon, et un échec de transport sort à 0~~ — réglé le 2026-10-16 par la branche `qualite/dette-reformulation` (`delai_abandon_ms` dans `config/reformulation.json`, lu par `executer.ts` ; code de sortie 2 dans `commande.ts`)
 
 `executer.ts` passe à `fetch` un `AbortController` jamais déclenché ; un échec de transport est
 signalé dans le bilan, mais `process.exitCode` reste 0.

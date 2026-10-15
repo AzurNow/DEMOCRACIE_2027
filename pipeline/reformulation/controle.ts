@@ -19,7 +19,7 @@
  */
 
 import { mesureFigureSousFormeAdmise } from "../questions/gabarits.ts";
-import { libelleSansMot, trouverLibelle } from "../questions/libelles.ts";
+import { nomsCherchesEnAttribution, trouverLibelle } from "../questions/libelles.ts";
 import type { CandidatNomme } from "../questions/types.ts";
 import { premiereCleDupliquee } from "./cles-dupliquees.ts";
 import type { DemandeReformulation } from "./demande.ts";
@@ -135,19 +135,14 @@ function sortieDe(brut: string, demandee: PositionDemandee): SortieReformulation
 /* ----------------------------------------------------------------- recopies */
 
 /**
- * Les chaînes qu'une formulation de Q-ATT ne doit pas contenir : les mêmes que la barrière de
- * symétrie (`symetrie.ts`, condition `aucun_nom_candidat_dans_q_att`), pour qu'une reformulation
- * acceptée ici ne la fasse pas rougir plus tard. Un libellé sans aucun mot ne peut rien détecter :
- * il est refusé, jamais sauté.
+ * Les chaînes qu'une formulation de Q-ATT ne doit pas contenir : celles de la barrière de symétrie,
+ * lues dans la même fonction (`nomsCherchesEnAttribution`), pour qu'une reformulation acceptée ici
+ * ne la fasse pas rougir plus tard. Un périmètre vide est refusé : le contrôle passerait faute de
+ * noms.
  */
 function nomsInterdits(perimetre: readonly CandidatNomme[]): readonly string[] {
   if (perimetre.length === 0) throw new Error("Périmètre vide : aucun nom de candidat à chercher dans une Q-ATT.");
-  const noms = perimetre.flatMap((candidat) => [candidat.candidat_id, candidat.libelle, candidat.nom]);
-  const vide = noms.find(libelleSansMot);
-  if (vide !== undefined) {
-    throw new Error(`Libellé de candidat sans aucun mot dans le périmètre : « ${vide} ». Il ne peut pas être cherché.`);
-  }
-  return noms;
+  return nomsCherchesEnAttribution(perimetre);
 }
 
 function controlerRecopies(texte: string, registre: string, demande: DemandeReformulation, interdits: readonly string[]): void {

@@ -10,7 +10,8 @@
  * réglages, et il n'est jamais envoyé.
  *
  * Validé ici en TypeScript, sans schéma JSON : la liste des réglages est celle des paramètres que
- * l'adaptateur Mistral envoie (`editeur-mistral.ts`), et rien d'autre.
+ * l'adaptateur Mistral envoie (`editeur-mistral.ts`), plus le délai d'abandon de chaque appel
+ * (`delai_abandon_ms`, lu par `executer.ts`), qui n'est jamais envoyé à l'API.
  */
 
 import { readFileSync } from "node:fs";
@@ -22,6 +23,8 @@ export interface ConfigurationReformulation {
   readonly temperature: number;
   readonly max_tokens: number;
   readonly random_seed: number;
+  /** Délai au-delà duquel un appel sans réponse est abandonné et compté échec de transport. */
+  readonly delai_abandon_ms: number;
 }
 
 type NomReglage = keyof ConfigurationReformulation;
@@ -42,6 +45,7 @@ const REGLES: Readonly<Record<NomReglage, Regle>> = {
   },
   max_tokens: { attendu: "un entier >= 1", admet: (valeur) => estEntier(valeur) && valeur >= 1 },
   random_seed: { attendu: "un entier >= 0", admet: (valeur) => estEntier(valeur) && valeur >= 0 },
+  delai_abandon_ms: { attendu: "un entier >= 1, en millisecondes", admet: (valeur) => estEntier(valeur) && valeur >= 1 },
 };
 
 const NOMS_REGLAGES = Object.keys(REGLES) as readonly NomReglage[];
@@ -106,6 +110,7 @@ export function validerConfiguration(texte: string, provenance: string): Configu
     temperature: objet["temperature"] as number,
     max_tokens: objet["max_tokens"] as number,
     random_seed: objet["random_seed"] as number,
+    delai_abandon_ms: objet["delai_abandon_ms"] as number,
   };
 }
 

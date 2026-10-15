@@ -7,14 +7,17 @@
  *
  * La comparaison porte sur la suite complète des mots de chaque libellé cherché, jamais sur un
  * fragment de mot : le nom « Dupont » est trouvé dans « M. Dupont propose », pas dans
- * « Dupontel ». Les libellés cherchés sont fournis par l'appelant (le libellé complet ET le nom
- * seul de chaque candidat du périmètre, `symetrie.ts`) : ce module ne décide pas de ce qui est un
- * nom.
+ * « Dupontel ». Les chaînes cherchées dans une Q-ATT sont assemblées ici, une seule fois
+ * (`nomsCherchesEnAttribution`), et lues par la barrière de symétrie (`symetrie.ts`) comme par le
+ * contrôle de la reformulation (`pipeline/reformulation/controle.ts`) : une formulation acceptée par
+ * l'un ne peut pas être refusée par l'autre faute d'un nom cherché d'un seul côté.
  *
  * Normalisation : casse ignorée, accents ignorés, ponctuation réduite à une séparation de mots. Les
  * accents sont retirés parce que le §5 prévoit une formulation familière « sans accent parfois » :
  * un nom écrit sans son accent y reste un nom.
  */
+
+import type { CandidatNomme } from "./types.ts";
 
 /** Minuscules, sans accents, ponctuation réduite à une séparation de mots. */
 function enMots(texte: string): string {
@@ -60,4 +63,26 @@ export function trouverLibelle(texte: string, libelles: readonly string[]): stri
     if (aiguille.includes(motif)) return libelle;
   }
   return null;
+}
+
+/**
+ * §5 (protocole 0.6) : « prénom et nom, ou nom seul ». Les chaînes qu'aucune question d'attribution
+ * ne doit contenir : pour chaque candidat du périmètre, l'identifiant, le libellé complet et le nom
+ * seul saisis par l'auteur, dans l'ordre du périmètre, sans doublon. `item.libelle_lisible`,
+ * étiquette de l'item, n'est pas un nom de candidat et n'est pas cherché.
+ *
+ * Seule définition : la barrière de symétrie et le contrôle de la reformulation la lisent toutes
+ * deux. Un libellé sans aucun mot ne détecterait rien : il est refusé, jamais sauté. Un périmètre
+ * vide rend une liste vide ; le refuser appartient à l'appelant qui l'exige.
+ */
+export function nomsCherchesEnAttribution(perimetre: readonly CandidatNomme[]): readonly string[] {
+  const noms = perimetre.flatMap((candidat) => [candidat.candidat_id, candidat.libelle, candidat.nom]);
+  const vide = noms.find(libelleSansMot);
+  if (vide !== undefined) {
+    throw new Error(
+      `Libellé de candidat sans aucun mot dans le périmètre : « ${vide} ». Ni la barrière « aucun nom de ` +
+        `candidat dans les Q-ATT » ni le contrôle de la reformulation ne peuvent le chercher.`,
+    );
+  }
+  return [...new Set(noms)];
 }

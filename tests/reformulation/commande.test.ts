@@ -8,22 +8,28 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { commandeReformuler } from "../../pipeline/reformulation/commande.ts";
+import type { Dependances } from "../../pipeline/reformulation/commande.ts";
 import { tachesDe } from "../../pipeline/reformulation/entrees.ts";
 import { lirePropositions } from "../../pipeline/reformulation/staging.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import {
+  attenteAuTourSuivant,
   CANDIDATS,
+  CONFIGURATION,
   corpsChat,
   ecrireDonnees,
   formulationsValideesDeTest,
   instantane,
   ITEMS,
+  jamaisEcoulee,
   ligneRefusDeTest,
   MESURE_BUDGET,
   MESURE_JARDIN,
   racineDeTest,
 } from "./aides.ts";
 
+/** Code de sortie documenté dans l'en-tête de `commande.ts` : bilan complet, mais des appels sans réponse. */
+const CODE_ECHECS_APPEL = 2;
 const DEPOT = resolve(import.meta.dirname, "../..");
 const CLE = "cle-factice-9f8e7d6c5b4a";
 const TACHES = tachesDe({ items: ITEMS, mesures: [MESURE_BUDGET, MESURE_JARDIN], candidats: CANDIDATS });
@@ -76,7 +82,12 @@ interface Execution {
   readonly envois: number;
 }
 
-async function lancer(argv: readonly string[], repondre: Repondeur = accepter, env: Record<string, string> = { MISTRAL_API_KEY: CLE }): Promise<Execution> {
+async function lancer(
+  argv: readonly string[],
+  repondre: Repondeur = accepter,
+  env: Record<string, string> = { MISTRAL_API_KEY: CLE },
+  attendre: Dependances["attendre"] = jamaisEcoulee,
+): Promise<Execution> {
   let sortie = "";
   let envois = 0;
   const code = await commandeReformuler(argv, {
@@ -89,6 +100,7 @@ async function lancer(argv: readonly string[], repondre: Repondeur = accepter, e
       return reponse instanceof Error ? Promise.reject(reponse) : Promise.resolve(reponse);
     },
     maintenant: () => Date.parse("2026-11-02T09:15:00Z"),
+    attendre,
     imprimer: (texte) => {
       sortie += texte;
     },
@@ -153,7 +165,7 @@ describe("cas limite 9 : mode réel sans clé ou sans plafond ; la clé n'est ja
     const execution = await lancer(reel(chemin), (prompt, rang) =>
       rang === 0 ? new TypeError(`échec imaginaire qui citerait Bearer ${CLE}`) : accepter(prompt, rang),
     );
-    expect(execution.code).toBe(0);
+    expect(execution.code).toBe(CODE_ECHECS_APPEL);
     expect(execution.sortie).not.toContain(CLE);
     expect(execution.sortie).toContain("[clé masquée]");
     for (const [fichier, contenu] of instantane(chemin)) expect(contenu, fichier).not.toContain(CLE);
@@ -208,6 +220,82 @@ describe("mode réel sur fetch factice", () => {
   it("rejets comptés par motif dans le bilan", async () => {
     const execution = await lancer(reel(racine()), () => new Response(corpsChat("```json\n{}\n```"), { status: 200 }));
     expect(execution.sortie).toContain(`  rejetées : ${NOMBRE} (bloc_de_code ${NOMBRE})`);
+  });
+});
+
+/* ------------------------------------- code de sortie et délai d'abandon */
+
+/** Un fetch qui ne répond jamais : il ne rejette qu'à l'interruption de son signal, comme fetch. */
+function muet(_url: string, init: RequestInit): Promise<Response> {
+  return new Promise<Response>((_resoudre, rejeter) => {
+    init.signal?.addEventListener("abort", () => rejeter(new DOMException("This operation was aborted", "AbortError")), { once: true });
+  });
+}
+
+describe("dette du 2026-10-15, point 2 : code de sortie et délai d'abandon", () => {
+  it("tout reçu ⇒ code 0", async () => {
+    expect(await lancer(reel(racine()))).toMatchObject({ code: 0, envois: NOMBRE });
+  });
+
+  it("un échec de transport ⇒ code non nul, bilan imprimé en entier", async () => {
+    const execution = await lancer(reel(racine()), (prompt, rang) => (rang === 0 ? new TypeError("connexion refusée") : accepter(prompt, rang)));
+    expect(execution.code).toBe(CODE_ECHECS_APPEL);
+    expect(execution.sortie).toContain("  échecs de transport : 1");
+    expect(execution.sortie).toContain(`  acceptées : ${NOMBRE - 1}`);
+    expect(execution.sortie).toContain("Questions non appelées, plafond atteint : 0");
+  });
+
+  it("un échec HTTP ⇒ code non nul, bilan imprimé en entier", async () => {
+    const execution = await lancer(reel(racine()), (prompt, rang) => (rang === 0 ? echouer(prompt, rang) : accepter(prompt, rang)));
+    expect(execution.code).toBe(CODE_ECHECS_APPEL);
+    expect(execution.sortie).toContain("  échecs HTTP : 1");
+    expect(execution.sortie).toContain("Questions non appelées, plafond atteint : 0");
+  });
+
+  it("des rejets du contrôle seuls ⇒ code 0 : la réponse a été reçue et écrite", async () => {
+    const execution = await lancer(reel(racine()), () => new Response(corpsChat("pas du json"), { status: 200 }));
+    expect(execution.code).toBe(0);
+  });
+
+  it("délai dépassé ⇒ appel abandonné, compté échec de transport, aucun fichier, code non nul", async () => {
+    const chemin = racine({ configuration: { ...CONFIGURATION, delai_abandon_ms: 1500 } });
+    const demandes: number[] = [];
+    let envois = 0;
+    let sortie = "";
+    const code = await commandeReformuler(reel(chemin, `--question=${VISEE.question.id}`), {
+      env: { MISTRAL_API_KEY: CLE },
+      envoi: (url, init) => {
+        envois += 1;
+        return muet(url, init);
+      },
+      maintenant: () => Date.parse("2026-11-02T09:15:00Z"),
+      attendre: attenteAuTourSuivant(demandes),
+      imprimer: (texte) => {
+        sortie += texte;
+      },
+      temporaire,
+      depot: DEPOT,
+    });
+    expect(code).toBe(CODE_ECHECS_APPEL);
+    expect(envois).toBe(1);
+    expect(demandes).toEqual([1500]);
+    expect(propositionsDe(chemin)).toBe(0);
+    expect(sortie).toMatch(/1500 ms/u);
+    expect(sortie).toContain("  échecs de transport : 1");
+  });
+
+  it("délai d'abandon null ⇒ refus nommé, code 1, aucun appel", async () => {
+    const execution = await lancer(reel(racine({ configuration: { ...CONFIGURATION, delai_abandon_ms: null } })));
+    expect(execution).toMatchObject({ code: 1, envois: 0 });
+    expect(execution.sortie).toMatch(/delai_abandon_ms : null/u);
+  });
+
+  it("mode simulé : sans délai ni configuration, même règle de sortie ; ses 500 simulés ⇒ code non nul", async () => {
+    const demandes: number[] = [];
+    const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${temporaire()}`], echouer, {}, attenteAuTourSuivant(demandes));
+    expect(execution).toMatchObject({ code: CODE_ECHECS_APPEL, envois: 0 });
+    expect(demandes).toEqual([]);
+    expect(execution.sortie).toMatch(/  échecs HTTP : [1-9]/u);
   });
 });
 
@@ -324,13 +412,18 @@ function sansIdNiDate(chemin: string): readonly string[] {
   );
 }
 
+/**
+ * L'éditeur simulé rend un 500 pour une partie des questions (`choixParEmpreinte`) : sur ces données,
+ * la commande va au bout et sort avec `CODE_ECHECS_APPEL`, comme en mode réel (dette du 2026-10-15,
+ * point 2).
+ */
 describe("mode simulé", () => {
   it("cas limite 14 : deux exécutions identiques sur un staging vide ⇒ mêmes contenus hors id et date", async () => {
     const chemin = racine();
     const premiere = temporaire();
     const seconde = temporaire();
-    expect(await lancer(["--simule", `--racine=${chemin}`, `--sortie=${premiere}`], echouer, {})).toMatchObject({ code: 0, envois: 0 });
-    expect(await lancer(["--simule", `--racine=${chemin}`, `--sortie=${seconde}`], echouer, {})).toMatchObject({ code: 0 });
+    expect(await lancer(["--simule", `--racine=${chemin}`, `--sortie=${premiere}`], echouer, {})).toMatchObject({ code: CODE_ECHECS_APPEL, envois: 0 });
+    expect(await lancer(["--simule", `--racine=${chemin}`, `--sortie=${seconde}`], echouer, {})).toMatchObject({ code: CODE_ECHECS_APPEL });
     const contenus = sansIdNiDate(premiere);
     expect(contenus).toHaveLength(NOMBRE);
     expect(sansIdNiDate(seconde)).toEqual(contenus);
@@ -339,7 +432,7 @@ describe("mode simulé", () => {
   it("n'exige ni clé, ni plafond, ni configuration remplie, et n'appelle jamais fetch", async () => {
     const chemin = racine({ configuration: { modele: null } });
     const execution = await lancer(["--simule", `--racine=${chemin}`, `--sortie=${temporaire()}`], echouer, {});
-    expect(execution).toMatchObject({ code: 0, envois: 0 });
+    expect(execution).toMatchObject({ code: CODE_ECHECS_APPEL, envois: 0 });
     expect(execution.sortie).toContain("mode simulé");
   });
 
@@ -351,7 +444,7 @@ describe("mode simulé", () => {
 
   it("sans --sortie : un répertoire temporaire neuf, hors du dépôt", async () => {
     const execution = await lancer(["--simule", `--racine=${racine()}`], echouer, {});
-    expect(execution.code).toBe(0);
+    expect(execution.code).toBe(CODE_ECHECS_APPEL);
     expect(execution.sortie).toContain("banc-reformuler-cmd-");
   });
 });

@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ConfigurationRefusee, lireConfiguration, validerConfiguration } from "../../pipeline/reformulation/configuration.ts";
 
-const COMPLETE = { modele: "modele-de-test-2026-01", temperature: 0.3, max_tokens: 800, random_seed: 7 };
+const COMPLETE = { modele: "modele-de-test-2026-01", temperature: 0.3, max_tokens: 800, random_seed: 7, delai_abandon_ms: 90_000 };
 
 function motifs(texte: string): readonly string[] {
   try {
@@ -25,11 +25,11 @@ describe("cas limite 8 : configuration de la reformulation", () => {
     expect(validerConfiguration(JSON.stringify({ $commentaire: "x", ...COMPLETE }), "essai")).toEqual(COMPLETE);
   });
 
-  it("le fichier livré, à remplir par l'auteur, est refusé et nomme ses quatre clés nulles", () => {
+  it("le fichier livré, à remplir par l'auteur, est refusé et nomme ses cinq clés nulles", () => {
     const chemin = resolve(import.meta.dirname, "../../config/reformulation.json");
     expect(() => lireConfiguration(chemin)).toThrow(ConfigurationRefusee);
     const refus = motifs(readFileSync(chemin, "utf8"));
-    expect(refus.map((motif) => motif.split(" : ")[0])).toEqual(["modele", "temperature", "max_tokens", "random_seed"]);
+    expect(refus.map((motif) => motif.split(" : ")[0])).toEqual(["modele", "temperature", "max_tokens", "random_seed", "delai_abandon_ms"]);
     expect(refus.every((motif) => motif.includes(": null"))).toBe(true);
   });
 
@@ -49,13 +49,22 @@ describe("cas limite 8 : configuration de la reformulation", () => {
   });
 
   it("une clé répétée ⇒ refus qui la nomme", () => {
-    const texte = '{"modele": "a", "modele": "b", "temperature": 0, "max_tokens": 1, "random_seed": 0}';
+    const texte = '{"modele": "a", "modele": "b", "temperature": 0, "max_tokens": 1, "random_seed": 0, "delai_abandon_ms": 1}';
     expect(motifs(texte)).toEqual(["modele : clé répétée"]);
   });
 
   it("des valeurs de mauvaise forme ⇒ un refus par clé", () => {
-    const refus = motifs(JSON.stringify({ modele: " ", temperature: -1, max_tokens: 1.5, random_seed: "7" }));
-    expect(refus.map((motif) => motif.split(" : ")[0])).toEqual(["modele", "temperature", "max_tokens", "random_seed"]);
+    const refus = motifs(JSON.stringify({ modele: " ", temperature: -1, max_tokens: 1.5, random_seed: "7", delai_abandon_ms: 0 }));
+    expect(refus.map((motif) => motif.split(" : ")[0])).toEqual(["modele", "temperature", "max_tokens", "random_seed", "delai_abandon_ms"]);
+  });
+
+  it("délai d'abandon null ⇒ refus qui nomme la clé : aucun appel réel sans délai fixé par l'auteur", () => {
+    const refus = motifs(JSON.stringify({ ...COMPLETE, delai_abandon_ms: null }));
+    expect(refus).toEqual([expect.stringMatching(/^delai_abandon_ms : null, à remplir par l'auteur/u)]);
+  });
+
+  it.each([0, -1, 1.5, "60000", Number.MAX_SAFE_INTEGER + 2])("délai d'abandon %s ⇒ refusé (entier >= 1 attendu)", (valeur) => {
+    expect(motifs(JSON.stringify({ ...COMPLETE, delai_abandon_ms: valeur }))).toEqual([expect.stringMatching(/^delai_abandon_ms : /u)]);
   });
 
   it("un commentaire qui n'est pas un texte ⇒ refus", () => {

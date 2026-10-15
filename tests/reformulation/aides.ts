@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parse, stringify } from "yaml";
 import type { ReponseHttp, RequeteHttp, Transport } from "../../pipeline/interrogation/editeur.ts";
+import type { IssueAttente } from "../../pipeline/interrogation/horloge.ts";
 import { ErreurReseau } from "../../pipeline/interrogation/editeur.ts";
 import type { CandidatNomme, Item, Mesure } from "../../pipeline/questions/types.ts";
 import type { DemandeReformulation } from "../../pipeline/reformulation/demande.ts";
@@ -23,7 +24,13 @@ export const CANDIDATS: readonly CandidatNomme[] = [
   nomme("demo-alpha", LIBELLE, "Durand-Aubry"),
   nomme("demo-beta", "Basile Fictif", "Fictif"),
 ];
-export const CONFIGURATION = { modele: "modele-de-test-2026-01", temperature: 0.2, max_tokens: 900, random_seed: 11 };
+export const CONFIGURATION = {
+  modele: "modele-de-test-2026-01",
+  temperature: 0.2,
+  max_tokens: 900,
+  random_seed: 11,
+  delai_abandon_ms: 60_000,
+};
 
 /** Une mesure telle que `data/mesures/` la porte, avec l'historique qu'exige `mesure.schema.json`. */
 function mesurePubliee(options: Parameters<typeof mesure>[0]): Mesure {
@@ -108,6 +115,57 @@ export class TransportFactice implements Transport {
     this.rendues.push(issue);
     return Promise.resolve(issue);
   }
+}
+
+/**
+ * Un transport qui ne répond jamais : il ne rend la main qu'à l'abandon de l'envoi, en rejetant
+ * comme le ferait `fetch` interrompu sous `transportFetch` (`ErreurReseau`). Il compte les envois
+ * interrompus.
+ */
+export class TransportMuet implements Transport {
+  readonly envois: RequeteHttp[] = [];
+  interrompus = 0;
+
+  envoyer(requete: RequeteHttp, signal: AbortSignal): Promise<ReponseHttp> {
+    this.envois.push(requete);
+    return new Promise<ReponseHttp>((_resoudre, rejeter) => {
+      signal.addEventListener(
+        "abort",
+        () => {
+          this.interrompus += 1;
+          rejeter(new ErreurReseau("envoi interrompu"));
+        },
+        { once: true },
+      );
+    });
+  }
+}
+
+/* ------------------------------------------------------------------ attentes */
+
+/** Une attente qui ne s'écoule jamais : seule son annulation la termine. Aucun temps réel. */
+export function jamaisEcoulee(_ms: number, signal: AbortSignal): Promise<IssueAttente> {
+  return new Promise<IssueAttente>((resoudre) => {
+    if (signal.aborted) {
+      resoudre("annulee");
+      return;
+    }
+    signal.addEventListener("abort", () => resoudre("annulee"), { once: true });
+  });
+}
+
+/**
+ * Une attente qui s'écoule au tour suivant de la boucle d'événements, quel que soit le délai
+ * demandé : un transport qui répond en micro-tâches la devance toujours, un transport muet jamais.
+ * Les délais demandés sont notés dans `demandes`.
+ */
+export function attenteAuTourSuivant(demandes: number[] = []): (ms: number, signal: AbortSignal) => Promise<IssueAttente> {
+  return (ms, signal) => {
+    demandes.push(ms);
+    return new Promise<IssueAttente>((resoudre) => {
+      setImmediate(() => resoudre(signal.aborted ? "annulee" : "ecoulee"));
+    });
+  };
 }
 
 /* ---------------------------------------------------------------- racine */

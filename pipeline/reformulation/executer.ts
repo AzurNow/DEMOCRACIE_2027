@@ -4,7 +4,11 @@
  *
  * Par appel :
  * 1. le prompt est rendu depuis `prompts/reformulation-1.0.0.md` (règle 6, `prompt.ts`) ;
- * 2. le transport envoie la requête ; un échec de transport n'écrit rien et est compté ;
+ * 2. le transport envoie la requête, sous le délai d'abandon de la configuration
+ *    (`delai_abandon_ms`) : l'envoi et la minuterie courent ensemble, le premier arrivé l'emporte
+ *    et l'autre est annulé. Un échec de transport, ou un délai écoulé sans réponse (l'envoi est
+ *    alors interrompu), n'écrit rien et compte comme échec de transport : seule une réponse HTTP
+ *    reçue s'écrit (règle 7) ;
  * 3. l'empreinte des octets du corps est prise avant toute lecture ; le corps est lu tel quel —
  *    objet JSON dans `brut`, sinon texte UTF-8 dans `brut_texte` ; un corps qui n'est pas de
  *    l'UTF-8 valide lève `CorpsNonUtf8` et arrête la commande sans rien écrire (même règle que
@@ -21,8 +25,9 @@
 import { createHash } from "node:crypto";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
 import { ulid } from "../../validation/domaine/ulid.ts";
-import { ErreurReseau, lireContenu, type Contenu, type ReponseHttp } from "../interrogation/editeur.ts";
+import { ErreurReseau, lireContenu, type Contenu, type ReponseHttp, type RequeteHttp } from "../interrogation/editeur.ts";
 import { instantParis } from "../interrogation/heure-paris.ts";
+import type { Horloge } from "../interrogation/horloge.ts";
 import type { CandidatNomme } from "../questions/types.ts";
 import { controlerSortie, SortieRejetee } from "./controle.ts";
 import { variablesDuPrompt } from "./demande.ts";
@@ -46,7 +51,14 @@ export interface ContexteExecution {
   /** Nombre maximal d'envois ; `null` : aucun plafond (mode simulé seulement, décidé par la commande). */
   readonly plafond: number | null;
   readonly maintenant: () => number;
-  /** Reçoit un message par échec de transport. */
+  /**
+   * Délai d'abandon de chaque appel, en millisecondes (`config/reformulation.json`) ; `null` : aucun
+   * délai (mode simulé seulement, sans réseau, décidé par la commande).
+   */
+  readonly delai_abandon_ms: number | null;
+  /** L'attente de la minuterie, injectée : `horlogeSysteme.attendre` en réel, une attente simulée en test. */
+  readonly attendre: Horloge["attendre"];
+  /** Reçoit un message par échec de transport ou appel abandonné. */
   readonly signaler: (message: string) => void;
 }
 
@@ -158,17 +170,71 @@ function propositionDe(tache: Tache, reception: Reception, adaptateur: Adaptateu
 
 type IssueAppel = { readonly genre: "ecrite"; readonly chemin: string; readonly issue: IssueProposition } | { readonly genre: "transport" };
 
-async function recevoir(tache: Tache, contexte: ContexteExecution): Promise<Reception | null> {
-  const { adaptateur, transport } = contexte.editeur;
-  const requete = adaptateur.construireRequete(rendrePrompt(contexte.texte_prompt, variablesDuPrompt(tache.demande)));
+type Envoi =
+  | { readonly genre: "http"; readonly reponse: ReponseHttp }
+  | { readonly genre: "transport"; readonly message: string }
+  | { readonly genre: "delai"; readonly delai_ms: number }
+  | { readonly genre: "abandonne" };
+
+/**
+ * L'envoi, ramené à une issue. Une fois l'envoi interrompu (minuterie écoulée), son rejet n'est plus
+ * attendu par personne : il devient « abandonne ». Avant cela, toute erreur qui n'est pas un échec de
+ * transport remonte telle quelle.
+ */
+function transporter(contexte: ContexteExecution, requete: RequeteHttp, signal: AbortSignal): Promise<Envoi> {
+  return contexte.editeur.transport.envoyer(requete, signal).then(
+    (reponse): Envoi => ({ genre: "http", reponse }),
+    (erreur: unknown): Envoi => {
+      if (signal.aborted) return { genre: "abandonne" };
+      if (erreur instanceof ErreurReseau) return { genre: "transport", message: erreur.message };
+      throw erreur;
+    },
+  );
+}
+
+/** L'envoi et la minuterie courent ensemble ; le premier arrivé l'emporte, l'autre est annulé. */
+async function envoyerSousDelai(contexte: ContexteExecution, requete: RequeteHttp, delai_ms: number): Promise<Envoi> {
+  const arretEnvoi = new AbortController();
+  const arretMinuterie = new AbortController();
+  const minuterie = contexte
+    .attendre(delai_ms, arretMinuterie.signal)
+    .then((issue): Envoi => (issue === "ecoulee" ? { genre: "delai", delai_ms } : { genre: "abandonne" }));
   try {
-    const reponse = await transport.envoyer(requete, new AbortController().signal);
-    return { reponse, instant: contexte.maintenant() };
-  } catch (erreur) {
-    if (!(erreur instanceof ErreurReseau)) throw erreur;
-    contexte.signaler(`Question ${tache.question.id} : ${erreur.message} Aucun fichier écrit.`);
+    return await Promise.race([transporter(contexte, requete, arretEnvoi.signal), minuterie]);
+  } finally {
+    arretMinuterie.abort();
+    arretEnvoi.abort();
+  }
+}
+
+function envoyer(contexte: ContexteExecution, requete: RequeteHttp): Promise<Envoi> {
+  const delai = contexte.delai_abandon_ms;
+  if (delai === null) return transporter(contexte, requete, new AbortController().signal);
+  return envoyerSousDelai(contexte, requete, delai);
+}
+
+/** Le motif signalé d'un appel sans réponse HTTP, ou la réponse reçue. */
+function issueEnvoi(envoi: Envoi): ReponseHttp | string {
+  switch (envoi.genre) {
+    case "http":
+      return envoi.reponse;
+    case "transport":
+      return envoi.message;
+    case "delai":
+      return `Aucune réponse au bout de ${envoi.delai_ms} ms : appel abandonné.`;
+    case "abandonne":
+      throw new Error("Envoi abandonné sans minuterie écoulée : état impossible, la commande s'arrête.");
+  }
+}
+
+async function recevoir(tache: Tache, contexte: ContexteExecution): Promise<Reception | null> {
+  const requete = contexte.editeur.adaptateur.construireRequete(rendrePrompt(contexte.texte_prompt, variablesDuPrompt(tache.demande)));
+  const issue = issueEnvoi(await envoyer(contexte, requete));
+  if (typeof issue === "string") {
+    contexte.signaler(`Question ${tache.question.id} : ${issue} Aucun fichier écrit.`);
     return null;
   }
+  return { reponse: issue, instant: contexte.maintenant() };
 }
 
 async function appeler(tache: Tache, contexte: ContexteExecution): Promise<IssueAppel> {

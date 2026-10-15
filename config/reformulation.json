@@ -1,7 +1,8 @@
 {
-  "$commentaire": "Réglages de l'appel au modèle de reformulation (pnpm reformuler, décisions D39 et D42). Rempli à la main par l'auteur avant le premier appel réel ; aucune valeur par défaut dans le code : la commande refuse de partir tant qu'une clé vaut null. modele : identifiant exact et épinglé de Mistral Large (D42 (1)), recopié dans production.modele de chaque proposition. temperature : nombre >= 0. max_tokens : entier >= 1, longueur maximale de la sortie (une sortie coupée est rejetée par le contrôle, jamais réparée). random_seed : entier >= 0, graine envoyée à l'API pour rendre l'appel rejouable. Toute clé ici est envoyée telle quelle dans le corps de la requête ; une clé inconnue est refusée.",
+  "$commentaire": "Réglages de l'appel au modèle de reformulation (pnpm reformuler, décisions D39 et D42). Rempli à la main par l'auteur avant le premier appel réel ; aucune valeur par défaut dans le code : la commande refuse de partir tant qu'une clé vaut null. modele : identifiant exact et épinglé de Mistral Large (D42 (1)), recopié dans production.modele de chaque proposition. temperature : nombre >= 0. max_tokens : entier >= 1, longueur maximale de la sortie (une sortie coupée est rejetée par le contrôle, jamais réparée). random_seed : entier >= 0, graine envoyée à l'API pour rendre l'appel rejouable. Ces quatre clés sont envoyées telles quelles dans le corps de la requête. delai_abandon_ms : entier >= 1, délai en millisecondes au-delà duquel un appel sans réponse est abandonné, compté échec de transport, sans aucun fichier écrit ; jamais envoyé à l'API. Une clé inconnue est refusée.",
   "modele": null,
   "temperature": null,
   "max_tokens": null,
-  "random_seed": null
+  "random_seed": null,
+  "delai_abandon_ms": null
 }

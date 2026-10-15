@@ -5,7 +5,8 @@
  * Requête : `POST https://api.mistral.ai/v1/chat/completions`, en-tête `Authorization: Bearer
  * <clé>`, corps `{model, messages: [{role: "user", content: <prompt rendu>}], temperature,
  * max_tokens, random_seed}`. Le prompt est le seul message : aucune instruction système, aucun
- * autre paramètre que ceux de la configuration.
+ * autre paramètre que ces quatre-là de la configuration (`delai_abandon_ms` borne l'attente de
+ * l'appel, `executer.ts`, et n'est jamais envoyé).
  *
  * Réponse : le texte du modèle est `choices[0].message.content`, quand c'est une chaîne. Toute
  * autre forme — `choices` absent ou vide, `message` absent, `content` nul, liste de morceaux ou
