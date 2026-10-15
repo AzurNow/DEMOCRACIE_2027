@@ -160,7 +160,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [ ] **Déposer la version 1.0 sur Zenodo** et publier l'empreinte et le DOI (critère de J1).
 - [ ] **Transmettre le protocole à l'Arcom, à Viginum et à la CNIL** pour information (§10).
 
-- [ ] **Écrire la 0.16 : quatre décisions du 2026-10-02 sur l'interrogation (§6)**, prises avant
+- [x] (2026-10-15, écrit en 0.16) **Écrire la 0.16 : quatre décisions du 2026-10-02 sur l'interrogation (§6)**, prises avant
       d'en écrire le code, selon la recommandation, et codées par le lot interrogation. Un agent ne
       peut pas écrire `docs/PROTOCOLE.md` : le texte est proposé ici, à appliquer tel quel ou à
       reprendre.
@@ -205,7 +205,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   la fenêtre est manquante ; un refus opposé par l'API elle-même est une réponse obtenue, classée
   non-réponse. »
 
-- [ ] **Écrire aussi en 0.16 : D13 et D14 (§7, notation)**, tranchées le 2026-10-03 et le
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D13 et D14 (§7, notation)**, tranchées le 2026-10-03 et le
       2026-10-05 avant le code du lot notation, selon la recommandation. Texte proposé :
 
   À la fin du paragraphe « Test contrefactuel de biais du juge », à la place de « Les notations
@@ -235,7 +235,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   sortent aussi des chiffres d'accord ; le contrefactuel outil permute les noms dans le texte des
   réponses. »
 
-- [ ] **Écrire aussi en 0.16 : D15 (§7)**, tranchée le 2026-10-05 et codée par la PR #79. Texte
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D15 (§7)**, tranchée le 2026-10-05 et codée par la PR #79. Texte
       proposé :
 
   Dans « Juges automatiques », après « (texte, liens, citations) » : « , chaque citation réduite à
@@ -255,7 +255,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   un accord partiel des juges est tranché par un humain ; l'échantillon humain est tiré parmi les
   réponses obtenues, arrondi au supérieur. »
 
-- [ ] **Écrire aussi en 0.16 : D16 (§7, test contrefactuel)**, tranchée le 2026-10-06 avant la
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D16 (§7, test contrefactuel)**, tranchée le 2026-10-06 avant la
       PR B du lot notation. Texte proposé, dans « Test contrefactuel de biais du juge », après
       « dans la réponse et dans l'item de référence » : « , ainsi que dans la question transmise au
       juge » ; puis, après « Une note qui change avec le nom seul révèle un biais du juge. » :
@@ -271,7 +271,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : le contrefactuel permute aussi la question ; un
   extrait invalide compte comme un changement ; le retrait des deux juges invalide le run. »
 
-- [ ] **Écrire aussi en 0.16 : D17 (§7, accord des notations)**, tranchée le 2026-10-06. Dans
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D17 (§7, accord des notations)**, tranchée le 2026-10-06. Dans
       le point de la « Règle de décision » sur l'échantillon aléatoire, remplacer « identiques sur
       tout ce que lisent les métriques primaires : catégorie, drapeaux, fraîcheur de l'obsolescence
       et, pour le sourçage, le seul sourçage valide (un même lien cité, existant et soutenant). »
@@ -285,7 +285,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : l'accord de deux notations porte sur tous les
   drapeaux. Section 11 : la fraîcheur n'existe qu'avec le drapeau obsolescence. »
 
-- [ ] **Écrire aussi en 0.16 : D18 (§7, notation humaine)**, tranchée le 2026-10-06. Texte
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D18 (§7, notation humaine)**, tranchée le 2026-10-06. Texte
       proposé, dans « Annotateurs humains », après « (sans voir l'outil, ni l'autre annotateur) » :
       « ni la note des juges : un humain reçoit exactement ce que reçoit un juge » ; dans le point
       sur l'échantillon, après « arbitrée par un troisième humain » : « qui la note à son tour à
@@ -296,7 +296,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : l'humain ne voit pas la note des juges ; le
   troisième humain de l'échantillon note à l'aveugle ; le jeu d'or a son propre tirage. »
 
-- [ ] **Écrire aussi en 0.16 : D19 (§7, test contrefactuel et sourçage)**, tranchée le
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D19 (§7, test contrefactuel et sourçage)**, tranchée le
       2026-10-06. Texte proposé, dans « Test contrefactuel de biais du juge », après la phrase sur
       le sous-ensemble : « Une réponse refusée par l'outil n'y entre pas : elle n'a pas de texte à
       permuter. » ; dans « Sourçage », après « Un lien mort ne soutient jamais rien » : « : quand
@@ -327,7 +327,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
       `questions.json` pour un vrai run, et personne n'inscrit un run invalide (D16 (3)), dont le
       schéma exige `publication` et `depot`. Dire quel outil gèle un run et quand il est invalidé.
 
-- [ ] **Écrire aussi en 0.16 : D20 (§7, test des liens)**, tranchée le 2026-10-08. Texte proposé,
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D20 (§7, test des liens)**, tranchée le 2026-10-08. Texte proposé,
       dans « Sourçage », après « le lien cité existe (test HTTP déterministe) » : « Le test passe une
       fois par run, après la fermeture de la fenêtre d'interrogation et avant la notation, sur chaque
       URL citée prise telle qu'écrite, en requête GET, selon la norme de collecte de la section 6
@@ -344,7 +344,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
   Ligne de révision, à fusionner : « Section 7 : règles du test HTTP des liens (moment, méthode,
   tentatives, table des verdicts publiée, copie conservée). »
 
-- [ ] **Écrire aussi en 0.16 : D21 (§7, test des liens, suite)**, tranchée le 2026-10-08. Texte
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D21 (§7, test des liens, suite)**, tranchée le 2026-10-08. Texte
       proposé, à la suite du texte de D20 : « Une erreur qui n'est ni un code HTTP classé ni un
       refus de robots.txt rend le lien inaccessible ; une erreur réseau et un robots.txt injoignable
       sont retentés comme les autres erreurs passagères. Une URL écrite avec des caractères non
@@ -362,7 +362,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [x] (2026-10-09, PR #95 fusionnée) **Relire `config/test-liens.toml`** (PR #95) avant sa fusion :
       c'est la table de mesure de D20 et D21.
 
-- [ ] **Écrire aussi en 0.16 : D24 (§7 et §12, go/no-go)**, tranchée le 2026-10-09. Texte proposé,
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D24 (§7 et §12, go/no-go)**, tranchée le 2026-10-09. Texte proposé,
       au §12, après « le kappa juges-humains de l'échantillon de 10 % est ≥ 0,75 » : « pour chaque
       juge retenu, sur la catégorie primaire, entre sa note et la note humaine retenue de la réponse
       (section 7) ; un kappa indéfini ne satisfait pas ce critère ». Et, à la fin du paragraphe :
@@ -420,7 +420,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
         l'API d'un comparateur quand il en offre une (n° 52 et 62).
 - [x] `tirage.part_reprise` et `tirage.part_absence_et_fictifs_min` retirés (#73).
 
-- [ ] **Écrire aussi en 0.16 : D26 (§3 et §7)**, tranchée le 2026-10-09. Texte proposé au §3,
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D26 (§3 et §7)**, tranchée le 2026-10-09. Texte proposé au §3,
       après la règle des candidats : « La liste publiée avec la version 1.0 applique ces règles au
       15 octobre 2026 ; elles sont réappliquées telles quelles au gel de chaque run, et tout écart
       avec la liste publiée est rapporté. » Dans le tableau des outils, « figurant dans le top des
@@ -433,7 +433,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
   Ligne de révision, à fusionner : « Section 3 : date d'application de la liste publiée, classement
   des stores précisé. »
 
-- [ ] **Écrire aussi en 0.16 : D27 (§7 et annexe D, charge du juge)**, tranchée le 2026-10-09. Au §7,
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D27 (§7 et annexe D, charge du juge)**, tranchée le 2026-10-09. Au §7,
       la liste de ce que reçoit chaque juge s'allonge : « … la date du run, la réponse attendue, la
       prémisse de la formulation lorsqu'elle est fausse, le texte de chaque page citée tel que conservé
       ou archivé, et la grille ». Et : « La fraîcheur d'une obsolescence se calcule depuis les dates ;
@@ -452,7 +452,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
   Ligne de révision, à fusionner : « Section 7 et annexe D : contenu de la charge du juge, note
   d'une question d'attribution calculée, sourçage hors du test contrefactuel. »
 
-- [ ] **Écrire aussi en 0.16 : D28 (§3, §8)**, tranchée le 2026-10-09. Au §3, après la phrase sur
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D28 (§3, §8)**, tranchée le 2026-10-09. Au §3, après la phrase sur
       les primaires : « Un candidat éliminé à un tour de primaire est retiré dès la proclamation du
       résultat. Une candidature est déclarée par une déclaration explicite de l'intéressé ou une
       investiture de son parti ; une intention ou une réflexion annoncée ne suffit pas. » Au §8,
@@ -467,7 +467,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
   dont l'API n'offre que la recherche web : il est mesuré dans le seul mode avec recherche. » Ligne
   de révision : « Section 8 : outil à un seul mode par API, dans un sens comme dans l'autre. »
 
-- [ ] **Écrire aussi en 0.16 : D40 (§5, graines)**, tranchée le 2026-10-15. Texte proposé, au
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D40 (§5, graines)**, tranchée le 2026-10-15. Texte proposé, au
       paragraphe « Tirage », après « ce qui rend le tirage reproductible. » : « Les graines d'un run
       ne sont choisies par personne : elles sont dérivées de la valeur d'une balise publique d'aléa
       (drand), au premier tour émis à l'instant de gel ou après. La réponse signée de la balise est
@@ -477,7 +477,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       recalculer. » Ligne de révision : « Section 5 : les graines sont dérivées d'une balise publique
       d'aléa, au premier tour qui suit le gel. » (Déjà inséré dans le projet de 0.16.)
 
-- [ ] **Relire le projet de 0.16 assemblé** dans `scratch/protocole-0.16/` (2026-10-15) : copie du
+- [x] (2026-10-15) relu et recopié, avec six derniers choix de rédaction (fin de `NOTES.md`) : **Relire le projet de 0.16 assemblé** dans `scratch/protocole-0.16/` (2026-10-15) : copie du
       protocole avec les textes de cette section appliqués, diff, et `NOTES.md` (placements
       validés le 2026-10-15, textes rédigés par l'agent à relire, corrections minimales de trois
       phrases de la 0.15). Puis recopier dans `docs/PROTOCOLE.md`.
@@ -501,18 +501,18 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       Gemini Notebook, Grok Bot et Meta AI exclus avec motif ; D37 : mode de Perplexity à figer sur
       sa documentation primaire.
 
-- [ ] **Écrire aussi en 0.16 : D32 (§7)**, tranchée le 2026-10-10. Après la règle de décision :
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D32 (§7)**, tranchée le 2026-10-10. Après la règle de décision :
       « Un refus de l'API est noté non-réponse sans être soumis aux juges. » D33 : à l'annexe C,
       « extrait justificatif obligatoire pour toute note autre qu'exacte, sauf sur un refus de
       l'API, qui n'a rien à citer » ; au §7, « un refus tiré dans l'échantillon reste doublement
       noté par des humains et n'entre pas dans l'accord juges-humains ; leur nombre est publié ».
 
-- [ ] **Inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3). Les sept
+- [x] (2026-10-15) recopié dans `prompts/judge-1.0.0.md` : **Inscrire le prompt juge** : `scratch/prompts/judge-1.0.0.md` (charge-juge-v3). Les sept
       choix de rédaction sont validés (D34, 2026-10-12) ; reste à recopier le prompt dans
       `prompts/judge-1.0.0.md`. Recopier ce fichier-là, daté du 2026-10-12 : la proposition
       du 2026-10-09, à points ouverts, est rangée dans `scratch/prompts/archives/` et ne sert plus.
 
-- [ ] **Écrire aussi en 0.16 : D34 (§7)**, tranchée le 2026-10-12. Au verdict de soutien : « Un lien
+- [x] (2026-10-15, écrit en 0.16) **Écrire aussi en 0.16 : D34 (§7)**, tranchée le 2026-10-12. Au verdict de soutien : « Un lien
       dont le texte transmis est tronqué et ne contient pas l'affirmation, ou dont le texte n'a pu
       être extrait, est jugé indéterminé ; ne soutient pas exige la page entière. » Au motif
       d'inexactitude : « Le juge retient le premier motif applicable dans l'ordre : candidat confondu,
@@ -521,7 +521,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 ### Prompts (`prompts/`)
 
-- [ ] **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
+- [x] (2026-10-15) `prompts/judge-1.0.0.md` ; ajout inventé non contradictoire ⇒ inexacte, `ajout_fabrique` (D26 (4) révisée) : **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
       et le prompt doit dire comment classer une réponse qui donne la bonne position et y ajoute une
       position inventée non contradictoire (`schema/README.md`, points ouverts, 3).
 - [x] **Relire les prompts d'extraction et de reformulation** (PR #104) : relus le 2026-10-12,
