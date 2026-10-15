@@ -32,7 +32,7 @@ import type { Tache } from "./entrees.ts";
 import { executer, trier } from "./executer.ts";
 import type { Bilan, Triage } from "./executer.ts";
 import { chargerPromptReformulation } from "./prompt.ts";
-import { empreinteValidee, FormulationValideeIllisible, JournalRefusIllisible, lireRefus } from "./reprise.ts";
+import { FormulationValideeIllisible, JournalRefusIllisible, lireRefus, validee } from "./reprise.ts";
 import { transportFetch } from "./transport-fetch.ts";
 import type { Envoi } from "./transport-fetch.ts";
 
@@ -132,7 +132,7 @@ function filtrer(taches: readonly Tache[], question: string | undefined): readon
 function trierDepuis(taches: readonly Tache[], racine: string, staging: string): Triage {
   const formulations = join(racine, "data", "formulations");
   const refus = lireRefus(join(racine, "validation", "formulations", "refus.jsonl"));
-  return trier(taches, staging, { empreinteValidee: (question_id) => empreinteValidee(formulations, question_id), refus });
+  return trier(taches, staging, { validee: (question_id) => validee(formulations, question_id), refus });
 }
 
 /* ------------------------------------------------------------------- bilan */

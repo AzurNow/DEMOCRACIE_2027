@@ -25,6 +25,14 @@ export interface Configuration {
   readonly repertoire_brouillons: string;
   /** `data/items/` : lu seulement, pour l'état effectif d'un item publié (statut de contestation). */
   readonly repertoire_data: string;
+  /** `data/mesures/` : lu seulement, pour engendrer le texte neutre courant des questions. */
+  readonly repertoire_mesures_data: string;
+  /** `data/formulations/` : lu, et écrit par la seule relecture (`io/data-formulations.ts`). */
+  readonly repertoire_formulations_data: string;
+  /** `config/perimetre.yaml` : lu seulement, pour le libellé des candidats. */
+  readonly fichier_perimetre: string;
+  /** `validation/formulations/refus.jsonl` : journal en ajout seul des propositions refusées. */
+  readonly journal_refus_formulations: string;
   readonly annotateur_id: string;
 }
 
@@ -84,6 +92,32 @@ function racineStagingParDefaut(env: NodeJS.ProcessEnv, racine: string, demo: bo
   return cheminOuDefaut(env, "BANC_STAGING", defaut);
 }
 
+interface EmplacementsFormulations {
+  readonly repertoire_mesures_data: string;
+  readonly repertoire_formulations_data: string;
+  readonly fichier_perimetre: string;
+  readonly journal_refus_formulations: string;
+}
+
+/** Relecture des formulations (D39) : en démonstration, rien n'est écrit hors de validation/fixtures/. */
+function emplacementsFormulations(env: NodeJS.ProcessEnv, racine: string, demo: boolean): EmplacementsFormulations {
+  const sous = (production: string, demonstration: string): string => resolve(racine, demo ? demonstration : production);
+  return {
+    repertoire_mesures_data: cheminOuDefaut(env, "BANC_DATA_MESURES", sous("data/mesures", "validation/fixtures/data-mesures-demo")),
+    repertoire_formulations_data: cheminOuDefaut(
+      env,
+      "BANC_DATA_FORMULATIONS",
+      sous("data/formulations", "validation/fixtures/data-formulations-demo"),
+    ),
+    fichier_perimetre: cheminOuDefaut(env, "BANC_PERIMETRE", resolve(racine, "config/perimetre.yaml")),
+    journal_refus_formulations: cheminOuDefaut(
+      env,
+      "BANC_REFUS_FORMULATIONS",
+      sous("validation/formulations/refus.jsonl", "validation/fixtures/formulations-demo/refus.jsonl"),
+    ),
+  };
+}
+
 export function configurationDepuisEnvironnement(env: NodeJS.ProcessEnv, racine: string): Configuration {
   const annotateur_id = annotateurIdRequis(env);
   const { demo, base, suffixe } = resoudreMode(env);
@@ -96,6 +130,7 @@ export function configurationDepuisEnvironnement(env: NodeJS.ProcessEnv, racine:
     repertoire_decisions: cheminOuDefaut(env, "BANC_DECISIONS", resolve(racine, `${base}/decisions${suffixe}`)),
     repertoire_brouillons: cheminOuDefaut(env, "BANC_BROUILLONS", resolve(racine, `${base}/brouillons${suffixe}`)),
     repertoire_data: cheminOuDefaut(env, "BANC_DATA", resolve(racine, demo ? "validation/fixtures/data-demo" : "data/items")),
+    ...emplacementsFormulations(env, racine, demo),
     annotateur_id,
   };
 }

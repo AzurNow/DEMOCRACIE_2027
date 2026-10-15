@@ -58,6 +58,10 @@ export function creerBac(): Bac {
     repertoire_decisions: join(racine, "validation/decisions"),
     repertoire_brouillons: join(racine, "validation/brouillons"),
     repertoire_data: join(racine, "data/items"),
+    repertoire_mesures_data: join(racine, "data/mesures"),
+    repertoire_formulations_data: join(racine, "data/formulations"),
+    fichier_perimetre: join(racine, "config/perimetre.yaml"),
+    journal_refus_formulations: join(racine, "validation/formulations/refus.jsonl"),
     annotateur_id,
   });
 

@@ -3,7 +3,8 @@
  * `data/mesures/` par la décision D38) : « aucun script, aucun agent, aucune migration n'écrit dans
  * `data/` directement ». Un seul module écrit dans chaque répertoire protégé, derrière ses contrôles
  * (schéma, ajout seul, empreinte du fichier lu) : `validation/io/data-items.ts` pour `data/items`,
- * `validation/io/data-mesures.ts` pour `data/mesures`. Aucun autre fichier de `outils/`,
+ * `validation/io/data-mesures.ts` pour `data/mesures`, `validation/io/data-formulations.ts` pour
+ * `data/formulations` (décision D39). Aucun autre fichier de `outils/`,
  * `pipeline/`, `validation/` ni `analysis/` ne combine une écriture disque et le chemin d'un
  * répertoire protégé, et un écrivain n'est autorisé que pour le sien. Ajouter un répertoire
  * protégé, c'est ajouter une ligne à `PROTEGES`.
@@ -30,6 +31,12 @@ interface Protege {
 const PROTEGES: readonly Protege[] = [
   { repertoire: "data/items", ecrivain: "validation/io/data-items.ts", chemin: /data\/items|["']data["']\s*,\s*["']items["']/ },
   { repertoire: "data/mesures", ecrivain: "validation/io/data-mesures.ts", chemin: /data\/mesures|["']data["']\s*,\s*["']mesures["']/ },
+  // Décision D39 : seule la relecture des formulations promeut vers data/formulations, par ce module.
+  {
+    repertoire: "data/formulations",
+    ecrivain: "validation/io/data-formulations.ts",
+    chemin: /data\/formulations|["']data["']\s*,\s*["']formulations["']/,
+  },
 ];
 
 const ECRITURE_TS =
@@ -90,6 +97,19 @@ describe("détecteur", () => {
     expect(ecritDansData("x.ts", 'readFileSync(join("data/mesures", nom), "utf8")')).toBe(false);
     expect(ecritDansData("x.ts", 'writeFileSync(join("staging/mesures", nom), texte)')).toBe(false);
     expect(ecritDansData("x.py", 'open(Path("data/mesures") / nom, encoding="utf-8")')).toBe(false);
+  });
+
+  it("cas limite 10 : data/formulations a un seul écrivain déclaré, et toute autre écriture y est attrapée", () => {
+    const ecrivains = PROTEGES.filter((protege) => protege.repertoire === "data/formulations").map((protege) => protege.ecrivain);
+    expect(ecrivains).toEqual(["validation/io/data-formulations.ts"]);
+    const versFormulations = 'writeFileSync(join("data/formulations", nom), texte)';
+    expect(ecritDansData("x.ts", versFormulations)).toBe(true);
+    expect(ecritDansData("x.ts", 'const d = join(racine, "data", "formulations"); renameSync(a, d)')).toBe(true);
+    expect(ecritDansData("x.py", 'Path("data/formulations/q.json").write_text(s)')).toBe(true);
+    expect(ecritDansData("x.ts", 'readFileSync(join("data/formulations", nom), "utf8")')).toBe(false);
+    expect(ecrituresInterdites("validation/io/data-formulations.ts", versFormulations)).toEqual([]);
+    expect(ecrituresInterdites("validation/serveur/formulations.ts", versFormulations)).toEqual(["data/formulations"]);
+    expect(ecrituresInterdites("validation/io/data-mesures.ts", versFormulations)).toEqual(["data/formulations"]);
   });
 
   it("un écrivain n'est autorisé que pour son propre répertoire", () => {

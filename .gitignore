@@ -17,6 +17,11 @@ validation/arbitrage/file.json
 validation/fixtures/decisions-demo/
 validation/fixtures/brouillons-demo/
 
+# Relecture des formulations en démonstration (BANC_DEMO=1) : formulations promues et refus d'essai,
+# jamais des relectures publiables (décisions D39 et D42).
+validation/fixtures/data-formulations-demo/
+validation/fixtures/formulations-demo/
+
 # Worktrees des sous-agents (Claude Code) : des copies de travail, jamais du contenu du dépôt.
 .claude/worktrees/
 

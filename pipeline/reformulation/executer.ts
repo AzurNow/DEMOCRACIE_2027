@@ -30,6 +30,7 @@ import type { DemandeReformulation } from "./demande.ts";
 import type { AdaptateurReformulation, EditeurReformulation } from "./editeur.ts";
 import type { Tache } from "./entrees.ts";
 import { rendrePrompt, VERSION_PROMPT_REFORMULATION } from "./prompt.ts";
+import type { ClePromotion } from "./relecture.ts";
 import { deciderReprise, type DecisionReprise, type EtatQuestion } from "./reprise.ts";
 import { ecrireProposition, lirePropositions } from "./staging.ts";
 import type { CorpsStocke, IssueProposition, MotifProposition, PropositionFormulation } from "./staging.ts";
@@ -65,8 +66,8 @@ export interface Bilan {
 /* ----------------------------------------------------------------- reprise */
 
 export interface EtatReprise {
-  /** `data/formulations/` : question_id → empreinte validée, ou null. */
-  readonly empreinteValidee: (question_id: string) => string | null;
+  /** `data/formulations/` : question_id → clé validée (empreinte, position affirmée), ou null. */
+  readonly validee: (question_id: string) => ClePromotion | null;
   readonly refus: ReadonlySet<string>;
 }
 
@@ -79,7 +80,8 @@ export interface Triage {
 function decisionPour(tache: Tache, staging: string, reprise: EtatReprise): DecisionReprise {
   const etat: EtatQuestion = {
     empreinte_courante: sha256(tache.question.texte_neutre),
-    empreinte_validee: reprise.empreinteValidee(tache.question.id),
+    position_courante: tache.demande.position_affirmee,
+    validee: reprise.validee(tache.question.id),
     propositions: lirePropositions(staging, tache.question.id),
     refus: reprise.refus,
   };

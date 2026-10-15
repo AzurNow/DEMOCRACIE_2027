@@ -196,6 +196,10 @@ describe("la table de routes est celle que le serveur applique", () => {
       "brouillon-ecrire": "/api/brouillon",
       raccourcis: "/api/raccourcis",
       source: "/api/lots/lot-001/items/ITEM1/source/assertion",
+      formulations: "/api/formulations",
+      formulation: "/api/formulations/q_00000000000000000000000000000001",
+      "formulation-promotion": "/api/formulations/promotions",
+      "formulation-refus": "/api/formulations/refus",
     };
 
     // Si une route est ajoutée sans exemple ici, ce test tombe : c'est le but.

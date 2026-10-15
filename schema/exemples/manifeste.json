@@ -1783,6 +1783,52 @@
       "attendu": "invalide",
       "motif": "Copie de valide-01 dont la formulation orientée porte position_affirmee « AUCUNE » : sans prémisse, le champ est absent, jamais rempli par le mot AUCUNE.",
       "regle_protocole": "§5 ; décision D42 (3) ; prompts/reformulation-1.0.0, « Sortie attendue »"
+    },
+    {
+      "objet": "formulations-validees",
+      "fichier": "formulations-validees/valide-01-q-fer-position-pour.json",
+      "attendu": "valide",
+      "motif": "D39, D42 : les trois formulations relues de la proposition acceptée valide-01, textes recopiés tels quels ; neutre produite par la table de gabarits, orientée portant la position demandée « pour »."
+    },
+    {
+      "objet": "formulations-validees",
+      "fichier": "formulations-validees/valide-02-q-att-sans-position.json",
+      "attendu": "valide",
+      "motif": "D42 (3) : question d'attribution, demande AUCUNE ; l'orientée ne porte pas de position_affirmee. Guillemets et apostrophes typographiques conservés tels quels."
+    },
+    {
+      "objet": "formulations-validees",
+      "fichier": "formulations-validees/invalide-01-neutre-produite-par-modele.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont la neutre nomme un modèle : elle est écrite par le gabarit, sa production est {gabarits}.",
+      "regle_protocole": "§5 ; décision D42 (2)"
+    },
+    {
+      "objet": "formulations-validees",
+      "fichier": "formulations-validees/invalide-02-sens-non-preserve.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont l'orientée porte sens_preserve false : une formulation qui change le sens se refuse, elle n'entre pas dans data/.",
+      "regle_protocole": "§5, « relues par un annotateur qui vérifie qu'elles ne changent pas le sens » ; règle 3 de CLAUDE.md"
+    },
+    {
+      "objet": "refus-formulation",
+      "fichier": "refus-formulation/valide-01-premisse-non-conforme.json",
+      "attendu": "valide",
+      "motif": "D39, D42 (3) : refus d'une proposition dont la prémisse de l'orientée n'affirme pas la position demandée ; registre en cause et commentaire nommés."
+    },
+    {
+      "objet": "refus-formulation",
+      "fichier": "refus-formulation/invalide-01-commentaire-blanc.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 dont le commentaire n'est fait que d'espaces : un refus dit ce qui change le sens.",
+      "regle_protocole": "§5 ; décision D39"
+    },
+    {
+      "objet": "refus-formulation",
+      "fichier": "refus-formulation/invalide-02-aucun-registre.json",
+      "attendu": "invalide",
+      "motif": "Copie de valide-01 sans registre en cause : un refus nomme ce qu'il refuse.",
+      "regle_protocole": "§5 ; décision D39"
     }
   ]
 }

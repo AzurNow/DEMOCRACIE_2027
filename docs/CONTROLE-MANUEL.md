@@ -41,3 +41,31 @@ geste à faire et une observation à constater, pas une intention.
       relancer `pnpm validate` et rouvrir la même session annotateur : vérifier que l'item suivant
       proposé est bien celui qui suit la dernière décision enregistrée, jamais le premier du lot ni
       celui déjà décidé.
+
+## Relecture des formulations (décisions D39 et D42)
+
+À dérouler sur un bac jetable, jamais sur le `data/` réel : `BANC_DATA`, `BANC_DATA_MESURES`,
+`BANC_DATA_FORMULATIONS`, `BANC_PERIMETRE`, `BANC_STAGING` et `BANC_REFUS_FORMULATIONS` pointés vers
+un répertoire temporaire qui porte un item et sa mesure publiés, un périmètre qui nomme son candidat,
+et deux propositions acceptées sous `staging/formulations/<question_id>/` (l'une avec des guillemets
+« » et des apostrophes ’ dans ses textes).
+
+- [ ] **Accès.** Sur l'accueil, cliquer « Relire les formulations » : vérifier que la liste nomme le
+      gabarit, le candidat (un tiret pour une question d'attribution) et la mesure, et ne nomme
+      jamais le modèle qui a reformulé.
+- [ ] **Périmètre absent.** Pointer `BANC_PERIMETRE` vers un fichier inexistant, relancer : vérifier
+      que l'écran affiche un message qui nomme le périmètre introuvable, plutôt qu'une liste vide.
+- [ ] **Trois textes côte à côte.** Ouvrir une question : vérifier que les trois textes s'affichent
+      dans trois colonnes (neutre, familière, orientée), tels quels, guillemets et apostrophes
+      typographiques compris, et qu'aucun n'est modifiable.
+- [ ] **Aucune case pré-cochée.** À l'ouverture, vérifier que les trois cases « Sens préservé » et la
+      case de prémisse sont décochées, et que les deux boutons sont inactifs. Sur une question
+      d'attribution, vérifier que la case dit « La prémisse n'affirme aucune position ».
+- [ ] **Promotion.** Cocher les quatre cases : vérifier que seul « Promouvoir » s'active ; cliquer,
+      puis vérifier que la question quitte la liste et que `data/formulations/<question_id>.json`
+      existe, textes identiques à ceux de la proposition.
+- [ ] **Refus.** Sur une autre question, décocher une case : vérifier que « Refuser » reste inactif
+      tant que le commentaire est vide ou fait d'espaces, puis s'active ; refuser, puis vérifier
+      qu'une ligne s'est ajoutée à la fin de `refus.jsonl` et que la question quitte la liste.
+- [ ] **Focus du commentaire.** Taper un commentaire de plusieurs mots : vérifier que le curseur ne
+      quitte pas la zone de texte à chaque frappe.

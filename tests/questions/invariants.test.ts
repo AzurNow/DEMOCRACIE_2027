@@ -361,8 +361,9 @@ describe("exemples de schema/exemples/", () => {
   // 250 → 259 : décision D32 de l'auteur, une notation valide et quatre invalides, un verdict valide et deux invalides, un invalide de run.
   // 259 → 262 : décision D33 de l'auteur, une notation valide et deux invalides (marqueur sur_refus_api).
   // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
-  it("charge les 266 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(266);
+  // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
+  it("charge les 273 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(273);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

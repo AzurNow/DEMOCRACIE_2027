@@ -65,6 +65,12 @@
  * D39 et D42), écrite une fois par `pnpm reformuler` dans `staging/formulations/<question_id>/`, avec
  * le corps HTTP du modèle tel que reçu et l'issue du contrôle déterministe ; lue par la relecture de
  * l'interface de validation. Le vingt-huitième.
+ *
+ * `formulations-validees` et `refus-formulation` décrivent les deux sorties de cette relecture
+ * (décisions D39 et D42) : `data/formulations/<question_id>.json`, les trois formulations relues
+ * d'une question, écrites par le seul `validation/io/data-formulations.ts` et lues par le gel ; et
+ * une ligne de `validation/formulations/refus.jsonl`, journal en ajout seul des propositions
+ * refusées, relu par `pnpm reformuler`. Le vingt-neuvième et le trentième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -95,6 +101,8 @@ export const NOMS_SCHEMAS = [
   "extraction-page-lien",
   "renvoi-humain",
   "proposition-formulation",
+  "formulations-validees",
+  "refus-formulation",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

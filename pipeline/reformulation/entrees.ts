@@ -19,7 +19,7 @@
  * Aucune entrée vide n'est comblée : sans item ou sans candidat, la commande le dit et s'arrête.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
 import { valider } from "../../outils/schemas/valider.ts";
@@ -74,6 +74,9 @@ interface PerimetreLu {
 
 /** Les candidats de `config/perimetre.yaml`, réduits à ce que nomme une question. */
 export function lireCandidats(chemin: string): readonly CandidatNomme[] {
+  if (!existsSync(chemin)) {
+    throw new EntreeAbsente(`${chemin} : périmètre introuvable. Sans le libellé des candidats, aucun texte neutre ne s'engendre.`);
+  }
   const perimetre = valider<PerimetreLu>("perimetre", parse(readFileSync(chemin, "utf8")) as unknown, chemin);
   return perimetre.candidats.map(({ candidat_id, libelle, nom }) => ({ candidat_id, libelle, nom }));
 }

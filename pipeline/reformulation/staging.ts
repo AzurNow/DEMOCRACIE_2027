@@ -1,22 +1,27 @@
 /**
  * `staging/formulations/<question_id>/<id>.json` : une proposition par réponse HTTP reçue,
  * conforme à `schema/proposition-formulation.schema.json`, écrite une fois et jamais réécrite
- * (règle 7). Le pipeline n'écrit que sous `staging/` (règle 3) ; la promotion vers
- * `data/formulations/` appartient à l'interface de validation.
+ * (règle 7). Le pipeline n'écrit que sous `staging/` (règle 3) ; la promotion des formulations
+ * relues vers `data/` appartient à l'interface de validation (`validation/io/data-formulations.ts`).
+ * (Le chemin complet n'est pas écrit ici : `tests/ecriture-data.test.ts` attrape tout module qui
+ * écrit sur disque et nomme un répertoire protégé.)
  *
  * - `ecrireProposition` valide l'objet contre le schéma (un objet non conforme est une erreur de
  *   code : `ErreurSchema`, rien n'est écrit), puis l'écrit de façon atomique — un temporaire du
  *   même répertoire, puis un lien vers le nom final, qui échoue si ce nom existe déjà
  *   (`PropositionDejaEcrite`). Calqué sur `validation/io/data-mesures.ts:creerMesure`.
  * - `lirePropositions` relit et valide toutes les propositions d'une question : le répertoire porte
- *   le nom de `question_id`, chaque fichier celui de son `id`. Un fichier étranger, mal nommé ou non
- *   conforme arrête la lecture : il n'est ni lu ni ignoré.
+ *   le nom de `question_id`, chaque fichier celui de son `id`, et `empreinte_texte_neutre` est le
+ *   sha256 de `texte_neutre`. Un fichier étranger, mal nommé, incohérent ou non conforme arrête la
+ *   lecture : il n'est ni lu ni ignoré. Seul lecteur du staging : la relecture de l'interface de
+ *   validation passe aussi par ici.
  */
 
 import { randomBytes } from "node:crypto";
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
+import { sha256 } from "../../validation/domaine/empreinte.ts";
 import type { ObjetJson } from "../interrogation/types.ts";
 import type { CodeGabarit } from "../questions/types.ts";
 import type { MotifRejet } from "./controle.ts";
@@ -112,6 +117,10 @@ function lireFichier(chemin: string, question_id: string, nom: string): Proposit
   if (nom !== `${proposition.id}.json`) throw new StagingFormulationsIllisible(chemin, `porte l'id ${proposition.id}, pas celui de son nom.`);
   if (proposition.question_id !== question_id) {
     throw new StagingFormulationsIllisible(chemin, `porte la question ${proposition.question_id}, pas celle de son répertoire.`);
+  }
+  // La relecture compare cette empreinte à celle du texte neutre courant (D39) : elle doit être celle du texte porté.
+  if (sha256(proposition.texte_neutre) !== proposition.empreinte_texte_neutre) {
+    throw new StagingFormulationsIllisible(chemin, "empreinte_texte_neutre n'est pas le sha256 de texte_neutre.");
   }
   return proposition;
 }

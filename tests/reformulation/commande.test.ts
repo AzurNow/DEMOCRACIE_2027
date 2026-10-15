@@ -11,7 +11,18 @@ import { commandeReformuler } from "../../pipeline/reformulation/commande.ts";
 import { tachesDe } from "../../pipeline/reformulation/entrees.ts";
 import { lirePropositions } from "../../pipeline/reformulation/staging.ts";
 import { sha256 } from "../../validation/domaine/empreinte.ts";
-import { CANDIDATS, corpsChat, ecrireDonnees, instantane, ITEMS, MESURE_BUDGET, MESURE_JARDIN, racineDeTest } from "./aides.ts";
+import {
+  CANDIDATS,
+  corpsChat,
+  ecrireDonnees,
+  formulationsValideesDeTest,
+  instantane,
+  ITEMS,
+  ligneRefusDeTest,
+  MESURE_BUDGET,
+  MESURE_JARDIN,
+  racineDeTest,
+} from "./aides.ts";
 
 const DEPOT = resolve(import.meta.dirname, "../..");
 const CLE = "cle-factice-9f8e7d6c5b4a";
@@ -241,13 +252,22 @@ describe("cas limite 7 : reprise", () => {
 
 describe("cas limites 15 à 17 : formulations validées et refus du relecteur", () => {
 
-  function ecrireValidee(chemin: string, empreinte: string): void {
+  function ecrireValidee(chemin: string, empreinte: string, position: string = VISEE.demande.position_affirmee): void {
     mkdirSync(join(chemin, "data", "formulations"), { recursive: true });
     writeFileSync(
       join(chemin, "data", "formulations", `${VISEE.question.id}.json`),
-      JSON.stringify({ question_id: VISEE.question.id, empreinte_texte_neutre: empreinte }),
+      JSON.stringify(formulationsValideesDeTest(VISEE.question.id, empreinte, position)),
     );
   }
+
+  it("Q1 (a) : validée sur la même empreinte mais une position périmée (item corrigé) ⇒ rappelée", async () => {
+    const chemin = racine();
+    const perimee = VISEE.demande.position_affirmee === "contre" ? "pour" : "contre";
+    ecrireValidee(chemin, sha256(VISEE.question.texte_neutre), perimee);
+    const execution = await lancer(reel(chemin));
+    expect(execution).toMatchObject({ code: 0, envois: NOMBRE });
+    expect(execution.sortie).not.toContain("déjà validées 1");
+  });
 
   it("15 : déjà dans data/formulations avec la même empreinte ⇒ pas d'appel, compté « déjà validée »", async () => {
     const chemin = racine();
@@ -278,7 +298,7 @@ describe("cas limites 15 à 17 : formulations validées et refus du relecteur", 
     const [acceptee] = lirePropositions(join(chemin, "staging", "formulations"), VISEE.question.id);
     if (acceptee === undefined) throw new Error("aucune proposition");
     mkdirSync(join(chemin, "validation", "formulations"), { recursive: true });
-    writeFileSync(join(chemin, "validation", "formulations", "refus.jsonl"), `${JSON.stringify({ proposition_id: acceptee.id })}\n`);
+    writeFileSync(join(chemin, "validation", "formulations", "refus.jsonl"), `${ligneRefusDeTest(acceptee.id, VISEE.question.id)}\n`);
     expect(await lancer(reel(chemin, `--question=${VISEE.question.id}`))).toMatchObject({ code: 0, envois: 1 });
   });
 
