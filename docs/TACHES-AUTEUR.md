@@ -4,8 +4,8 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
-`docs/PROTOCOLE.md` 0.15, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
+Mis à jour le 2026-10-15. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+`docs/PROTOCOLE.md` 0.16, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
 
@@ -16,6 +16,7 @@ Mis à jour le 2026-10-12. Sources relues : `docs/feuille-de-route.json`, `docs/
 - [ ] Supprimer les branches locales `worktree-agent-a691960d77994bec2` et
       `worktree-agent-a6f6673166d1cef6a` (contenu déjà dans `main` par #95, mais `-d` les refuse) :
       `git branch -D`, que l'agent n'emploie pas.
+- [x] (2026-10-15) #118, #120 et #122 à #124 fusionnées (mesures validées, lot reformulation).
 - [x] #67 à #75 fusionnées le 2026-10-02 (protocole 0.15, décisions du 2026-10-02, clôture,
       chargeur du périmètre, modèle 0.2.0 de `config/perimetre.yaml`, D12, lot interrogation en
       mode simulé).
@@ -549,6 +550,15 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       (`docs/DETTE.md`, 2026-09-25, point 2).
 - [ ] **Dire si une réextraction du texte invalide les items déjà validés sur l'ancien texte**
       (`docs/DETTE.md`, 2026-09-23, point 1).
+
+---
+
+- [ ] **Remplir `config/reformulation.json`** (PR #123) : identifiant épinglé de Mistral Large,
+      `temperature`, `max_tokens`, `random_seed`. Puis `pnpm reformuler --simule`, et seulement
+      ensuite `MISTRAL_API_KEY=… pnpm reformuler --plafond=<n>`, une fois des items dans
+      `data/items/` et les candidats dans `config/perimetre.yaml`.
+- [ ] **Dérouler la section « Relecture des formulations » de `docs/CONTROLE-MANUEL.md`** sur un
+      bac jetable (PR #124).
 
 ---
 

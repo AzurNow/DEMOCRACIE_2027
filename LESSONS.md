@@ -411,7 +411,7 @@ pour base la branche de #53. #53 a été fusionnée dans `main`, puis #54 onze s
 la branche de #53, que plus rien ne suivait. Ses sept commits (Q-ATT contestée, version de mesure
 dépassée, `contestes_au_gel`) n'ont jamais atteint `main`, et la passe suivante aurait repris un
 état sans eux. Il a fallu une PR de rattrapage (#55). Une PR empilée se rebase sur `main` avant sa
-fusion. À la reprise d'une session, comparer `main` aux branches des dernières PR fusionnées.
+fusion. À la reprise d'une session, comparer `main` aux branches des dernières PR fusionnées. Payé une deuxième fois le 2026-10-15 : #119 fusionnée dans `lots/mesures-validees` après #118, rattrapée par #120. Depuis, une PR qui contient le commit d'une autre vise `main` et se fusionne après elle (#124 après #123).
 
 **Pour l'aveuglement, vérifier ce que chaque champ servi révèle, pas seulement qui il nomme.** Le
 brief de l'écran de notation humaine (#88) autorisait à servir la `TacheAnnotateur`, qui porte le

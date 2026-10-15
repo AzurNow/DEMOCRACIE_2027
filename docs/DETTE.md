@@ -13,9 +13,49 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-15 — Mesures validées, garde de `data/mesures`, lot reformulation, D38 à D43 (PR #118, #120, #122 à #124 : `validation/io/`, `pipeline/reformulation/`, `validation/serveur/formulations.ts`)
+
+### 1. La liste des noms interdits dans une Q-ATT est construite à deux endroits — *moyenne*
+
+`nomsInterdits` (`pipeline/reformulation/controle.ts`) et `libellesDuPerimetre`
+(`pipeline/questions/symetrie.ts`) assemblent chacune `candidat_id`, `libelle` et `nom` du périmètre.
+Le commentaire du premier dit qu'il doit rester identique au second ; aucun test ne compare les deux.
+
+**Pourquoi ça casse.** Si la barrière de symétrie apprend à chercher un nom de plus (un alias, un nom
+d'usage), le contrôle de la reformulation accepte des formulations familières et orientées qu'elle
+refusera ensuite : relues pour rien, puis le gel est bloqué la veille du run. Visible, mais tard.
+
+**Ce qu'il faut faire.** Exporter une seule fonction depuis `libelles.ts`, lue par les deux, au
+prochain passage sur l'un des deux fichiers.
+
+### 2. `pnpm reformuler` n'a aucun délai d'abandon, et un échec de transport sort à 0 — *basse*
+
+`executer.ts` passe à `fetch` un `AbortController` jamais déclenché ; un échec de transport est
+signalé dans le bilan, mais `process.exitCode` reste 0.
+
+**Pourquoi ça casse.** Un appel Mistral qui ne répond pas fige la commande sans fin ; un lot à moitié
+échoué paraît réussi à qui ne lit que le code de sortie. Les questions manquantes se découvrent au gel
+(`FormulationsEnDefautAuGel`), jamais en silence.
+
+**Ce qu'il faut faire.** Avant le premier appel réel : un délai fixe, et un code de sortie non nul
+dès qu'une question n'a reçu aucune réponse.
+
+### 3. `tests/notation/chaine.test.ts` a bloqué environ 16 minutes, deux fois, sans cause trouvée — *basse*
+
+Une fois chez un agent, une fois dans la session principale, pendant le lot reformulation. Relancé
+seul puis dans la suite, il passe en 38 à 57 s. Non reproduit.
+
+**Pourquoi ça casse.** Un blocage en CI retient une PR jusqu'au délai du job ; si sa cause est un
+ordre ou une course réels dans la chaîne de notation, il réapparaîtra pendant un run.
+
+**Ce qu'il faut faire.** À la prochaine occurrence, relever le processus bloqué (`ps`, trace de
+vitest) avant de relancer.
+
+---
+
 ## 2026-10-12 (après-midi) — Contraction « à le », « à les » au remplissage des gabarits, D35 (4) (PR #111 : `pipeline/questions/gabarits.ts`)
 
-### 1. La mesure contractée n'existe que dans le texte rempli, et le contrôle de la reformulation devra la retrouver — *moyenne*
+### ~~1. La mesure contractée n'existe que dans le texte rempli, et le contrôle de la reformulation devra la retrouver~~ — réglé le 2026-10-15 par la PR #122 (`formesAdmisesDeMesure` et `mesureFigureSousFormeAdmise` dans `gabarits.ts`, lues par `controle.ts`)
 
 `remplirTexteNeutre` applique la contraction en interne (`joindreMesure`, non exportée) et ne rend que
 la question entière. D35 (4) exige que le contrôle de la reformulation, encore à écrire, compare la

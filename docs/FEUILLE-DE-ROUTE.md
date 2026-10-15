@@ -195,7 +195,7 @@ flowchart LR
     lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T2"]:::T2
     lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T0"]:::T0
     lot_feuille_de_route["feuille-de-route<br/>Feuille de route générée depuis ce fichier<br/>T2"]:::T2
-    lot_mesures_validees["mesures-validees<br/>data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel<br/>T0"]:::T0
+    lot_mesures_validees["mesures-validees<br/>data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel<br/>T2"]:::T2
     lot_outillage["outillage<br/>ajv sur les exemples de schéma, ESLint à deux règles de complexité<br/>T3"]:::T3
     lot_questions_tirage_symetrie["questions-tirage-symetrie<br/>Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers<br/>T2"]:::T2
     lot_schemas["schemas<br/>Schémas JSON et leurs exemples<br/>T2"]:::T2
@@ -205,7 +205,7 @@ flowchart LR
     lot_contestation_notification["contestation-notification<br/>Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18)<br/>T2"]:::T2
     lot_dette_validation["dette-validation<br/>Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/<br/>T2"]:::T2
     lot_hors_code["hors-code<br/>Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9<br/>T0"]:::T0
-    lot_reformulation["reformulation<br/>Formulations familière et orientée : staging, relecture humaine, data/formulations/<br/>T0"]:::T0
+    lot_reformulation["reformulation<br/>Formulations familière et orientée : staging, relecture humaine, data/formulations/<br/>T2"]:::T2
   end
   subgraph jalon_J4["J4 · 22 nov. 2026"]
     lot_alignement_0_3["alignement-0-3<br/>Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)<br/>T2"]:::T2
@@ -263,7 +263,7 @@ flowchart LR
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
 | extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T0 | bloqué par perimetre-prompts | opus | L | 1 | collecte (informe), perimetre-prompts |
 | feuille-de-route | Feuille de route générée depuis ce fichier | J2 | T2 | débloqué | sonnet | S | 0.5 | — |
-| mesures-validees | data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel | J2 | T0 | bloqué par dette-validation | opus | M | 0.5 | dette-validation |
+| mesures-validees | data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel | J2 | T2 | bloqué par dette-validation | opus | M | 0.5 | dette-validation |
 | outillage | ajv sur les exemples de schéma, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
 | questions-tirage-symetrie | Gabarits, reformulations, tirage stratifié à graine, pnpm symmetry, invariants inter-fichiers | J2 | T2 | débloqué | opus | L | 2 | — |
 | schemas | Schémas JSON et leurs exemples | J2 | T2 | débloqué | fait | S | 0 | — |
@@ -271,7 +271,7 @@ flowchart LR
 | contestation-notification | Arbitrage, contestation, décision du panel et notification des campagnes (conformité n° 18) | J3 | T2 | débloqué | opus | L | 2 | validation-interface |
 | dette-validation | Réannotation supersédante, pnpm mesures, logique client extraite vers domaine/ | J3 | T2 | débloqué | opus pour promote, sonnet pour le reste | M | 1 | — |
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
-| reformulation | Formulations familière et orientée : staging, relecture humaine, data/formulations/ | J3 | T0 | bloqué par mesures-validees, perimetre-prompts | opus | L | 2 | mesures-validees, perimetre-prompts |
+| reformulation | Formulations familière et orientée : staging, relecture humaine, data/formulations/ | J3 | T2 | bloqué par mesures-validees, perimetre-prompts | opus | L | 2 | mesures-validees, perimetre-prompts |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
 | gel | Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider) | J4 | T0 | bloqué par mesures-validees, questions-tirage-symetrie, reformulation | opus | L | 1 | mesures-validees, questions-tirage-symetrie, reformulation |
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T3 | atteint | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
@@ -303,7 +303,7 @@ flowchart LR
 - collecte (T2)
 - extraction (T0)
 - feuille-de-route (T2)
-- mesures-validees (T0)
+- mesures-validees (T2)
 - outillage (T3)
 - questions-tirage-symetrie (T2)
 - schemas (T2)
@@ -314,7 +314,7 @@ flowchart LR
 - contestation-notification (T2)
 - dette-validation (T2)
 - hors-code (T0)
-- reformulation (T0)
+- reformulation (T2)
 
 ### J4
 
