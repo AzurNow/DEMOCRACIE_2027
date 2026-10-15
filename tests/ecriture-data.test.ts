@@ -1,9 +1,12 @@
 /**
- * Règle 3 de `CLAUDE.md`, rendue vérifiable (lot contestation-notification, V1) : « aucun script,
- * aucun agent, aucune migration n'écrit dans `data/items/` directement ». Un seul module y écrit,
- * `validation/io/data-items.ts`, derrière ses contrôles (schéma, ajout seul, empreinte du fichier
- * lu). Aucun autre fichier de `outils/`, `pipeline/`, `validation/` ni `analysis/` ne combine une
- * écriture disque et le chemin `data/items`.
+ * Règle 3 de `CLAUDE.md`, rendue vérifiable (lot contestation-notification, V1, étendu à
+ * `data/mesures/` par la décision D38) : « aucun script, aucun agent, aucune migration n'écrit dans
+ * `data/` directement ». Un seul module écrit dans chaque répertoire protégé, derrière ses contrôles
+ * (schéma, ajout seul, empreinte du fichier lu) : `validation/io/data-items.ts` pour `data/items`,
+ * `validation/io/data-mesures.ts` pour `data/mesures`. Aucun autre fichier de `outils/`,
+ * `pipeline/`, `validation/` ni `analysis/` ne combine une écriture disque et le chemin d'un
+ * répertoire protégé, et un écrivain n'est autorisé que pour le sien. Ajouter un répertoire
+ * protégé, c'est ajouter une ligne à `PROTEGES`.
  *
  * Le contrôle est textuel, donc grossier : il attrape l'écriture directe, pas un chemin reconstruit
  * morceau par morceau. C'est un filet, pas une preuve ; la preuve reste la relecture.
@@ -15,13 +18,23 @@ import { describe, expect, it } from "vitest";
 
 const RACINE = resolve(import.meta.dirname, "..");
 const REPERTOIRES = ["outils", "pipeline", "validation", "analysis"];
-const SEUL_ECRIVAIN = "validation/io/data-items.ts";
 const IGNORES = new Set(["node_modules", "dist", "__pycache__"]);
+
+interface Protege {
+  readonly repertoire: string;
+  readonly ecrivain: string;
+  readonly chemin: RegExp;
+}
+
+/** Répertoire protégé → seul écrivain autorisé. Des données : aucun cas particulier dans le code. */
+const PROTEGES: readonly Protege[] = [
+  { repertoire: "data/items", ecrivain: "validation/io/data-items.ts", chemin: /data\/items|["']data["']\s*,\s*["']items["']/ },
+  { repertoire: "data/mesures", ecrivain: "validation/io/data-mesures.ts", chemin: /data\/mesures|["']data["']\s*,\s*["']mesures["']/ },
+];
 
 const ECRITURE_TS =
   /\b(writeFileSync|appendFileSync|renameSync|linkSync|symlinkSync|copyFileSync|cpSync|rmSync|unlinkSync|mkdirSync|createWriteStream|writeFile|appendFile)\s*\(/;
 const ECRITURE_PY = /\bopen\([^\n]*,\s*(mode\s*=\s*)?["'][rbt]*[wax+][rwxabt+]*["']|\.write_(text|bytes)\(|\bos\.(replace|rename|remove|unlink)\(|\bshutil\.(copy\w*|move)\(/;
-const CHEMIN_DATA = /data\/items|["']data["']\s*,\s*["']items["']/;
 
 function fichiersSources(repertoire: string): readonly string[] {
   const trouves: string[] = [];
@@ -34,9 +47,22 @@ function fichiersSources(repertoire: string): readonly string[] {
   return trouves;
 }
 
-export function ecritDansData(chemin: string, contenu: string): boolean {
+/** Les répertoires protégés que ce contenu écrit (écriture disque et chemin du répertoire). */
+export function repertoiresEcrits(chemin: string, contenu: string): readonly string[] {
   const ecriture = chemin.endsWith(".py") ? ECRITURE_PY : ECRITURE_TS;
-  return ecriture.test(contenu) && CHEMIN_DATA.test(contenu);
+  if (!ecriture.test(contenu)) return [];
+  return PROTEGES.filter((protege) => protege.chemin.test(contenu)).map((protege) => protege.repertoire);
+}
+
+export function ecritDansData(chemin: string, contenu: string): boolean {
+  return repertoiresEcrits(chemin, contenu).length > 0;
+}
+
+/** Les répertoires qu'un fichier écrit sans en être l'écrivain déclaré. */
+function ecrituresInterdites(chemin: string, contenu: string): readonly string[] {
+  return repertoiresEcrits(chemin, contenu).filter(
+    (repertoire) => PROTEGES.find((protege) => protege.repertoire === repertoire)?.ecrivain !== chemin,
+  );
 }
 
 describe("détecteur", () => {
@@ -47,30 +73,56 @@ describe("détecteur", () => {
     expect(ecritDansData("x.py", 'Path("data/items/x.json").write_text(s)')).toBe(true);
   });
 
+  it("attrape une écriture directe vers data/mesures, en TypeScript comme en Python", () => {
+    expect(ecritDansData("x.ts", 'writeFileSync(join("data/mesures", nom), texte)')).toBe(true);
+    expect(ecritDansData("x.ts", 'const d = join(racine, "data", "mesures"); renameSync(a, d)')).toBe(true);
+    expect(ecritDansData("x.py", 'open(Path("data/mesures") / nom, "w")')).toBe(true);
+    expect(ecritDansData("x.py", 'Path("data/mesures/x.json").write_text(s)')).toBe(true);
+  });
+
   it("laisse passer une lecture de data/items, et une écriture ailleurs", () => {
     expect(ecritDansData("x.ts", 'readFileSync(join("data/items", nom), "utf8")')).toBe(false);
     expect(ecritDansData("x.ts", 'writeFileSync(join("staging/items", nom), texte)')).toBe(false);
     expect(ecritDansData("x.py", 'open(Path("data/items") / nom, encoding="utf-8")')).toBe(false);
   });
+
+  it("laisse passer une lecture de data/mesures, et une écriture dans staging/mesures", () => {
+    expect(ecritDansData("x.ts", 'readFileSync(join("data/mesures", nom), "utf8")')).toBe(false);
+    expect(ecritDansData("x.ts", 'writeFileSync(join("staging/mesures", nom), texte)')).toBe(false);
+    expect(ecritDansData("x.py", 'open(Path("data/mesures") / nom, encoding="utf-8")')).toBe(false);
+  });
+
+  it("un écrivain n'est autorisé que pour son propre répertoire", () => {
+    const [items, mesures] = PROTEGES.map((protege) => protege.ecrivain) as [string, string];
+    const versMesures = 'writeFileSync(join("data/mesures", nom), texte)';
+    const versItems = 'writeFileSync(join("data/items", nom), texte)';
+    expect(ecrituresInterdites(items, versItems)).toEqual([]);
+    expect(ecrituresInterdites(mesures, versMesures)).toEqual([]);
+    expect(ecrituresInterdites(items, versMesures)).toEqual(["data/mesures"]);
+    expect(ecrituresInterdites(mesures, versItems)).toEqual(["data/items"]);
+    expect(ecrituresInterdites("outils/x.ts", versItems + versMesures)).toEqual(["data/items", "data/mesures"]);
+  });
 });
 
-describe("règle 3 : un seul module écrit dans data/items", () => {
+describe("règle 3 : un seul module écrit dans chaque répertoire de data/", () => {
   const fichiers = REPERTOIRES.flatMap((repertoire) => fichiersSources(join(RACINE, repertoire)));
 
   it("le balayage porte sur des fichiers réels", () => {
     expect(fichiers.length).toBeGreaterThan(50);
-    expect(fichiers.map((chemin) => relative(RACINE, chemin))).toContain(SEUL_ECRIVAIN);
+    const relatifs = fichiers.map((chemin) => relative(RACINE, chemin));
+    for (const { ecrivain } of PROTEGES) expect(relatifs).toContain(ecrivain);
   });
 
-  it("le seul écrivain écrit bien sur disque (sinon le contrôle ne dit rien)", () => {
-    expect(ECRITURE_TS.test(readFileSync(join(RACINE, SEUL_ECRIVAIN), "utf8"))).toBe(true);
+  it.each(PROTEGES)("l'écrivain de $repertoire écrit bien sur disque vers $repertoire", (protege) => {
+    const contenu = readFileSync(join(RACINE, protege.ecrivain), "utf8");
+    expect(repertoiresEcrits(protege.ecrivain, contenu)).toContain(protege.repertoire);
   });
 
-  it("aucun autre fichier ne combine écriture disque et chemin data/items", () => {
+  it("aucun fichier n'écrit dans un répertoire protégé sans en être l'écrivain", () => {
     const fautifs = fichiers
-      .filter((chemin) => relative(RACINE, chemin) !== SEUL_ECRIVAIN)
-      .filter((chemin) => ecritDansData(chemin, readFileSync(chemin, "utf8")))
-      .map((chemin) => relative(RACINE, chemin));
+      .map((chemin) => relative(RACINE, chemin))
+      .map((chemin) => ({ chemin, ecrits: ecrituresInterdites(chemin, readFileSync(join(RACINE, chemin), "utf8")) }))
+      .filter(({ ecrits }) => ecrits.length > 0);
     expect(fautifs).toEqual([]);
   });
 });
