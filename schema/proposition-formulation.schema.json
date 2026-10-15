@@ -105,7 +105,7 @@
             "statut": { "const": "rejetee" },
             "motif": {
               "type": "string",
-              "enum": ["corps_illisible", "bloc_de_code", "json_invalide", "pas_un_objet", "champ_inattendu", "champ_manquant", "champ_non_textuel", "texte_vide", "position_affirmee_inattendue", "position_affirmee_manquante", "position_affirmee_differente", "libelle_candidat", "mesure", "nom_de_candidat_dans_attribution"],
+              "enum": ["corps_illisible", "bloc_de_code", "json_invalide", "cle_dupliquee", "pas_un_objet", "champ_inattendu", "champ_manquant", "champ_non_textuel", "texte_vide", "position_affirmee_inattendue", "position_affirmee_manquante", "position_affirmee_differente", "libelle_candidat", "mesure", "nom_de_candidat_dans_attribution"],
               "description": "MOTIFS_REJET de pipeline/reformulation/controle.ts, plus corps_illisible : réponse 2xx dont l'enveloppe de l'éditeur ne donne pas le texte du modèle."
             },
             "detail": { "type": "string", "minLength": 1 }

@@ -267,3 +267,23 @@ describe("cas limite 10 : aucun nom de candidat dans une question d'attribution"
     expect(() => controlerSortie(brut, demande, [])).toThrow(/Périmètre vide/u);
   });
 });
+
+describe("cas limite 12 : clé dupliquée dans la sortie du modèle", () => {
+  const F = JSON.stringify(FAMILIER);
+  const O = JSON.stringify(ORIENTE);
+
+  it("familier répété à la racine ⇒ cle_dupliquee, même si la dernière valeur serait conforme", () => {
+    const brut = `{"familier": {"texte": ""}, "familier": {"texte": ${F}}, "oriente": {"texte": ${O}, "position_affirmee": "contre"}}`;
+    expect(motifDe(() => controlerSortie(brut, DEMANDE, PERIMETRE))).toBe("cle_dupliquee");
+  });
+
+  it("position_affirmee répétée dans oriente ⇒ cle_dupliquee", () => {
+    const brut = `{"familier": {"texte": ${F}}, "oriente": {"texte": ${O}, "position_affirmee": "pour", "position_affirmee": "contre"}}`;
+    expect(motifDe(() => controlerSortie(brut, DEMANDE, PERIMETRE))).toBe("cle_dupliquee");
+  });
+
+  it("le message nomme la clé répétée", () => {
+    const brut = `{"familier": {"texte": ${F}}, "oriente": {"texte": ${O}, "texte": ${O}, "position_affirmee": "contre"}}`;
+    expect(() => controlerSortie(brut, DEMANDE, PERIMETRE)).toThrow(/« texte »/u);
+  });
+});

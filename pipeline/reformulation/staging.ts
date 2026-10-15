@@ -1,0 +1,129 @@
+/**
+ * `staging/formulations/<question_id>/<id>.json` : une proposition par réponse HTTP reçue,
+ * conforme à `schema/proposition-formulation.schema.json`, écrite une fois et jamais réécrite
+ * (règle 7). Le pipeline n'écrit que sous `staging/` (règle 3) ; la promotion vers
+ * `data/formulations/` appartient à l'interface de validation.
+ *
+ * - `ecrireProposition` valide l'objet contre le schéma (un objet non conforme est une erreur de
+ *   code : `ErreurSchema`, rien n'est écrit), puis l'écrit de façon atomique — un temporaire du
+ *   même répertoire, puis un lien vers le nom final, qui échoue si ce nom existe déjà
+ *   (`PropositionDejaEcrite`). Calqué sur `validation/io/data-mesures.ts:creerMesure`.
+ * - `lirePropositions` relit et valide toutes les propositions d'une question : le répertoire porte
+ *   le nom de `question_id`, chaque fichier celui de son `id`. Un fichier étranger, mal nommé ou non
+ *   conforme arrête la lecture : il n'est ni lu ni ignoré.
+ */
+
+import { randomBytes } from "node:crypto";
+import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { valider } from "../../outils/schemas/valider.ts";
+import type { ObjetJson } from "../interrogation/types.ts";
+import type { CodeGabarit } from "../questions/types.ts";
+import type { MotifRejet } from "./controle.ts";
+import type { PositionAffirmable, PositionDemandee } from "./position-affirmee.ts";
+
+export type MotifProposition = MotifRejet | "corps_illisible";
+
+export type IssueProposition =
+  | { readonly statut: "echec_http" }
+  | { readonly statut: "rejetee"; readonly motif: MotifProposition; readonly detail: string }
+  | {
+      readonly statut: "acceptee";
+      readonly familier: { readonly texte: string };
+      readonly oriente: { readonly texte: string; readonly position_affirmee?: PositionAffirmable };
+    };
+
+export type CorpsStocke = { readonly brut: ObjetJson } | { readonly brut_texte: string };
+
+export type AppelStocke = {
+  readonly date: string;
+  readonly statut_http: number;
+  readonly brut_octets_sha256: string;
+} & CorpsStocke;
+
+/** `schema/proposition-formulation.schema.json`, champ pour champ. */
+export interface PropositionFormulation {
+  readonly id: string;
+  readonly question_id: string;
+  readonly texte_neutre: string;
+  readonly empreinte_texte_neutre: string;
+  readonly version_gabarits: string;
+  readonly demande: {
+    readonly gabarit: CodeGabarit;
+    readonly type_item: string;
+    readonly libelle_candidat: string;
+    readonly formulation_mesure: string;
+    readonly position_affirmee: PositionDemandee;
+  };
+  readonly production: { readonly modele: string; readonly version_prompt: string };
+  readonly appel: AppelStocke;
+  readonly issue: IssueProposition;
+}
+
+export class PropositionDejaEcrite extends Error {
+  constructor(chemin: string) {
+    super(`Proposition déjà écrite, jamais réécrite (règle 7) : ${chemin}.`);
+    this.name = "PropositionDejaEcrite";
+  }
+}
+
+export class StagingFormulationsIllisible extends Error {
+  constructor(chemin: string, detail: string) {
+    super(`${chemin} : ${detail} Rien n'est ignoré : corriger ou retirer ce fichier à la main.`);
+    this.name = "StagingFormulationsIllisible";
+  }
+}
+
+export function repertoireQuestion(staging: string, question_id: string): string {
+  return join(staging, question_id);
+}
+
+export function cheminProposition(staging: string, proposition: Pick<PropositionFormulation, "id" | "question_id">): string {
+  return join(repertoireQuestion(staging, proposition.question_id), `${proposition.id}.json`);
+}
+
+/** Valide puis écrit une fois ; lève `ErreurSchema` ou `PropositionDejaEcrite`, sans rien écrire alors. */
+export function ecrireProposition(staging: string, proposition: PropositionFormulation): string {
+  const chemin = cheminProposition(staging, proposition);
+  const texte = `${JSON.stringify(valider<PropositionFormulation>("proposition-formulation", proposition, `proposition à écrire dans ${chemin}`), null, 2)}\n`;
+  const repertoire = repertoireQuestion(staging, proposition.question_id);
+  mkdirSync(repertoire, { recursive: true });
+  const tmp = join(repertoire, `.${proposition.id}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
+  writeFileSync(tmp, texte, { encoding: "utf8", flag: "wx" });
+  try {
+    linkSync(tmp, chemin);
+  } catch (erreur) {
+    if ((erreur as NodeJS.ErrnoException).code === "EEXIST") throw new PropositionDejaEcrite(chemin);
+    throw erreur;
+  } finally {
+    rmSync(tmp, { force: true });
+  }
+  return chemin;
+}
+
+function lireFichier(chemin: string, question_id: string, nom: string): PropositionFormulation {
+  let brut: unknown;
+  try {
+    brut = JSON.parse(readFileSync(chemin, "utf8"));
+  } catch (erreur) {
+    throw new StagingFormulationsIllisible(chemin, `JSON illisible (${erreur instanceof Error ? erreur.message : String(erreur)}).`);
+  }
+  const proposition = valider<PropositionFormulation>("proposition-formulation", brut, chemin);
+  if (nom !== `${proposition.id}.json`) throw new StagingFormulationsIllisible(chemin, `porte l'id ${proposition.id}, pas celui de son nom.`);
+  if (proposition.question_id !== question_id) {
+    throw new StagingFormulationsIllisible(chemin, `porte la question ${proposition.question_id}, pas celle de son répertoire.`);
+  }
+  return proposition;
+}
+
+/** Toutes les propositions d'une question, en ordre de nom ; aucune si le répertoire n'existe pas. */
+export function lirePropositions(staging: string, question_id: string): readonly PropositionFormulation[] {
+  const repertoire = repertoireQuestion(staging, question_id);
+  if (!existsSync(repertoire)) return [];
+  const noms = readdirSync(repertoire).sort();
+  const etrangers = noms.filter((nom) => !nom.endsWith(".json") || nom.startsWith("."));
+  if (etrangers.length > 0) {
+    throw new StagingFormulationsIllisible(repertoire, `fichiers qui ne sont pas des propositions : ${etrangers.join(", ")}.`);
+  }
+  return noms.map((nom) => lireFichier(join(repertoire, nom), question_id, nom));
+}
