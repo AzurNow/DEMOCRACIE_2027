@@ -14,6 +14,13 @@
  * les chemins fautifs, et bloque l'écriture comme un item introuvable : code de sortie non nul,
  * rien n'est écrit dans `data/`.
  *
+ * Les mesures citées par les items écrits entrent dans `data/mesures/` avec eux, un fichier par
+ * mesure dans sa version courante (décision D38, option (a) ; `validation/io/data-mesures.ts`) :
+ * créée si elle est absente, laissée telle quelle si elle est identique, réécrite si la version du
+ * staging est supérieure. Même version et contenu différent, ou version du staging inférieure : la
+ * mesure est nommée au rapport et rien n'est écrit, ni item ni mesure. Tous les contrôles passent
+ * avant la première écriture.
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -32,12 +39,19 @@ import { VersionMesureEcart, type Issue } from "../validation/domaine/promotion.
 import type { Item, Lot } from "../validation/domaine/types.ts";
 import { lireRegistreArbitrage } from "../validation/io/arbitrage-fichier.ts";
 import { cheminItem, creerItem, lireItemsData } from "../validation/io/data-items.ts";
+import {
+  creerMesure,
+  lireMesuresData,
+  planifierMesures,
+  reecrireMesure,
+  type PlanMesures,
+} from "../validation/io/data-mesures.ts";
 import { ecrireFileArbitrage } from "../validation/io/file-arbitrage.ts";
 import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/notifications-dues.ts";
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
-import { chargerStaging } from "../validation/io/staging.ts";
+import { chargerStaging, type Staging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { evaluerLots, type Introuvable, type RenvoyeDuLot, type Verdict } from "./evaluation-lots.ts";
 import { erreurDeSchema } from "./schemas/valider.ts";
@@ -50,6 +64,7 @@ const OPTIONS: readonly string[] = [
   "decisions",
   "mesures",
   "data",
+  "data-mesures",
   "arbitrage",
   "notifications",
 ];
@@ -62,6 +77,7 @@ interface Options {
   readonly decisions: string;
   readonly mesures: string;
   readonly data: string;
+  readonly data_mesures: string;
   readonly arbitrage: string;
   readonly notifications: string;
 }
@@ -85,6 +101,7 @@ function lireOptions(): Options {
     decisions: texte(table, "decisions", resolve(racine, "validation/decisions")),
     mesures: texte(table, "mesures", resolve(racine, "validation/mesures")),
     data: texte(table, "data", resolve(racine, "data/items")),
+    data_mesures: texte(table, "data-mesures", resolve(racine, "data/mesures")),
     arbitrage: texte(table, "arbitrage", resolve(racine, "validation/arbitrage")),
     notifications: texte(table, "notifications", resolve(racine, "validation/notifications")),
   };
@@ -159,10 +176,38 @@ function itemsDeData(options: Options): readonly Item[] {
  * sinon `ItemFictifEnDouble` arrête la commande, en simulation comme à l'écriture.
  */
 function controlerFictifUnique(verdicts: readonly Verdict[], options: Options): void {
-  const aEcrire = verdicts
+  verifierFictifUnique(itemsAEcrire(verdicts, options), itemsDeData(options));
+}
+
+/** Les items que `--ecrire` écrirait, dans l'état exact où ils le seraient. */
+function itemsAEcrire(verdicts: readonly Verdict[], options: Options): readonly Item[] {
+  return verdicts
     .filter((verdict) => verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options))
     .map((verdict) => (verdict.issue as Extract<Issue, { sort: "promouvoir" }>).item);
-  verifierFictifUnique(aEcrire, itemsDeData(options));
+}
+
+/**
+ * Les mesures citées par les items à écrire, face à `data/mesures/` (frontière d'entrée : chaque
+ * fichier y est confronté à `mesure.schema.json`). Rien n'est écrit ici.
+ */
+function planDesMesures(verdicts: readonly Verdict[], staging: Staging, options: Options): PlanMesures {
+  const publiees = lireMesuresData(options.data_mesures);
+  return planifierMesures(itemsAEcrire(verdicts, options), staging.mesures, publiees, options.data_mesures);
+}
+
+function imprimerPlanMesures(plan: PlanMesures): void {
+  process.stdout.write(`\nMesures à créer : ${plan.creer.length}\n`);
+  for (const mesure of plan.creer) process.stdout.write(`  ${mesure.id}  version ${mesure.version}\n`);
+  process.stdout.write(`Mesures à réécrire : ${plan.reecrire.length}\n`);
+  for (const { lu, apres } of plan.reecrire) {
+    process.stdout.write(`  ${apres.id}  version ${lu.mesure.version} → ${apres.version}\n`);
+  }
+  process.stdout.write(`Mesures déjà dans data/, identiques : ${plan.identiques.length}\n`);
+  if (plan.refus.length === 0) return;
+  process.stdout.write(`\nMesures qui ne peuvent pas entrer dans data/mesures/ : ${plan.refus.length}\n`);
+  for (const refus of plan.refus) {
+    process.stdout.write(`  ${refus.mesure_id}  ${refus.motif}\n${refus.detail.replace(/^/gm, "    ")}\n`);
+  }
 }
 
 /**
@@ -308,7 +353,17 @@ function imprimerNonEvaluables(lots: readonly Lot[], options: Options): void {
   }
 }
 
-function ecrire(verdicts: readonly Verdict[], options: Options): void {
+/** Les mesures avant les items : un item publié ne cite jamais une mesure absente de `data/`. */
+function ecrireMesures(plan: PlanMesures, options: Options): readonly string[] {
+  for (const mesure of plan.creer) creerMesure(options.data_mesures, mesure);
+  for (const { lu, apres } of plan.reecrire) reecrireMesure(options.data_mesures, lu, apres);
+  return [
+    ...plan.creer.map((mesure) => `mesure ${mesure.id} version ${mesure.version}, créée`),
+    ...plan.reecrire.map(({ lu, apres }) => `mesure ${apres.id} version ${lu.mesure.version} → ${apres.version}, réécrite`),
+  ];
+}
+
+function ecrire(verdicts: readonly Verdict[], plan: PlanMesures, options: Options): void {
   const promus: string[] = [];
   // §4 (0.10) : tout ce qui est publié est notifié, rejeté et non évaluable compris. Toutes les
   // notifications sont préparées et la file contrôlée avant le premier item écrit : une file
@@ -317,6 +372,7 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
     verdict.issue.sort === "promouvoir" && !dejaDansData(verdict, options) ? [{ item: verdict.issue.item, due: notificationDue(verdict.issue.item, "creation") }] : [],
   );
   controlerAjout(options.notifications, aPromouvoir.map(({ due }) => due));
+  const mesures = ecrireMesures(plan, options);
   for (const { item, due } of aPromouvoir) {
     // Seule écriture vers `data/items/` : `creerItem` revalide contre le schéma, quel que soit le
     // chemin qui y mène, et refuse d'écraser un item déjà publié.
@@ -336,8 +392,13 @@ function ecrire(verdicts: readonly Verdict[], options: Options): void {
 
   process.stdout.write(
     `\n${promus.length} item(s) écrit(s) dans ${options.data}\n` +
+      `${plan.creer.length} mesure(s) créée(s), ${plan.reecrire.length} réécrite(s) dans ${options.data_mesures}\n` +
       `${file.length} entrée(s) dans la file d'arbitrage.\n\n` +
-      commandeGit(["data/items", "validation/notifications/dues.jsonl"], `data: promotion de ${promus.length} item(s)`, promus),
+      commandeGit(
+        ["data/items", "data/mesures", "validation/notifications/dues.jsonl"],
+        `data: promotion de ${promus.length} item(s)`,
+        [...promus, ...mesures],
+      ),
   );
 }
 
@@ -347,8 +408,9 @@ function principal(): void {
 
   // Les deux registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
   // --ecrire` y ajoutent les décisions.
+  const staging = chargerStaging(options.staging);
   const { effectifs, verdicts, introuvables, renvoyes } = evaluerLots({
-    staging: chargerStaging(options.staging),
+    staging,
     data: lireItemsData(options.data),
     lots: lireLots(options.lots),
     repertoire_decisions: options.decisions,
@@ -360,12 +422,14 @@ function principal(): void {
 
   const fautifs = nonConformes(verdicts, options);
   const dates = datesIncoherentes(verdicts, options);
+  const plan = planDesMesures(verdicts, staging, options);
 
   imprimerRapport(verdicts, effectifs, options);
   imprimerIntrouvables(introuvables);
   imprimerRenvoyes(renvoyes);
   imprimerNonConformes(fautifs);
   imprimerDatesIncoherentes(dates);
+  imprimerPlanMesures(plan);
   controlerFictifUnique(verdicts, options);
 
   if (introuvables.length > 0) {
@@ -392,11 +456,19 @@ function principal(): void {
     process.exitCode = 1;
     return;
   }
+  if (plan.refus.length > 0) {
+    process.stderr.write(
+      "\nDes mesures citées par les items à promouvoir ne peuvent pas entrer dans data/mesures/ (voir\n" +
+        "ci-dessus) : rien n'est écrit, ni item ni mesure.\n",
+    );
+    process.exitCode = 1;
+    return;
+  }
   if (!options.ecrire) {
     process.stdout.write("\nSimulation : rien n'a été écrit. Ajouter --ecrire pour écrire dans data/.\n");
     return;
   }
-  ecrire(verdicts, options);
+  ecrire(verdicts, plan, options);
 }
 
 try {

@@ -110,7 +110,8 @@ describe("une ligne due par événement, au même --ecrire", () => {
       [rejete.id, "creation"],
     ]);
     expect(apresPromotion.every((due) => due.commit === commitPromotion)).toBe(true);
-    expect(promotion.sortie).toMatch(/git add data\/items validation\/notifications\/dues\.jsonl/);
+    // Modifié ouvertement (lot mesures-validees, D38) : les mesures citées entrent dans data/mesures/ avec les items.
+    expect(promotion.sortie).toMatch(/git add data\/items data\/mesures validation\/notifications\/dues\.jsonl/);
   });
 
   it("contester : exactement une ligne « contestation »", () => {
