@@ -13,12 +13,14 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { horlogeSysteme } from "../pipeline/interrogation/horloge.ts";
 import { commandeReformuler } from "../pipeline/reformulation/commande.ts";
 
 process.exitCode = await commandeReformuler(process.argv.slice(2), {
   env: process.env,
   envoi: (url, init) => fetch(url, init),
   maintenant: () => Date.now(),
+  attendre: (ms, signal) => horlogeSysteme.attendre(ms, signal),
   imprimer: (texte) => process.stdout.write(texte),
   temporaire: () => mkdtempSync(join(tmpdir(), "banc-reformuler-")),
   depot: resolve(import.meta.dirname, ".."),

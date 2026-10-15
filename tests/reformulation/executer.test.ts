@@ -29,6 +29,9 @@ import {
   reponse,
   sortieConforme,
   TransportFactice,
+  TransportMuet,
+  attenteAuTourSuivant,
+  jamaisEcoulee,
   type Reponse,
 } from "./aides.ts";
 
@@ -79,6 +82,8 @@ async function essayer(taches: readonly Tache[], repondre: (rang: number) => Rep
     staging: repertoire,
     plafond,
     maintenant: () => INSTANT,
+    delai_abandon_ms: CONFIGURATION.delai_abandon_ms,
+    attendre: jamaisEcoulee,
     signaler: (message) => signalements.push(message),
   };
   const bilan = await executer({ a_appeler: taches, deja_acceptees: 0, deja_validees: 0 }, contexte);
@@ -197,6 +202,8 @@ describe("cas limite 5 : corps qui n'est pas de l'UTF-8 valide", () => {
       staging: repertoire,
       plafond: null,
       maintenant: () => INSTANT,
+      delai_abandon_ms: CONFIGURATION.delai_abandon_ms,
+      attendre: jamaisEcoulee,
       signaler: () => undefined,
     };
     await expect(executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte)).rejects.toThrow(CorpsNonUtf8);
@@ -212,6 +219,77 @@ describe("cas limite 6 : échec de transport", () => {
     expect(lirePropositions(essai.staging, NOMMEE.question.id)).toEqual([]);
     expect(essai.bilan).toMatchObject({ appels: 2, echecs_transport: 1, acceptees: 1 });
     expect(essai.signalements).toEqual([expect.stringContaining("connexion refusée")]);
+  });
+});
+
+describe("dette du 2026-10-15, point 2 : délai d'abandon par appel", () => {
+  function contexteAvec(
+    transport: ContexteExecution["editeur"]["transport"],
+    attendre: ContexteExecution["attendre"],
+    delai_abandon_ms: number | null,
+    signalements: string[],
+  ): ContexteExecution {
+    return {
+      editeur: { adaptateur: adaptateurMistral(CONFIGURATION, "cle-factice"), transport },
+      texte_prompt: TEXTE_PROMPT,
+      perimetre: CANDIDATS,
+      staging: staging(),
+      plafond: null,
+      maintenant: () => INSTANT,
+      delai_abandon_ms,
+      attendre,
+      signaler: (message) => signalements.push(message),
+    };
+  }
+
+  it("délai dépassé ⇒ envoi interrompu, compté échec de transport, signalé, aucun fichier écrit", async () => {
+    const transport = new TransportMuet();
+    const demandes: number[] = [];
+    const signalements: string[] = [];
+    const contexte = contexteAvec(transport, attenteAuTourSuivant(demandes), 1234, signalements);
+    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    expect(bilan).toMatchObject({ appels: 1, acceptees: 0, echecs_http: 0, echecs_transport: 1, ecrits: [] });
+    expect(demandes).toEqual([1234]);
+    expect(transport.interrompus).toBe(1);
+    expect(readdirSync(contexte.staging)).toEqual([]);
+    expect(signalements).toEqual([expect.stringMatching(new RegExp(`${NOMMEE.question.id}.*1234 ms.*Aucun fichier écrit`, "u"))]);
+  });
+
+  it("un appel abandonné n'arrête pas la commande : la question suivante est appelée et écrite", async () => {
+    let rang = 0;
+    const muet = new TransportMuet();
+    const factice = new TransportFactice(() => reponse(200, corpsChat(sortieConforme(SUR_A.demande))));
+    const transport: ContexteExecution["editeur"]["transport"] = {
+      envoyer: (requete, signal) => (rang++ === 0 ? muet.envoyer(requete, signal) : factice.envoyer(requete)),
+    };
+    const contexte = contexteAvec(transport, attenteAuTourSuivant(), 1000, []);
+    const bilan = await executer({ a_appeler: [NOMMEE, SUR_A], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    expect(bilan).toMatchObject({ appels: 2, acceptees: 1, echecs_transport: 1 });
+    expect(lirePropositions(contexte.staging, NOMMEE.question.id)).toEqual([]);
+    expect(lirePropositions(contexte.staging, SUR_A.question.id)).toHaveLength(1);
+  });
+
+  it("réponse reçue avant le délai ⇒ écrite, et la minuterie est annulée", async () => {
+    const signaux: AbortSignal[] = [];
+    const attendre: ContexteExecution["attendre"] = (ms, signal) => {
+      signaux.push(signal);
+      return jamaisEcoulee(ms, signal);
+    };
+    const transport = new TransportFactice(() => reponse(200, corpsChat(sortieConforme(NOMMEE.demande))));
+    const contexte = contexteAvec(transport, attendre, 1000, []);
+    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    expect(bilan).toMatchObject({ appels: 1, acceptees: 1, echecs_transport: 0 });
+    expect(signaux).toHaveLength(1);
+    expect(signaux[0]?.aborted).toBe(true);
+  });
+
+  it("sans délai (mode simulé seulement) ⇒ aucune minuterie posée", async () => {
+    const demandes: number[] = [];
+    const transport = new TransportFactice(() => reponse(200, corpsChat(sortieConforme(NOMMEE.demande))));
+    const contexte = contexteAvec(transport, attenteAuTourSuivant(demandes), null, []);
+    const bilan = await executer({ a_appeler: [NOMMEE], deja_acceptees: 0, deja_validees: 0 }, contexte);
+    expect(bilan).toMatchObject({ appels: 1, acceptees: 1 });
+    expect(demandes).toEqual([]);
   });
 });
 

@@ -16,12 +16,24 @@
  *
  * `--racine=<chemin>` (tests) : la racine où lire `data/`, `config/`, `validation/formulations/`,
  * et, en mode réel, où écrire `staging/formulations/`. Par défaut, le dépôt.
+ *
+ * Délai : en mode réel, chaque appel est abandonné au-delà de `delai_abandon_ms`
+ * (`config/reformulation.json`) et compté échec de transport. Le mode simulé n'a pas de délai.
+ *
+ * Code de sortie :
+ * - 0 : la commande est allée au bout et chaque appel fait a reçu une réponse HTTP 2xx (acceptée ou
+ *   rejetée par le contrôle) ;
+ * - 1 : refus de partir ou erreur, avant ou pendant les appels ;
+ * - 2 : la commande est allée au bout, bilan imprimé en entier, mais au moins un appel a fini en
+ *   échec de transport (délai dépassé compris) ou en échec HTTP : des questions restent sans
+ *   proposition lisible et seront rappelées au prochain passage.
  */
 
 import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { analyserArguments, drapeau, OptionsInconnues, texte } from "../../outils/arguments.ts";
 import type { Arguments } from "../../outils/arguments.ts";
+import type { Horloge } from "../interrogation/horloge.ts";
 import { lireConfiguration, ConfigurationRefusee } from "./configuration.ts";
 import type { DemandeReformulation } from "./demande.ts";
 import type { EditeurReformulation } from "./editeur.ts";
@@ -43,6 +55,8 @@ export interface Dependances {
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly envoi: Envoi;
   readonly maintenant: () => number;
+  /** L'attente de la minuterie du délai d'abandon : `horlogeSysteme.attendre` en réel. */
+  readonly attendre: Horloge["attendre"];
   readonly imprimer: (texte: string) => void;
   /** Un répertoire temporaire neuf, pour la sortie par défaut du mode simulé. */
   readonly temporaire: () => string;
@@ -66,6 +80,8 @@ interface Mode {
   readonly nom: "réel" | "simulé";
   readonly staging: string;
   readonly plafond: number | null;
+  /** `null` : aucun délai, mode simulé seulement. */
+  readonly delai_abandon_ms: number | null;
   readonly editeur: (texte_prompt: string, demandes: readonly DemandeReformulation[]) => EditeurReformulation;
 }
 
@@ -88,6 +104,7 @@ function modeReel(table: Arguments, racine: string, dependances: Dependances): M
     nom: "réel",
     staging: join(racine, "staging", "formulations"),
     plafond,
+    delai_abandon_ms: configuration.delai_abandon_ms,
     editeur: () => ({ adaptateur: adaptateurMistral(configuration, cle), transport: transportFetch(dependances.envoi) }),
   };
 }
@@ -116,6 +133,7 @@ function modeSimule(table: Arguments, dependances: Dependances): Mode {
     nom: "simulé",
     staging,
     plafond: plafondDe(table),
+    delai_abandon_ms: null,
     editeur: (texte_prompt, demandes) => editeurSimule(texte_prompt, demandes, choixParEmpreinte),
   };
 }
@@ -155,7 +173,7 @@ function lignesBilan(mode: Mode, total: number, bilan: Bilan): readonly string[]
 
 /* ---------------------------------------------------------------- commande */
 
-async function derouler(argv: readonly string[], dependances: Dependances, imprimer: (texte: string) => void): Promise<void> {
+async function derouler(argv: readonly string[], dependances: Dependances, imprimer: (texte: string) => void): Promise<Bilan> {
   const table = analyserArguments(argv, OPTIONS_REFORMULER);
   const racine = resolve(texte(table, "racine", dependances.depot));
   const mode = drapeau(table, "simule") ? modeSimule(table, dependances) : modeReel(table, racine, dependances);
@@ -171,9 +189,19 @@ async function derouler(argv: readonly string[], dependances: Dependances, impri
     staging: mode.staging,
     plafond: mode.plafond,
     maintenant: dependances.maintenant,
+    delai_abandon_ms: mode.delai_abandon_ms,
+    attendre: dependances.attendre,
     signaler: imprimer,
   });
   lignesBilan(mode, taches.length, bilan).forEach(imprimer);
+  return bilan;
+}
+
+/** Bilan complet, mais au moins un appel sans réponse HTTP 2xx (voir l'en-tête). */
+const CODE_ECHECS_APPEL = 2;
+
+function codeDuBilan(bilan: Bilan): number {
+  return bilan.echecs_transport > 0 || bilan.echecs_http > 0 ? CODE_ECHECS_APPEL : 0;
 }
 
 /** Retire la clé de tout texte imprimé, quelle que soit son origine. */
@@ -188,12 +216,11 @@ function texteErreur(erreur: unknown): string {
   return attendu || erreur.stack === undefined ? erreur.message : erreur.stack;
 }
 
-/** Rend le code de sortie : 0 si la commande est allée au bout, 1 si elle a refusé ou échoué. */
+/** Rend le code de sortie de l'en-tête : 0, 1 (refus ou erreur) ou 2 (échecs de transport ou HTTP). */
 export async function commandeReformuler(argv: readonly string[], dependances: Dependances): Promise<number> {
   const imprimer = (ligne: string): void => dependances.imprimer(`${masquer(ligne, dependances.env[VARIABLE_CLE])}\n`);
   try {
-    await derouler(argv, dependances, imprimer);
-    return 0;
+    return codeDuBilan(await derouler(argv, dependances, imprimer));
   } catch (erreur) {
     imprimer(texteErreur(erreur));
     return 1;

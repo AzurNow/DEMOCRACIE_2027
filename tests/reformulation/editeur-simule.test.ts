@@ -14,7 +14,7 @@ import { executer } from "../../pipeline/reformulation/executer.ts";
 import { chargerPromptReformulation } from "../../pipeline/reformulation/prompt.ts";
 import { lirePropositions } from "../../pipeline/reformulation/staging.ts";
 import type { PropositionFormulation } from "../../pipeline/reformulation/staging.ts";
-import { CANDIDATS, ITEMS, MESURE_BUDGET, MESURE_JARDIN } from "./aides.ts";
+import { CANDIDATS, ITEMS, jamaisEcoulee, MESURE_BUDGET, MESURE_JARDIN } from "./aides.ts";
 
 const TACHES = tachesDe({ items: ITEMS, mesures: [MESURE_BUDGET, MESURE_JARDIN], candidats: CANDIDATS });
 const TEXTE_PROMPT = chargerPromptReformulation();
@@ -37,6 +37,8 @@ async function avecIssue(issue: IssueSimulee): Promise<readonly PropositionFormu
       staging,
       plafond: null,
       maintenant: () => Date.parse("2026-11-02T09:15:00Z"),
+      delai_abandon_ms: null,
+      attendre: jamaisEcoulee,
       signaler: () => undefined,
     },
   );

@@ -19,7 +19,7 @@
 import { exigerJeuComplet, exigerTirageDuRun } from "./completude.ts";
 import { decisionAvantGel, decisionReintegre } from "./contestation.ts";
 import { gabaritParCode } from "./gabarits.ts";
-import { libelleSansMot, trouverLibelle } from "./libelles.ts";
+import { nomsCherchesEnAttribution, trouverLibelle } from "./libelles.ts";
 import type {
   CandidatAuGel,
   CodeCondition,
@@ -120,7 +120,7 @@ function construireContexte(tirage: Tirage, corpus: Corpus, run: RunAuGel): Cont
     compares: perimetre
       .filter((candidat) => estCompare(candidat))
       .map((candidat) => candidat.candidat_id),
-    libelles: libellesDuPerimetre(perimetre),
+    libelles: nomsCherchesEnAttribution(perimetre),
     compensations: tirage.compensations,
     compensatrices: new Set(tirage.compensations.map((c) => `${c.candidat_id}|${c.question_id}`)),
     quota: tirage.parametres.questions_par_strate,
@@ -143,24 +143,6 @@ function memoriser<T>(calcul: () => T): () => T {
  */
 export function estCompare(candidat: Pick<CandidatAuGel, "interroge" | "sous_seuil">): boolean {
   return candidat.interroge && !candidat.sous_seuil;
-}
-
-/**
- * §5 (protocole 0.6) : « prénom et nom, ou nom seul ». Pour chaque candidat du périmètre, le
- * libellé complet et le nom seul, saisis par l'auteur dans le run ; l'identifiant aussi, qu'un texte
- * ne doit pas davantage citer. `item.libelle_lisible`, étiquette de l'item, n'est pas un nom de
- * candidat et n'est pas cherché. Un libellé sans aucun mot ne détecterait rien : il est refusé.
- */
-function libellesDuPerimetre(perimetre: readonly CandidatAuGel[]): readonly string[] {
-  const libelles = perimetre.flatMap((candidat) => [candidat.candidat_id, candidat.libelle, candidat.nom]);
-  const vide = libelles.find(libelleSansMot);
-  if (vide !== undefined) {
-    throw new Error(
-      `Libellé de candidat sans aucun mot dans le périmètre du run : « ${vide} ». La barrière « aucun ` +
-        `nom de candidat dans les Q-ATT » ne peut pas le chercher.`,
-    );
-  }
-  return [...new Set(libelles)];
 }
 
 function agreger(conditions: readonly ConditionSymetrie[]): StatutSymetrie {
