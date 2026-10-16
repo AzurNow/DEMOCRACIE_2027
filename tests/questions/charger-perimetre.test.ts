@@ -18,9 +18,11 @@ import { parse, stringify } from "yaml";
 import {
   chargerPerimetre,
   construirePerimetre,
+  LETTRES_MOT_SIGNIFICATIF,
   normaliserAlias,
   PerimetreIncomplet,
   PerimetreRefuse,
+  revelationsDansAlias,
   SEUIL_COUVERTURE_ITEMS_P,
 } from "../../pipeline/questions/charger-perimetre.ts";
 import type { ContexteDuGel } from "../../pipeline/questions/charger-perimetre.ts";
@@ -473,24 +475,49 @@ describe("gel, PR 2b, cas 8 : alias aveugle qui trahit un outil (D45 (2))", () =
     expect(normaliserAlias("O07")).toBe("o07");
   });
 
+  // PR 2c (D48 (2) et (3)) : les quatre cas suivants refusaient l'alias sur une seule inclusion de
+  // chaîne entière. Le mot significatif et `outil_id` font désormais trahir aussi d'autres champs
+  // (« outil » est un mot du libellé et de l'`outil_id` des deux assistants) : chaque attendu liste
+  // exactement tous les motifs, dans l'ordre des outils puis des champs. Attendus changés ouvertement.
   it("cas 8 : alias contenant le libellé d'un autre outil, en casse et accents différents ⇒ refus", () => {
     const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "Juge OUTIL   BÊTA n° 7"]]));
-    expect(erreur.motifs).toEqual([expect.stringContaining("contient le libelle « Outil Beta » de l'outil outil-beta")]);
+    expect(erreur.motifs).toEqual([
+      expect.stringContaining("contient le mot « outil » du libelle « Outil Alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « outil » du outil_id « outil-alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « outil », le mot « beta », la forme collée « outilbeta » du libelle « Outil Beta » de l'outil outil-beta"),
+      expect.stringContaining("contient le mot « beta » du editeur « Éditeur Beta » de l'outil outil-beta"),
+      expect.stringContaining("contient le mot « outil », le mot « beta », la forme collée « outilbeta » du outil_id « outil-beta » de l'outil outil-beta"),
+    ]);
   });
 
   it("cas 8 : alias contenant le libellé de son propre outil ⇒ refus", () => {
     const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "outil alpha"]]));
-    expect(erreur.motifs).toEqual([expect.stringContaining("contient le libelle « Outil Alpha » de l'outil outil-alpha")]);
+    expect(erreur.motifs).toEqual([
+      expect.stringContaining("la forme collée « outilalpha » du libelle « Outil Alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « alpha » du editeur « Éditeur Alpha » de l'outil outil-alpha"),
+      expect.stringContaining("la forme collée « outilalpha » du outil_id « outil-alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « outil » du libelle « Outil Beta » de l'outil outil-beta"),
+      expect.stringContaining("contient le mot « outil » du outil_id « outil-beta » de l'outil outil-beta"),
+    ]);
   });
 
   it("cas 8 : alias contenant un éditeur ⇒ refus", () => {
     const editeur = refus(perimetreComplet(), contexte([["outil-alpha", "par EDITEUR ALPHA"]]));
-    expect(editeur.motifs).toEqual([expect.stringContaining("contient le editeur « Éditeur Alpha » de l'outil outil-alpha")]);
+    expect(editeur.motifs).toEqual([
+      expect.stringContaining("contient le mot « alpha » du libelle « Outil Alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « editeur », le mot « alpha », la forme collée « editeuralpha » du editeur « Éditeur Alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « alpha » du outil_id « outil-alpha » de l'outil outil-alpha"),
+      expect.stringContaining("contient le mot « editeur » du editeur « Éditeur Beta » de l'outil outil-beta"),
+    ]);
   });
 
   it("cas 8 : l'éditeur d'un comparateur du périmètre trahit aussi ⇒ refus", () => {
     const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "association  gamma"]]));
-    expect(erreur.motifs).toEqual([expect.stringContaining("de l'outil comparateur-gamma")]);
+    expect(erreur.motifs).toEqual([
+      expect.stringContaining("contient le mot « gamma » du libelle « Comparateur Gamma » de l'outil comparateur-gamma"),
+      expect.stringContaining("la forme collée « associationgamma » du editeur « Association Gamma » de l'outil comparateur-gamma"),
+      expect.stringContaining("contient le mot « gamma » du outil_id « comparateur-gamma » de l'outil comparateur-gamma"),
+    ]);
   });
 
   it("cas 8 : même alias pour deux outils, après normalisation ⇒ refus", () => {
@@ -500,6 +527,113 @@ describe("gel, PR 2b, cas 8 : alias aveugle qui trahit un outil (D45 (2))", () =
 
   it("cas 8 : un alias neutre, distinct des autres, passe", () => {
     expect(charger(perimetreComplet(), contexte([["outil-alpha", "O07"], ["outil-beta", "O08"]])).perimetre.outils[0]).toMatchObject({ alias_aveugle: "O07" });
+  });
+});
+
+describe("gel, PR 2c : mots significatifs, formes collées et outil_id (D48 (2) et (3))", () => {
+  const mot = (trouve: string) => ({ nature: "mot", trouve });
+  const collee = (trouve: string) => ({ nature: "forme_collee", trouve });
+
+  it("D48 (3), cas 3 : « Mistral » contre l'éditeur « Mistral AI » ⇒ le mot « mistral » (« ai » ignoré)", () => {
+    expect(revelationsDansAlias("Mistral", "Mistral AI")).toEqual([mot("mistral")]);
+  });
+
+  it("D48 (3), cas 3 : « LeChat » contre « Le Chat » ⇒ le mot « chat » et la forme collée « lechat »", () => {
+    expect(revelationsDansAlias("LeChat", "Le Chat")).toEqual([mot("chat"), collee("lechat")]);
+  });
+
+  it("D48 (3), cas 3 : casse et accents différents ⇒ même résultat", () => {
+    expect(revelationsDansAlias("MÎSTRAL", "mistral ai")).toEqual(revelationsDansAlias("Mistral", "Mistral AI"));
+    expect(revelationsDansAlias("LÈCHAT", "le chât")).toEqual(revelationsDansAlias("LeChat", "Le Chat"));
+  });
+
+  it("D48 (3) : la forme collée seule, sans aucun mot significatif, suffit", () => {
+    expect(revelationsDansAlias("Juge ABCD", "Ab Cd")).toEqual([collee("abcd")]);
+  });
+
+  it("D48 (3), cas 4 : un mot de 2 lettres (« ai », « le ») ne suffit pas à refuser", () => {
+    expect(revelationsDansAlias("AI le juge", "Le Ai Studio")).toEqual([]);
+    expect(revelationsDansAlias("Juge AI", "Mistral AI")).toEqual([]);
+  });
+
+  it("D48 (3), cas 4 : un mot d'exactement 3 lettres suffit", () => {
+    expect(LETTRES_MOT_SIGNIFICATIF).toBe(3);
+    expect(revelationsDansAlias("Zyxo", "Zyx Lb")).toEqual([mot("zyx")]);
+  });
+
+  it("D50 : une forme collée de moins de 3 lettres ne suffit pas (« X », « A B ») ; d'exactement 3, elle suffit", () => {
+    expect(revelationsDansAlias("XO7", "X")).toEqual([]);
+    expect(revelationsDansAlias("AB12", "A B")).toEqual([]);
+    expect(revelationsDansAlias("XAB12", "A-B")).toEqual([]);
+    expect(revelationsDansAlias("ABC12", "A B C")).toEqual([collee("abc")]);
+  });
+
+  it("D48 (2) : tirets et soulignés d'un outil_id découpent des mots comme les espaces", () => {
+    expect(revelationsDansAlias("Juge Kappa", "kappa_zeta-outil")).toEqual([mot("kappa")]);
+    expect(revelationsDansAlias("KappaZeta", "kappa_zeta")).toEqual([mot("kappa"), mot("zeta"), collee("kappazeta")]);
+    expect(revelationsDansAlias("Juge AbCd", "ab_cd")).toEqual([collee("abcd")]);
+  });
+
+  it("D48 (3), cas 5 : un alias sans mot significatif ni forme collée d'un texte ⇒ rien trouvé", () => {
+    expect(revelationsDansAlias("O07", "Mistral AI")).toEqual([]);
+    expect(revelationsDansAlias("O07", "outil-alpha")).toEqual([]);
+  });
+
+  function avecOutil(outil: Objet): Objet {
+    const perimetre = perimetreComplet();
+    outils(perimetre).push(outil);
+    return perimetre;
+  }
+
+  const KAPPA = {
+    outil_id: "kappa_zeta",
+    libelle: "Assistant Kz",
+    editeur: "Société Kz",
+    famille: "assistant",
+    inclus: false,
+    motif_exclusion: "Absent du top des applications à la date de gel.",
+  };
+
+  it("D48 (2), cas 2 : alias contenant l'outil_id d'un autre outil, avec séparateurs ⇒ refus nommant le champ outil_id", () => {
+    const erreur = refus(avecOutil(KAPPA), contexte([["outil-alpha", "Juge Kappa-Zeta"]]));
+    expect(erreur.motifs).toEqual([
+      expect.stringContaining(
+        "alias_aveugle « Juge Kappa-Zeta » de outil-alpha contient le mot « kappa », le mot « zeta », la forme collée « kappazeta » " +
+          "du outil_id « kappa_zeta » de l'outil kappa_zeta",
+      ),
+    ]);
+  });
+
+  const LE_CHAT = { ...KAPPA, outil_id: "assistant-k", libelle: "Le Chat", editeur: "Mistral AI" };
+
+  it("D48 (3), cas 3 : « Mistral » contre l'éditeur « Mistral AI » d'un outil du périmètre ⇒ refus (mot)", () => {
+    const erreur = refus(avecOutil(LE_CHAT), contexte([["outil-alpha", "Mistral"]]));
+    expect(erreur.motifs).toEqual([
+      expect.stringContaining("alias_aveugle « Mistral » de outil-alpha contient le mot « mistral » du editeur « Mistral AI » de l'outil assistant-k"),
+    ]);
+  });
+
+  it("D48 (3), cas 3 : « LeChat » contre le libellé « Le Chat » ⇒ refus (forme collée)", () => {
+    const erreur = refus(avecOutil(LE_CHAT), contexte([["outil-alpha", "LeChat"]]));
+    expect(erreur.motifs).toEqual([
+      expect.stringContaining("alias_aveugle « LeChat » de outil-alpha contient le mot « chat », la forme collée « lechat » du libelle « Le Chat » de l'outil assistant-k"),
+    ]);
+  });
+
+  it("D48 (3), cas 3 : « lèCHAT » ⇒ le même refus, casse et accents ignorés", () => {
+    const erreur = refus(avecOutil(LE_CHAT), contexte([["outil-alpha", "lèCHAT"]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("contient le mot « chat », la forme collée « lechat » du libelle « Le Chat » de l'outil assistant-k")]);
+  });
+
+  // `run.schema.json` borne l'alias à `^[A-Z]{1,3}[0-9]{2,4}$` : les cas acceptés suivent cette forme.
+  it("D48 (3), cas 4 : un alias dont le seul mot commun a 2 lettres (« AI », « LE ») passe", () => {
+    for (const alias of ["AI07", "LE07"]) {
+      expect(charger(avecOutil(LE_CHAT), contexte([["outil-alpha", alias]])).perimetre.outils[0]).toMatchObject({ alias_aveugle: alias });
+    }
+  });
+
+  it("D48 (3), cas 5 : un alias légitime passe contre tous les champs de tous les outils", () => {
+    expect(charger(avecOutil(LE_CHAT), contexte([["outil-alpha", "O07"]])).perimetre.outils[0]).toMatchObject({ alias_aveugle: "O07" });
   });
 });
 

@@ -10,9 +10,10 @@
  *    `date_gel`, refusée (D45 (4)) ; destination libre, ou refus (`destination.ts`) ; l'empreinte des
  *    octets de `docs/PROTOCOLE.md` (`versions.protocole_sha256` ; le dépôt est propre, le fichier sur
  *    disque est celui du commit).
- * 4. L'ordre des instants (D45 (4), `instants.ts`) : un gel exécuté avant `date_gel` est refusé.
- *    Puis le run précédent (D45 (3), `precedent.ts`) : lu sous `runs/` du dépôt, son tirage vérifié
- *    sur l'empreinte que son `run.json` déclare, ou son absence déclarée ; tout défaut est refusé.
+ * 4. L'ordre des instants (D45 (4), D48 (1), `instants.ts`) : un gel exécuté avant `date_gel`, ou à
+ *    l'ouverture de sa fenêtre ou après, est refusé. Puis le run précédent (D45 (3), D48 (4) et (5),
+ *    `precedent.ts`) : lu sous `runs/` du dépôt, publié, son tirage et son `questions.json` vérifiés
+ *    sur les empreintes que son `run.json` déclare, ou son absence déclarée ; tout défaut est refusé.
  *    Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
  *    cela n'appelle le réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
  *    `date_gel`, servie par la Wayback Machine. Puis la balise, lue sur les deux relais (D44,
@@ -52,7 +53,7 @@ import { ecrireToutOuRien } from "./ecriture.ts";
 import type { EcrireFichier } from "./ecriture.ts";
 import { verifierEngagement } from "./engagement.ts";
 import type { EngagementVerifie } from "./engagement.ts";
-import { exigerGelApresDateGel } from "./instants.ts";
+import { exigerGelApresDateGel, exigerGelAvantFenetre } from "./instants.ts";
 import { lirePrecedent } from "./precedent.ts";
 import type { LireHttp } from "./reseau.ts";
 
@@ -69,8 +70,8 @@ export interface OptionsGel {
   /** Le port de l'API de disponibilité de la Wayback Machine. */
   readonly wayback: LireHttp;
   /**
-   * L'instant présent, en millisecondes : un gel avant `date_gel`, ou dont le tour n'est pas encore
-   * émis, est refusé sans appel réseau.
+   * L'instant présent, en millisecondes : un gel avant `date_gel`, à l'ouverture de sa fenêtre ou
+   * après, ou dont le tour n'est pas encore émis, est refusé sans appel réseau.
    */
   readonly maintenant: () => number;
   readonly ecrire: EcrireFichier;
@@ -172,7 +173,9 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   const protocole_sha256 = sha256DuFichier(chemins.protocole);
 
   const date_gel_ms = lireInstant(prepare.perimetre.date_gel, `${chemins.perimetre}, date_gel`);
-  exigerGelApresDateGel(options.maintenant(), date_gel_ms);
+  const maintenant_ms = options.maintenant();
+  exigerGelApresDateGel(maintenant_ms, date_gel_ms);
+  exigerGelAvantFenetre(maintenant_ms, prepare.fenetre.debut_ms);
   const precedent = lirePrecedent(options.racine, date_gel_ms);
   const { engagement, balise } = await lireAlea(options, commit, date_gel_ms);
   const run_id = identifiantDuRun(date_gel_ms, balise.alea);

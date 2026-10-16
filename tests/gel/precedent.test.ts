@@ -96,17 +96,39 @@ async function refusDe(options: OptionsGel): Promise<Error> {
   throw new Error("Le gel a été accepté alors qu'un refus était attendu.");
 }
 
-/** Un dépôt de fixture où un premier gel, de ce type, a écrit `runs/2026-12-01/`, commité. */
-async function depotAvecUnRun(type_run = "mensuel"): Promise<string> {
+function premierRun(racine: string): string {
+  return join(racine, "runs", DATE_1);
+}
+
+/** Change le `statut` du premier run à la main, comme l'auteur le fera (`run:invalider`, publication : PR 3). */
+function changerStatut(racine: string, statut: string): void {
+  const chemin = join(premierRun(racine), "run.json");
+  ecrireJson(chemin, { ...lireJson<Record<string, unknown>>(chemin), statut });
+}
+
+/**
+ * Un dépôt de fixture où un premier gel, de ce type, a écrit `runs/2026-12-01/`, puis où ce run est
+ * passé à la main au statut voulu (D48 (5) : seul un run publié sert de précédent), commité.
+ */
+async function depotAvecUnRun(type_run = "mensuel", statut = "publie"): Promise<string> {
   const racine = depotDuJeu(jeuNominal());
   temporaires.push(racine);
   await geler(optionsGel(racine, undefined, { type_run }));
+  changerStatut(racine, statut);
   recommiter(racine, "premier run");
   return racine;
 }
 
-function premierRun(racine: string): string {
-  return join(racine, "runs", DATE_1);
+/**
+ * Récrit le `questions.json` du premier run et l'empreinte que son `run.json` en déclare : le run
+ * précédent est cohérent, seul son contenu diffère (D48 (4)).
+ */
+function reecrireQuestions(racine: string, questions: unknown): void {
+  const repertoire = premierRun(racine);
+  const texte = `${JSON.stringify(questions, null, 2)}\n`;
+  writeFileSync(join(repertoire, "questions.json"), texte, "utf8");
+  const run = lireJson<{ questions: Record<string, unknown> }>(join(repertoire, "run.json"));
+  ecrireJson(join(repertoire, "run.json"), { ...run, questions: { ...run.questions, sha256: sha256(texte) } });
 }
 
 /** Avance le périmètre et la fenêtre au second gel, et commite. */
@@ -152,6 +174,7 @@ function runLu(repertoire: string, date_gel: string, surcharges: Partial<RunDeRu
     type_run: "mensuel",
     statut: "publie",
     tirage: { chemin: `runs/${repertoire}/tirage.json`, sha256: "a".repeat(64) },
+    questions: { chemin: `runs/${repertoire}/questions.json`, sha256: "b".repeat(64) },
     ...surcharges,
   };
 }
@@ -223,11 +246,9 @@ describe("précédent, cas 3 : invalides et pilotes écartés", () => {
     expect(choisirPrecedent([NOVEMBRE, { ...DECEMBRE, type_run: "pilote" }], NOTRE_GEL)).toBe(NOVEMBRE);
   });
 
-  it("précédent, cas 3 : un run planifié, en cours ou provisoire reste un précédent (seul invalide est exclu)", () => {
-    for (const statut of ["planifie", "en_cours", "publie_provisoire"]) {
-      expect(choisirPrecedent([{ ...DECEMBRE, statut }], NOTRE_GEL)).toEqual({ ...DECEMBRE, statut });
-    }
-  });
+  // PR 2b : « un run planifié, en cours ou provisoire reste un précédent (seul invalide est exclu) ».
+  // D48 (5) et D49 le contredisent pour planifie et en_cours, désormais sautés : ce test est
+  // remplacé par les cas 8 ci-dessous, attendu changé ouvertement ; publie_provisoire reste un précédent.
 
   it("précédent, cas 3 : seul run de runs/, un pilote ⇒ run_precedent: null", async () => {
     const racine = await depotAvecUnRun("pilote");
@@ -282,12 +303,12 @@ describe("précédent, cas 4 : précédent illisible ou incohérent ⇒ refus no
     expect((await secondRefuse(racine)).motif).toBe("tirage_d_un_autre_run");
   });
 
-  it("précédent, cas 4 : une question tirée absente de questions.json ⇒ refus question_introuvable", async () => {
+  it("précédent, cas 4 : une question tirée absente de questions.json, empreinte recalculée ⇒ refus question_introuvable", async () => {
     const racine = await depotAvecUnRun();
     const repertoire = premierRun(racine);
     const tiree = lireJson<{ entrees: EntreeLue[] }>(join(repertoire, "tirage.json")).entrees[0]?.question_id;
     const questions = lireJson<QuestionLue[]>(join(repertoire, "questions.json"));
-    ecrireJson(join(repertoire, "questions.json"), questions.filter((question) => question.id !== tiree));
+    reecrireQuestions(racine, questions.filter((question) => question.id !== tiree));
     const erreur = await secondRefuse(racine);
     expect(erreur.motif).toBe("question_introuvable");
     expect(erreur.message).toContain(String(tiree));
@@ -314,7 +335,11 @@ describe("précédent, cas 5 et 10 : reprises au second gel", () => {
     const premier = lireJson<{ id: string; tirage: { sha256: string } }>(join(premierRun(racine), "run.json"));
     const run = await secondGel(racine);
     const objet = lireJson<Record<string, unknown>>(join(run, "run.json"));
-    expect(objet["run_precedent"]).toEqual({ id: premier.id, tirage: { chemin: `runs/${DATE_1}/tirage.json`, sha256: premier.tirage.sha256 } });
+    expect(objet["run_precedent"]).toEqual({
+      id: premier.id,
+      tirage: { chemin: `runs/${DATE_1}/tirage.json`, sha256: premier.tirage.sha256 },
+      questions: { chemin: `runs/${DATE_1}/questions.json`, sha256: sha256(readFileSync(join(premierRun(racine), "questions.json"))) },
+    });
     expect(() => valider("run", objet, "run.json du second gel")).not.toThrow();
     const questions = new Map(lireJson<QuestionLue[]>(join(premierRun(racine), "questions.json")).map((question) => [question.id, question]));
     const reprises = lireJson<{ entrees: EntreeLue[] }>(join(run, "tirage.json")).entrees.filter((entree) => entree.reprise);
@@ -343,7 +368,7 @@ describe("précédent, cas 5 et 10 : reprises au second gel", () => {
             ),
           },
     );
-    ecrireJson(join(repertoire, "questions.json"), questions);
+    reecrireQuestions(racine, questions);
     recommiter(racine, "un texte du premier run diffère");
     const run = await secondGel(racine);
     const entrees = lireJson<{ entrees: EntreeLue[] }>(join(run, "tirage.json")).entrees;
@@ -354,9 +379,12 @@ describe("précédent, cas 5 et 10 : reprises au second gel", () => {
     expect(entrees.filter((autre) => autre.question_id !== changee && tirees.includes(autre.question_id)).every((autre) => autre.reprise)).toBe(true);
   });
 
-  it("précédent, cas 10 : deux gels successifs, le second reprend le premier et passe pnpm symmetry", async () => {
+  it("précédent, cas 10, D48 cas 9 : deux gels successifs, le premier passé publie à la main, le second le reprend et passe pnpm symmetry", async () => {
     const racine = await depotAvecUnRun();
+    const premier = lireJson<{ id: string; statut: string }>(join(premierRun(racine), "run.json"));
+    expect(premier.statut).toBe("publie");
     const run = await secondGel(racine);
+    expect((lireJson<{ run_precedent: { id: string } }>(join(run, "run.json")).run_precedent).id).toBe(premier.id);
     const entrees = lireJson<{ entrees: EntreeLue[] }>(join(run, "tirage.json")).entrees;
     expect(entrees.some((entree) => entree.reprise)).toBe(true);
     const resultat = executerOutil("symmetry.ts", [
@@ -369,5 +397,105 @@ describe("précédent, cas 5 et 10 : reprises au second gel", () => {
     expect(resultat.erreur).not.toContain("Le run ne peut pas être lancé");
     expect(resultat.status).toBe(0);
     expect(resultat.sortie).toContain("Contrôles verts : le run peut être lancé.");
+  });
+});
+
+/* ------------------------------------------------ D48 (4) : empreinte des questions */
+
+describe("D48 (4), cas 7 : questions.json du précédent vérifié sur l'empreinte que son run.json déclare", () => {
+  it("D48 cas 7 : questions.json modifié d'un octet ⇒ refus questions_empreinte, rien écrit, aucun appel réseau", async () => {
+    const racine = await depotAvecUnRun();
+    const chemin = join(premierRun(racine), "questions.json");
+    writeFileSync(chemin, `${readFileSync(chemin, "utf8")} `, "utf8");
+    const erreur = await secondRefuse(racine);
+    expect(erreur.motif).toBe("questions_empreinte");
+    expect(erreur.run).toBe(DATE_1);
+    expect(erreur.message).toContain(`runs/${DATE_1}/questions.json`);
+  });
+
+  // Le schéma exige `questions` : un tel run.json est aussi non conforme. Le gel ne valide de chaque
+  // run.json que les champs qu'il lit, et ne lit `questions` que du précédent retenu : c'est
+  // `questions_empreinte` qui part, pas `run_illisible`, et un run non retenu sans `questions` ne
+  // bloque aucun gel.
+  it("D48 cas 7 : empreinte absente du run.json du précédent ⇒ refus questions_empreinte (et non run_illisible), rien écrit", async () => {
+    const racine = await depotAvecUnRun();
+    const chemin = join(premierRun(racine), "run.json");
+    const { questions: _retiree, ...sans } = lireJson<Record<string, unknown>>(chemin);
+    ecrireJson(chemin, sans);
+    const erreur = await secondRefuse(racine);
+    expect(erreur.motif).toBe("questions_empreinte");
+    expect(erreur.message).toContain("ne déclare pas");
+  });
+
+  it("D48 cas 7 : déclaration de questions non conforme (sans sha256) ⇒ refus run_illisible", async () => {
+    const racine = await depotAvecUnRun();
+    const chemin = join(premierRun(racine), "run.json");
+    const run = lireJson<Record<string, unknown>>(chemin);
+    ecrireJson(chemin, { ...run, questions: { chemin: `runs/${DATE_1}/questions.json` } });
+    expect((await secondRefuse(racine)).motif).toBe("run_illisible");
+  });
+
+  it("D48 cas 7 : questions.chemin hors du répertoire de son run ⇒ refus chemin_incoherent", async () => {
+    const racine = await depotAvecUnRun();
+    const chemin = join(premierRun(racine), "run.json");
+    const run = lireJson<{ questions: Record<string, unknown> }>(chemin);
+    ecrireJson(chemin, { ...run, questions: { ...run.questions, chemin: "runs/2026-11-03/questions.json" } });
+    const erreur = await secondRefuse(racine);
+    expect(erreur.motif).toBe("chemin_incoherent");
+    expect(erreur.message).toContain("questions.chemin");
+  });
+
+  it("D48 cas 7 : un run non retenu (pilote) sans questions dans son run.json ne bloque pas le gel", async () => {
+    const racine = await depotAvecUnRun("pilote");
+    const chemin = join(premierRun(racine), "run.json");
+    const { questions: _retiree, ...sans } = lireJson<Record<string, unknown>>(chemin);
+    ecrireJson(chemin, sans);
+    recommiter(racine, "pilote sans questions");
+    const run = await secondGel(racine);
+    expect(lireJson<Record<string, unknown>>(join(run, "run.json"))["run_precedent"]).toBeNull();
+  });
+});
+
+/* ---------------------------------------------- D48 (5) : statut du précédent */
+
+describe("D48 (5), D49, cas 8 : seul un run publie ou publie_provisoire sert de précédent, tout autre statut est sauté", () => {
+  it("D49 cas 8 : le plus récent planifie, puis en_cours ⇒ sauté, le publie d'avant est pris", () => {
+    for (const statut of ["planifie", "en_cours"]) {
+      expect(choisirPrecedent([NOVEMBRE, { ...DECEMBRE, statut }], NOTRE_GEL)).toBe(NOVEMBRE);
+    }
+  });
+
+  it("D49 cas 8 : aucun run publié (planifie, en_cours, invalide seulement) ⇒ aucun précédent", () => {
+    const runs = [{ ...NOVEMBRE, statut: "planifie" }, { ...DECEMBRE, statut: "en_cours" }, runLu("2026-12-15", "2026-12-15T06:00:00+01:00", { statut: "invalide" })];
+    expect(choisirPrecedent(runs, NOTRE_GEL)).toBeNull();
+  });
+
+  it("D48 cas 8 : le plus récent publie_provisoire ⇒ pris ; publie ⇒ pris", () => {
+    expect(choisirPrecedent([NOVEMBRE, { ...DECEMBRE, statut: "publie_provisoire" }], NOTRE_GEL)).toEqual({ ...DECEMBRE, statut: "publie_provisoire" });
+    expect(choisirPrecedent([NOVEMBRE, DECEMBRE], NOTRE_GEL)).toBe(DECEMBRE);
+  });
+
+  it("D48 cas 8 : le plus récent invalide ⇒ sauté, le run d'avant publie est pris", () => {
+    expect(choisirPrecedent([NOVEMBRE, { ...DECEMBRE, statut: "invalide" }], NOTRE_GEL)).toBe(NOVEMBRE);
+  });
+
+  it("D49 cas 8 : un en_cours et un publié à la même date_gel ⇒ pas d'ambiguïté, le publié est pris", () => {
+    const jumeau = { ...DECEMBRE, repertoire: "2026-12-01-bis", statut: "en_cours" };
+    expect(choisirPrecedent([DECEMBRE, jumeau], NOTRE_GEL)).toBe(DECEMBRE);
+  });
+
+  it("D49 cas 8 : seul run de runs/ laissé planifie, puis en_cours ⇒ sauté, run_precedent: null", async () => {
+    for (const statut of ["planifie", "en_cours"]) {
+      const racine = await depotAvecUnRun("mensuel", statut);
+      const run = await secondGel(racine);
+      expect(lireJson<Record<string, unknown>>(join(run, "run.json"))["run_precedent"]).toBeNull();
+    }
+  });
+
+  it("D48 cas 8 : premier run publie_provisoire ⇒ pris pour précédent", async () => {
+    const racine = await depotAvecUnRun("mensuel", "publie_provisoire");
+    const premier = lireJson<{ id: string }>(join(premierRun(racine), "run.json"));
+    const run = await secondGel(racine);
+    expect((lireJson<{ run_precedent: { id: string } }>(join(run, "run.json")).run_precedent).id).toBe(premier.id);
   });
 });

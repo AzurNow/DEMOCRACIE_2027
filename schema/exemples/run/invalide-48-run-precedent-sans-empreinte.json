@@ -92,6 +92,10 @@
     "id": "01K95Q7RG0PRECEDENT0EXEMP0",
     "tirage": {
       "chemin": "runs/2026-11-03/tirage.json"
+    },
+    "questions": {
+      "chemin": "runs/2026-11-03/questions.json",
+      "sha256": "8e1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d10"
     }
   },
   "perimetre": {
@@ -393,6 +397,10 @@
     "nombre_questions": 402,
     "part_reprise": 0.8,
     "part_items_a_f": 0.23
+  },
+  "questions": {
+    "chemin": "runs/2026-12-01/questions.json",
+    "sha256": "3f9a1c7e5b2d4f6a8c0e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a"
   },
   "depot": {
     "doi": "10.5281/zenodo.0000001",

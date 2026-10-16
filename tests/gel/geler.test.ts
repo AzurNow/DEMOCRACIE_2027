@@ -162,6 +162,17 @@ describe("gel nominal", () => {
     expect(tirage["nombre_questions"]).toBe((json(run, "tirage.json")["entrees"] as unknown[]).length);
   });
 
+  it("D48 (4), cas 6 : run.json déclare questions.json par son chemin sous runs/<date>/ et le SHA-256 de ses octets exacts", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    const { createHash } = await import("node:crypto");
+    expect(objet["questions"]).toEqual({
+      chemin: `runs/${DATE}/questions.json`,
+      sha256: createHash("sha256").update(readFileSync(join(run, "questions.json"))).digest("hex"),
+    });
+    expect(Object.keys(objet).indexOf("questions")).toBe(Object.keys(objet).indexOf("tirage") + 1);
+  });
+
   it("les alias aveugles de config/gel.json sont inscrits au périmètre du run", async () => {
     const { run } = await gelNominal();
     const outils = (json(run, "run.json")["perimetre"] as { outils: Record<string, unknown>[] }).outils;

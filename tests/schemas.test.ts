@@ -122,12 +122,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 278 → 284 : lot gel, PR 2a (D44, D46), un valide (pilote sans balise ni engagement) et cinq invalides (mensuel sans balise ; sans engagement ; signature de 47 octets ; horodatage de 12 chiffres ; un seul relais) du schéma run.
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
-  it("1. les 286 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
+  it("1. les 288 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(286);
+    expect(manifeste.exemples).toHaveLength(288);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -275,7 +276,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 278 → 284 : lot gel, PR 2a (D44, D46), un valide (pilote sans balise ni engagement) et cinq invalides (mensuel sans balise ; sans engagement ; signature de 47 octets ; horodatage de 12 chiffres ; un seul relais) du schéma run.
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 286 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(286);
+  // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 288 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(288);
   });
 });

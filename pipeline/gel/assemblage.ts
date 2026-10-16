@@ -13,8 +13,8 @@
  *    `engendree_le` de chaque question vaut `date_gel`, pour que deux gels du même commit donnent
  *    le même `questions.json`, octet pour octet. Rien ici ne dépend des graines ni de l'identifiant.
  * 2. `tirerAuGel` puis `fichiersDuGel` : le tirage (`tirage.ts:tirer`, graine du tirage, quotas du
- *    périmètre, tirage du run précédent pour les reprises du §5), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` par son
- *    chemin et le SHA-256 de ses octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
+ *    périmètre, tirage du run précédent pour les reprises du §5), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` et
+ *    `questions.json` (D48 (4)) par leur chemin et le SHA-256 de leurs octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
  *    l'engagement archivé (D46), le run précédent (D45 (3), `precedent.ts`) et l'empreinte du
  *    protocole ; enfin les réponses brutes des relais
  *    (sous `balise/`) et de la Wayback Machine (`engagement/wayback.json`, D47 (3)), octet pour
@@ -83,7 +83,7 @@ export interface GelPrepare {
 
 /**
  * Phase 1 : périmètre, fenêtre, questions. Lève sur toute entrée qui ne permet pas de geler, dont
- * une fenêtre ouverte avant `date_gel` (D45 (4), `instants.ts`).
+ * une fenêtre ouverte à `date_gel` ou avant (D45 (4), D50, `instants.ts`).
  */
 export function preparer(entrees: EntreesGel): GelPrepare {
   const perimetre = construirePerimetre(
@@ -164,7 +164,13 @@ function jugeAuGel(juge: JugeAuGel) {
   return { ...juge, retire: false };
 }
 
-function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun, tirage_texte: string): unknown {
+/** Les textes exacts de `tirage.json` et `questions.json`, tels qu'ils seront écrits. */
+interface TextesEngages {
+  readonly tirage: string;
+  readonly questions: string;
+}
+
+function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun, textes: TextesEngages): unknown {
   const tirage = tire.resultat.tirage;
   return {
     id: tire.run_id,
@@ -188,8 +194,12 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     symetrie: { conditions: meta.symetrie.conditions, statut_global: meta.symetrie.statut_global },
     tirage: {
       chemin: `runs/${prepare.date_repertoire}/tirage.json`,
-      sha256: sha256(tirage_texte),
+      sha256: sha256(textes.tirage),
       nombre_questions: tirage.entrees.length,
+    },
+    questions: {
+      chemin: `runs/${prepare.date_repertoire}/questions.json`,
+      sha256: sha256(textes.questions),
     },
   };
 }
@@ -197,18 +207,18 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
 /**
  * Phase 2b, après la barrière : les trois fichiers, chacun validé contre son schéma, puis les
  * archives de la balise et de l'engagement. `run.json` porte l'empreinte des octets exacts de
- * `tirage.json` tel qu'il sera écrit, et de chaque archive.
+ * `tirage.json` et de `questions.json` (D48 (4)) tels qu'ils seront écrits, et de chaque archive.
  */
 export function fichiersDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun): readonly FichierDuGel[] {
   const provenance = `gel du run ${tire.run_id}`;
   validerFragment<string>("run", "#/properties/type_run", meta.type_run, `${provenance}, type_run`);
   const tirage = valider<Tirage>("tirage", tire.resultat.tirage, `${provenance}, tirage.json`);
   const questions = prepare.questions.map((question) => valider<Question>("question", question, `${provenance}, question ${question.id}`));
-  const tirage_texte = texteJson(tirage);
-  const run = valider<unknown>("run", runDuGel(prepare, entrees, tire, meta, tirage_texte), `${provenance}, run.json`);
+  const textes: TextesEngages = { tirage: texteJson(tirage), questions: texteJson(questions) };
+  const run = valider<unknown>("run", runDuGel(prepare, entrees, tire, meta, textes), `${provenance}, run.json`);
   return [
-    { chemin: "questions.json", contenu: texteJson(questions) },
-    { chemin: "tirage.json", contenu: tirage_texte },
+    { chemin: "questions.json", contenu: textes.questions },
+    { chemin: "tirage.json", contenu: textes.tirage },
     { chemin: "run.json", contenu: texteJson(run) },
     ...archivesDeLaBalise(meta.balise).map((archive) => ({ chemin: archive.chemin, contenu: archive.octets })),
     { chemin: ARCHIVE_WAYBACK, contenu: meta.engagement.octets },
