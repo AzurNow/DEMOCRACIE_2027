@@ -16,7 +16,12 @@ import { runDeNotation } from "../notation/fabriques.ts";
 import { depotDuJeu, optionsGel } from "./fixtures.ts";
 import { jeuNominal } from "./jeux.ts";
 
-const APPELANTS = ["pipeline/gel/assemblage.ts", "pipeline/notation/controle-croise.ts"];
+const APPELANTS = [
+  "pipeline/gel/assemblage.ts",
+  "pipeline/notation/controle-croise.ts",
+  "pipeline/notation/contrefactuel.ts",
+  "pipeline/notation/publication-contrefactuel.ts",
+];
 
 const temporaires: string[] = [];
 

@@ -24,6 +24,7 @@
 import type { ResultatContrefactuel, ResultatJuge } from "./contrefactuel.ts";
 import { CLE_DERANGEMENT_CANDIDATS, correspondancesDe, type Derangement } from "./derangement.ts";
 import { CLE_SOUS_ENSEMBLE_CONTREFACTUEL, comparerChaines, type SousEnsembleContrefactuel } from "./echantillons.ts";
+import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { ChangementsContrefactuel, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 
 /** `run.schema.json#/properties/contrefactuel_candidats`. */
@@ -86,7 +87,7 @@ export function publierContrefactuel(
       return publierTermine(resultat.juges, resultat, sous_ensemble, derangement, run, resultat.taux_echantillon_humain);
     case "run_invalide":
       return {
-        ...publierTermine(resultat.juges, resultat, sous_ensemble, derangement, run, 0.25),
+        ...publierTermine(resultat.juges, resultat, sous_ensemble, derangement, run, TAUX_ECHANTILLON_APRES_RETRAIT),
         statut: "invalide",
         invalidation: { motif: resultat.raison },
       };
@@ -119,7 +120,7 @@ function publierIndefini(commun: Commun, sous_ensemble: SousEnsembleContrefactue
   return {
     contrefactuel_candidats: bloc("indefini", commun, sous_ensemble, derangement),
     juges: run.juges.map((juge) => ({ juge_id: juge.juge_id, retire: false })),
-    taux_echantillon_humain: 0.1,
+    taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT,
   };
 }
 

@@ -47,6 +47,7 @@ import type { Ulid } from "../../analysis/types.ts";
 import { JugeIndetermine } from "./decision.ts";
 import { comparerChaines, type SousEnsembleContrefactuel } from "./echantillons.ts";
 import { controlerExtrait, type TextesDeVerification } from "./extrait.ts";
+import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { NotationIndividuelle, RenvoiHumain, RunDeNotation, TauxEchantillonHumain } from "./types.ts";
 
 /** §7 : « au-delà de 3 % », en fraction exacte. */
@@ -110,7 +111,7 @@ interface Commun {
 
 export type ResultatContrefactuel =
   | (Commun & { readonly statut: "en_attente"; readonly paires_incompletes: readonly PaireIncomplete[] })
-  | (Commun & { readonly statut: "indefini"; readonly motif: "aucune_reponse_eligible"; readonly taux_echantillon_humain: 0.1 })
+  | (Commun & { readonly statut: "indefini"; readonly motif: "aucune_reponse_eligible"; readonly taux_echantillon_humain: typeof TAUX_ECHANTILLON_SANS_RETRAIT })
   | (Commun & { readonly statut: "termine"; readonly juges: readonly ResultatJuge[]; readonly taux_echantillon_humain: TauxEchantillonHumain })
   | (Commun & { readonly statut: "run_invalide"; readonly raison: string; readonly juges: readonly ResultatJuge[] });
 
@@ -144,7 +145,7 @@ export function testerContrefactuel(entree: EntreeContrefactuel): ResultatContre
     sous_effectif: entree.sous_ensemble.sous_effectif,
     mentions_residuelles: entree.paires.reduce((total, paire) => total + paire.mentions_residuelles, 0),
   };
-  if (entree.paires.length === 0) return { ...commun, statut: "indefini", motif: "aucune_reponse_eligible", taux_echantillon_humain: 0.1 };
+  if (entree.paires.length === 0) return { ...commun, statut: "indefini", motif: "aucune_reponse_eligible", taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT };
   const incompletes = pairesIncompletes(entree.paires, juges, notations, renvois);
   if (incompletes.length > 0) return { ...commun, statut: "en_attente", paires_incompletes: incompletes };
   return issue(commun, juges.map((juge_id) => resultatDuJuge(juge_id, entree.paires, notations, renvois)));
@@ -331,5 +332,5 @@ function issue(commun: Commun, juges: readonly ResultatJuge[]): ResultatContrefa
       juges,
     };
   }
-  return { ...commun, statut: "termine", juges, taux_echantillon_humain: retires === 0 ? 0.1 : 0.25 };
+  return { ...commun, statut: "termine", juges, taux_echantillon_humain: retires === 0 ? TAUX_ECHANTILLON_SANS_RETRAIT : TAUX_ECHANTILLON_APRES_RETRAIT };
 }
