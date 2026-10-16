@@ -1,11 +1,13 @@
 /**
- * Le run précédent d'un gel (décision D45 (3), §5 : « 80 % des questions sont reprises du run
- * précédent »). C'est le run de `runs/` dont la `date_gel` est la plus récente strictement avant
- * la nôtre, hors `statut` `invalide` et hors `type_run` `pilote`. Il est inscrit dans
- * `run.json#/run_precedent` ; son absence y est déclarée par `null`, jamais omise.
+ * Le run précédent d'un gel (décisions D45 (3), D48 (4) et (5), D49, §5 : « 80 % des questions
+ * sont reprises du run précédent »). C'est le plus récent des runs de `runs/` dont la `date_gel` est
+ * strictement avant la nôtre, de `statut` `publie` ou `publie_provisoire`, hors `type_run` `pilote`.
+ * Tout autre statut (`planifie`, `en_cours`, `invalide`) est sauté, comme un pilote (D49 : un run
+ * supplémentaire à 72 h, §6, doit pouvoir geler pendant qu'un run est en cours de notation). Il est
+ * inscrit dans `run.json#/run_precedent` ; son absence y est déclarée par `null`, jamais omise.
  *
  * Partie pure : `choisirPrecedent` (le choix, sur des `run.json` déjà lus) et `tiragePrecedentVerifie`
- * (des octets de son `tirage.json` et du contenu de son `questions.json` au `TiragePrecedent` que
+ * (des octets de son `tirage.json` et de son `questions.json` au `TiragePrecedent` que
  * `tirage.ts:tirer` reçoit). Partie lue, mince : `lirePrecedent`.
  *
  * Chaque répertoire de `runs/` doit porter un `run.json` lisible : un seul illisible, et le gel ne
@@ -14,16 +16,21 @@
  *   - `run_illisible` : un `run.json` absent, qui n'est pas du JSON, ou dont un champ lu n'est pas
  *     conforme à `run.schema.json` ;
  *   - `precedent_ambigu` : deux runs retenables à la même `date_gel` ;
- *   - `chemin_incoherent` : le tirage déclaré n'est pas `runs/<son répertoire>/tirage.json` ;
+ *   - `chemin_incoherent` : le tirage ou les questions déclarés ne sont pas
+ *     `runs/<son répertoire>/tirage.json` ou `questions.json` ;
  *   - `tirage_illisible` : le tirage absent, illisible ou non conforme à `tirage.schema.json` ;
  *   - `empreinte_differente` : le SHA-256 des octets du tirage n'est pas celui que son `run.json`
  *     déclare ;
  *   - `tirage_d_un_autre_run` : `tirage.run_id` n'est pas l'`id` de son `run.json` ;
+ *   - `questions_empreinte` (D48 (4)) : son `run.json` ne déclare pas l'empreinte de `questions.json`,
+ *     ou le SHA-256 de ses octets n'est pas celle qu'il déclare ;
  *   - `questions_illisibles` : `questions.json` absent, illisible, ou une question non conforme ;
  *   - `question_introuvable` : une question tirée absente de `questions.json`.
  *
  * Seuls les champs que le choix lit sont validés dans chaque `run.json` (fragments de
  * `run.schema.json`) : un run gelé sous un schéma plus ancien reste lisible pour ce qu'on en lit.
+ * `questions`, exigé depuis D48 (4), n'est lu que s'il est présent ; son absence n'est refusée que
+ * pour le précédent retenu, qui en a besoin (`questions_empreinte`).
  */
 
 import { createHash } from "node:crypto";
@@ -43,6 +50,7 @@ export type MotifPrecedent =
   | "tirage_illisible"
   | "empreinte_differente"
   | "tirage_d_un_autre_run"
+  | "questions_empreinte"
   | "questions_illisibles"
   | "question_introuvable";
 
@@ -52,11 +60,17 @@ export class PrecedentRefuse extends Error {
   readonly run: string;
 
   constructor(motif: MotifPrecedent, run: string, detail: string) {
-    super(`Run précédent refusé (${motif}, runs/${run}, décision D45 (3)) : ${detail} Rien n'est écrit.`);
+    super(`Run précédent refusé (${motif}, runs/${run}, décisions D45 (3), D48) : ${detail} Rien n'est écrit.`);
     this.name = "PrecedentRefuse";
     this.motif = motif;
     this.run = run;
   }
+}
+
+/** Un fichier du run déclaré dans son `run.json` : chemin dans le dépôt et SHA-256 de ses octets. */
+export interface FichierDeclare {
+  readonly chemin: string;
+  readonly sha256: string;
 }
 
 /** Ce que le choix lit d'un `run.json` de `runs/`, chaque champ validé contre son fragment. */
@@ -67,13 +81,16 @@ export interface RunDeRuns {
   readonly date_gel_ms: number;
   readonly type_run: string;
   readonly statut: string;
-  readonly tirage: { readonly chemin: string; readonly sha256: string };
+  readonly tirage: FichierDeclare;
+  /** D48 (4) ; `undefined` : son `run.json` ne le déclare pas, refusé s'il est le précédent. */
+  readonly questions: FichierDeclare | undefined;
 }
 
 /** `run.json#/run_precedent` quand un précédent existe. */
 export interface RunPrecedent {
   readonly id: string;
-  readonly tirage: { readonly chemin: string; readonly sha256: string };
+  readonly tirage: FichierDeclare;
+  readonly questions: FichierDeclare;
 }
 
 /** Ce que le gel retient : l'inscription de `run.json` et l'entrée du tirage, ensemble. */
@@ -85,12 +102,17 @@ export interface PrecedentDuGel {
 /** Aucun précédent : déclaré dans `run.json`, tirage sans reprise. */
 export const SANS_PRECEDENT: PrecedentDuGel = { run_precedent: null, tirage_precedent: undefined };
 
-/** D45 (3) : ni un run invalidé, ni un pilote ne servent de précédent. */
-const STATUTS_EXCLUS: ReadonlySet<string> = new Set(["invalide"]);
-const TYPES_EXCLUS: ReadonlySet<string> = new Set(["pilote"]);
+/**
+ * D48 (5), D49 : les seuls statuts admis pour le précédent. Tout autre statut (`planifie`,
+ * `en_cours`, `invalide`) est sauté : un run supplémentaire à 72 h (§6) doit pouvoir geler pendant
+ * qu'un run est en cours de notation.
+ */
+const STATUTS_ADMIS: ReadonlySet<string> = new Set(["publie", "publie_provisoire"]);
+/** D45 (3) : un pilote ne sert jamais de précédent ; il est sauté. */
+const TYPES_SAUTES: ReadonlySet<string> = new Set(["pilote"]);
 
 function retenable(run: RunDeRuns, date_gel_ms: number): boolean {
-  return run.date_gel_ms < date_gel_ms && !STATUTS_EXCLUS.has(run.statut) && !TYPES_EXCLUS.has(run.type_run);
+  return run.date_gel_ms < date_gel_ms && STATUTS_ADMIS.has(run.statut) && !TYPES_SAUTES.has(run.type_run);
 }
 
 /**
@@ -132,6 +154,11 @@ function fragment<T>(objet: Record<string, unknown>, cle: string, provenance: st
   return validerFragment<T>("run", pointeur, objet[cle], `${provenance}, ${cle}`);
 }
 
+/** Un champ que le schéma exige mais qu'un `run.json` plus ancien peut ne pas porter : absent, `undefined`. */
+function fragmentSiPresent<T>(objet: Record<string, unknown>, cle: string, provenance: string): T | undefined {
+  return objet[cle] === undefined ? undefined : fragment<T>(objet, cle, provenance);
+}
+
 function objetJson(texte: string): Record<string, unknown> {
   const valeur: unknown = JSON.parse(texte);
   if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) {
@@ -151,7 +178,8 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
       date_gel_ms: lireInstant(date_gel, `${provenance}, date_gel`),
       type_run: fragment<string>(objet, "type_run", provenance),
       statut: fragment<string>(objet, "statut", provenance),
-      tirage: fragment<{ chemin: string; sha256: string }>(objet, "tirage", provenance),
+      tirage: fragment<FichierDeclare>(objet, "tirage", provenance),
+      questions: fragmentSiPresent<FichierDeclare>(objet, "questions", provenance),
     };
   });
 }
@@ -166,10 +194,31 @@ export function cheminDuTirage(repertoire: string): string {
   return `runs/${repertoire}/tirage.json`;
 }
 
+export function cheminDesQuestions(repertoire: string): string {
+  return `runs/${repertoire}/questions.json`;
+}
+
+function exigerChemin(run: RunDeRuns, champ: string, declare: string, attendu: string): void {
+  if (declare === attendu) return;
+  throw new PrecedentRefuse("chemin_incoherent", run.repertoire, `${champ}.chemin vaut « ${declare} », attendu « ${attendu} ».`);
+}
+
 function exigerCheminCoherent(run: RunDeRuns): void {
-  const attendu = cheminDuTirage(run.repertoire);
-  if (run.tirage.chemin === attendu) return;
-  throw new PrecedentRefuse("chemin_incoherent", run.repertoire, `tirage.chemin vaut « ${run.tirage.chemin} », attendu « ${attendu} ».`);
+  exigerChemin(run, "tirage", run.tirage.chemin, cheminDuTirage(run.repertoire));
+}
+
+/** D48 (4) : la déclaration de `questions.json`, présente et à son chemin, ou refus. */
+function questionsDeclarees(run: RunDeRuns): FichierDeclare {
+  const declarees = run.questions;
+  if (declarees === undefined) {
+    throw new PrecedentRefuse(
+      "questions_empreinte",
+      run.repertoire,
+      `son run.json ne déclare pas questions (chemin et SHA-256 de ${cheminDesQuestions(run.repertoire)}, D48 (4)).`,
+    );
+  }
+  exigerChemin(run, "questions", declarees.chemin, cheminDesQuestions(run.repertoire));
+  return declarees;
 }
 
 function exigerEmpreinte(run: RunDeRuns, octets: Uint8Array): void {
@@ -182,6 +231,16 @@ function exigerEmpreinte(run: RunDeRuns, octets: Uint8Array): void {
   );
 }
 
+function exigerEmpreinteDesQuestions(run: RunDeRuns, declarees: FichierDeclare, octets: Uint8Array): void {
+  const lue = sha256(octets);
+  if (lue === declarees.sha256) return;
+  throw new PrecedentRefuse(
+    "questions_empreinte",
+    run.repertoire,
+    `SHA-256 de ${declarees.chemin} : ${lue} ; son run.json déclare ${declarees.sha256}.`,
+  );
+}
+
 function tirageLu(run: RunDeRuns, octets: Uint8Array): Tirage {
   const tirage = ou("tirage_illisible", run.repertoire, () =>
     valider<Tirage>("tirage", JSON.parse(new TextDecoder().decode(octets)), run.tirage.chemin),
@@ -190,9 +249,10 @@ function tirageLu(run: RunDeRuns, octets: Uint8Array): Tirage {
   throw new PrecedentRefuse("tirage_d_un_autre_run", run.repertoire, `tirage.run_id vaut ${tirage.run_id}, run.json#/id vaut ${run.id}.`);
 }
 
-function questionsLues(run: RunDeRuns, questions_brutes: unknown): readonly Question[] {
-  const provenance = `runs/${run.repertoire}/questions.json`;
+function questionsLues(run: RunDeRuns, octets: Uint8Array): readonly Question[] {
+  const provenance = cheminDesQuestions(run.repertoire);
   return ou("questions_illisibles", run.repertoire, () => {
+    const questions_brutes: unknown = JSON.parse(new TextDecoder().decode(octets));
     if (!Array.isArray(questions_brutes)) throw new SyntaxError(`${provenance} n'est pas un tableau.`);
     return questions_brutes.map((question: unknown, rang) => valider<Question>("question", question, `${provenance}[${rang}]`));
   });
@@ -206,16 +266,17 @@ function exigerQuestionsTirees(run: RunDeRuns, tirage: Tirage, questions: readon
 }
 
 /**
- * Des octets du tirage précédent et du contenu de son `questions.json` au `TiragePrecedent` :
- * chemin cohérent, empreinte égale à celle que son `run.json` déclare, tirage conforme et de ce
- * run, chaque question tirée présente. La signature de chaque question (`signature.ts`) est
- * calculée sur la question telle que le run précédent l'a posée.
+ * Des octets du tirage précédent et de son `questions.json` au `TiragePrecedent` : chemins
+ * cohérents, empreintes égales à celles que son `run.json` déclare (D48 (4) pour les questions),
+ * tirage conforme et de ce run, chaque question tirée présente. La signature de chaque question
+ * (`signature.ts`) est calculée sur la question telle que le run précédent l'a posée.
  */
-export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array, questions_brutes: unknown): TiragePrecedent {
+export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array, octets_questions: Uint8Array): TiragePrecedent {
   exigerCheminCoherent(run);
   exigerEmpreinte(run, octets_tirage);
   const tirage = tirageLu(run, octets_tirage);
-  const questions = questionsLues(run, questions_brutes);
+  exigerEmpreinteDesQuestions(run, questionsDeclarees(run), octets_questions);
+  const questions = questionsLues(run, octets_questions);
   exigerQuestionsTirees(run, tirage, questions);
   return tiragePrecedentDepuis(tirage, questions);
 }
@@ -233,20 +294,30 @@ function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
     });
 }
 
+function octetsDe(motif: MotifPrecedent, run: RunDeRuns, chemin: string): Uint8Array {
+  return ou(motif, run.repertoire, () => new Uint8Array(readFileSync(chemin)));
+}
+
 /**
  * Lit `runs/` sous `racine`, choisit le précédent, vérifie et lit son tirage et ses questions. Le
  * gel lit toujours `runs/` du dépôt, `--sortie` ou non : le précédent d'un essai est celui qu'aurait
- * le vrai run.
+ * le vrai run. Les déclarations du `run.json` (chemins, présence de `questions`) sont contrôlées
+ * avant toute lecture des deux fichiers.
  */
 export function lirePrecedent(racine: string, date_gel_ms: number): PrecedentDuGel {
   const run = choisirPrecedent(lireRunsDuDepot(join(racine, "runs")), date_gel_ms);
   if (run === null) return SANS_PRECEDENT;
   exigerCheminCoherent(run);
+  const questions = questionsDeclarees(run);
   const repertoire = join(racine, "runs", run.repertoire);
-  const octets = ou("tirage_illisible", run.repertoire, () => new Uint8Array(readFileSync(join(repertoire, "tirage.json"))));
-  const questions: unknown = ou("questions_illisibles", run.repertoire, () => JSON.parse(readFileSync(join(repertoire, "questions.json"), "utf8")));
+  const octets_tirage = octetsDe("tirage_illisible", run, join(repertoire, "tirage.json"));
+  const octets_questions = octetsDe("questions_illisibles", run, join(repertoire, "questions.json"));
   return {
-    run_precedent: { id: run.id, tirage: { chemin: run.tirage.chemin, sha256: run.tirage.sha256 } },
-    tirage_precedent: tiragePrecedentVerifie(run, octets, questions),
+    run_precedent: {
+      id: run.id,
+      tirage: { chemin: run.tirage.chemin, sha256: run.tirage.sha256 },
+      questions: { chemin: questions.chemin, sha256: questions.sha256 },
+    },
+    tirage_precedent: tiragePrecedentVerifie(run, octets_tirage, octets_questions),
   };
 }

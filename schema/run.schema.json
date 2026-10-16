@@ -20,7 +20,8 @@
     "juges",
     "taux_echantillon_humain",
     "symetrie",
-    "tirage"
+    "tirage",
+    "questions"
   ],
   "properties": {
     "id": {
@@ -230,13 +231,13 @@
       }
     },
     "run_precedent": {
-      "description": "Décision D45 (3), §5 (reprises à 80 %) : le run dont les questions peuvent être reprises, c'est-à-dire le run de runs/ dont la date_gel est la plus récente strictement avant celle-ci, hors statut invalide et hors type_run pilote, choisi par pnpm geler (pipeline/gel/precedent.ts). null : aucun run ne remplit ces conditions au gel, et le tirage est fait sans reprise. L'absence est déclarée, jamais omise : le champ est exigé de tout run.",
+      "description": "Décisions D45 (3), D48 (5) et D49, §5 (reprises à 80 %) : le run dont les questions peuvent être reprises, choisi par pnpm geler (pipeline/gel/precedent.ts) : le plus récent des runs de runs/ dont la date_gel est strictement avant celle-ci, de statut publie ou publie_provisoire, hors type_run pilote. Tout autre statut (planifie, en_cours, invalide) est sauté, comme un pilote : un run supplémentaire à 72 h (§6) peut geler pendant qu'un run est en cours de notation. null : aucun run ne remplit ces conditions au gel, et le tirage est fait sans reprise. L'absence est déclarée, jamais omise : le champ est exigé de tout run.",
       "oneOf": [
         { "type": "null" },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["id", "tirage"],
+          "required": ["id", "tirage", "questions"],
           "properties": {
             "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
             "tirage": {
@@ -246,6 +247,16 @@
               "description": "Le tirage du run précédent tel que son run.json le déclare (tirage.chemin, tirage.sha256) ; pnpm geler a recalculé l'empreinte de ses octets et l'a trouvée égale avant de le lire.",
               "properties": {
                 "chemin": { "type": "string", "pattern": "^runs/[0-9]{4}-[0-9]{2}-[0-9]{2}/tirage\\.json$" },
+                "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+              }
+            },
+            "questions": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["chemin", "sha256"],
+              "description": "Décision D48 (4) : le questions.json du run précédent tel que son run.json le déclare (questions.chemin, questions.sha256) ; pnpm geler a recalculé l'empreinte de ses octets et l'a trouvée égale avant de le lire.",
+              "properties": {
+                "chemin": { "type": "string", "pattern": "^runs/[0-9]{4}-[0-9]{2}-[0-9]{2}/questions\\.json$" },
                 "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
               }
             }
@@ -1124,6 +1135,26 @@
           "minimum": 0,
           "maximum": 1,
           "description": "§5 : les items d'absence et fictifs constituent au moins 20 % des questions de chaque run."
+        }
+      }
+    },
+    "questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chemin",
+        "sha256"
+      ],
+      "description": "Décision D48 (4) : référence vers le jeu complet des questions engendrées au gel (questions.json, tableau du schéma question), qui décide des reprises du run suivant (§5 : même identifiant et mêmes empreintes de texte). Écrite par pnpm geler à partir des octets exacts écrits ; le gel suivant recalcule l'empreinte avant de lire ce fichier.",
+      "properties": {
+        "chemin": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Chemin relatif dans le dépôt, sous runs/<date>/ comme tirage.chemin : par exemple runs/2026-12-01/questions.json."
+        },
+        "sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Empreinte des octets de questions.json. Une divergence au recalcul est une erreur dure, pas un avertissement."
         }
       }
     },

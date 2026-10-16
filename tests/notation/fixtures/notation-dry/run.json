@@ -242,5 +242,9 @@
     "chemin": "runs/2026-11-27/tirage.json",
     "sha256": "d7674f1060f55b4f57a77b17f39c6fb67821b4ff6a3d5e23b0187e1ad2fab5e4",
     "nombre_questions": 3
+  },
+  "questions": {
+    "chemin": "runs/2026-11-27/questions.json",
+    "sha256": "a57cd2c51a0153559f676bff1a170318c23f3bb3eea55cb3a1c3e521a6e9bfa7"
   }
 }

@@ -51,8 +51,11 @@ export const CONFIGURATION_GEL = {
 /** La capture de l'engagement (D46) : 2026-11-30T12:00:00Z, avant les deux `date_gel` des jeux. */
 export const HORODATAGE_ENGAGEMENT = "20261130120000";
 
-/** L'instant présent des gels d'essai : tous les tours des jeux sont émis. */
-export const MAINTENANT = Date.parse("2026-12-02T00:00:00Z");
+/**
+ * L'instant présent des gels d'essai : tous les tours des jeux sont émis, et la fenêtre de
+ * `CONFIGURATION_GEL` (06:00 à Paris, 05:00 UTC) n'est pas encore ouverte (D48 (1)).
+ */
+export const MAINTENANT = Date.parse("2026-12-01T04:00:00Z");
 
 /** Le texte de `docs/PROTOCOLE.md` du dépôt de fixture, ouvertement fictif. */
 export const PROTOCOLE_DE_FIXTURE = "# Protocole de fixture\n\nTexte fictif du dépôt d'essai du gel ; aucune règle réelle.\n";

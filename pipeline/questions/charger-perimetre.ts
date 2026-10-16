@@ -16,8 +16,10 @@
  *      les dix thèmes exactement, les identifiants uniques, la liste officielle selon le régime, un
  *      candidat retiré non interrogé, la règle d'inclusion du §3 (`perimetre.ts:inclusionAvantListe`)
  *      pour chaque candidat non retiré du régime `avant_liste_officielle`, et un alias aveugle pour
- *      chaque assistant inclus, qui ne contient ni le libellé ni l'éditeur d'un outil du périmètre et
- *      qu'aucun autre outil ne partage, après normalisation (`normaliserAlias`, D45 (2)) ;
+ *      chaque assistant inclus, qui ne trahit ni le libellé, ni l'éditeur, ni l'`outil_id` d'un outil
+ *      du périmètre (aucun de leurs mots significatifs, aucune de leurs formes collées :
+ *      `revelationsDansAlias`, D48 (2) et (3)) et qu'aucun autre outil ne partage, après
+ *      normalisation (`normaliserAlias`, D45 (2)) ;
  *   4. l'instantané est calculé — `items_p_au_gel` par `couverture.ts:itemsPAuGel`,
  *      `items_p_verifies` en est la longueur (la définition de `itemsPComptesAuGel`), `sous_seuil`
  *      le seuil du §4 — puis validé contre `run.schema.json#/properties/perimetre`.
@@ -290,29 +292,78 @@ function exigeAlias(outil: OutilCommun): boolean {
 }
 
 /**
- * D45 (2) : la seule comparaison des alias aveugles, entre eux et avec le libellé et l'éditeur des
- * outils — NFKD, diacritiques (marques combinantes) retirés, minuscules, espaces repliés en un seul
+ * D45 (2) : la seule normalisation des alias aveugles, entre eux et avec les champs qui nomment un
+ * outil — NFKD, diacritiques (marques combinantes) retirés, minuscules, espaces repliés en un seul
  * et retirés aux deux bouts. « Éditeur  Alpha » et « editeur alpha » sont le même texte.
  */
 export function normaliserAlias(texte: string): string {
   return texte.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/gu, " ").trim();
 }
 
+/** D48 (3) : un mot de 3 lettres au moins, après normalisation, est significatif ; « ai », « le » ne le sont pas. */
+export const LETTRES_MOT_SIGNIFICATIF = 3;
+
+/** Ce qui n'est ni lettre ni chiffre sépare les mots (espace, tiret, souligné, apostrophe…). */
+const SEPARATEURS = /[^\p{L}\p{N}]+/gu;
+
+/** Ce qu'un alias trahit d'un texte qui nomme un outil : un de ses mots significatifs, ou sa forme collée. */
+export interface Revelation {
+  readonly nature: "mot" | "forme_collee";
+  /** Le mot ou la forme collée, normalisés, tels que trouvés dans l'alias. */
+  readonly trouve: string;
+}
+
+function motsSignificatifs(normalise: string): readonly string[] {
+  const mots = normalise.split(SEPARATEURS).filter((mot) => [...mot].length >= LETTRES_MOT_SIGNIFICATIF);
+  return [...new Set(mots)];
+}
+
+function formeCollee(normalise: string): string {
+  return normalise.replace(SEPARATEURS, "");
+}
+
+/**
+ * D48 (3) : la seule comparaison d'un alias à un texte qui nomme un outil, l'un et l'autre passés par
+ * `normaliserAlias`. L'alias trahit le texte s'il contient un de ses mots significatifs (« Mistral »
+ * contre « Mistral AI ») ou sa forme sans espaces ni séparateurs, comparée à la forme collée de
+ * l'alias (« LeChat » contre « Le Chat »). Ces deux règles couvrent l'inclusion du texte entier.
+ * Rend tout ce qui est trouvé, mots d'abord ; vide, l'alias ne trahit pas ce texte.
+ */
+export function revelationsDansAlias(alias: string, texte: string): readonly Revelation[] {
+  const alias_normalise = normaliserAlias(alias);
+  const texte_normalise = normaliserAlias(texte);
+  const mots: readonly Revelation[] = motsSignificatifs(texte_normalise)
+    .filter((mot) => alias_normalise.includes(mot))
+    .map((mot) => ({ nature: "mot", trouve: mot }));
+  const collee = formeCollee(texte_normalise);
+  const forme: readonly Revelation[] =
+    collee !== "" && formeCollee(alias_normalise).includes(collee) ? [{ nature: "forme_collee", trouve: collee }] : [];
+  return [...mots, ...forme];
+}
+
 /**
  * Ce qui, dans un outil saisi, le nomme : `libelle` (le périmètre ne porte pas de champ « nom »
- * distinct de lui) et `editeur`. Un alias qui contient l'un d'eux, de n'importe quel outil du
+ * distinct de lui), `editeur` et `outil_id` (D48 (2) : clé stable, ses tirets et soulignés
+ * découpent des mots comme les espaces). Un alias qui en trahit un, de n'importe quel outil du
  * périmètre, trahit un outil au juge (§7).
  */
-const CHAMPS_REVELATEURS = ["libelle", "editeur"] as const;
+const CHAMPS_REVELATEURS = ["libelle", "editeur", "outil_id"] as const;
+
+const NATURE: Readonly<Record<Revelation["nature"], string>> = { mot: "le mot", forme_collee: "la forme collée" };
+
+function enMots(revelations: readonly Revelation[]): string {
+  return revelations.map((revelation) => `${NATURE[revelation.nature]} « ${revelation.trouve} »`).join(", ");
+}
 
 function motifsRevelateurs(outil_id: string, alias: string, outils: readonly OutilSaisi[]): readonly string[] {
-  const normalise = normaliserAlias(alias);
   return outils.flatMap((outil) =>
-    CHAMPS_REVELATEURS.filter((champ) => normalise.includes(normaliserAlias(outil[champ]))).map(
-      (champ) =>
-        `alias_aveugle « ${alias} » de ${outil_id} contient le ${champ} « ${outil[champ]} » de l'outil ${outil.outil_id} : ` +
-        `l'aveuglement des juges ne tient plus (§7, D45 (2))`,
-    ),
+    CHAMPS_REVELATEURS.map((champ) => ({ champ, revelations: revelationsDansAlias(alias, outil[champ]) }))
+      .filter(({ revelations }) => revelations.length > 0)
+      .map(
+        ({ champ, revelations }) =>
+          `alias_aveugle « ${alias} » de ${outil_id} contient ${enMots(revelations)} du ${champ} « ${outil[champ]} » ` +
+          `de l'outil ${outil.outil_id} : l'aveuglement des juges ne tient plus (§7, D45 (2), D48 (2) et (3))`,
+      ),
   );
 }
 
