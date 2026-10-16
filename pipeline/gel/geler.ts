@@ -7,26 +7,36 @@
  *    chaque fichier validé contre son schéma), `data/formulations/` (son seul lecteur,
  *    `validation/io/data-formulations.ts`), `config/perimetre.yaml`.
  * 3. Périmètre, fenêtre, questions (`assemblage.ts:preparer`) ; destination libre, ou refus
- *    (`destination.ts`).
- * 4. Graines (le port), identifiant, tirage.
- * 5. La barrière de `pnpm symmetry`, les mêmes fonctions (`barriere.ts:jugerBarriere`), items et
+ *    (`destination.ts`) ; l'empreinte des octets de `docs/PROTOCOLE.md` (`versions.protocole_sha256` ;
+ *    le dépôt est propre, le fichier sur disque est celui du commit).
+ * 4. Le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus, sans aucun appel
+ *    réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
+ *    `date_gel`, servie par la Wayback Machine. Puis la balise, lue sur les deux relais (D44,
+ *    `balise.ts:lireBalise`). Chaque refus est nommé ; aucun repli.
+ * 5. Graines et identifiant du run, dérivés de l'aléa (D44, D45 (1)) ; tirage.
+ * 6. La barrière de `pnpm symmetry`, les mêmes fonctions (`barriere.ts:jugerBarriere`), items et
  *    mesures recoupés avec le commit inscrit. Bloquée — refus nommé, symétrie rouge, invariant
  *    violé — : `GelBloque`, rien n'est écrit (règle 4). `ecart_tolere` : le gel continue, l'écart
  *    est inscrit dans `run.json#/symetrie`.
- * 6. Les trois fichiers, écrits tout ou rien (`ecriture.ts`).
+ * 7. Les trois fichiers et les réponses brutes des relais, écrits tout ou rien (`ecriture.ts`).
  *
  * Le gel lit `data/` et n'y écrit jamais (règle 3) : il écrit sous `runs/` ou sous la sortie demandée.
+ * Le réseau ne passe que par les ports `relais` et `wayback` ; l'heure, que par `maintenant`.
  */
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
+import { lireInstant } from "../interrogation/heure-paris.ts";
 import { lireFormulationsData } from "../../validation/io/data-formulations.ts";
 import type { Violation } from "../questions/invariants.ts";
 import type { Item, Mesure, Question, Symetrie, Tirage } from "../questions/types.ts";
 import type { FormulationsValidees } from "../reformulation/relecture.ts";
 import { fichiersDuGel, preparer, runAuGel, tirerAuGel } from "./assemblage.ts";
 import type { EntreesGel } from "./assemblage.ts";
+import { exigerTourEmis, identifiantDuRun, lireBalise, tourAuGel, valeursDesGraines } from "./balise.ts";
+import type { BaliseLue } from "./balise.ts";
 import { estUnRefus, jugerBarriere, lireRepertoire } from "./barriere.ts";
 import type { Refus, VerdictBarriere } from "./barriere.ts";
 import { lireConfigurationGel } from "./configuration.ts";
@@ -34,17 +44,24 @@ import { exigerDepotPropre } from "./depot.ts";
 import { destinationDuRun } from "./destination.ts";
 import { ecrireToutOuRien } from "./ecriture.ts";
 import type { EcrireFichier } from "./ecriture.ts";
-import type { SourceDeGraines } from "./graines.ts";
+import { verifierEngagement } from "./engagement.ts";
+import type { Engagement } from "./engagement.ts";
+import type { LireHttp } from "./reseau.ts";
 
 export interface OptionsGel {
-  /** La racine du dépôt lu : `data/`, `config/`, et `runs/` quand `sortie` est absente. */
+  /** La racine du dépôt lu : `data/`, `config/`, `docs/PROTOCOLE.md`, et `runs/` quand `sortie` est absente. */
   readonly racine: string;
   /** Absente : `runs/` du dépôt (gel réel, l'auteur seul). Présente : hors de `runs/`. */
   readonly sortie: string | undefined;
   readonly type_run: string;
-  readonly source_graines: SourceDeGraines;
-  /** L'identifiant (ULID) du run. */
-  readonly identifiant: () => string;
+  /** L'URL de la capture Wayback du commit gelé (D46) ; absente, le gel est refusé. */
+  readonly engagement: string | undefined;
+  /** Le port des deux relais drand. */
+  readonly relais: LireHttp;
+  /** Le port de l'API de disponibilité de la Wayback Machine. */
+  readonly wayback: LireHttp;
+  /** L'instant présent, en millisecondes : un tour pas encore émis est refusé sans appel réseau. */
+  readonly maintenant: () => number;
   readonly ecrire: EcrireFichier;
 }
 
@@ -52,6 +69,7 @@ export interface ResultatGel {
   readonly repertoire: string;
   readonly run_id: string;
   readonly commit: string;
+  readonly tour: number;
   readonly symetrie: Symetrie;
   readonly questions: readonly Question[];
   readonly tirage: Tirage;
@@ -89,6 +107,7 @@ interface Disposition {
   readonly formulations: string;
   readonly perimetre: string;
   readonly configuration: string;
+  readonly protocole: string;
 }
 
 function disposition(racine: string): Disposition {
@@ -98,6 +117,7 @@ function disposition(racine: string): Disposition {
     formulations: join(racine, "data", "formulations"),
     perimetre: join(racine, "config", "perimetre.yaml"),
     configuration: join(racine, "config", "gel.json"),
+    protocole: join(racine, "docs", "PROTOCOLE.md"),
   };
 }
 
@@ -114,15 +134,36 @@ function lireEntrees(chemins: Disposition): EntreesGel {
   return { perimetre_brut, provenance_perimetre: chemins.perimetre, configuration, items, mesures, formulations };
 }
 
+function sha256DuFichier(chemin: string): string {
+  return createHash("sha256").update(readFileSync(chemin)).digest("hex");
+}
+
+interface Alea {
+  readonly engagement: Engagement;
+  readonly balise: BaliseLue;
+}
+
+/** Tour émis, puis engagement, puis balise : le premier refus arrête tout, rien n'est écrit. */
+async function lireAlea(options: OptionsGel, commit: string, date_gel_ms: number): Promise<Alea> {
+  const tour = tourAuGel(date_gel_ms);
+  exigerTourEmis(tour, options.maintenant());
+  const engagement = await verifierEngagement(options.engagement, commit, date_gel_ms, options.wayback);
+  const balise = await lireBalise(tour, options.relais);
+  return { engagement, balise };
+}
+
 export async function geler(options: OptionsGel): Promise<ResultatGel> {
   const commit = exigerDepotPropre(options.racine);
   const chemins = disposition(options.racine);
   const entrees = lireEntrees(chemins);
   const prepare = preparer(entrees);
   const destination = destinationDuRun(options.racine, options.sortie, prepare.date_repertoire);
+  const protocole_sha256 = sha256DuFichier(chemins.protocole);
 
-  const valeurs = await options.source_graines.graines();
-  const tire = tirerAuGel(prepare, entrees, options.identifiant(), valeurs);
+  const date_gel_ms = lireInstant(prepare.perimetre.date_gel, `${chemins.perimetre}, date_gel`);
+  const { engagement, balise } = await lireAlea(options, commit, date_gel_ms);
+  const run_id = identifiantDuRun(date_gel_ms, balise.alea);
+  const tire = tirerAuGel(prepare, entrees, run_id, valeursDesGraines(balise.alea));
   const verdict = jugerBarriere({
     repertoire_items: chemins.items,
     repertoire_mesures: chemins.mesures,
@@ -130,12 +171,12 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
     questions: prepare.questions,
     items: entrees.items,
     mesures: entrees.mesures,
-    run: { ...runAuGel(prepare, tire.run_id), versions: { donnees_commit: commit } },
+    run: { ...runAuGel(prepare, run_id), versions: { donnees_commit: commit } },
   });
   if (verdict.bloque || estUnRefus(verdict.symetrie)) throw new GelBloque(verdict);
 
   const symetrie = verdict.symetrie;
-  const fichiers = fichiersDuGel(prepare, entrees, tire, { type_run: options.type_run, commit, symetrie });
-  const repertoire = ecrireToutOuRien(destination, fichiers, options.ecrire);
-  return { repertoire, run_id: tire.run_id, commit, symetrie, questions: prepare.questions, tirage: tire.resultat.tirage };
+  const meta = { type_run: options.type_run, commit, symetrie, protocole_sha256, balise, engagement };
+  const repertoire = ecrireToutOuRien(destination, fichiersDuGel(prepare, entrees, tire, meta), options.ecrire);
+  return { repertoire, run_id, commit, tour: balise.tour, symetrie, questions: prepare.questions, tirage: tire.resultat.tirage };
 }

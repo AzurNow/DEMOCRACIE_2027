@@ -363,8 +363,9 @@ describe("exemples de schema/exemples/", () => {
   // 262 → 266 : décisions D39 et D42, deux propositions de formulation valides (acceptée, rejetée) et deux invalides (brut et brut_texte ; AUCUNE recopiée).
   // 266 → 273 : décisions D39 et D42 (relecture des formulations), deux valides et deux invalides du nouveau schéma formulations-validees (neutre produite par un modèle ; sens non préservé), un valide et deux invalides du nouveau schéma refus-formulation (commentaire blanc ; aucun registre).
   // 273 → 278 : décision D41 (lot gel), deux valides (complet, brouillon) et trois invalides (clé inconnue ; juge sans version_prompt ; fenêtre sans décalage) du nouveau schéma config-gel.
-  it("charge les 278 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(278);
+  // 278 → 284 : lot gel, PR 2a (D44, D46), un valide (pilote sans balise ni engagement) et cinq invalides (mensuel sans balise ; sans engagement ; signature de 47 octets ; horodatage de 12 chiffres ; un seul relais) du schéma run.
+  it("charge les 284 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(284);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

@@ -1,7 +1,8 @@
 /**
  * Fixtures du lot gel : un dépôt Git jetable qui a la disposition du vrai (`data/items/`,
- * `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`), commité, donc
- * propre. Jamais le dépôt du projet : `pipeline/gel/geler.ts:geler` reçoit sa racine.
+ * `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`,
+ * `docs/PROTOCOLE.md`), commité, donc propre. Jamais le dépôt du projet : `pipeline/gel/geler.ts:geler`
+ * reçoit sa racine. Le réseau (relais drand, Wayback) est rejoué par `reseau-fixture.ts`.
  *
  * Aucun candidat, outil, sondage, mesure ni URL réels : tout est ouvertement fictif (`demo-*`,
  * `*.invalid`). Les items sont fabriqués par les fabriques du lot questions et complétés de ce que
@@ -15,8 +16,7 @@ import { join } from "node:path";
 import { stringify } from "yaml";
 import { valider } from "../../outils/schemas/valider.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
-import { grainesFixes } from "../../pipeline/gel/graines.ts";
-import type { ValeursDesGraines } from "../../pipeline/gel/graines.ts";
+import { DEPOT_PUBLIC } from "../../pipeline/gel/engagement.ts";
 import { ecrireExclusif } from "../../pipeline/gel/ecriture.ts";
 import { THEMES } from "../../pipeline/questions/types.ts";
 import type { CandidatNomme, Item, Mesure, Theme } from "../../pipeline/questions/types.ts";
@@ -25,11 +25,12 @@ import type { Tache } from "../../pipeline/reformulation/entrees.ts";
 import { formulationsValideesDe } from "../../pipeline/reformulation/relecture.ts";
 import type { FormulationsValidees, PropositionAcceptee } from "../../pipeline/reformulation/relecture.ts";
 import { mesure as mesureValidee } from "../aides/fabriques.ts";
-import { commiterTout, initialiserDepot } from "../aides/depot.ts";
-import { identifiant, itemA, itemF, itemP, mesure } from "../questions/fabriques.ts";
+import { commiterTout, head, initialiserDepot } from "../aides/depot.ts";
+import { itemA, itemF, itemP, mesure } from "../questions/fabriques.ts";
 import type { OptionsItem } from "../questions/fabriques.ts";
 import { promu } from "../reformulation/aides.ts";
 import { identifiants, proposition, RELECTEUR, toutCoche } from "../reformulation/fabriques-relecture.ts";
+import { relaisDeFixture, waybackDeFixture } from "./reseau-fixture.ts";
 
 /** 2026-12-01T00:00:00Z : le gel tombe à minuit UTC, un `valide_au` du 1er décembre l'atteint pile. */
 export const GEL = "2026-12-01T01:00:00+01:00";
@@ -47,13 +48,18 @@ export const CONFIGURATION_GEL = {
   alias_aveugles: { "outil-alpha": "O07" },
 };
 
-export const VALEURS_GRAINES: ValeursDesGraines = {
-  tirage: 20261201,
-  echantillon_humain: 20261202,
-  bootstrap: 20261203,
-  permutation: 20261204,
-  contrefactuel: 20261205,
-};
+/** La capture de l'engagement (D46) : 2026-11-30T12:00:00Z, avant les deux `date_gel` des jeux. */
+export const HORODATAGE_ENGAGEMENT = "20261130120000";
+
+/** L'instant présent des gels d'essai : tous les tours des jeux sont émis. */
+export const MAINTENANT = Date.parse("2026-12-02T00:00:00Z");
+
+/** Le texte de `docs/PROTOCOLE.md` du dépôt de fixture, ouvertement fictif. */
+export const PROTOCOLE_DE_FIXTURE = "# Protocole de fixture\n\nTexte fictif du dépôt d'essai du gel ; aucune règle réelle.\n";
+
+export function engagementDe(commit: string, horodatage = HORODATAGE_ENGAGEMENT): string {
+  return `https://web.archive.org/web/${horodatage}/${DEPOT_PUBLIC}/commit/${commit}`;
+}
 
 /* ------------------------------------------------------------------ données */
 
@@ -188,7 +194,7 @@ function ecrireJson(chemin: string, valeur: unknown): void {
 
 /** Pose le jeu sous `racine` (data/, config/), validé contre les schémas, sans commiter. */
 export function poserJeu(racine: string, jeu: Jeu): void {
-  for (const repertoire of ["data/items", "data/mesures", "data/formulations", "config"]) {
+  for (const repertoire of ["data/items", "data/mesures", "data/formulations", "config", "docs"]) {
     mkdirSync(join(racine, repertoire), { recursive: true });
   }
   for (const item of jeu.items) ecrireJson(join(racine, "data/items", `${item.id}.json`), valider("item", item, item.id));
@@ -198,6 +204,7 @@ export function poserJeu(racine: string, jeu: Jeu): void {
   for (const lue of formulations) ecrireJson(join(racine, "data/formulations", `${lue.question_id}.json`), lue);
   writeFileSync(join(racine, "config/perimetre.yaml"), stringify(perimetreSaisi(jeu.date_gel, jeu.candidats)), "utf8");
   ecrireJson(join(racine, "config/gel.json"), jeu.configuration === undefined ? CONFIGURATION_GEL : jeu.configuration);
+  writeFileSync(join(racine, "docs/PROTOCOLE.md"), PROTOCOLE_DE_FIXTURE, "utf8");
 }
 
 /** Un dépôt Git temporaire, propre, qui porte le jeu. */
@@ -212,14 +219,19 @@ export function recommiter(racine: string, message: string): void {
   commiterTout(racine, message);
 }
 
-/** Les options d'un gel d'essai : toujours une sortie hors de `runs/`, graines et identifiant fixes. */
+/**
+ * Les options d'un gel d'essai : une sortie hors de `runs/`, l'engagement du HEAD du dépôt de
+ * fixture, les relais et la Wayback Machine de fixture, une heure fixe.
+ */
 export function optionsGel(racine: string, sortie: string | undefined, surcharges: Partial<OptionsGel> = {}): OptionsGel {
   return {
     racine,
     sortie,
     type_run: "pilote",
-    source_graines: grainesFixes(VALEURS_GRAINES, "graines des tests"),
-    identifiant: () => identifiant("run:gel"),
+    engagement: engagementDe(head(racine)),
+    relais: relaisDeFixture().lire,
+    wayback: waybackDeFixture().lire,
+    maintenant: () => MAINTENANT,
     ecrire: ecrireExclusif,
     ...surcharges,
   };

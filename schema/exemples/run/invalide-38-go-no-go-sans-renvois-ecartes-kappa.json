@@ -46,6 +46,43 @@
       "version": "1"
     }
   },
+  "balise": {
+    "chaine": {
+      "empreinte": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+      "genese": 1692803367,
+      "periode": 3,
+      "schema_id": "bls-unchained-g1-rfc9380"
+    },
+    "tour": 34432612,
+    "signature": "36bf2d978a0c35308b64a59e919ea58b9c38fa9fc6eb2324902b8c33b8f572a4c5c7637e044c11d1b67c9f03f2122ed8",
+    "alea": "47ca82400bd62e4b1d517bde589fdbe264dd37d04ccf69d456472bafdbd2bc33",
+    "relais": [
+      {
+        "base": "https://api.drand.sh",
+        "url": "https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/34432612",
+        "chemin": "runs/2026-12-01/balise/api.drand.sh.json",
+        "sha256": "03023a2ee663e76cae17c05b3a383e6a515e62e4fe073ff04a0c9d3868d0c599"
+      },
+      {
+        "base": "https://drand.cloudflare.com",
+        "url": "https://drand.cloudflare.com/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/34432612",
+        "chemin": "runs/2026-12-01/balise/drand.cloudflare.com.json",
+        "sha256": "03023a2ee663e76cae17c05b3a383e6a515e62e4fe073ff04a0c9d3868d0c599"
+      }
+    ],
+    "cles": {
+      "tirage": "tirage",
+      "echantillon_humain": "echantillon_humain",
+      "bootstrap": "bootstrap",
+      "permutation": "permutation",
+      "contrefactuel": "contrefactuel"
+    },
+    "cle_identifiant": "run_id"
+  },
+  "engagement": {
+    "url": "https://web.archive.org/web/20261130050000/https://github.com/AzurNow/DEMOCRACIE_2027/commit/e6fb06210fafc02fd7479ddbed2d042cc3a5155e",
+    "horodatage": "20261130050000"
+  },
   "perimetre": {
     "regime_inclusion": "avant_liste_officielle",
     "candidats": [

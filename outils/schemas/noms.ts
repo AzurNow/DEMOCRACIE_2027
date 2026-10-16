@@ -74,8 +74,7 @@
  *
  * `config-gel` décrit `config/gel.json`, les paramètres du gel d'un run que run.json exige et
  * qu'aucune autre source ne porte (version du protocole, début de fenêtre, juges, alias aveugles),
- * saisis par l'auteur et lus par `pnpm geler` (décision D41) ; il porte aussi, en `$defs`, la forme
- * du fichier de `--graines-fixes`. Le trente et unième.
+ * saisis par l'auteur et lus par `pnpm geler` (décision D41). Le trente et unième.
  */
 export const NOMS_SCHEMAS = [
   "commun",

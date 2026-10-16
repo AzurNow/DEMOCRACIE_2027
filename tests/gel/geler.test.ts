@@ -2,36 +2,55 @@
  * Lot gel, PR 1 : `pnpm geler` sur fixtures (décisions D41, D44). Chaque cas limite du brief a son
  * test, nommé « cas n ». Tous les gels visent un dépôt Git jetable (`fixtures.ts`) et une sortie
  * temporaire ; `runs/` du projet est photographié avant et après, et ne doit pas bouger (cas 3).
+ *
+ * Lot gel, PR 2a (D44, D45 (1), D46) : la balise et l'engagement au bout de la chaîne, nommés
+ * « balise, cas n » ; le réseau est rejoué par `reseau-fixture.ts`, jamais appelé.
  */
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { valider } from "../../outils/schemas/valider.ts";
+import { BaliseRefusee, identifiantDuRun, QUICKNET, RELAIS, urlTour, valeursDesGraines } from "../../pipeline/gel/balise.ts";
 import { DepotSale } from "../../pipeline/gel/depot.ts";
 import { RunDejaGele, SortieSousRuns } from "../../pipeline/gel/destination.ts";
 import { ConfigurationGelIncomplete } from "../../pipeline/gel/configuration.ts";
+import { EngagementRefuse } from "../../pipeline/gel/engagement.ts";
 import { geler, GelBloque } from "../../pipeline/gel/geler.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
 import { head, RACINE_PROJET } from "../aides/depot.ts";
-import { identifiant } from "../questions/fabriques.ts";
 import {
   CONFIGURATION_GEL,
   depotDuJeu,
+  engagementDe,
+  GEL,
   GEL_MINUIT_TRENTE,
+  HORODATAGE_ENGAGEMENT,
   itemPDeData,
   optionsGel,
+  PROTOCOLE_DE_FIXTURE,
   recommiter,
   relue,
   tachesDuJeu,
 } from "./fixtures.ts";
 import type { Jeu } from "./fixtures.ts";
 import { ITEM_FIN_AU_GEL, ITEM_P1, jeuEcartTolere, jeuNominal, jeuRouge, MESURE_FISC_1 } from "./jeux.ts";
+import { octetsJson, relaisDeFixture, reponseJson, reponseTour, waybackDeFixture } from "./reseau-fixture.ts";
 
 const DATE = "2026-12-01";
 const RUNS_DU_PROJET = join(RACINE_PROJET, "runs");
+/** `GEL` tombe exactement sur l'émission de ce tour (`tests/gel/balise.test.ts`, cas 1). */
+const TOUR_DU_GEL = 34426612;
+const ARCHIVES = RELAIS.map((relais) => `balise/${relais.nom}.json`);
+const FICHIERS_DU_RUN = ["balise", ...ARCHIVES, "questions.json", "run.json", "tirage.json"].sort();
+
+function sha256(octets: string | Uint8Array): string {
+  return createHash("sha256").update(octets).digest("hex");
+}
 
 /* ------------------------------------------------------------------ outillage */
 
@@ -101,12 +120,20 @@ async function gelNominal(jeu: Jeu = jeuNominal()) {
 describe("gel nominal", () => {
   it("écrit run.json, tirage.json et questions.json, statut planifie, commits inscrits", async () => {
     const { racine, run, resultat } = await gelNominal();
-    expect(readdirSync(run).sort()).toEqual(["questions.json", "run.json", "tirage.json"]);
+    expect(readdirSync(run).sort()).toEqual(["balise", "questions.json", "run.json", "tirage.json"]);
+    expect(readdirSync(join(run, "balise")).sort()).toEqual(RELAIS.map((relais) => `${relais.nom}.json`).sort());
     const objet = json(run, "run.json");
     expect(objet["statut"]).toBe("planifie");
     expect(objet["type_run"]).toBe("pilote");
-    expect(objet["id"]).toBe(identifiant("run:gel"));
-    expect(objet["versions"]).toEqual({ protocole: CONFIGURATION_GEL.version_protocole, code_commit: head(racine), donnees_commit: head(racine) });
+    // D45 (1) : l'identifiant est dérivé de date_gel et de l'aléa du tour, jamais tiré.
+    expect(objet["id"]).toBe(identifiantDuRun(Date.parse(GEL), reponseTour(TOUR_DU_GEL).randomness));
+    // Balise, cas 12 : versions.protocole_sha256 est l'empreinte de docs/PROTOCOLE.md du dépôt de fixture.
+    expect(objet["versions"]).toEqual({
+      protocole: CONFIGURATION_GEL.version_protocole,
+      protocole_sha256: sha256(PROTOCOLE_DE_FIXTURE),
+      code_commit: head(racine),
+      donnees_commit: head(racine),
+    });
     expect(objet["fenetre"]).toEqual({ debut: CONFIGURATION_GEL.fenetre_debut, fin: "2026-12-03T06:00:00.000+01:00" });
     expect(objet["taux_echantillon_humain"]).toBe(0.1);
     expect((objet["juges"] as Record<string, unknown>[]).map((juge) => juge["retire"])).toEqual([false, false]);
@@ -187,7 +214,7 @@ describe("cas 2 : runs/<date>/ existe déjà", () => {
   it("cas 2 : un second gel vers la même sortie est refusé, le premier reste intact", async () => {
     const { racine, sortie, run } = await gelNominal();
     const avant = lire(run, "run.json");
-    expect(await refusDe(optionsGel(racine, sortie, { identifiant: () => identifiant("run:second") }))).toBeInstanceOf(RunDejaGele);
+    expect(await refusDe(optionsGel(racine, sortie))).toBeInstanceOf(RunDejaGele);
     expect(lire(run, "run.json")).toBe(avant);
   });
 });
@@ -196,7 +223,7 @@ describe("cas 3 : --sortie", () => {
   it("cas 3 : sans --sortie, le gel écrit sous runs/ du dépôt lu, et seulement là", async () => {
     const racine = depot(jeuNominal());
     await geler(optionsGel(racine, undefined));
-    expect(readdirSync(join(racine, "runs", DATE)).sort()).toEqual(["questions.json", "run.json", "tirage.json"]);
+    expect(readdirSync(join(racine, "runs", DATE)).sort()).toEqual(["balise", "questions.json", "run.json", "tirage.json"]);
     expect(readdirSync(join(racine, "runs"))).toEqual([DATE]);
   });
 
@@ -374,28 +401,36 @@ describe("cas 10 : mesure modifiée après donnees_commit", () => {
 });
 
 describe("cas 11 : reproductibilité", () => {
-  it("cas 11 : deux gels du même commit, même identifiant ⇒ trois fichiers identiques octet pour octet", async () => {
+  it("cas 11, balise, cas 9 : deux gels du même commit et de la même balise ⇒ les trois fichiers et les archives de balise identiques octet pour octet", async () => {
+    // D45 (1) : l'identifiant du run ne se choisit plus, il est dérivé de date_gel et de l'aléa ;
+    // tirage.json (qui porte run_id et dont le générateur est amorcé par lui) et run.json sont donc
+    // identiques eux aussi, et pas seulement questions.json.
     const racine = depot(jeuNominal());
     const [a, b] = [temporaire("banc-gel-a-"), temporaire("banc-gel-b-")];
     await geler(optionsGel(racine, a));
     await geler(optionsGel(racine, b));
-    for (const nom of ["questions.json", "tirage.json", "run.json"]) {
+    expect(arborescence(join(b, DATE))).toEqual(FICHIERS_DU_RUN);
+    expect(arborescence(join(a, DATE))).toEqual(FICHIERS_DU_RUN);
+    for (const nom of ["questions.json", "tirage.json", "run.json", ...ARCHIVES]) {
       expect(readFileSync(join(b, DATE, nom))).toEqual(readFileSync(join(a, DATE, nom)));
     }
+    expect(json(join(a, DATE), "tirage.json")["run_id"]).toBe(json(join(a, DATE), "run.json")["id"]);
   });
 
-  it("cas 11 : deux gels du même commit, identifiants différents ⇒ questions.json identique ; seul l'identifiant du run est propre à chaque gel", async () => {
-    // L'identifiant du run est dans run.json#/id, mais aussi dans tirage.json#/run_id, que le schéma
-    // exige égal à run.id (TirageDUnAutreRun), et il amorce le générateur du tirage
-    // (pipeline/questions/tirage.ts:amorce). Le brief attendait tirage.json identique : c'est
-    // impossible tant que run_id y figure ; écart signalé dans le rapport du lot.
-    const racine = depot(jeuNominal());
+  it("cas 11 : deux balises différentes (deux date_gel) ⇒ identifiants et graines différents, chacun dérivé de sa balise", async () => {
+    const racine_a = depot(jeuNominal());
+    const racine_b = depot(jeuNominal(GEL_MINUIT_TRENTE));
     const [a, b] = [temporaire("banc-gel-a-"), temporaire("banc-gel-b-")];
-    await geler(optionsGel(racine, a, { identifiant: () => identifiant("run:a") }));
-    await geler(optionsGel(racine, b, { identifiant: () => identifiant("run:b") }));
-    expect(readFileSync(join(b, DATE, "questions.json"))).toEqual(readFileSync(join(a, DATE, "questions.json")));
-    expect(json(join(a, DATE), "tirage.json")["run_id"]).toBe(identifiant("run:a"));
-    expect(json(join(b, DATE), "tirage.json")["run_id"]).toBe(identifiant("run:b"));
+    await geler(optionsGel(racine_a, a));
+    await geler(optionsGel(racine_b, b));
+    const [run_a, run_b] = [json(join(a, DATE), "run.json"), json(join(b, DATE), "run.json")];
+    const [balise_a, balise_b] = [run_a["balise"] as { tour: number; alea: string }, run_b["balise"] as { tour: number; alea: string }];
+    expect(balise_a.tour).not.toBe(balise_b.tour);
+    expect(run_a["id"]).not.toBe(run_b["id"]);
+    expect(run_b["id"]).toBe(identifiantDuRun(Date.parse(GEL_MINUIT_TRENTE), balise_b.alea));
+    expect(json(join(b, DATE), "tirage.json")["run_id"]).toBe(run_b["id"]);
+    const graines_b = run_b["graines"] as Record<string, { valeur: number }>;
+    expect(Object.fromEntries(Object.entries(graines_b).map(([nom, graine]) => [nom, graine.valeur]))).toEqual(valeursDesGraines(balise_b.alea));
   });
 });
 
@@ -404,10 +439,10 @@ describe("cas 12 : écriture tout ou rien", () => {
     const racine = depot(jeuNominal());
     const sortie = temporaire("banc-gel-sortie-");
     let appels = 0;
-    const ecrire = (chemin: string, texte: string): void => {
+    const ecrire = (chemin: string, contenu: string | Uint8Array): void => {
       appels += 1;
       if (appels === 3) throw new Error("disque plein (simulé)");
-      writeFileSync(chemin, texte, { encoding: "utf8", flag: "wx" });
+      writeFileSync(chemin, contenu, { encoding: "utf8", flag: "wx" });
     };
     const erreur = await refusDe(optionsGel(racine, sortie, { ecrire }));
     expect(erreur.message).toBe("disque plein (simulé)");
@@ -436,6 +471,200 @@ describe("cas 13 : bout en bout", () => {
   });
 });
 
+/* ------------------------------------------------ PR 2a : balise et engagement */
+
+interface BaliseDuRun {
+  chaine: Record<string, unknown>;
+  tour: number;
+  signature: string;
+  alea: string;
+  relais: { base: string; url: string; chemin: string; sha256: string }[];
+  cles: Record<string, string>;
+  cle_identifiant: string;
+}
+
+describe("balise, cas 11 : run.json porte la balise et l'engagement", () => {
+  it("balise, cas 11 : run.json passe le schéma, même déclaré mensuel (balise et engagement exigés hors pilote)", async () => {
+    const { run } = await gelNominal();
+    const objet = json(run, "run.json");
+    expect(() => valider("run", objet, "run.json du gel")).not.toThrow();
+    expect(() => valider("run", { ...objet, type_run: "mensuel" }, "run.json du gel, mensuel")).not.toThrow();
+    const { balise: _b, ...sans_balise } = objet;
+    expect(() => valider("run", { ...sans_balise, type_run: "mensuel" }, "sans balise")).toThrow(/balise/);
+    const { engagement: _e, ...sans_engagement } = objet;
+    expect(() => valider("run", { ...sans_engagement, type_run: "mensuel" }, "sans engagement")).toThrow(/engagement/);
+  });
+
+  it("la balise inscrite : chaîne, tour, signature, aléa recalculé, relais et empreinte de chaque archive, clés", async () => {
+    const { run } = await gelNominal();
+    const balise = json(run, "run.json")["balise"] as BaliseDuRun;
+    const tour = reponseTour(TOUR_DU_GEL);
+    expect(balise.chaine).toEqual({ ...QUICKNET });
+    expect(balise.tour).toBe(TOUR_DU_GEL);
+    expect(balise.signature).toBe(tour.signature);
+    expect(balise.alea).toBe(sha256(Buffer.from(tour.signature, "hex")));
+    expect(balise.relais.map((relais) => relais.base)).toEqual(RELAIS.map((relais) => relais.base));
+    expect(balise.relais.map((relais) => relais.url)).toEqual(RELAIS.map((relais) => urlTour(relais, TOUR_DU_GEL)));
+    expect(balise.relais.map((relais) => relais.chemin)).toEqual(ARCHIVES.map((archive) => `runs/${DATE}/${archive}`));
+    for (const [rang, archive] of ARCHIVES.entries()) {
+      const octets = readFileSync(join(run, archive));
+      // Règle 7 : la réponse brute, octet pour octet, et son empreinte.
+      expect(Buffer.from(octets)).toEqual(Buffer.from(octetsJson(tour)));
+      expect(balise.relais[rang]?.sha256).toBe(sha256(octets));
+    }
+    expect(balise.cles).toEqual({
+      tirage: "tirage",
+      echantillon_humain: "echantillon_humain",
+      bootstrap: "bootstrap",
+      permutation: "permutation",
+      contrefactuel: "contrefactuel",
+    });
+    expect(balise.cle_identifiant).toBe("run_id");
+    const graines = json(run, "run.json")["graines"] as Record<string, { valeur: number }>;
+    expect(Object.fromEntries(Object.entries(graines).map(([nom, graine]) => [nom, graine.valeur]))).toEqual(valeursDesGraines(balise.alea));
+  });
+
+  it("l'engagement inscrit : l'URL de capture et son horodatage", async () => {
+    const { racine, run } = await gelNominal();
+    expect(json(run, "run.json")["engagement"]).toEqual({ url: engagementDe(head(racine)), horodatage: HORODATAGE_ENGAGEMENT });
+  });
+
+  it("balise, cas 11 : la sortie du gel passe pnpm symmetry, archives de balise comprises", async () => {
+    const { racine, run } = await gelNominal();
+    expect(arborescence(run)).toEqual(FICHIERS_DU_RUN);
+    const resultat = symmetry(racine, run);
+    expect(resultat.status).toBe(0);
+    expect(resultat.sortie).toContain("Contrôles verts : le run peut être lancé.");
+  });
+});
+
+/** Un gel refusé : l'erreur, et la preuve que rien n'est écrit. */
+async function refusSansEcriture(surcharges: (racine: string) => Partial<OptionsGel>) {
+  const racine = depot(jeuNominal());
+  const sortie = temporaire("banc-gel-sortie-");
+  const erreur = await refusDe(optionsGel(racine, sortie, surcharges(racine)));
+  expect(arborescence(sortie)).toEqual([]);
+  return erreur;
+}
+
+describe("balise, cas 3, 4 et 7 : refus de la balise, rien écrit", () => {
+  it("balise, cas 3 : les deux relais diffèrent par la signature ⇒ refus, rien écrit", async () => {
+    const autre = reponseTour(TOUR_DU_GEL + 1);
+    const relais = relaisDeFixture((url) => (url === urlTour(RELAIS[1] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson({ ...autre, round: TOUR_DU_GEL }) : undefined));
+    const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
+    expect(erreur).toBeInstanceOf(BaliseRefusee);
+    expect((erreur as BaliseRefusee).motif).toBe("relais_en_desaccord");
+  });
+
+  it("balise, cas 3 : les deux relais diffèrent par le tour ⇒ refus, rien écrit", async () => {
+    const relais = relaisDeFixture((url) =>
+      url === urlTour(RELAIS[0] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson(reponseTour(TOUR_DU_GEL - 1)) : undefined,
+    );
+    const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
+    expect((erreur as BaliseRefusee).motif).toBe("tour_different");
+  });
+
+  it("balise, cas 4 : un relais injoignable ⇒ refus, rien écrit, l'autre n'est pas retenu seul", async () => {
+    const second = RELAIS[1] as (typeof RELAIS)[number];
+    const relais = relaisDeFixture((url) => (url.startsWith(second.base) ? new Error("ENOTFOUND (simulé)") : undefined));
+    const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
+    expect(erreur).toBeInstanceOf(BaliseRefusee);
+    expect((erreur as BaliseRefusee).motif).toBe("injoignable");
+    expect((erreur as BaliseRefusee).relais).toBe(second.nom);
+    // Le premier relais a répondu, et n'a pas suffi.
+    expect(relais.appels.filter((url) => url.startsWith((RELAIS[0] as (typeof RELAIS)[number]).base))).toHaveLength(2);
+  });
+
+  it("balise, cas 4 : un relais en erreur HTTP ⇒ refus, rien écrit", async () => {
+    const relais = relaisDeFixture((url) => (url === urlTour(RELAIS[1] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson({}, 500) : undefined));
+    const erreur = await refusSansEcriture(() => ({ relais: relais.lire }));
+    expect((erreur as BaliseRefusee).motif).toBe("statut_http");
+  });
+
+  it("balise, cas 5 : randomness d'un relais ≠ SHA-256(signature) ⇒ refus, rien écrit", async () => {
+    const faux = { ...reponseTour(TOUR_DU_GEL), randomness: "f".repeat(64) };
+    const relais = relaisDeFixture((url) => (url === urlTour(RELAIS[0] as (typeof RELAIS)[number], TOUR_DU_GEL) ? reponseJson(faux) : undefined));
+    expect(((await refusSansEcriture(() => ({ relais: relais.lire }))) as BaliseRefusee).motif).toBe("alea_faux");
+  });
+
+  it("balise, cas 7 : date_gel dans le futur ⇒ refus avant tout appel réseau, aucun port appelé", async () => {
+    const relais = relaisDeFixture();
+    const wayback = waybackDeFixture();
+    const erreur = await refusSansEcriture(() => ({
+      relais: relais.lire,
+      wayback: wayback.lire,
+      maintenant: () => Date.parse(GEL) - 1,
+    }));
+    expect(erreur).toBeInstanceOf(BaliseRefusee);
+    expect((erreur as BaliseRefusee).motif).toBe("pas_encore_emis");
+    expect(relais.appels).toEqual([]);
+    expect(wayback.appels).toEqual([]);
+  });
+
+  it("balise, cas 7 : date_gel à l'instant présent exact ⇒ le tour est émis, le gel passe", async () => {
+    const racine = depot(jeuNominal());
+    const sortie = temporaire("banc-gel-sortie-");
+    await geler(optionsGel(racine, sortie, { maintenant: () => Date.parse(GEL) }));
+    expect(arborescence(join(sortie, DATE))).toEqual(FICHIERS_DU_RUN);
+  });
+});
+
+describe("balise, cas 8 : engagement archivé, rien écrit", () => {
+  it("balise, cas 8 : engagement absent ⇒ refus nommant --engagement, aucun appel réseau", async () => {
+    const relais = relaisDeFixture();
+    const wayback = waybackDeFixture();
+    const erreur = await refusSansEcriture(() => ({ engagement: undefined, relais: relais.lire, wayback: wayback.lire }));
+    expect(erreur).toBeInstanceOf(EngagementRefuse);
+    expect((erreur as EngagementRefuse).motif).toBe("absent");
+    expect(erreur.message).toContain("--engagement");
+    expect([...relais.appels, ...wayback.appels]).toEqual([]);
+  });
+
+  it("balise, cas 8 : capture d'un autre commit que HEAD ⇒ refus, la balise n'est pas lue", async () => {
+    const relais = relaisDeFixture();
+    const erreur = await refusSansEcriture(() => ({ engagement: engagementDe("a".repeat(40)), relais: relais.lire }));
+    expect((erreur as EngagementRefuse).motif).toBe("autre_commit");
+    expect(relais.appels).toEqual([]);
+  });
+
+  it("balise, cas 8 : capture horodatée à date_gel exactement ⇒ refus", async () => {
+    const erreur = await refusSansEcriture((racine) => ({ engagement: engagementDe(head(racine), "20261201000000") }));
+    expect((erreur as EngagementRefuse).motif).toBe("tardif");
+  });
+
+  it("balise, cas 8 : capture postérieure à date_gel ⇒ refus", async () => {
+    const erreur = await refusSansEcriture((racine) => ({ engagement: engagementDe(head(racine), "20261201120000") }));
+    expect((erreur as EngagementRefuse).motif).toBe("tardif");
+  });
+
+  it("balise, cas 8 : Wayback ne sert pas la capture ⇒ refus, la balise n'est pas lue", async () => {
+    const relais = relaisDeFixture();
+    const wayback = waybackDeFixture(() => reponseJson({ archived_snapshots: {} }));
+    const erreur = await refusSansEcriture(() => ({ relais: relais.lire, wayback: wayback.lire }));
+    expect((erreur as EngagementRefuse).motif).toBe("non_servie");
+    expect(wayback.appels).toHaveLength(1);
+    expect(relais.appels).toEqual([]);
+  });
+});
+
+describe("balise, cas 10 : écriture tout ou rien des archives", () => {
+  it("balise, cas 10 : une erreur à l'écriture de la dernière archive de balise ne laisse aucun fichier", async () => {
+    const racine = depot(jeuNominal());
+    const sortie = temporaire("banc-gel-sortie-");
+    const ecrits: string[] = [];
+    const ecrire = (chemin: string, contenu: string | Uint8Array): void => {
+      if (chemin.endsWith(ARCHIVES[ARCHIVES.length - 1] as string)) throw new Error("disque plein à l'archive (simulé)");
+      writeFileSync(chemin, contenu, { flag: "wx" });
+      ecrits.push(chemin);
+    };
+    const erreur = await refusDe(optionsGel(racine, sortie, { ecrire }));
+    expect(erreur.message).toBe("disque plein à l'archive (simulé)");
+    // Les trois fichiers et la première archive ont été écrits dans le temporaire, puis retirés.
+    expect(ecrits).toHaveLength(4);
+    expect(arborescence(sortie)).toEqual([]);
+  });
+});
+
 /* --------------------------------------------------------------- ligne de commande */
 
 function geleCli(arguments_: readonly string[]) {
@@ -448,7 +677,7 @@ function geleCli(arguments_: readonly string[]) {
 describe("pnpm geler en ligne de commande", () => {
   it("sans --type-run : code 1, l'option nommée, rien écrit", () => {
     const sortie = temporaire("banc-gel-cli-");
-    const resultat = geleCli([`--sortie=${sortie}`, "--graines-fixes=/nulle-part.json"]);
+    const resultat = geleCli([`--sortie=${sortie}`, `--engagement=${engagementDe("a".repeat(40))}`]);
     expect(resultat.status).toBe(1);
     expect(resultat.erreur).toContain("--type-run est obligatoire");
     expect(arborescence(sortie)).toEqual([]);
@@ -456,29 +685,27 @@ describe("pnpm geler en ligne de commande", () => {
 
   it("un --type-run hors du schéma : code 1, rien écrit", () => {
     const sortie = temporaire("banc-gel-cli-");
-    const resultat = geleCli([`--sortie=${sortie}`, "--type-run=hebdo", "--graines-fixes=/nulle-part.json"]);
+    const resultat = geleCli([`--sortie=${sortie}`, "--type-run=hebdo", `--engagement=${engagementDe("a".repeat(40))}`]);
     expect(resultat.status).toBe(1);
     expect(resultat.erreur).toContain("type_run");
     expect(arborescence(sortie)).toEqual([]);
   });
 
-  it("sans --graines-fixes : code 1, la raison dite (balise drand absente), rien écrit", () => {
+  it("sans --engagement : code 1, la raison dite (capture Wayback, D46), rien écrit", () => {
     const sortie = temporaire("banc-gel-cli-");
     const resultat = geleCli([`--sortie=${sortie}`, "--type-run=pilote"]);
     expect(resultat.status).toBe(1);
-    expect(resultat.erreur).toContain("--graines-fixes est obligatoire");
-    expect(resultat.erreur).toContain("drand");
+    expect(resultat.erreur).toContain("--engagement est obligatoire");
+    expect(resultat.erreur).toContain("Wayback");
+    expect(resultat.erreur).toContain("Rien n'est écrit.");
     expect(arborescence(sortie)).toEqual([]);
   });
 
-  it("des graines fixes non conformes (quatre valeurs) : code 1, rien écrit", () => {
+  it("--graines-fixes n'existe plus : option inconnue, code 1, rien écrit", () => {
     const sortie = temporaire("banc-gel-cli-");
-    const graines = join(temporaire("banc-gel-graines-"), "graines.json");
-    writeFileSync(graines, JSON.stringify({ tirage: 1, echantillon_humain: 2, bootstrap: 3, permutation: 4 }), "utf8");
-    const resultat = geleCli([`--sortie=${sortie}`, "--type-run=pilote", `--graines-fixes=${graines}`]);
+    const resultat = geleCli([`--sortie=${sortie}`, "--type-run=pilote", "--graines-fixes=/nulle-part.json"]);
     expect(resultat.status).toBe(1);
-    expect(resultat.erreur).toContain("contrefactuel");
-    expect(resultat.erreur).toContain("Rien n'est écrit.");
+    expect(resultat.erreur).toContain("option(s) inconnue(s) : --graines-fixes");
     expect(arborescence(sortie)).toEqual([]);
   });
 });

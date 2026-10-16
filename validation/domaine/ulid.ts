@@ -16,7 +16,16 @@ const MOTIF = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
 /** 48 bits d'horodatage en millisecondes, puis 80 bits d'aléa. */
 export function ulid(maintenant: number = Date.now()): string {
-  return encoderTemps(maintenant) + encoderAlea();
+  return encoderTemps(maintenant) + encoderOctets(randomBytes(10));
+}
+
+/**
+ * Un ULID dont les 80 bits de la partie aléatoire sont donnés, et non tirés : l'identifiant d'un run,
+ * dérivé de la balise du gel (décision D45 (1), `pipeline/gel/balise.ts:identifiantDuRun`).
+ */
+export function ulidDe(millisecondes: number, octets: Uint8Array): string {
+  if (octets.length !== 10) throw new Error(`La partie aléatoire d'un ULID compte 10 octets, pas ${octets.length}.`);
+  return encoderTemps(millisecondes) + encoderOctets(octets);
 }
 
 function encoderTemps(millisecondes: number): string {
@@ -32,8 +41,7 @@ function encoderTemps(millisecondes: number): string {
   return caracteres.reverse().join("");
 }
 
-function encoderAlea(): string {
-  const octets = randomBytes(10);
+function encoderOctets(octets: Uint8Array): string {
   let valeur = 0n;
   for (const octet of octets) valeur = (valeur << 8n) | BigInt(octet);
   const caracteres: string[] = [];
