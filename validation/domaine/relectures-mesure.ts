@@ -1,0 +1,119 @@
+/**
+ * Registre des relectures de mesure : la logique, sans le disque (décision D53 (1) du 2026-10-16).
+ *
+ * Une mesure est un référent partagé entre candidats, et sa `formulation_canonique` est le texte
+ * exact substitué dans les gabarits de questions (§5, symétrie). Avant d'entrer dans
+ * `data/mesures/`, à sa création comme à chaque nouvelle version, son contenu exact est relu par
+ * l'auteur, et la relecture est inscrite dans un registre publié en ajout seul
+ * (`validation/mesures/relectures.json`). `pnpm promote` refuse d'écrire une mesure qu'aucune
+ * entrée ne couvre (règle 3 de `CLAUDE.md`).
+ *
+ * **Une règle uniforme.** Aucune distinction selon l'origine de la mesure (extraction ou autre), ni
+ * selon la raison d'une nouvelle version (une correction de thème acceptée comprise) : une
+ * relecture couvre un `(id, version, empreinte)`, et rien d'autre.
+ *
+ * **L'empreinte est recalculée depuis le contenu**, selon la définition de `mesure.empreinte`
+ * (`mesure.schema.json` : sha256 de la forme canonique de {libelle, theme, formulation_canonique,
+ * fictive}). Le champ `empreinte` porté par la mesure n'est contrôlé nulle part contre son contenu :
+ * s'y fier laisserait passer une formulation modifiée après la relecture sans que ce champ suive.
+ */
+
+import { empreinteDe } from "./empreinte.ts";
+import type { Mesure } from "./types.ts";
+
+export interface RelectureMesure {
+  readonly mesure_id: string;
+  readonly mesure_version: number;
+  /** `empreinteContenuMesure` de la mesure relue. */
+  readonly empreinte: string;
+  /** Date civile de la relecture, `AAAA-MM-JJ`. */
+  readonly date: string;
+}
+
+export type RegistreRelecturesMesure = readonly RelectureMesure[];
+
+const CHAMPS: ReadonlySet<string> = new Set(["mesure_id", "mesure_version", "empreinte", "date"]);
+const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const DATE_CIVILE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+
+export class EntreeRelectureInvalide extends Error {
+  constructor(detail: string, provenance: string) {
+    super(`Entrée du registre des relectures invalide (${provenance}) : ${detail}`);
+    this.name = "EntreeRelectureInvalide";
+  }
+}
+
+/** sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive}. */
+export function empreinteContenuMesure(mesure: Mesure): string {
+  return empreinteDe({
+    libelle: mesure.libelle,
+    theme: mesure.theme,
+    formulation_canonique: mesure.formulation_canonique,
+    fictive: mesure.fictive,
+  });
+}
+
+/** L'entrée qui couvrirait exactement `mesure`, relue le jour `date`. */
+export function relectureDe(mesure: Mesure, date: string): RelectureMesure {
+  return {
+    mesure_id: mesure.id,
+    mesure_version: mesure.version,
+    empreinte: empreinteContenuMesure(mesure),
+    date,
+  };
+}
+
+/** Vrai ssi une entrée porte exactement l'id, la version et l'empreinte du contenu de `mesure`. */
+export function mesureRelue(registre: RegistreRelecturesMesure, mesure: Mesure): boolean {
+  const empreinte = empreinteContenuMesure(mesure);
+  return registre.some(
+    (entree) => entree.mesure_id === mesure.id && entree.mesure_version === mesure.version && entree.empreinte === empreinte,
+  );
+}
+
+/**
+ * Frontière d'exécution d'une entrée, en lecture (et en écriture, PR B). Même verdict que
+ * `schema/relecture-mesure.schema.json` sur chaque cas (test d'accord) : une entrée malformée
+ * arrête, elle n'est jamais complétée ni ignorée.
+ */
+export function validerEntreeRelecture(valeur: unknown, provenance: string): RelectureMesure {
+  const brute = objetOuLeve(valeur, provenance);
+  refuserChampsEnTrop(brute, provenance);
+  return {
+    mesure_id: motifObligatoire(brute, "mesure_id", ULID, provenance),
+    mesure_version: versionObligatoire(brute, provenance),
+    empreinte: motifObligatoire(brute, "empreinte", SHA256, provenance),
+    date: motifObligatoire(brute, "date", DATE_CIVILE, provenance),
+  };
+}
+
+function objetOuLeve(valeur: unknown, provenance: string): Record<string, unknown> {
+  if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) {
+    throw new EntreeRelectureInvalide("ce n'est pas un objet JSON.", provenance);
+  }
+  return valeur as Record<string, unknown>;
+}
+
+function refuserChampsEnTrop(brute: Record<string, unknown>, provenance: string): void {
+  const enTrop = Object.keys(brute).filter((cle) => !CHAMPS.has(cle));
+  if (enTrop.length > 0) {
+    throw new EntreeRelectureInvalide(`champ(s) inattendu(s) : ${enTrop.join(", ")}.`, provenance);
+  }
+}
+
+function motifObligatoire(brute: Record<string, unknown>, cle: string, motif: RegExp, provenance: string): string {
+  const valeur = brute[cle];
+  if (typeof valeur !== "string" || !motif.test(valeur)) {
+    throw new EntreeRelectureInvalide(`champ « ${cle} » absent ou mal formé (attendu ${motif.source}).`, provenance);
+  }
+  return valeur;
+}
+
+function versionObligatoire(brute: Record<string, unknown>, provenance: string): number {
+  const valeur = brute["mesure_version"];
+  if (typeof valeur !== "number" || !Number.isInteger(valeur) || valeur < 1) {
+    throw new EntreeRelectureInvalide("champ « mesure_version » absent ou non entier ≥ 1.", provenance);
+  }
+  return valeur;
+}

@@ -13,7 +13,9 @@
  * - `reecrireMesure` refuse si le fichier a changé depuis sa lecture, si la version n'augmente pas,
  *   ou si la mesure à écrire n'est pas conforme au schéma ;
  * - `planifierMesures` dit, avant toute écriture, ce que la promotion ferait de chaque mesure citée
- *   et ce qui l'en empêche. Il n'écrit rien.
+ *   et ce qui l'en empêche. Il n'écrit rien. Une mesure qu'il créerait ou réécrirait exige une
+ *   relecture de l'auteur couvrant son `(id, version, empreinte)` au registre
+ *   `validation/mesures/relectures.json` (décision D53 (1)) ; sinon, refus `sans_relecture`.
  *
  * Toute écriture est atomique : un temporaire du même répertoire, puis un lien (création) ou un
  * renommage (réécriture).
@@ -24,6 +26,7 @@ import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync,
 import { join } from "node:path";
 import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../domaine/empreinte.ts";
+import { empreinteContenuMesure, mesureRelue, type RegistreRelecturesMesure } from "../domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../domaine/types.ts";
 import { FichierModifieDepuisLecture } from "./data-items.ts";
 
@@ -135,7 +138,8 @@ export type MotifRefusMesure =
   | "absente_du_staging"
   | "non_conforme"
   | "meme_version_contenu_different"
-  | "regression_de_version";
+  | "regression_de_version"
+  | "sans_relecture";
 
 export interface RefusMesure {
   readonly mesure_id: string;
@@ -175,15 +179,45 @@ function comparer(courante: Mesure, publiee: MesureLue, chemin: string): Sort {
   );
 }
 
-function trier(mesure_id: string, staging: ReadonlyMap<string, Mesure>, data: ReadonlyMap<string, MesureLue>, repertoire: string): Sort {
+/** La mesure qu'un sort écrirait dans `data/mesures/`, `null` s'il n'en écrit aucune. */
+function mesureAEcrire(sort: Sort): Mesure | null {
+  if (sort.sort === "creer") return sort.mesure;
+  if (sort.sort === "reecrire") return sort.apres;
+  return null;
+}
+
+/**
+ * Décision D53 (1) : une mesure n'est créée ou réécrite dans `data/mesures/` que si son contenu
+ * exact a été relu par l'auteur. Règle uniforme, sans égard à l'origine de la mesure ni à la raison
+ * de sa nouvelle version. Une mesure identique à sa version publiée n'est pas écrite : elle passe.
+ */
+function exigerRelecture(sort: Sort, relectures: RegistreRelecturesMesure, chemin: string): Sort {
+  const mesure = mesureAEcrire(sort);
+  if (mesure === null || mesureRelue(relectures, mesure)) return sort;
+  return refus(
+    mesure.id,
+    "sans_relecture",
+    `${chemin} : aucune relecture au registre validation/mesures/relectures.json ne couvre ` +
+      `mesure_id ${mesure.id}, mesure_version ${mesure.version}, empreinte ${empreinteContenuMesure(mesure)}. ` +
+      `Toute mesure créée ou réécrite dans data/mesures/ est d'abord relue par l'auteur dans ce contenu exact.`,
+  );
+}
+
+function trier(
+  mesure_id: string,
+  staging: ReadonlyMap<string, Mesure>,
+  data: ReadonlyMap<string, MesureLue>,
+  repertoire: string,
+  relectures: RegistreRelecturesMesure,
+): Sort {
   const chemin = cheminMesure(repertoire, mesure_id);
   const courante = staging.get(mesure_id);
   if (courante === undefined) return refus(mesure_id, "absente_du_staging", `citée par un item à promouvoir, absente de staging/mesures/.`);
   const erreur = erreurDeSchema("mesure", courante, `mesure à écrire dans ${chemin}`);
   if (erreur !== null) return refus(mesure_id, "non_conforme", erreur.message);
   const publiee = data.get(mesure_id);
-  if (publiee === undefined) return { sort: "creer", mesure: courante };
-  return comparer(courante, publiee, chemin);
+  const sort: Sort = publiee === undefined ? { sort: "creer", mesure: courante } : comparer(courante, publiee, chemin);
+  return exigerRelecture(sort, relectures, chemin);
 }
 
 /**
@@ -195,9 +229,10 @@ export function planifierMesures(
   staging: ReadonlyMap<string, Mesure>,
   data: ReadonlyMap<string, MesureLue>,
   repertoire: string,
+  relectures: RegistreRelecturesMesure,
 ): PlanMesures {
   const ids = [...new Set(items.map((item) => item.mesure_id))].sort();
-  const sorts = ids.map((mesure_id) => trier(mesure_id, staging, data, repertoire));
+  const sorts = ids.map((mesure_id) => trier(mesure_id, staging, data, repertoire, relectures));
   return {
     creer: sorts.flatMap((sort) => (sort.sort === "creer" ? [sort.mesure] : [])),
     reecrire: sorts.flatMap((sort) => (sort.sort === "reecrire" ? [{ lu: sort.lu, apres: sort.apres }] : [])),

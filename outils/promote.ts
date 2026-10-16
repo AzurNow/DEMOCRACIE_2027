@@ -21,6 +21,13 @@
  * mesure est nommée au rapport et rien n'est écrit, ni item ni mesure. Tous les contrôles passent
  * avant la première écriture.
  *
+ * Décision D53 (1) : une mesure à créer ou à réécrire n'entre dans `data/mesures/` que si une
+ * relecture de l'auteur couvre exactement son identifiant, sa version et l'empreinte de son contenu,
+ * au registre publié en ajout seul `validation/mesures/relectures.json` (répertoire `--mesures`,
+ * celui du registre des corrections de thème). Sinon, refus `sans_relecture`, et rien n'est écrit.
+ * Une mesure identique à sa version publiée passe sans relecture. Le registre est lu, jamais écrit
+ * ici ; un registre illisible ou une entrée malformée arrêtent la commande.
+ *
  *   pnpm promote
  *   pnpm promote --ecrire
  */
@@ -51,6 +58,7 @@ import { ajouterDues, controlerAjout, notificationDue } from "../validation/io/n
 import { etatsDuLot } from "../validation/io/lecture-croisee.ts";
 import { lireLots } from "../validation/io/lots-fichier.ts";
 import { lireRegistre } from "../validation/io/mesures-fichier.ts";
+import { lireRelectures } from "../validation/io/relectures-fichier.ts";
 import { chargerStaging, type Staging } from "../validation/io/staging.ts";
 import { instantLocal } from "../validation/serveur/contexte.ts";
 import { evaluerLots, type Introuvable, type RenvoyeDuLot, type Verdict } from "./evaluation-lots.ts";
@@ -192,7 +200,10 @@ function itemsAEcrire(verdicts: readonly Verdict[], options: Options): readonly 
  */
 function planDesMesures(verdicts: readonly Verdict[], staging: Staging, options: Options): PlanMesures {
   const publiees = lireMesuresData(options.data_mesures);
-  return planifierMesures(itemsAEcrire(verdicts, options), staging.mesures, publiees, options.data_mesures);
+  // Décision D53 (1) : registre des relectures de l'auteur, lu à côté de celui des corrections de
+  // thème (`--mesures`). Absent : registre vide. Illisible ou malformé : la commande s'arrête.
+  const relectures = lireRelectures(options.mesures);
+  return planifierMesures(itemsAEcrire(verdicts, options), staging.mesures, publiees, options.data_mesures, relectures);
 }
 
 function imprimerPlanMesures(plan: PlanMesures): void {
@@ -406,8 +417,8 @@ function principal(): void {
   const options = lireOptions();
   if (options.ecrire && !ecriturePermise(options.racine)) return;
 
-  // Les deux registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
-  // --ecrire` y ajoutent les décisions.
+  // Les registres sont **lus**, jamais écrits ici : `pnpm mesures --ecrire` et `pnpm arbitrer
+  // --ecrire` y ajoutent les décisions ; le registre des relectures est lu par `planDesMesures`.
   const staging = chargerStaging(options.staging);
   const { effectifs, verdicts, introuvables, renvoyes } = evaluerLots({
     staging,

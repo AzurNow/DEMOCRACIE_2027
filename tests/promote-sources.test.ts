@@ -42,6 +42,7 @@ function bacAvec(item: Item, lot_id: string, jugement: Jugement = {}): Bac {
   const bac = creerBac();
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
+  bac.relireMesure(mesure({ id: item.mesure_id, version: 1 }));
   bac.ecrireLot(lotDe(lot_id, [item]));
   for (const annotateur_id of ["a1", "a2"]) {
     const corrige = jugement.corrections !== undefined;

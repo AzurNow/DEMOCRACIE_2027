@@ -932,6 +932,26 @@
       "regle_protocole": "§3, dix thèmes fixes"
     },
     {
+      "objet": "relecture-mesure",
+      "fichier": "relecture-mesure/valide-01-relecture.json",
+      "attendu": "valide",
+      "motif": "Relecture d'une mesure par l'auteur : identifiant, version et empreinte du contenu relu, date civile (décision D53 (1))."
+    },
+    {
+      "objet": "relecture-mesure",
+      "fichier": "relecture-mesure/invalide-01-empreinte-non-hexadecimale.json",
+      "attendu": "invalide",
+      "motif": "Empreinte portant un caractère non hexadécimal : elle ne peut être celle d'aucun contenu, la relecture ne couvrirait rien de vérifiable.",
+      "regle_protocole": "Règle 3 de CLAUDE.md, décision D53 (1)"
+    },
+    {
+      "objet": "relecture-mesure",
+      "fichier": "relecture-mesure/invalide-02-formulation-recopiee.json",
+      "attendu": "invalide",
+      "motif": "Entrée recopiant la formulation relue : le registre ne porte pas le texte, l'empreinte le couvre ; un champ en trop est rejeté, jamais ignoré.",
+      "regle_protocole": "Règle 3 de CLAUDE.md, décision D53 (1)"
+    },
+    {
       "objet": "diagnostic-lot",
       "fichier": "diagnostic-lot/valide-01-lot-supersede.json",
       "attendu": "valide",
