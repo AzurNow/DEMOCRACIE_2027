@@ -92,14 +92,13 @@ vide (un gel s'invalide, il ne se refait pas) ; un champ de `config/gel.json` à
 nommé ; un alias aveugle que deux outils partagent, ou qui trahit le libellé, l'éditeur ou
 l'`outil_id` d'un outil du périmètre, après normalisation : il contient un de leurs mots
 significatifs (3 lettres au moins, mots découpés sur tout ce qui n'est ni lettre ni chiffre :
-« Mistral » contre « Mistral AI ») ou leur forme sans espaces ni séparateurs (« LeChat » contre
-« Le Chat ») (`PerimetreRefuse`, D45 (2), D48 (2) et (3)) ; une fenêtre ouverte avant
-`date_gel` (`OrdreDesInstantsRefuse`, D45 (4)) ; une question sans formulations relues sur son texte
+« Mistral » contre « Mistral AI ») ou leur forme sans espaces ni séparateurs, de 3 lettres au moins aussi (« LeChat »
+contre « Le Chat ») (`PerimetreRefuse`, D45 (2), D48 (2) et (3), D50) ; une fenêtre ouverte à
+`date_gel` ou avant (`OrdreDesInstantsRefuse`, D45 (4), D50) ; une question sans formulations relues sur son texte
 neutre et sa position courants (`FormulationsEnDefautAuGel`) ; **avant tout appel réseau**, un gel
 exécuté avant `date_gel`, ou à l'ouverture de sa fenêtre ou après (`OrdreDesInstantsRefuse`,
 `gel_apres_ouverture_fenetre`, D48 (1) : des réponses obtenues avant le gel ne seraient couvertes
-par aucun tirage publié ; une fenêtre ouverte à `date_gel` exactement ne laisse donc aucun instant
-de gel possible), un run précédent illisible ou incohérent
+par aucun tirage publié), un run précédent illisible ou incohérent
 (`PrecedentRefuse`) et un tour drand pas encore émis (`BaliseRefusee`) ; un engagement absent, mal formé, d'un autre commit, non antérieur à `date_gel` ou que
 la Wayback Machine ne sert pas (`EngagementRefuse`) ; une balise refusée (`BaliseRefusee` : relais
 injoignable, muet au-delà de 30 s ou en erreur HTTP, réponse illisible, chaîne différente de l'épinglée, tour différent,

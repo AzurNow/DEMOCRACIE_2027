@@ -114,12 +114,15 @@ describe("instants, cas 6 : gel exécuté avant date_gel", () => {
 });
 
 describe("instants, cas 7 : fenêtre ouverte avant date_gel", () => {
-  it("instants, cas 7 : fenetre.debut < date_gel ⇒ refus nommé ; égal ⇒ accepté", () => {
-    expect(() => exigerFenetreApresDateGel(GEL_MS, GEL_MS)).not.toThrow();
+  // D50 : l'égalité, acceptée par la PR 2b (D45 (4)), est refusée. Attendu changé ouvertement.
+  it("instants, cas 7 : fenetre.debut ≤ date_gel ⇒ refus nommé (D50) ; 1 ms après ⇒ accepté", () => {
     expect(() => exigerFenetreApresDateGel(GEL_MS + 1, GEL_MS)).not.toThrow();
-    const erreur = refusDe(() => exigerFenetreApresDateGel(GEL_MS - 1, GEL_MS));
-    expect(erreur).toBeInstanceOf(OrdreDesInstantsRefuse);
-    expect((erreur as OrdreDesInstantsRefuse).motif).toBe("fenetre_avant_date_gel");
+    for (const debut of [GEL_MS, GEL_MS - 1]) {
+      const erreur = refusDe(() => exigerFenetreApresDateGel(debut, GEL_MS));
+      expect(erreur).toBeInstanceOf(OrdreDesInstantsRefuse);
+      expect((erreur as OrdreDesInstantsRefuse).motif).toBe("fenetre_avant_date_gel");
+      expect((erreur as OrdreDesInstantsRefuse).message).toContain("D50");
+    }
   });
 
   it("instants, cas 7 : date_gel une heure après l'ouverture de la fenêtre ⇒ refus, aucun appel réseau, rien écrit", async () => {
@@ -133,15 +136,15 @@ describe("instants, cas 7 : fenêtre ouverte avant date_gel", () => {
     expect(arborescence(sortie)).toEqual([]);
   });
 
-  // D48 (1) : `exigerFenetreApresDateGel` accepte toujours l'égalité (premier test du bloc), mais
-  // aucun instant d'exécution n'est à la fois ≥ date_gel et < fenetre.debut quand les deux sont
-  // égaux : le gel entier est désormais refusé, `gel_apres_ouverture_fenetre`. Attendu changé
-  // ouvertement (PR 2b : « accepté, le run est écrit »).
-  it("instants, cas 7 : date_gel égale à l'ouverture de la fenêtre ⇒ refus gel_apres_ouverture_fenetre (D48 (1)), rien écrit", async () => {
+  // D50 : aucun instant d'exécution n'est à la fois ≥ date_gel et < fenetre.debut quand les deux
+  // sont égaux ; le refus nomme la configuration (`fenetre_avant_date_gel`), contrôlée au
+  // chargement, avant l'heure du gel. Attendu changé ouvertement (PR 2b : « accepté, le run est
+  // écrit » ; PR 2c avant D50 : `gel_apres_ouverture_fenetre`).
+  it("instants, cas 7 : date_gel égale à l'ouverture de la fenêtre ⇒ refus fenetre_avant_date_gel (D50), rien écrit", async () => {
     const { sortie, relais, wayback, options } = gelA(FENETRE, Date.parse(FENETRE));
     const erreur = await refusDuGel(options);
     expect(erreur).toBeInstanceOf(OrdreDesInstantsRefuse);
-    expect((erreur as OrdreDesInstantsRefuse).motif).toBe("gel_apres_ouverture_fenetre");
+    expect((erreur as OrdreDesInstantsRefuse).motif).toBe("fenetre_avant_date_gel");
     expect(relais.appels).toEqual([]);
     expect(wayback.appels).toEqual([]);
     expect(arborescence(sortie)).toEqual([]);

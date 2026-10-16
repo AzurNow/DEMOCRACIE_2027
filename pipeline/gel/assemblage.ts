@@ -83,7 +83,7 @@ export interface GelPrepare {
 
 /**
  * Phase 1 : périmètre, fenêtre, questions. Lève sur toute entrée qui ne permet pas de geler, dont
- * une fenêtre ouverte avant `date_gel` (D45 (4), `instants.ts`).
+ * une fenêtre ouverte à `date_gel` ou avant (D45 (4), D50, `instants.ts`).
  */
 export function preparer(entrees: EntreesGel): GelPrepare {
   const perimetre = construirePerimetre(

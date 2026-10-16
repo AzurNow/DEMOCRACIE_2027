@@ -11,7 +11,7 @@
  * quicknet. Refuse, sans rien écrire et avec le code 1 : un dépôt sale, un répertoire de run qui
  * existe déjà, une `--sortie` sous `runs/`, un `config/gel.json` incomplet, une question sans
  * formulations relues sur son texte neutre et sa position courants, un alias aveugle qui trahit un
- * outil ou que deux outils partagent, une fenêtre ouverte avant `date_gel`, et avant tout appel
+ * outil ou que deux outils partagent, une fenêtre ouverte à `date_gel` ou avant (D50), et avant tout appel
  * réseau un gel exécuté avant `date_gel`, un run précédent illisible ou incohérent (D45 (2) à (4)) et
  * un tour drand pas encore émis, un engagement archivé absent, d'un autre commit, postérieur à
  * `date_gel` ou que la Wayback Machine ne sert pas, deux relais en désaccord ou l'un d'eux injoignable,

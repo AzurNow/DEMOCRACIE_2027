@@ -326,7 +326,9 @@ function formeCollee(normalise: string): string {
  * D48 (3) : la seule comparaison d'un alias à un texte qui nomme un outil, l'un et l'autre passés par
  * `normaliserAlias`. L'alias trahit le texte s'il contient un de ses mots significatifs (« Mistral »
  * contre « Mistral AI ») ou sa forme sans espaces ni séparateurs, comparée à la forme collée de
- * l'alias (« LeChat » contre « Le Chat »). Ces deux règles couvrent l'inclusion du texte entier.
+ * l'alias (« LeChat » contre « Le Chat »), quand elle compte 3 lettres au moins comme un mot (D50 :
+ * un outil nommé « X » ne fait pas refuser tout alias qui contient un X). Ces deux règles couvrent
+ * l'inclusion du texte entier, dès qu'il compte 3 lettres au moins.
  * Rend tout ce qui est trouvé, mots d'abord ; vide, l'alias ne trahit pas ce texte.
  */
 export function revelationsDansAlias(alias: string, texte: string): readonly Revelation[] {
@@ -337,7 +339,7 @@ export function revelationsDansAlias(alias: string, texte: string): readonly Rev
     .map((mot) => ({ nature: "mot", trouve: mot }));
   const collee = formeCollee(texte_normalise);
   const forme: readonly Revelation[] =
-    collee !== "" && formeCollee(alias_normalise).includes(collee) ? [{ nature: "forme_collee", trouve: collee }] : [];
+    [...collee].length >= LETTRES_MOT_SIGNIFICATIF && formeCollee(alias_normalise).includes(collee) ? [{ nature: "forme_collee", trouve: collee }] : [];
   return [...mots, ...forme];
 }
 

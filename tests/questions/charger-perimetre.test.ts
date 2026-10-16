@@ -561,6 +561,13 @@ describe("gel, PR 2c : mots significatifs, formes collées et outil_id (D48 (2) 
     expect(revelationsDansAlias("Zyxo", "Zyx Lb")).toEqual([mot("zyx")]);
   });
 
+  it("D50 : une forme collée de moins de 3 lettres ne suffit pas (« X », « A B ») ; d'exactement 3, elle suffit", () => {
+    expect(revelationsDansAlias("XO7", "X")).toEqual([]);
+    expect(revelationsDansAlias("AB12", "A B")).toEqual([]);
+    expect(revelationsDansAlias("XAB12", "A-B")).toEqual([]);
+    expect(revelationsDansAlias("ABC12", "A B C")).toEqual([collee("abc")]);
+  });
+
   it("D48 (2) : tirets et soulignés d'un outil_id découpent des mots comme les espaces", () => {
     expect(revelationsDansAlias("Juge Kappa", "kappa_zeta-outil")).toEqual([mot("kappa")]);
     expect(revelationsDansAlias("KappaZeta", "kappa_zeta")).toEqual([mot("kappa"), mot("zeta"), collee("kappazeta")]);
