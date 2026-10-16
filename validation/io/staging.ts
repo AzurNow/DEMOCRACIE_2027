@@ -1,8 +1,9 @@
 /**
  * Lecture de `staging/`. En lecture seule, sans la moindre exception : le pipeline écrit ici,
  * l'interface de validation lit, et `pnpm promote` écrit ailleurs. La seule écriture de
- * l'outillage de validation dans `staging/`, le renvoi en attente après une correction de thème
- * (protocole 0.13, §4), vit à part, dans `staging-renvoi.ts`.
+ * l'outillage de validation dans `staging/`, la réécriture d'un item renvoyé en attente après une
+ * correction de thème (protocole 0.13, §4) ou un rattachement à une autre mesure (D53 (1)), vit à
+ * part, dans `staging-renvoi.ts`.
  *
  * Y compris pour les textes canoniques des sources : un texte extrait faux se corrige en
  * réextrayant la source, jamais depuis l'écran de validation (docs/CONTRATS.md §1).

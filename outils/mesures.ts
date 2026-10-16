@@ -13,18 +13,48 @@
  *   pnpm mesures --mesure=<id> --theme=<theme> --decision=acceptee --ecrire
  *   pnpm mesures --mesure=<id> --theme=<theme> --decision=refusee --motif="..." --ecrire
  *   pnpm mesures --renvoyer=<id> [--ecrire]
+ *   pnpm mesures --relire=<mesure> [--date=AAAA-MM-JJ] [--ecrire]
+ *   pnpm mesures --rattacher=<item> --a=<mesure> [--date=AAAA-MM-JJ] [--ecrire]
  *
  * La commande n'écrit jamais dans `data/`. Accepter une demande ne modifie pas la mesure : c'est
  * une décision, pas une correction. La mesure se corrige en amont, dans le pipeline, et
  * `pnpm promote` refuse de promouvoir tant que les deux ne concordent pas.
  *
  * Une fois la mesure corrigée (nouvelle version), `--renvoyer` renvoie en attente les autres items
- * de la mesure, jugés contre l'ancien thème (protocole 0.13, §4) : c'est la seule écriture de la
- * commande dans `staging/`, détaillée dans `renvoi-mesure.ts`.
+ * de la mesure, jugés contre l'ancien thème (protocole 0.13, §4), détaillé dans `renvoi-mesure.ts`.
+ *
+ * Décision D53 (1) : `--relire` imprime en entier le contenu actuel d'une mesure de
+ * `staging/mesures/` (libellé, thème, fictive, formulation canonique) et son empreinte, puis, avec
+ * `--ecrire`, inscrit cette relecture au registre publié en ajout seul
+ * `validation/mesures/relectures.json`, sans lequel `pnpm promote` refuse d'écrire la mesure
+ * (`sans_relecture`). Elle ne réécrit jamais la mesure : une formulation à reprendre s'édite à la
+ * main en staging, avant la relecture. `--rattacher` rattache un item de staging à une autre
+ * mesure existante (`rattachement-mesure.ts`). Avec `--renvoyer`, ce sont les seules écritures de
+ * la commande dans `staging/`.
+ *
+ * Les quatre modes (`--mesure`, `--renvoyer`, `--relire`, `--rattacher`) s'excluent : en demander
+ * deux est refusé avant toute lecture.
  */
 
 import { resolve } from "node:path";
+import { IntrouvableEnStaging, RattachementInacheve, rattacher, trouverEnStaging } from "./rattachement-mesure.ts";
 import { estRefusAttendu, renvoyer } from "./renvoi-mesure.ts";
+import { EntreeRattachementInvalide, RattachementRefuse } from "../validation/domaine/rattachements-item.ts";
+import {
+  EntreeRelectureInvalide,
+  mesureRelue,
+  relectureDe,
+  validerEntreeRelecture,
+} from "../validation/domaine/relectures-mesure.ts";
+import { RegistreRattachementsIllisible } from "../validation/io/rattachements-fichier.ts";
+import {
+  ajouterRelecture,
+  cheminRelectures,
+  lireRelectures,
+  RegistreModifieDepuisLecture,
+  RegistreRelecturesIllisible,
+} from "../validation/io/relectures-fichier.ts";
+import { ItemStagingModifie } from "../validation/io/staging-renvoi.ts";
 import { analyserArguments, drapeau, obligatoire, texte, type Arguments } from "./arguments.ts";
 import {
   ancienneteEnJours,
@@ -57,6 +87,9 @@ const OPTIONS: readonly string[] = [
   "date",
   "decision",
   "motif",
+  "relire",
+  "rattacher",
+  "a",
 ];
 
 interface Options {
@@ -73,6 +106,12 @@ interface Options {
   readonly mesure: string;
   /** Mesure dont les items sont à renvoyer en attente. Chaîne vide : pas de renvoi. */
   readonly renvoyer: string;
+  /** Mesure de staging dont le contenu actuel est relu. Chaîne vide : pas de relecture. */
+  readonly relire: string;
+  /** Item de staging à rattacher à la mesure `a`. Chaîne vide : pas de rattachement. */
+  readonly rattacher: string;
+  /** Mesure cible d'un rattachement ; n'a de sens qu'avec `rattacher`. */
+  readonly a: string;
 }
 
 function lireOptions(table: Arguments): Options {
@@ -87,7 +126,38 @@ function lireOptions(table: Arguments): Options {
     data: texte(table, "data", resolve(racine, "data/items")),
     mesure: texte(table, "mesure", ""),
     renvoyer: texte(table, "renvoyer", ""),
+    relire: texte(table, "relire", ""),
+    rattacher: texte(table, "rattacher", ""),
+    a: texte(table, "a", ""),
   };
+}
+
+/* ------------------------------------------------------------------- modes exclusifs */
+
+class ArgumentsIncompatibles extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ArgumentsIncompatibles";
+  }
+}
+
+const MODES = ["mesure", "renvoyer", "relire", "rattacher"] as const;
+
+/** Un seul mode par appel ; `--a` sans `--rattacher` n'est jamais ignoré. Contrôlé avant toute lecture. */
+function verifierModeUnique(options: Options): void {
+  const demandes = MODES.filter((mode) => options[mode].length > 0);
+  if (demandes.length > 1) {
+    throw new ArgumentsIncompatibles(
+      `Options incompatibles : ${demandes.map((mode) => `--${mode}`).join(" et ")}. Une seule opération par appel ; rien n'est lu ni écrit.`,
+    );
+  }
+  if (options.a.length > 0 && options.rattacher.length === 0) {
+    throw new ArgumentsIncompatibles("--a n'a de sens qu'avec --rattacher=<item> ; rien n'est lu ni écrit.");
+  }
+}
+
+function dateDuJour(table: Arguments): string {
+  return texte(table, "date", instantLocal(new Date()).slice(0, 10));
 }
 
 /* ------------------------------------------------- demandes restées sans décision */
@@ -224,11 +294,65 @@ function enregistrer(table: Arguments, options: Options): void {
   );
 }
 
+/* ------------------------------------------------------- relire une mesure (D53 (1)) */
+
+/**
+ * Imprime en entier ce que l'auteur atteste avoir relu, puis, avec `--ecrire`, l'inscrit au
+ * registre. La mesure n'est jamais réécrite ; l'empreinte est recalculée depuis son contenu
+ * (`relectureDe`), jamais recopiée de son champ `empreinte`.
+ */
+function relire(table: Arguments, options: Options): void {
+  const staging = chargerStaging(options.staging);
+  const mesure = trouverEnStaging(staging.mesures, "Mesure", options.relire, staging);
+  const relecture = validerEntreeRelecture(relectureDe(mesure, dateDuJour(table)), "arguments de la commande");
+  // Lu avant tout, y compris en simulation : un registre corrompu arrête la commande.
+  const registre = lireRelectures(options.mesures);
+  process.stdout.write(
+    `Mesure ${mesure.id}, version ${mesure.version}\n` +
+      `  libellé : ${mesure.libelle}\n` +
+      `  thème : ${mesure.theme}\n` +
+      `  fictive : ${String(mesure.fictive)}\n` +
+      `  formulation canonique : ${mesure.formulation_canonique}\n` +
+      `  empreinte du contenu relu : ${relecture.empreinte}\n`,
+  );
+
+  const chemin = cheminRelectures(options.mesures);
+  if (mesureRelue(registre, mesure)) {
+    process.stdout.write(`\nCe contenu exact est déjà relu au registre ${chemin} : aucune entrée ajoutée.\n`);
+    return;
+  }
+  if (!options.ecrire) {
+    process.stdout.write(
+      `\nSimulation : rien n'a été écrit dans ${chemin}.\n` +
+        "Ajouter --ecrire pour attester avoir relu ce texte en entier et l'inscrire au registre.\n",
+    );
+    return;
+  }
+  const relu = ajouterRelecture(options.mesures, relecture);
+  process.stdout.write(
+    `\nRelecture ajoutée le ${relecture.date} : le registre compte ${relu.length} entrée(s).\n` +
+      "Toute modification ultérieure du libellé, du thème, de fictive ou de la formulation change\n" +
+      "l'empreinte : `pnpm promote` refusera à nouveau la mesure jusqu'à une nouvelle relecture.\n",
+  );
+}
+
+/* ---------------------------------------------------------------------- aiguillage */
+
 function principal(): void {
   const table = analyserArguments(process.argv.slice(2), OPTIONS);
   const options = lireOptions(table);
+  verifierModeUnique(options);
   if (options.renvoyer.length > 0) {
     renvoyer({ ...options, mesure_id: options.renvoyer });
+    return;
+  }
+  if (options.relire.length > 0) {
+    relire(table, options);
+    return;
+  }
+  if (options.rattacher.length > 0) {
+    const cible = obligatoire(table, "a", "la mesure cible du rattachement n'est jamais implicite.");
+    rattacher({ ...options, item_id: options.rattacher, mesure_id: cible, date: dateDuJour(table) });
     return;
   }
   if (options.mesure.length > 0) {
@@ -238,10 +362,28 @@ function principal(): void {
   imprimerDemandes(demandesSansDecision(options, instantLocal(new Date())));
 }
 
+/** Les refus des modes `--relire` et `--rattacher` : nommés, sans pile d'appels. */
+const REFUS_NOMMES: readonly (abstract new (...arguments_: never[]) => Error)[] = [
+  ArgumentsIncompatibles,
+  IntrouvableEnStaging,
+  RattachementRefuse,
+  RattachementInacheve,
+  EntreeRelectureInvalide,
+  EntreeRattachementInvalide,
+  RegistreRelecturesIllisible,
+  RegistreRattachementsIllisible,
+  RegistreModifieDepuisLecture,
+  ItemStagingModifie,
+];
+
+function refusNomme(erreur: unknown): boolean {
+  return estRefusAttendu(erreur) || REFUS_NOMMES.some((classe) => erreur instanceof classe);
+}
+
 try {
   principal();
 } catch (erreur) {
-  if (!estRefusAttendu(erreur)) throw erreur;
+  if (!refusNomme(erreur)) throw erreur;
   process.stderr.write(`\n${(erreur as Error).message}\n`);
   process.exitCode = 1;
 }

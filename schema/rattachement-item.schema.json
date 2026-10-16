@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:rattachement-item",
+  "title": "Entrée du registre des rattachements d'item",
+  "description": "Une ligne de `validation/mesures/rattachements.json` (décision D53 (1) du 2026-10-16). L'extraction crée une mesure de staging par item ; l'auteur rattache un item de `staging/` à une autre mesure, existante, pour que plusieurs items partagent le même référent. `pnpm mesures --rattacher=<item> --a=<mesure> --ecrire` réécrit l'item de staging sur la mesure cible (version incrémentée, empreinte recalculée : la mesure et sa version font partie du contenu notant, §4), puis ajoute cette entrée. Ce schéma décrit UNE entrée de ce registre, pas le tableau qui les contient. Le registre est publié et en ajout seul : il trace la décision ; `pnpm promote` ne le relit pas, il promeut l'item tel qu'il est en staging. Contrat publié, relié à `validerEntreeRattachement()` (`validation/domaine/rattachements-item.ts`), frontière d'exécution, par un test d'accord (`tests/rattachements-item.test.ts`).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["item_id", "item_version", "mesure_avant", "mesure_apres", "mesure_version_apres", "date"],
+
+  "properties": {
+    "item_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "L'item rattaché. Un identifiant opaque : son contenu n'est pas recopié ici."
+    },
+
+    "item_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version de l'item AVANT le rattachement : celle que le rattachement a réécrite. La version résultante est dans l'historique de l'item."
+    },
+
+    "mesure_avant": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "La mesure que l'item citait avant le rattachement. Elle reste en `staging/mesures/` ; plus citée par aucun item, elle n'est pas promue."
+    },
+
+    "mesure_apres": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "La mesure cible, existante dans `staging/mesures/` au moment du rattachement."
+    },
+
+    "mesure_version_apres": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version de la mesure cible sur laquelle l'item est épinglé par le rattachement : sa version courante à ce moment."
+    },
+
+    "date": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+      "description": "Jour du rattachement, pas l'instant : une décision humaine relue à l'échelle du jour, comme les autres arbitrages publiés du §4. L'instant et le commit sont dans l'historique de l'item."
+    }
+  }
+}
