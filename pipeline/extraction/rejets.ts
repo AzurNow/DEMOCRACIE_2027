@@ -6,10 +6,15 @@
  *
  * | Portée | Ce qui est écarté | Motifs |
  * | --- | --- | --- |
- * | `sortie` | la sortie entière d'un modèle, jamais réparée | `bloc_de_code`, `json_invalide`, `cle_dupliquee`, `non_conforme` |
+ * | `sortie` | la sortie entière d'un modèle, jamais réparée | `lecture_illisible`, `bloc_de_code`, `json_invalide`, `cle_dupliquee`, `non_conforme` |
  * | `item` | un item d'une sortie conforme, avant l'appariement | `candidat_different`, `saut_de_page`, `citation_vide`, `introuvable`, `citation_ambigue`, `citation_sans_page_unique` |
  * | `depot` | un item retenu qu'un item de staging ne peut pas porter | `etat_o_sans_etat_anterieur` |
  * | `source` | la source entière : rien n'est déposé | `extraction_double_incomplete` |
+ *
+ * `lecture_illisible` : la réponse ne donne aucun texte du modèle (statut hors 2xx, sortie coupée,
+ * refus, enveloppe inattendue) ; `detail` porte la raison reçue, telle quelle. Les quatre autres
+ * motifs de portée `sortie` sont ceux de `lecture-sortie.ts:lireSortie`, qui ne lit que du texte et
+ * ne peut donc pas produire `lecture_illisible`.
  *
  * L'index est le rang de l'item dans la sortie brute, telle que reçue : il suit donc, par
  * construction, l'ordre que le modèle a choisi.
@@ -22,12 +27,15 @@ import type { MotifRejetCitation } from "./localisation.ts";
 import type { MotifRejetSortie } from "./lecture-sortie.ts";
 import type { Accord } from "./types.ts";
 
+/** Motifs de portée `sortie` : ceux de `lireSortie`, plus l'absence de texte lisible, décidée en amont. */
+export type MotifRejetSortieEntiere = MotifRejetSortie | "lecture_illisible";
+
 export type MotifRejetItem = "candidat_different" | MotifRejetCitation;
 
 export interface RejetSortie {
   readonly portee: "sortie";
   readonly modele: string;
-  readonly motif: MotifRejetSortie;
+  readonly motif: MotifRejetSortieEntiere;
   readonly detail: string;
 }
 

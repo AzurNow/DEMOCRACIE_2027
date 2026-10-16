@@ -31,8 +31,8 @@
       {
         "portee": "sortie",
         "modele": "modele-exemple-b",
-        "motif": "json_invalide",
-        "detail": "Unexpected end of JSON input"
+        "motif": "lecture_illisible",
+        "detail": "réponse HTTP 500 : aucun texte du modèle n'est lu hors 2xx."
       },
       {
         "portee": "source",

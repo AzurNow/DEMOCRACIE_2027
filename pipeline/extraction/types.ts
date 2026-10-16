@@ -33,3 +33,11 @@ export interface SortieExtraction {
 export type RangModele = 0 | 1;
 
 export type Accord = "accord" | "desaccord_existence" | "desaccord_contenu";
+
+/**
+ * Ce que le cœur reçoit d'un modèle : le texte de sa sortie, ou la raison pour laquelle la réponse
+ * n'en donne pas (statut hors 2xx, sortie coupée, refus, enveloppe inattendue). Une sortie illisible
+ * n'est jamais remplacée par une chaîne plausible : le cœur la rejette sous `lecture_illisible`,
+ * avec cette raison. `LectureTexteModele` (`pipeline/reformulation/editeur.ts`) a cette forme.
+ */
+export type SortieModele = { readonly lisible: true; readonly texte: string } | { readonly lisible: false; readonly raison: string };
