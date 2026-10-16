@@ -13,6 +13,41 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — Lot gel, PR 2b à 4 : taux d'échantillon, statuts du run, `run:invalider`, `run:dry --run`, D51 ; dépôts de test sans gc (PR #135, #137, #138 : `pipeline/run/`, `pipeline/interrogation/run-gele.ts`, `pipeline/gel/precedent.ts`, `tests/aides/depot.ts`)
+
+### 1. Le taux de l'échantillon humain est encore écrit en dur dans le test contrefactuel — *moyenne*
+
+La PR 2b a mis les taux du §7 (10 %, 25 % après retrait d'un juge) dans
+`pipeline/notation/taux-echantillon.ts`, lu par le gel et le contrôle croisé. Mais
+`pipeline/notation/contrefactuel.ts` (lignes 113, 147, 334) et
+`pipeline/notation/publication-contrefactuel.ts` (lignes 89, 122) écrivent encore `0.1` et `0.25`
+en littéraux.
+
+**Pourquoi ça casse.** Si un amendement change un taux, seule `taux-echantillon.ts` sera modifiée.
+Le contrefactuel continuera d'inscrire l'ancien taux dans `run.json`, et le contrôle croisé refusera
+alors le run. La casse est visible, mais elle arrive à la notation d'un vrai run.
+`tests/gel/taux-echantillon.test.ts` ne surveille que deux appelants, le gel et le contrôle croisé.
+
+**Ce qu'il faut faire.** Importer les deux constantes dans les deux fichiers et ajouter ceux-ci à
+`APPELANTS` dans le test. C'est une petite PR, à faire avant le run pilote.
+
+### 2. `lireRunGele` mêle la lecture du gel et la garde propre au simulé — *basse*
+
+`pipeline/interrogation/run-gele.ts:lireRunGele` commence par `exigerHorsDeRuns`, qui refuse tout
+répertoire sous `runs/`. Or c'est exactement là que `run:live` lira le vrai run. Le seul écrivain
+de `en_cours` est donc, aujourd'hui, le chemin simulé.
+
+**Pourquoi ça casse.** Si `run:live` réutilise `lireRunGele` tel quel, il est refusé sur tout vrai
+run : ça se voit tout de suite. S'il écrit sa propre lecture pour contourner ce refus, il risque de
+sauter la vérification des empreintes, ou `inscrireDemarrage`. Le run serait alors interrogé au
+statut `planifie`, ou sur un tirage non vérifié, sans qu'aucun test ne le signale.
+
+**Ce qu'il faut faire.** À l'écriture de `run:live`, sortir `exigerHorsDeRuns` de `lireRunGele` et
+le laisser à `outils/run-dry.ts`. Ajouter un test qui vérifie que `run:live` passe par la même
+vérification et par la même transition.
+
+---
+
 ## 2026-10-15 — Mesures validées, garde de `data/mesures`, lot reformulation, D38 à D43 (PR #118, #120, #122 à #124 : `validation/io/`, `pipeline/reformulation/`, `validation/serveur/formulations.ts`)
 
 ### ~~1. La liste des noms interdits dans une Q-ATT est construite à deux endroits~~ — réglé le 2026-10-16 par la branche `qualite/dette-reformulation` (`nomsCherchesEnAttribution` dans `pipeline/questions/libelles.ts`, lue par `controle.ts` et `symetrie.ts` ; équivalence testée dans `tests/questions/noms-en-attribution.test.ts`)

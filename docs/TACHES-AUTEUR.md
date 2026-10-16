@@ -4,13 +4,15 @@ Tout ce qui attend l'auteur, et que ni le code ni un agent ne peut faire à sa p
 traité d'un coup. Chaque ligne dit quoi, où, et d'où vient la demande. Une tâche faite est cochée,
 puis retirée à la clôture de session suivante.
 
-Mis à jour le 2026-10-15. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
+Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/DETTE.md`,
 `docs/PROTOCOLE.md` 0.16, `docs/conformite/2026-09-29.md`, `schema/README.md`, PR #28 à #75.
 
 ---
 
 ## 0. Fusions en attente
 
+- [ ] **#136** (texte de D51 dans le bloc 0.17), CI verte après mise à jour sur `main`.
+- [x] (2026-10-16) #135, #137 et #138 fusionnées (lot gel, PR 3 et 4 ; dépôts de test sans gc).
 - [x] (2026-10-12) #109, #104, #110 et #111 fusionnées. Conflit de #104 réglé par l'agent (D34 et
       D35 gardées toutes deux). Le contrôle de Claude Code refuse toujours `gh pr merge` à l'agent.
 - [x] (2026-10-16, par l'agent avec l'accord de l'auteur) Supprimer les branches locales `worktree-agent-a691960d77994bec2` et
@@ -687,6 +689,9 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 ## 5. Décisions à prendre seulement si le cas se présente
 
+- [ ] **Défaut découvert après la publication d'un run** : D51 (4) n'admet l'invalidation que depuis
+      `planifie` ou `en_cours`, et le protocole ne prévoit pas d'erratum. Faut-il un erratum publié
+      à côté du run, et un statut ou un champ pour le porter ? (D51, texte de la 0.17 au §6.)
 - [x] (2026-10-09, D24 (3) : décision dérivée, codée au lot `go-no-go`) **Run `publie_provisoire` dont les sept critères go/no-go sont verts** : le schéma l'accepte
       (#61), alors que le §12 (« Sinon, le run est publié … avec la mention provisoire ») suggère
       qu'un run tout vert est publié sans la mention. À trancher au plus tard au lot `go-no-go`.

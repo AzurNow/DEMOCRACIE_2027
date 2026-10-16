@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-15",
+  "date_maj": "2026-10-16",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -1114,7 +1114,7 @@
       "id": "gel",
       "titre": "Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider)",
       "jalon": "J4",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "opus",
       "taille": "L",
       "temps_auteur_h": 1,
