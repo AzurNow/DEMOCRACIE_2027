@@ -520,8 +520,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       position inventée, position opposée, quantification fausse, périmètre faux, omission, ajout
       fabriqué, autre. »
 
-- [ ] **Écrire la 0.17 : D42 à D50**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
-      propositions séparées de D42, D44, D45 et D46). En tête : « version 0.17 ».
+- [ ] **Écrire la 0.17 : D42 à D51**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
+      propositions séparées de D42, D44, D45 et D46 ; D51 ajoutée le même jour). En tête : « version 0.17 ».
 
       **§5, « Formulations ».** Remplacer « Les formulations sont produites par un modèle puis
       relues par un annotateur qui vérifie qu'elles ne changent pas le sens. » par : « La
@@ -578,6 +578,17 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       **§6, après « …à partir de son ouverture. »** : « Elle s'ouvre après l'exécution du gel du run
       (section 5) : aucune requête ne part avant que le tirage existe. »
 
+      **§6, D51.** Remplacer « Si un incident technique invalide un run, le run entier est réexécuté
+      et les deux runs sont publiés, le premier marqué invalide avec la raison. » par : « Un run est
+      planifié à son gel et passe en cours avant la première tentative de sa fenêtre. Si un incident
+      technique invalide un run, l'invalidation est enregistrée dès qu'elle est connue, avec sa
+      raison et sa date, et le statut du run reste inchangé jusqu'à son dépôt (section 12). Seul un
+      run planifié ou en cours s'invalide ; un run publié, à titre définitif ou provisoire, ne
+      s'invalide plus. Un run qui porte une invalidation n'est plus interrogé ni noté, et ne passe
+      pas les critères de publication. Le run entier est réexécuté par un nouveau run, qui désigne
+      dès son gel le run invalidé qu'il remplace ; la réexécution ne modifie jamais le run invalidé.
+      Les deux runs sont publiés, le premier marqué invalide avec la raison. »
+
       **§7, « Juges automatiques », après « …sur la position. »** : « Chaque réponse porte un alias
       aveugle de son outil, saisi par l'auteur à chaque gel et publié avec le run : c'est sous ce
       seul nom que l'outil est désigné là où la notation doit rester aveugle. Un alias est formé
@@ -588,6 +599,14 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       du périmètre, ou l'un de ces trois écrit sans espaces quand il compte trois lettres au
       moins. »
 
+      **§7, D51.** Remplacer « la notation du run s'arrête et le run est marqué invalide, avec cette
+      raison (section 12) » par : « la notation du run s'arrête et l'invalidation du run est
+      enregistrée, avec cette raison (sections 6 et 12) ».
+
+      **§12, D51.** Dans « Critères go/no-go avant chaque publication », après « mais déclare sa
+      publication et son dépôt comme tout run publié », ajouter : « ; il prend le statut invalide
+      avec ce dépôt, son invalidation ayant été enregistrée dès qu'elle a été connue (section 6) ».
+
       **Ligne de révision** : « 0.17, 2026-10-16 : décisions de l'auteur des 15 et 16 octobre sur la
       reformulation et le gel. Section 5 : la formulation neutre est écrite par le gabarit, la
       position qu'affirme une formulation orientée suit une règle fixe par type d'item et se
@@ -595,9 +614,14 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       commit archivé avant l'instant de gel ; la balise, ses relais, la règle de dérivation des
       graines et de l'identifiant du run sont écrits ; le run précédent est le dernier run publié, et
       il est engagé par les empreintes de son tirage et de ses questions. Section 6 : la fenêtre
-      s'ouvre après le gel. Section 7 : format et règles de refus des alias aveugles. »
+      s'ouvre après le gel ; un run passe en cours avant sa première tentative ; son invalidation
+      est enregistrée dès qu'elle est connue, sur un run planifié ou en cours seulement ; sa
+      réexécution désigne dès le gel le run qu'elle remplace. Section 7 : format et règles de refus
+      des alias aveugles ; le retrait des deux juges enregistre l'invalidation du run. Section 12 :
+      un run invalide prend ce statut avec son dépôt. »
 
-      Le code applique déjà D42 à D47 ; D48 à D50 arrivent avec la PR 2c du lot gel (#134). Le prompt de
+      Le code applique déjà D42 à D50 (D48 à D50 par la PR 2c du lot gel, #134) et D51 sauf
+      l'écriture de `en_cours` (PR 3, #135 ; `en_cours` arrive avec la PR 4). Le prompt de
       reformulation 1.0.1 aligné sur D42 suit la 0.17 (lot reformulation).
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
       une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
