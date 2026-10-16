@@ -631,6 +631,21 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Alias (§7), run précédent (§5) et ordre des instants (§5, §6) à écrire en 0.17. Identifiant et run précédent dans la PR 2 du lot gel, refus d'ordre et alias dans la PR 2 également.",
       "date_decision": "2026-10-15"
+    },
+    {
+      "id": "D46",
+      "statut": "tranchee",
+      "question": "Le tour drand est fixé par date_gel (D44, D45) et devient public dès date_gel passée : un auteur qui gèle plus tard peut lire l’aléa, rejouer le tirage, puis modifier data/ avant de geler. Comment l’exclure ?",
+      "contexte": "Rejouer le gel ne sert à rien (même date_gel, même tour) ; modifier les données après avoir vu l’aléa, si. La phrase du §5 « Nul, l’auteur compris, ne peut connaître une graine avant le gel » serait vraie à la lettre et fausse en substance.",
+      "options": [
+        "(1) Engagement archivé : avant date_gel, l’auteur pousse le commit à geler et fait capturer par la Wayback Machine la page GitHub de ce commit ; le gel exige HEAD = ce commit, inscrit l’URL de capture dans run.json et vérifie auprès de Wayback que l’horodatage de capture précède date_gel.",
+        "(2) Tolérance : gel refusé N minutes après date_gel.",
+        "(3) Tour = instant d’exécution du gel.",
+        "(4) Risque résiduel déclaré au §5."
+      ],
+      "recommandation": "Option 1 : vérifiable par un tiers, service déjà employé par la collecte.",
+      "retenu": "Option 1. Appel Wayback au gel autorisé, lancé par l’auteur seul. À écrire au §5 en 0.17. Dans la PR 2a du lot gel.",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
@@ -1056,7 +1071,8 @@
         "D40",
         "D41",
         "D44",
-        "D45"
+        "D45",
+        "D46"
       ],
       "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
     },

@@ -548,6 +548,15 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       « Sections 5, 6 et 7 : identifiant du run dérivé de la balise, run précédent, ordre des
       instants, alias aveugles. »
 
+- [ ] **Écrire en 0.17 : D46 (§5)**, tranchée le 2026-10-16. Rédaction de l'agent, à relire. §5,
+      « Tirage », après la phrase sur la balise : « Avant la date de gel, l'auteur publie le commit
+      du code et des données qu'il gèlera, et le fait archiver par un service tiers ; le gel ne
+      porte que sur ce commit, et l'archive, dont l'horodatage précède la date de gel, est publiée
+      avec le run. » Ligne de révision : « Section 5 : engagement archivé sur le commit gelé. »
+- [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
+      une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
+      avant `date_gel`.
+
 ### Prompts (`prompts/`)
 
 - [x] (2026-10-15) `prompts/judge-1.0.0.md` ; ajout inventé non contradictoire ⇒ inexacte, `ajout_fabrique` (D26 (4) révisée) : **Écrire les prompts des juges** `prompts/judge-*`. Ils appartiennent à l'auteur (lot notation),
