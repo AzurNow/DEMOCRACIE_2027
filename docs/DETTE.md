@@ -15,7 +15,7 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ## 2026-10-16 — Lot gel, PR 2b à 4 : taux d'échantillon, statuts du run, `run:invalider`, `run:dry --run`, D51 ; dépôts de test sans gc (PR #135, #137, #138 : `pipeline/run/`, `pipeline/interrogation/run-gele.ts`, `pipeline/gel/precedent.ts`, `tests/aides/depot.ts`)
 
-### 1. Le taux de l'échantillon humain est encore écrit en dur dans le test contrefactuel — *moyenne*
+### ~~1. Le taux de l'échantillon humain est encore écrit en dur dans le test contrefactuel~~ — réglé le 2026-10-16 par la branche `qualite/dette-taux-contrefactuel` (constantes de `taux-echantillon.ts` importées par les deux fichiers, ajoutés à `APPELANTS`)
 
 La PR 2b a mis les taux du §7 (10 %, 25 % après retrait d'un juge) dans
 `pipeline/notation/taux-echantillon.ts`, lu par le gel et le contrôle croisé. Mais
