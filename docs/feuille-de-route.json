@@ -659,6 +659,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Paramètre --engagement et archive Wayback à écrire au §5 en 0.17 avec D46. Dans la PR 2a (#130).",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D48",
+      "statut": "tranchee",
+      "question": "Cinq points laissés par la PR 2b du lot gel (#131) : gel exécuté après l’ouverture de sa fenêtre, champs comparés aux alias aveugles, variantes proches d’un nom, empreinte des questions du run précédent, statuts admis pour un run précédent.",
+      "contexte": "Aucune décision ne refuse un gel lancé après fenetre.debut : des réponses obtenues avant le gel ne seraient couvertes par aucun tirage publié. Les alias sont comparés au libellé et à l’éditeur, pas à outil_id, par inclusion de sous-chaîne : « Mistral » passe contre « Mistral AI », « LeChat » contre « Le Chat ». run.json n’engage par empreinte que le tirage, pas questions.json, qui décide pourtant des reprises. Seul le statut invalide est exclu : un run planifie ou en_cours peut servir de précédent.",
+      "options": [
+        "(1) Gel refusé si son instant d’exécution est postérieur ou égal à fenetre.debut ; outil_id comparé aux alias ; alias refusé s’il contient un mot significatif (3 lettres au moins) du libellé ou de l’éditeur, ou le libellé ou l’éditeur sans espaces ; questions_sha256 inscrit dans run.json et vérifié au gel ; run précédent admis seulement au statut publie ou publie_provisoire, tout autre refusé nommément.",
+        "Variantes : gel tardif toléré et inscrit, ou refusé seulement si une réponse existe ; libellé et éditeur seuls ; comparaison sans espaces seule, ou inclusion stricte ; empreinte seule ; statu quo inscrit en dette."
+      ],
+      "recommandation": "Option 1 sur les cinq points.",
+      "retenu": "Option 1 sur les cinq points. Gel tardif (§5, §6), alias (§7), empreinte des questions et statut du précédent (§5) à écrire en 0.17. Dans une PR 2c du lot gel, après #131.",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
