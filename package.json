@@ -22,6 +22,7 @@
     "run:dry": "node --experimental-strip-types outils/run-dry.ts",
     "run:invalider": "node --experimental-strip-types outils/run-invalider.ts",
     "reformuler": "node --experimental-strip-types outils/reformuler.ts",
+    "extraire": "node --experimental-strip-types outils/extraire.ts",
     "geler": "node --experimental-strip-types outils/geler.ts",
     "feuille-de-route": "node --experimental-strip-types outils/feuille-de-route.ts",
     "lots": "node --experimental-strip-types outils/lots.ts",
@@ -43,6 +44,7 @@
     "preuve": "uv run python -m pipeline.preuve",
     "textes": "uv run python -m pipeline.collecte.textes",
     "transcriptions": "uv run python -m pipeline.collecte.transcription",
+    "extraction:entrees": "uv run python -m pipeline.collecte.entrees_extraction",
     "notifier": "node --experimental-strip-types outils/contacts.ts | uv run python -m pipeline.notification",
     "check:py": "uv run ruff check pipeline tests",
     "test:py": "uv run pytest"

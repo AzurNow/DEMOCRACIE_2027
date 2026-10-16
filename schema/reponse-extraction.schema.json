@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:reponse-extraction",
+  "title": "Réponse HTTP d'un modèle extracteur",
+  "description": "staging/reponses-extraction/<cle_source>/<sha256_source>/<modele encodé>.<prompt_sha256>.json, écrit une fois par `pnpm extraire` pour chaque réponse HTTP reçue d'un des deux extracteurs (§4, décision D52), avant toute lecture du corps, et jamais réécrit (règle 7). Le corps est stocké tel que reçu : objet JSON dans brut, sinon texte UTF-8 exact dans brut_texte ; un corps qui n'est pas de l'UTF-8 valide n'est pas écrit (CorpsNonUtf8), un échec de transport non plus. La clé de reprise est (source, modèle, empreinte du prompt rendu) : une réponse gardée est relue au lancement suivant au lieu de repayer l'appel, et seulement pour le même prompt rendu.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cle_source", "sha256_source", "modele", "version_prompt", "prompt_sha256", "date", "statut_http", "brut_octets_sha256"],
+  "properties": {
+    "cle_source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+    "sha256_source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+    "modele": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifiant exact du modèle appelé, tel que config/extraction.json l'épingle ; préfixé simule/ en mode simulé."
+    },
+    "version_prompt": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Version du prompt rendu, par exemple prompts/extraction-1.0.0."
+    },
+    "prompt_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 (UTF-8) du prompt rendu envoyé, texte canonique compris."
+    },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant", "description": "Instant de réception." },
+    "statut_http": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "brut": { "type": "object", "description": "Le corps reçu quand c'est un objet JSON, tel quel. Exclusif de brut_texte." },
+    "brut_texte": {
+      "type": "string",
+      "description": "Le corps reçu, décodé en UTF-8, quand ce n'est pas un objet JSON, octet pour octet. Exclusif de brut."
+    },
+    "brut_octets_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte des octets du corps, prise avant toute lecture."
+    }
+  },
+  "oneOf": [
+    { "required": ["brut"], "not": { "required": ["brut_texte"] } },
+    { "required": ["brut_texte"], "not": { "required": ["brut"] } }
+  ]
+}

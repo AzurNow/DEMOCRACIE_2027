@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:journal-extraction",
+  "title": "Journal de l'extraction double d'une source",
+  "description": "staging/journal-extraction/<cle_source>/<sha256_source>.json, écrit une fois par `pnpm extraire`, en dernier, après les items et les mesures de la source (§4, décision D52) : c'est lui qui marque la source comme traitée, et une source journalisée n'est jamais relancée automatiquement, refusée comprise. Porte le texte lu (fiche de l'extracteur épinglé), les deux réponses gardées dans l'ordre de config/extraction.json avec ce que l'enveloppe de l'éditeur a permis d'y lire, et l'issue : extraite (identifiants des items et mesures déposés dans staging/items/ et staging/mesures/, rejets du cœur) ou refusee (D53 (2) : une sortie rejetée en entier, aucun item, rejet extraction_double_incomplete). Une incohérence d'entrée (fiche, texte, transcription) n'est pas journalisée : elle est nommée par la commande, et la source reste à traiter.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cle_source", "sha256_source", "texte_sha256", "date", "commit", "version_prompt", "prompt_sha256", "reponses", "issue"],
+  "properties": {
+    "cle_source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+    "sha256_source": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+    "texte_sha256": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Texte canonique lu : celui de la fiche de l'extracteur épinglé (D52 (4))."
+    },
+    "date": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant" },
+    "commit": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git", "description": "Commit du code qui extrait." },
+    "version_prompt": { "type": "string", "minLength": 1 },
+    "prompt_sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+    "reponses": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Les deux réponses gardées, dans l'ordre de config/extraction.json.",
+      "items": { "$ref": "#/$defs/reponse" }
+    },
+    "issue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "items", "mesures", "rejets"],
+          "properties": {
+            "statut": { "const": "extraite" },
+            "items": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } },
+            "mesures": { "type": "array", "items": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" } },
+            "rejets": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/rejet" },
+              "not": { "contains": { "properties": { "portee": { "const": "source" } }, "required": ["portee"] } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statut", "rejets"],
+          "description": "D53 (2) : la source n'a pas été extraite deux fois, rien n'est déposé.",
+          "properties": {
+            "statut": { "const": "refusee" },
+            "rejets": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/rejet" },
+              "contains": { "properties": { "portee": { "const": "source" } }, "required": ["portee"] }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "reponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modele", "statut_http", "brut_octets_sha256", "lecture"],
+      "properties": {
+        "modele": { "type": "string", "minLength": 1 },
+        "statut_http": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "brut_octets_sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "Désigne la réponse gardée sous staging/reponses-extraction/."
+        },
+        "lecture": {
+          "description": "Ce que l'enveloppe de l'éditeur a permis de lire. Illisible (statut hors 2xx, sortie coupée, refus, enveloppe inattendue) : la raison, et la sortie transmise au cœur est vide, ce qui refuse la source (D53 (2)).",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lisible"],
+              "properties": { "lisible": { "const": true } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lisible", "raison"],
+              "properties": { "lisible": { "const": false }, "raison": { "type": "string", "minLength": 1 } }
+            }
+          ]
+        }
+      }
+    },
+    "rejet": {
+      "description": "pipeline/extraction/rejets.ts, champ pour champ.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["portee", "modele", "motif", "detail"],
+          "properties": {
+            "portee": { "const": "sortie" },
+            "modele": { "type": "string", "minLength": 1 },
+            "motif": { "enum": ["bloc_de_code", "json_invalide", "cle_dupliquee", "non_conforme"] },
+            "detail": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["portee", "modele", "index", "motif", "detail"],
+          "properties": {
+            "portee": { "const": "item" },
+            "modele": { "type": "string", "minLength": 1 },
+            "index": { "type": "integer", "minimum": 0 },
+            "motif": {
+              "enum": ["candidat_different", "saut_de_page", "citation_vide", "introuvable", "citation_ambigue", "citation_sans_page_unique"]
+            },
+            "detail": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["portee", "modele", "index", "motif", "accord", "detail"],
+          "properties": {
+            "portee": { "const": "depot" },
+            "modele": { "type": "string", "minLength": 1 },
+            "index": { "type": "integer", "minimum": 0 },
+            "motif": { "const": "etat_o_sans_etat_anterieur" },
+            "accord": { "enum": ["accord", "desaccord_existence", "desaccord_contenu"] },
+            "detail": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["portee", "motif", "detail"],
+          "properties": {
+            "portee": { "const": "source" },
+            "motif": { "const": "extraction_double_incomplete" },
+            "detail": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

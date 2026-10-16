@@ -10,7 +10,7 @@ from importlib.metadata import version
 
 import pymupdf
 
-from pipeline.collecte.textes.fiche import Extraction
+from pipeline.collecte.textes.fiche import Extracteur, Extraction
 from pipeline.collecte.textes.pages import SEPARATEUR_PAGES, joindre_pages
 from pipeline.collecte.textes.refus import ExtractionRefusee
 
@@ -21,6 +21,11 @@ DRAPEAUX = pymupdf.TEXT_PRESERVE_LIGATURES | pymupdf.TEXT_PRESERVE_WHITESPACE | 
 
 def options() -> dict[str, object]:
     return {"mode": MODE, "drapeaux": DRAPEAUX, "separateur_pages": SEPARATEUR_PAGES}
+
+
+def extracteur() -> Extracteur:
+    """pymupdf, dans la version installée (épinglée par `uv.lock`), avec les options ci-dessus."""
+    return Extracteur(OUTIL, version("pymupdf"), options())
 
 
 def _ouvrir(octets: bytes) -> pymupdf.Document:
@@ -45,4 +50,4 @@ def lire_pages(octets: bytes) -> list[str]:
 
 def extraire_pdf(octets: bytes) -> Extraction:
     en_pages = joindre_pages(lire_pages(octets))
-    return Extraction(en_pages.texte, OUTIL, version("pymupdf"), options(), pages=en_pages.pages)
+    return Extraction(en_pages.texte, *extracteur(), pages=en_pages.pages)

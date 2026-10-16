@@ -1,0 +1,28 @@
+{
+  "cle_source": "b821820ffc1103409b8918e88d7b469493faa71122db2d19860c4ccb369b5864",
+  "sha256_source": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
+  "modele": "modele-exemple-a",
+  "version_prompt": "prompts/extraction-1.0.0",
+  "prompt_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "date": "2026-10-16T14:00:00+02:00",
+  "statut_http": 200,
+  "brut_octets_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "brut": {
+    "id": "msg_exemple",
+    "type": "message",
+    "role": "assistant",
+    "model": "modele-exemple-a",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"items\": []}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  }
+}

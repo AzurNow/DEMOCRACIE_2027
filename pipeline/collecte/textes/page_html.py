@@ -19,7 +19,7 @@ import re
 from html.parser import HTMLParser
 
 from pipeline.collecte.textes.canonique import TexteCanonique, canoniser
-from pipeline.collecte.textes.fiche import Encodage, Extraction
+from pipeline.collecte.textes.fiche import Encodage, Extracteur, Extraction
 from pipeline.collecte.textes.refus import ExtractionRefusee
 
 OUTIL = "html.parser"
@@ -136,9 +136,14 @@ def rendre(document: str) -> str:
     return rendu.texte()
 
 
+def extracteur() -> Extracteur:
+    """`html.parser` de la bibliothèque standard : sa version est celle de Python qui l'exécute."""
+    return Extracteur(OUTIL, platform.python_version(), {"regle": REGLE})
+
+
 def extraire_html(octets: bytes, type_contenu: str | None) -> Extraction:
     document, encodage = decoder(octets, type_contenu)
     texte = TexteCanonique(canoniser(rendre(document)))
     if texte.longueur == 0:
         raise ExtractionRefusee("page HTML sans texte")
-    return Extraction(texte, OUTIL, platform.python_version(), {"regle": REGLE}, encodage=encodage)
+    return Extraction(texte, *extracteur(), encodage=encodage)

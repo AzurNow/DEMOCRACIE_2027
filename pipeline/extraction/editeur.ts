@@ -51,7 +51,12 @@ function estSucces(statut: number): boolean {
   return statut >= 200 && statut < 300;
 }
 
-function lectureDe(adaptateur: AdaptateurExtraction, statut: number, contenu: Contenu): LectureTexteModele {
+/**
+ * Ce qu'une réponse permet de lire : le texte du modèle d'une réponse 2xx, ou la raison qui l'en
+ * empêche. Exporté pour `pnpm extraire`, qui relit ainsi une réponse gardée sur le disque comme une
+ * réponse fraîche (`executer.ts`).
+ */
+export function lectureDe(adaptateur: AdaptateurExtraction, statut: number, contenu: Contenu): LectureTexteModele {
   if (!estSucces(statut)) return { lisible: false, raison: `réponse HTTP ${statut} : aucun texte du modèle n'est lu hors 2xx.` };
   return adaptateur.texteDuModele(contenu);
 }

@@ -1,0 +1,39 @@
+{
+  "cle_source": "b821820ffc1103409b8918e88d7b469493faa71122db2d19860c4ccb369b5864",
+  "sha256_source": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
+  "texte_sha256": "d21aed9376a8b169069fc8c12c1684afeaa018510d89c5bcb485325444ae07f0",
+  "date": "2026-10-16T14:00:05+02:00",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "version_prompt": "prompts/extraction-1.0.0",
+  "prompt_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "reponses": [
+    {
+      "modele": "modele-exemple-a",
+      "statut_http": 200,
+      "brut_octets_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "lecture": {
+        "lisible": true
+      }
+    },
+    {
+      "modele": "modele-exemple-b",
+      "statut_http": 500,
+      "brut_octets_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "lecture": {
+        "lisible": false,
+        "raison": "réponse HTTP 500 : aucun texte du modèle n'est lu hors 2xx."
+      }
+    }
+  ],
+  "issue": {
+    "statut": "refusee",
+    "rejets": [
+      {
+        "portee": "sortie",
+        "modele": "modele-exemple-b",
+        "motif": "json_invalide",
+        "detail": "Unexpected end of JSON input"
+      }
+    ]
+  }
+}

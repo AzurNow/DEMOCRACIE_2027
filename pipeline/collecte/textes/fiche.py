@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
+from typing import NamedTuple
 
 from pipeline.collecte.textes.canonique import TexteCanonique
 from pipeline.collecte.textes.pages import Page
@@ -25,6 +26,17 @@ class Encodage:
     nom: str
     origine: str
     """`bom`, `content-type` ou `meta`."""
+
+
+class Extracteur(NamedTuple):
+    """L'extracteur qui produit un texte : outil, version exacte, options. Chaque module
+    d'extraction (`pdf.py`, `page_html.py`, `transcription_vtt.py`) le décrit par une seule fonction
+    `extracteur()`, qu'appellent à la fois son extraction et `en_service.extracteur_en_service` :
+    l'extracteur inscrit dans une fiche et l'extracteur épinglé ne peuvent pas diverger."""
+
+    outil: str
+    version: str
+    options: dict[str, object]
 
 
 @dataclass(frozen=True)
