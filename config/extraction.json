@@ -1,0 +1,20 @@
+{
+  "$commentaire": "Les deux extracteurs de l'extraction double (§4, décision D52 (1) et (3)), lus par pipeline/extraction/configuration-editeurs.ts. Rempli à la main par l'auteur avant le premier appel réel ; aucune valeur par défaut dans le code : la configuration est refusée tant qu'une clé vaut null. ORDRE : exactement deux entrées ; le premier extracteur fournit les champs d'un item apparié et les deux sont listés dans cet ordre dans assertion.extraction.modeles (D52 (3)) ; il n'est jamais réordonné. editeur : anthropic ou mistral, choisit l'adaptateur ; toute autre valeur est refusée. modele : identifiant exact et épinglé du modèle (Claude Sonnet 5.5 chez Anthropic, Mistral Large chez Mistral, D52 (1)), envoyé tel quel et inscrit dans chaque item ; deux identifiants identiques sont refusés. max_tokens : entier >= 1, longueur maximale de la sortie ; une sortie coupée (stop_reason max_tokens, finish_reason length) n'est jamais lue ni réparée. Anthropic seulement — effort : low, medium, high, xhigh ou max, envoyé dans output_config.effort ; aucune température, aucun thinking, aucun repli de modèle n'est envoyé (voir pipeline/extraction/editeur-anthropic.ts). Mistral seulement — temperature : nombre >= 0 ; random_seed : entier >= 0, graine envoyée à l'API pour rendre l'appel rejouable. delai_abandon_ms : entier >= 1, délai en millisecondes au-delà duquel un appel sans réponse est abandonné ; jamais envoyé à l'API. Une clé inconnue, ou propre à l'autre éditeur, est refusée ; une clé répétée aussi. Les clés d'API ne figurent jamais ici.",
+  "extracteurs": [
+    {
+      "editeur": "anthropic",
+      "modele": null,
+      "max_tokens": null,
+      "effort": null,
+      "delai_abandon_ms": null
+    },
+    {
+      "editeur": "mistral",
+      "modele": null,
+      "temperature": null,
+      "max_tokens": null,
+      "random_seed": null,
+      "delai_abandon_ms": null
+    }
+  ]
+}
