@@ -712,6 +712,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Dans la PR 3 du lot gel ; à écrire aux §6 et §12.",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D52",
+      "statut": "tranchee",
+      "question": "Quatre points du lot extraction que le §4 ne tranche pas : les deux modèles extracteurs ; la règle d'appariement des deux extractions ; ce qui est déposé dans staging/ pour une paire appariée ; le texte canonique lu quand une source en a plusieurs, et le sort des items validés sur un texte plus ancien.",
+      "contexte": "Le §4 exige une extraction double par deux familles et le signalement de tout désaccord d'existence ou de contenu, sans écrire la comparaison. Le dépôt n'appelait que Mistral (reformulation, en fetch). DETTE 2026-09-23, point 1 : plusieurs fiches d'extraction de texte par source.",
+      "options": [
+        "(1) Claude Sonnet 5.5 et Mistral Large, en fetch sans SDK (nouvel appel réseau vers l'API Anthropic accepté) ; (2) appariement par recouvrement des intervalles de citation après test verbatim, même thème exigé, plus grand recouvrement puis plus petit offset ; sans partenaire ⇒ desaccord_existence ; type, position ou quantification différents ⇒ desaccord_contenu ; libellé et paraphrase non comparés ; (3) un item par paire, champs du modèle cité en premier dans la configuration ; un item non apparié est déposé, marqué desaccord_existence ; (4) fiche produite par la version d'extracteur épinglée par le code, source refusée sinon ; un item validé reste attaché à son texte et à ses offsets.",
+        "Variantes : troisième famille ; citations identiques seulement ; recouvrement sans le thème ; deux items par paire ; citation la plus courte ; revalidation des items sur un nouveau texte ; plus ancienne fiche."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Lot extraction, PR 1 (cœur) et PR 2 (éditeurs). Points 2 à 4 à écrire au §4 à la prochaine révision, car ils influent sur ce qui est proposé à la validation.",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
@@ -859,9 +872,10 @@
         }
       ],
       "decisions": [
-        "D3"
+        "D3",
+        "D52"
       ],
-      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification."
+      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification. Le 2026-10-16 : D52 tranchée (Claude Sonnet 5.5 et Mistral Large, appariement par recouvrement des citations, un item par paire, texte de l'extracteur épinglé). Découpage : PR 1 cœur pur, PR 2 éditeurs, PR 3 pnpm extraire. Le prompt 1.0.0 a été relu le 2026-10-12 (D35)."
     },
     {
       "id": "questions-tirage-symetrie",

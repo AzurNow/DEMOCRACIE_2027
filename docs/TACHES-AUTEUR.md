@@ -625,6 +625,18 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       Le code applique déjà D42 à D50 (D48 à D50 par la PR 2c du lot gel, #134) et D51 sauf
       l'écriture de `en_cours` (PR 3, #135 ; `en_cours` arrive avec la PR 4). Le prompt de
       reformulation 1.0.1 aligné sur D42 suit la 0.17 (lot reformulation).
+- [ ] **Écrire D52 (2) à (4) au §4 à la prochaine révision** (0.18). Proposition, après la phrase
+      « l'extraction est faite deux fois par des modèles de familles différentes et tout désaccord
+      d'existence ou de contenu est signalé » : « Les deux extractions portent sur le même texte
+      canonique, celui que produit la version de l'extracteur de texte épinglée par le code ; un item
+      déjà validé reste attaché au texte et aux offsets sur lesquels il l'a été. Deux items sont
+      appariés quand leurs citations, après le test verbatim, se recouvrent et qu'ils portent le même
+      thème ; à plusieurs candidats, le plus grand recouvrement l'emporte, puis le plus petit offset.
+      Un item sans partenaire est proposé à la validation avec un désaccord d'existence ; deux items
+      appariés dont le type, la position ou la quantification diffèrent le sont avec un désaccord de
+      contenu. Une paire donne un seul item, dont les champs viennent du modèle nommé en premier ; le
+      libellé et la paraphrase ne sont pas comparés. » Nommer au §4 les deux modèles (D52 (1)) :
+      Claude Sonnet 5.5 et Mistral Large, version exacte au premier appel réel.
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
       une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
       avant `date_gel`.
