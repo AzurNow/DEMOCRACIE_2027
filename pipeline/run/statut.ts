@@ -4,8 +4,9 @@
  * rien ; l'écriture est à l'appelant (`invalidation.ts`, `pipeline/notation/inscription-contrefactuel.ts`).
  *
  * - `demarrer` (D51 (1)) : `planifie` ⇒ `en_cours`. Tout autre statut de départ est refusé, et un
- *   run qui porte une `invalidation` aussi : il ne part pas. L'interrogation l'appellera avant la
- *   première tentative (lot gel, PR 4).
+ *   run qui porte une `invalidation` aussi : il ne part pas. L'interrogation (`pipeline/interrogation/run-gele.ts`)
+ *   l'appelle avant la première tentative (lot gel, PR 4), par `demarrerOuReprendre`, qui admet aussi la reprise d'un run
+ *   `en_cours` sans invalidation.
  * - `invalider` (D51 (2), (4)) : pose `invalidation { motif, date }` et laisse le statut inchangé.
  *   Le passage au statut `invalide` se fait avec le dépôt (§12 : un run invalide déclare sa
  *   publication et son dépôt), hors d'ici. Admis depuis `planifie` ou `en_cours` seulement : après
@@ -68,6 +69,22 @@ export function demarrer<T extends RunAvecStatut>(run: T): T {
     throw new TransitionRefusee("demarrer", "porte_une_invalidation", `le run porte une invalidation (« ${run.invalidation.motif} ») ; il ne part pas.`);
   }
   return { ...run, statut: "en_cours" };
+}
+
+export type IssueDemarrage<T> = { readonly issue: "demarre"; readonly run: T } | { readonly issue: "reprend" };
+
+/**
+ * Ce que l'interrogation fait du statut avant la première tentative (D51 (1), lot gel, PR 4) :
+ * `planifie` démarre (`demarrer`) ; `en_cours` reprend, sans nouvelle transition ni rien à écrire,
+ * sauf s'il porte une `invalidation` (posée pendant la fenêtre) : refus, il ne repart pas. Tout autre
+ * statut est refusé par `demarrer`.
+ */
+export function demarrerOuReprendre<T extends RunAvecStatut>(run: T): IssueDemarrage<T> {
+  if (run.statut !== "en_cours") return { issue: "demarre", run: demarrer(run) };
+  if (run.invalidation !== undefined) {
+    throw new TransitionRefusee("demarrer", "porte_une_invalidation", `le run en_cours porte une invalidation (« ${run.invalidation.motif} ») ; il ne reprend pas.`);
+  }
+  return { issue: "reprend" };
 }
 
 export type IssueInvalidation<T> = { readonly issue: "inscrite"; readonly run: T } | { readonly issue: "deja_inscrite" };

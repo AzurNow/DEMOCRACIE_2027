@@ -30,7 +30,14 @@ export interface DispositionRun {
 }
 
 export function dispositionRun(racine: string, date_gel: string): DispositionRun {
-  const run = join(racine, dateParis(lireInstant(date_gel, "date_gel")));
+  return dispositionDuRepertoire(join(racine, dateParis(lireInstant(date_gel, "date_gel"))));
+}
+
+/**
+ * La même disposition sous un répertoire de run déjà nommé par sa date : celui qu'écrit
+ * `pnpm geler` (`<sortie>/<date>/`, `pipeline/gel/destination.ts`), que `pnpm run:dry --run` reçoit.
+ */
+export function dispositionDuRepertoire(run: string): DispositionRun {
   const volume = join(run, "volume");
   return { run, volume, reponses: join(volume, "reponses"), tentatives: join(volume, "tentatives") };
 }

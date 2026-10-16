@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { demarrer, invalider, TransitionRefusee } from "../../pipeline/run/statut.ts";
+import { demarrer, demarrerOuReprendre, invalider, TransitionRefusee } from "../../pipeline/run/statut.ts";
 import type { MotifTransition, RunAvecStatut } from "../../pipeline/run/statut.ts";
 
 const DATE_GEL = "2026-12-01T01:00:00+01:00";
@@ -58,6 +58,28 @@ describe("statut, cas 1 : demarrer", () => {
     const entree = run("planifie");
     demarrer(entree);
     expect(entree.statut).toBe("planifie");
+  });
+});
+
+describe("run gelé, cas 7 et 12 : demarrerOuReprendre (lot gel, PR 4)", () => {
+  it("run gelé, cas 7 : planifie ⇒ demarre, avec le run de demarrer", () => {
+    expect(demarrerOuReprendre(run("planifie"))).toEqual({ issue: "demarre", run: demarrer(run("planifie")) });
+  });
+
+  it("run gelé, cas 7 : en_cours sans invalidation ⇒ reprend, sans nouveau run à écrire", () => {
+    expect(demarrerOuReprendre(run("en_cours"))).toEqual({ issue: "reprend" });
+  });
+
+  it("run gelé, cas 12 : en_cours portant une invalidation ⇒ refus nommé porte_une_invalidation", () => {
+    const invalide = run("en_cours", { invalidation: { motif: MOTIF, date: APRES } });
+    const erreur = refus(() => demarrerOuReprendre(invalide));
+    expect(erreur.motif).toBe("porte_une_invalidation");
+    expect(erreur.transition).toBe("demarrer");
+  });
+
+  it("run gelé, cas 6 : publie, publie_provisoire, invalide ⇒ refus nommé statut_de_depart ; planifie invalidé ⇒ porte_une_invalidation", () => {
+    for (const statut of ["publie", "publie_provisoire", "invalide"]) expect(motifDu(() => demarrerOuReprendre(run(statut)))).toBe("statut_de_depart");
+    expect(motifDu(() => demarrerOuReprendre(run("planifie", { invalidation: { motif: MOTIF, date: APRES } })))).toBe("porte_une_invalidation");
   });
 });
 
