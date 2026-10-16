@@ -180,6 +180,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-16 :** Option 1 sur les cinq points. Gel tardif (§5, §6), alias (§7), empreinte des questions et statut du précédent (§5) à écrire en 0.17. Dans une PR 2c du lot gel, après #131.
 
+### D49 — D48 (5) refuse le gel quand le run le plus récent n’est ni publié ni invalidé. Or un run supplémentaire doit partir dans les 72 h d’un débat ou de la liste officielle (§6), pendant qu’un run peut encore être en notation : le gel serait refusé et l’engagement des 72 h intenable.
+
+**Décision du 2026-10-16 :** Option 1. Remplace le « tout autre refusé nommément » de D48 (5). Dans la PR 2c du lot gel ; à écrire au §5 en 0.17. Même jour : la question sur le changement de position suit la règle de l’item O (D42 (3)) ; D43 écrite au §5 en 0.17 ; format des alias écrit au §7.
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.

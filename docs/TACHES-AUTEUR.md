@@ -13,7 +13,7 @@ Mis à jour le 2026-10-15. Sources relues : `docs/feuille-de-route.json`, `docs/
 
 - [x] (2026-10-12) #109, #104, #110 et #111 fusionnées. Conflit de #104 réglé par l'agent (D34 et
       D35 gardées toutes deux). Le contrôle de Claude Code refuse toujours `gh pr merge` à l'agent.
-- [ ] Supprimer les branches locales `worktree-agent-a691960d77994bec2` et
+- [x] (2026-10-16, par l'agent avec l'accord de l'auteur) Supprimer les branches locales `worktree-agent-a691960d77994bec2` et
       `worktree-agent-a6f6673166d1cef6a` (contenu déjà dans `main` par #95, mais `-d` les refuse) :
       `git branch -D`, que l'agent n'emploie pas.
 - [x] (2026-10-15) #118, #120 et #122 à #124 fusionnées (mesures validées, lot reformulation).
@@ -520,39 +520,83 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       position inventée, position opposée, quantification fausse, périmètre faux, omission, ajout
       fabriqué, autre. »
 
-- [ ] **Écrire en 0.17 : D42 (§5, formulations)**, tranchée le 2026-10-15. Rédaction de l'agent, à
-      relire. Au paragraphe « Formulations », après « … qui vérifie qu'elles ne changent pas le
-      sens. » : « La formulation neutre est écrite par le gabarit, sans modèle, et relue avec les
-      deux autres. La position que la prémisse d'une formulation orientée affirme suit une règle
-      fixe, identique pour tous les candidats : « pour » sur un item F, la position de l'état
-      antérieur sur un item O, la position de l'item sur un item P, aucune sur un item A ni sur une
-      question d'attribution. » Ligne de révision : « Section 5 : la neutre est relue ; la position
-      affirmée par la prémisse orientée suit une règle fixe par type d'item. » Le modèle (Mistral
-      Large épinglé) n'a pas à figurer au §5 : il est publié dans `production.modele`.
+- [ ] **Écrire la 0.17 : D42 à D49**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
+      propositions séparées de D42, D44, D45 et D46). En tête : « version 0.17 ».
 
-- [ ] **Écrire en 0.17 : D44 (§5, graines)**, tranchée le 2026-10-15. Rédaction de l'agent, à
-      relire. Au paragraphe « Tirage », après « … publiée avec elle. » : « La balise est la chaîne
-      quicknet de drand, dont l'empreinte est publiée avec le run. Une graine est formée des huit
-      premiers octets, lus en gros-boutiste et décalés de 11 bits vers la droite, du SHA-256 de la
-      valeur de la balise écrite en hexadécimal, du caractère U+0000 et de sa clé. » Ligne de
-      révision : « Section 5 : chaîne de la balise et règle de dérivation des graines écrites. »
+      **§5, « Formulations ».** Remplacer « Les formulations sont produites par un modèle puis
+      relues par un annotateur qui vérifie qu'elles ne changent pas le sens. » par : « La
+      formulation neutre est écrite par le gabarit ; la familière et l'orientée sont produites par un
+      modèle ; les trois sont relues ensemble par un annotateur qui vérifie qu'elles ne changent pas
+      le sens. » Remplacer les deux phrases « Sur un item O, la vérité de la prémisse dépend de la
+      date : le relecteur note […] que le relecteur note. » par : « La position qu'affirme une
+      formulation orientée est fixée par une règle par type d'item, jamais choisie par le
+      relecteur : « pour » sur un item F, la position de l'item sur un item P, la position de l'état
+      antérieur sur un item O, y compris pour une question sur le changement de position ; sur un
+      item A et sur une question d'attribution, elle n'affirme aucune position. Cette position est
+      recalculée sur l'item en vigueur au gel : une formulation relue sur une autre position est
+      rappelée en relecture, et sa question n'est pas gelée. Sur un item O, la vérité de la prémisse
+      dépend de la date : à l'instant de gel, la prémisse est fausse si la position qu'elle affirme
+      diffère de la position en vigueur. »
 
-- [ ] **Écrire en 0.17 : D45 (§5, §6, §7)**, tranchée le 2026-10-15. Rédaction de l'agent, à
-      relire. §5, « Tirage », après la phrase sur la balise : « L'identifiant du run en est dérivé
-      de même, par la clé « run_id ». Le run précédent d'un run est le run publié, hors pilote et
-      hors run invalide, dont l'instant de gel est le plus récent avant le sien ; il est inscrit avec
-      le run, et son absence est déclarée. Un gel ne s'exécute pas avant son instant de gel. » §6 :
-      « La fenêtre d'interrogation ne s'ouvre pas avant l'instant de gel. » §7 : « Les alias
-      aveugles des outils sont choisis par l'auteur et publiés avec le run ; un alias ne contient ni
-      le nom ni l'éditeur d'un outil, et deux outils n'en partagent pas. » Ligne de révision :
-      « Sections 5, 6 et 7 : identifiant du run dérivé de la balise, run précédent, ordre des
-      instants, alias aveugles. »
+      **§5, nouveau paragraphe « Gel », avant « Tirage ».** Il remplace, dans « Tirage », le passage
+      de « Les graines d'un run ne sont choisies par personne » à « chacun peut la recalculer. » :
+      « **Gel.** Chaque run déclare un instant de gel, qui précède l'ouverture de sa fenêtre
+      d'interrogation (section 6). Le gel engendre le jeu complet des questions, fait le tirage et
+      dérive les graines. Il est exécuté à l'instant de gel ou après, et strictement avant
+      l'ouverture de la fenêtre. Un gel exécuté plus tôt est refusé. Un gel exécuté plus tard est
+      refusé aussi : des réponses obtenues avant lui ne seraient couvertes par aucun tirage publié.
+      Avant l'instant de gel, l'auteur publie le commit à geler et fait archiver sa page publique
+      par la Wayback Machine. Le gel exige que le dépôt soit exactement à ce commit et vérifie auprès
+      de la Wayback Machine que la capture précède l'instant de gel. La réponse de la Wayback
+      Machine est archivée avec le run, telle que reçue, avec son empreinte. Les données sont ainsi
+      figées publiquement avant que l'aléa existe : nul ne peut lire l'aléa, rejouer le tirage, puis
+      modifier les données. Ces exigences valent pour tout run, run pilote compris.
 
-- [ ] **Écrire en 0.17 : D46 (§5)**, tranchée le 2026-10-16. Rédaction de l'agent, à relire. §5,
-      « Tirage », après la phrase sur la balise : « Avant la date de gel, l'auteur publie le commit
-      du code et des données qu'il gèlera, et le fait archiver par un service tiers ; le gel ne
-      porte que sur ce commit, et l'archive, dont l'horodatage précède la date de gel, est publiée
-      avec le run. » Ligne de révision : « Section 5 : engagement archivé sur le commit gelé. »
+      Les graines d'un run ne sont choisies par personne. Elles sont dérivées de la balise publique
+      d'aléa drand, sur sa chaîne quicknet, dont l'empreinte est publiée avec le code, au premier
+      tour émis à l'instant de gel ou après. La réponse de ce tour est lue sur deux relais
+      indépendants, qui doivent rendre la même réponse ; elle est archivée avec le run telle que
+      reçue. L'aléa est l'empreinte SHA-256 de sa signature. Pour n'ajouter aucune dépendance, le
+      projet ne vérifie pas lui-même la signature cryptographique ; la procédure est documentée
+      pour qu'un tiers la fasse. Chaque graine publiée (tirage, échantillon humain, test
+      contrefactuel, bootstrap, permutation) est dérivée de l'aléa par une clé lisible, publiée avec
+      elle. On prend l'empreinte SHA-256 de l'aléa écrit en hexadécimal, suivi d'un octet nul puis
+      de la clé. On lit ses 8 premiers octets comme un entier gros-boutiste, que l'on décale de 11
+      bits vers la droite : c'est la graine, un entier de 53 bits. L'identifiant du run est dérivé
+      de même, par la clé « run_id ». Nul, l'auteur compris, ne peut connaître une graine avant le
+      gel, et chacun peut la recalculer. »
+
+      **§5, « Tirage », après « …compte comme neuve. »** : « Le run précédent est le plus récent des
+      runs publiés, à titre définitif ou provisoire, dont l'instant de gel précède strictement celui
+      du run, le run pilote excepté : un run planifié, en cours ou invalidé n'en est pas un. Le run
+      inscrit son précédent, ou déclare qu'il n'en a pas : le premier run public n'en a pas, et
+      toutes ses questions sont neuves. Chaque run publie l'empreinte SHA-256 de son tirage et celle
+      de son jeu de questions. Au gel, ces empreintes sont recalculées sur les fichiers du run
+      précédent, et un précédent dont une empreinte diffère est refusé. »
+
+      **§6, après « …à partir de son ouverture. »** : « Elle s'ouvre après l'exécution du gel du run
+      (section 5) : aucune requête ne part avant que le tirage existe. »
+
+      **§7, « Juges automatiques », après « …sur la position. »** : « Chaque réponse porte un alias
+      aveugle de son outil, saisi par l'auteur à chaque gel et publié avec le run : c'est sous ce
+      seul nom que l'outil est désigné là où la notation doit rester aveugle. Un alias est formé
+      d'une à trois lettres capitales suivies de deux à quatre chiffres. Un alias partagé par deux
+      outils est refusé. Les alias sont comparés après une normalisation fixe : décomposition
+      Unicode, diacritiques retirés, minuscules, espaces repliés. Un alias est aussi refusé s'il
+      contient un mot de trois lettres au moins du nom, de l'éditeur ou de l'identifiant d'un outil
+      du périmètre, ou l'un de ces trois écrit sans espaces. »
+
+      **Ligne de révision** : « 0.17, 2026-10-16 : décisions de l'auteur des 15 et 16 octobre sur la
+      reformulation et le gel. Section 5 : la formulation neutre est écrite par le gabarit, la
+      position qu'affirme une formulation orientée suit une règle fixe par type d'item et se
+      recalcule au gel ; le gel a lieu entre l'instant de gel et l'ouverture de la fenêtre, sur un
+      commit archivé avant l'instant de gel ; la balise, ses relais, la règle de dérivation des
+      graines et de l'identifiant du run sont écrits ; le run précédent est le dernier run publié, et
+      il est engagé par les empreintes de son tirage et de ses questions. Section 6 : la fenêtre
+      s'ouvre après le gel. Section 7 : format et règles de refus des alias aveugles. »
+
+      Le code applique déjà D42 à D47 ; D48 et D49 arrivent avec la PR 2c du lot gel. Le prompt de
+      reformulation 1.0.1 aligné sur D42 suit la 0.17 (lot reformulation).
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
       une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
       avant `date_gel`.

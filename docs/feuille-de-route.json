@@ -672,6 +672,20 @@
       "recommandation": "Option 1 sur les cinq points.",
       "retenu": "Option 1 sur les cinq points. Gel tardif (§5, §6), alias (§7), empreinte des questions et statut du précédent (§5) à écrire en 0.17. Dans une PR 2c du lot gel, après #131.",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D49",
+      "statut": "tranchee",
+      "question": "D48 (5) refuse le gel quand le run le plus récent n’est ni publié ni invalidé. Or un run supplémentaire doit partir dans les 72 h d’un débat ou de la liste officielle (§6), pendant qu’un run peut encore être en notation : le gel serait refusé et l’engagement des 72 h intenable.",
+      "contexte": "Relevé en rédigeant la 0.17. Un run passe par sa fenêtre de 48 h, la notation et l’audit humain avant d’être publié ; au rythme hebdomadaire, deux runs se chevauchent souvent.",
+      "options": [
+        "(1) Run précédent = le plus récent des runs publie ou publie_provisoire avant la date_gel, hors pilote ; planifie, en_cours et invalide sont sautés, sans refus.",
+        "(2) Accepter un run en_cours dont le tirage est figé.",
+        "(3) Garder le refus de D48 (5) et le déclarer comme limite au §11."
+      ],
+      "recommandation": "Option 1.",
+      "retenu": "Option 1. Remplace le « tout autre refusé nommément » de D48 (5). Dans la PR 2c du lot gel ; à écrire au §5 en 0.17. Même jour : la question sur le changement de position suit la règle de l’item O (D42 (3)) ; D43 écrite au §5 en 0.17 ; format des alias écrit au §7.",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
@@ -1099,7 +1113,9 @@
         "D44",
         "D45",
         "D46",
-        "D47"
+        "D47",
+        "D48",
+        "D49"
       ],
       "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
     },
