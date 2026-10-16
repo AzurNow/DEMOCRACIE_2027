@@ -42,7 +42,7 @@ def test_agent_utilisateur_propre_au_test_des_liens(horloge: HorlogeFactice) -> 
     sonde.sonder(A)
 
     assert AGENT_LIENS.startswith("BancEssai2027-liens/")
-    assert "https://github.com/AzurNow/DEMOCRACIE_2027" in AGENT_LIENS
+    assert "https://github.com/AzurNow/DEMOCRATIE_2027" in AGENT_LIENS
     assert all(en_tetes == {"User-Agent": AGENT_LIENS} for _u, _t, en_tetes in transport.requetes)
 
 

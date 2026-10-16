@@ -34,7 +34,7 @@ def test_agent_utilisateur_nomme_le_projet_et_le_depot(horloge: HorlogeFactice) 
     )
     client.telecharger("https://example.org/a")
 
-    assert "https://github.com/AzurNow/DEMOCRACIE_2027" in AGENT_UTILISATEUR
+    assert "https://github.com/AzurNow/DEMOCRATIE_2027" in AGENT_UTILISATEUR
     assert all(en_tetes["User-Agent"] == AGENT_UTILISATEUR for _u, _t, en_tetes in transport.requetes)
 
 

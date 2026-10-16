@@ -645,7 +645,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       qu'une fois rattaché par la validation à une mesure, existante ou nouvelle, dont la
       formulation canonique a été relue. »
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
-      une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
+      une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRATIE_2027/commit/<sha>`),
       avant `date_gel`.
 
 ### Prompts (`prompts/`)

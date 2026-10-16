@@ -3,7 +3,7 @@
  * devient public dès `date_gel` passée : sans engagement, un auteur qui gèlerait plus tard pourrait
  * lire l'aléa, rejouer le tirage, puis modifier `data/` avant de geler. Avant `date_gel`, l'auteur
  * pousse donc le commit à geler et fait capturer par la Wayback Machine sa page GitHub,
- * `https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`. Au gel :
+ * `https://github.com/AzurNow/DEMOCRATIE_2027/commit/<sha>`. Au gel :
  *
  * 1. l'URL de capture doit être exactement `https://web.archive.org/web/<14 chiffres>/<page du
  *    commit HEAD complet>` (`lireEngagement`) ;
@@ -32,7 +32,7 @@ import { DelaiDepasse, jsonDesOctets, messageDErreur } from "./reseau.ts";
 import type { LireHttp, ReponseHttp } from "./reseau.ts";
 
 /** D46 : le dépôt public dont la page de commit est capturée. */
-export const DEPOT_PUBLIC = "https://github.com/AzurNow/DEMOCRACIE_2027";
+export const DEPOT_PUBLIC = "https://github.com/AzurNow/DEMOCRATIE_2027";
 
 const DISPONIBILITE = "https://archive.org/wayback/available";
 
