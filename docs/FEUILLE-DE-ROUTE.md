@@ -164,6 +164,18 @@ Aucune décision en attente.
 
 **Décision du 2026-10-15 :** Option 1 sur les quatre points. Règle de dérivation et chaîne à écrire au §5 en 0.17.
 
+### D45 — Quatre points du gel soulevés par la PR 1 (#127) : identifiant du run et reproductibilité du tirage, origine des alias aveugles, run précédent de la reprise à 80 %, ordre entre l'instant du gel, date_gel et la fenêtre.
+
+**Décision du 2026-10-15 :** Option 1 sur les quatre points. Alias (§7), run précédent (§5) et ordre des instants (§5, §6) à écrire en 0.17. Identifiant et run précédent dans la PR 2 du lot gel, refus d'ordre et alias dans la PR 2 également.
+
+### D46 — Le tour drand est fixé par date_gel (D44, D45) et devient public dès date_gel passée : un auteur qui gèle plus tard peut lire l’aléa, rejouer le tirage, puis modifier data/ avant de geler. Comment l’exclure ?
+
+**Décision du 2026-10-16 :** Option 1. Appel Wayback au gel autorisé, lancé par l’auteur seul. À écrire au §5 en 0.17. Dans la PR 2a du lot gel.
+
+### D47 — Quatre points laissés par la PR 2a du lot gel (#130) : source de l’URL d’engagement, dispense du pilote, archivage de la réponse Wayback, délai des appels réseau du gel.
+
+**Décision du 2026-10-16 :** Option 1 sur les quatre points. Paramètre --engagement et archive Wayback à écrire au §5 en 0.17 avec D46. Dans la PR 2a (#130).
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.
