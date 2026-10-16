@@ -138,6 +138,13 @@ métrique secondaire, la fraîcheur sans drapeau) ; ils sont devenus la décisio
 « métriques différentes ⇒ notes différentes » protège la mesure ; l'autre révèle ce que le texte du
 protocole dit de travers.
 
+**Couper `gc` et `maintenance` automatiques dans un dépôt Git de test.** Le 2026-10-16, la CI de
+#136, une PR qui ne touchait que de la documentation, a échoué deux fois de suite sur deux tests du
+gel différents. L'erreur était `ENOTEMPTY` à la suppression de `/tmp/banc-gel-depot-…/.git`. Un
+`git commit` peut lancer en arrière-plan un `gc --auto` qui écrit encore dans `.git` pendant que
+`afterEach` supprime le dépôt. Corrigé dans `tests/aides/depot.ts`
+(`-c gc.auto=0 -c maintenance.auto=false`, #138). Tout dépôt Git de test passe par cet outil.
+
 ## Outillage
 
 **Valider avec ce qui est déjà là.** `jsonschema` était installé sur la machine : 45 exemples
@@ -432,3 +439,10 @@ Le 2026-10-12, le brief de la contraction (#111) demandait un commit ; le gabari
 `codeur-opus` l'interdisent. L'agent a tenu sa définition et l'a signalé, sans dégât, mais un agent
 moins strict aurait commité un diff que personne n'avait relu. La relecture du diff avant commit
 reste à la session principale.
+
+**Rédiger l'amendement en même temps que le brief, pas après.** Le 2026-10-16, le brief de la PR 4
+du gel admettait la reprise d'un run `en_cours` sans dire ce qu'il advient d'un run `en_cours` qui
+porte une invalidation. Le trou est apparu en écrivant la phrase du §6 « un run qui porte une
+invalidation n'est plus interrogé », et l'agent travaillait déjà. Il a fallu lui envoyer une
+précision en cours de route (cas 12). S'il avait rendu son travail avant, la reprise d'un run
+invalidé serait passée.

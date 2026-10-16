@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-15.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-16.
 
 ## Décisions en attente
 
@@ -241,7 +241,7 @@ flowchart LR
   end
   subgraph jalon_J4["J4 · 22 nov. 2026"]
     lot_alignement_0_3["alignement-0-3<br/>Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7)<br/>T2"]:::T2
-    lot_gel["gel<br/>Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider)<br/>T0"]:::T0
+    lot_gel["gel<br/>Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider)<br/>T3"]:::T3
     lot_interrogation["interrogation<br/>Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo<br/>T3"]:::T3
     lot_notation["notation<br/>Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves<br/>T3"]:::T3
     lot_notation_humaine["notation-humaine<br/>Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or<br/>T2"]:::T2
@@ -305,7 +305,7 @@ flowchart LR
 | hors-code | Avocat, Zenodo, institutions, annotateurs, panel, image conteneur §9 | J3 | T0 | bloqué par protocole | auteur | L | 24 | protocole |
 | reformulation | Formulations familière et orientée : staging, relecture humaine, data/formulations/ | J3 | T2 | bloqué par mesures-validees, perimetre-prompts | opus | L | 2 | mesures-validees, perimetre-prompts |
 | alignement-0-3 | Aligner analysis/ et pipeline/questions/ sur le protocole 0.3 (D6, D7) | J4 | T2 | débloqué | opus | M | 0.5 | — |
-| gel | Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider) | J4 | T0 | bloqué par mesures-validees, questions-tirage-symetrie, reformulation | opus | L | 1 | mesures-validees, questions-tirage-symetrie, reformulation |
+| gel | Écrivain du gel (pnpm geler), graines par balise publique, transitions de statut du run (run:invalider) | J4 | T3 | atteint | opus | L | 1 | mesures-validees, questions-tirage-symetrie, reformulation |
 | interrogation | Appels API, fenêtre 48 h, trois tentatives au plus, réponses brutes immuables, archive Zenodo | J4 | T3 | atteint | opus | M | 1 | perimetre-prompts, questions-tirage-symetrie |
 | notation | Deux juges, désaccords, échantillon 10 %, test contrefactuel, revue humaine des erreurs graves | J4 | T3 | atteint | opus | L | 2 | interrogation (informe), perimetre-prompts, test-liens |
 | notation-humaine | Interface locale de notation humaine des réponses : échantillon 10 % / 25 %, arbitrage, désaccord des juges, extrait invalide, erreurs graves, jeu d'or | J4 | T2 | débloqué | sonnet | L | 2 | notation, test-liens, validation-interface (informe) |
@@ -351,7 +351,7 @@ flowchart LR
 ### J4
 
 - alignement-0-3 (T2)
-- gel (T0)
+- gel (T3)
 - interrogation (T3)
 - notation (T3)
 - notation-humaine (T2)
