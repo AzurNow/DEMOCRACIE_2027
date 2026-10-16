@@ -8,7 +8,9 @@
  *
  * Partie pure : `choisirPrecedent` (le choix, sur des `run.json` déjà lus) et `tiragePrecedentVerifie`
  * (des octets de son `tirage.json` et de son `questions.json` au `TiragePrecedent` que
- * `tirage.ts:tirer` reçoit). Partie lue, mince : `lirePrecedent`.
+ * `tirage.ts:tirer` reçoit, par `fichiersDuRunVerifies`). Partie lue, mince : `lirePrecedent`, par
+ * `lireFichiersDuRun`. Ces deux-là vérifient aussi le run gelé que `pnpm run:dry --run` interroge
+ * (`pipeline/interrogation/run-gele.ts`) : une seule vérification dans le dépôt.
  *
  * Chaque répertoire de `runs/` doit porter un `run.json` lisible : un seul illisible, et le gel ne
  * peut plus dire quel run est le précédent. Tout défaut est un refus nommé (`PrecedentRefuse`),
@@ -58,12 +60,15 @@ export class PrecedentRefuse extends Error {
   readonly motif: MotifPrecedent;
   /** Le répertoire de `runs/` en cause. */
   readonly run: string;
+  /** Le défaut seul, sans le cadre du précédent : `pipeline/interrogation/run-gele.ts` le reprend. */
+  readonly detail: string;
 
   constructor(motif: MotifPrecedent, run: string, detail: string) {
     super(`Run précédent refusé (${motif}, runs/${run}, décisions D45 (3), D48) : ${detail} Rien n'est écrit.`);
     this.name = "PrecedentRefuse";
     this.motif = motif;
     this.run = run;
+    this.detail = detail;
   }
 }
 
@@ -269,19 +274,35 @@ function exigerQuestionsTirees(run: RunDeRuns, tirage: Tirage, questions: readon
   throw new PrecedentRefuse("question_introuvable", run.repertoire, `question(s) tirée(s) absente(s) de questions.json : ${absentes.join(", ")}.`);
 }
 
+/** Le tirage et les questions d'un run gelé, lus et vérifiés contre son `run.json`. */
+export interface FichiersDuRun {
+  readonly tirage: Tirage;
+  readonly questions: readonly Question[];
+}
+
 /**
- * Des octets du tirage précédent et de son `questions.json` au `TiragePrecedent` : chemins
+ * Des octets du tirage d'un run et de son `questions.json` aux deux fichiers lus : chemins
  * cohérents, empreintes égales à celles que son `run.json` déclare (D48 (4) pour les questions),
- * tirage conforme et de ce run, chaque question tirée présente. La signature de chaque question
- * (`signature.ts`) est calculée sur la question telle que le run précédent l'a posée.
+ * tirage conforme et de ce run, chaque question tirée présente. Seule vérification du dépôt : le gel
+ * l'applique au précédent, `pnpm run:dry --run` au run qu'il interroge (`run-gele.ts`).
  */
-export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array, octets_questions: Uint8Array): TiragePrecedent {
+export function fichiersDuRunVerifies(run: RunDeRuns, octets_tirage: Uint8Array, octets_questions: Uint8Array): FichiersDuRun {
   exigerCheminCoherent(run);
   exigerEmpreinte(run, octets_tirage);
   const tirage = tirageLu(run, octets_tirage);
   exigerEmpreinteDesQuestions(run, questionsDeclarees(run), octets_questions);
   const questions = questionsLues(run, octets_questions);
   exigerQuestionsTirees(run, tirage, questions);
+  return { tirage, questions };
+}
+
+/**
+ * Des octets du tirage précédent et de son `questions.json` au `TiragePrecedent`, après
+ * `fichiersDuRunVerifies`. La signature de chaque question (`signature.ts`) est calculée sur la
+ * question telle que le run précédent l'a posée.
+ */
+export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array, octets_questions: Uint8Array): TiragePrecedent {
+  const { tirage, questions } = fichiersDuRunVerifies(run, octets_tirage, octets_questions);
   return tiragePrecedentDepuis(tirage, questions);
 }
 
@@ -304,6 +325,19 @@ function octetsDe(motif: MotifPrecedent, run: RunDeRuns, chemin: string): Uint8A
 }
 
 /**
+ * Lit sous `repertoire` (le répertoire du run, où qu'il soit) le tirage et les questions que `run`
+ * déclare, et les vérifie (`fichiersDuRunVerifies`). Les déclarations (chemins, présence de
+ * `questions`) sont contrôlées avant toute lecture des deux fichiers.
+ */
+export function lireFichiersDuRun(repertoire: string, run: RunDeRuns): FichiersDuRun {
+  exigerCheminCoherent(run);
+  questionsDeclarees(run);
+  const octets_tirage = octetsDe("tirage_illisible", run, join(repertoire, "tirage.json"));
+  const octets_questions = octetsDe("questions_illisibles", run, join(repertoire, "questions.json"));
+  return fichiersDuRunVerifies(run, octets_tirage, octets_questions);
+}
+
+/**
  * Lit `runs/` sous `racine`, choisit le précédent, vérifie et lit son tirage et ses questions. Le
  * gel lit toujours `runs/` du dépôt, `--sortie` ou non : le précédent d'un essai est celui qu'aurait
  * le vrai run. Les déclarations du `run.json` (chemins, présence de `questions`) sont contrôlées
@@ -312,17 +346,14 @@ function octetsDe(motif: MotifPrecedent, run: RunDeRuns, chemin: string): Uint8A
 export function lirePrecedent(racine: string, date_gel_ms: number): PrecedentDuGel {
   const run = choisirPrecedent(lireRunsDuDepot(join(racine, "runs")), date_gel_ms);
   if (run === null) return SANS_PRECEDENT;
-  exigerCheminCoherent(run);
-  const questions = questionsDeclarees(run);
-  const repertoire = join(racine, "runs", run.repertoire);
-  const octets_tirage = octetsDe("tirage_illisible", run, join(repertoire, "tirage.json"));
-  const octets_questions = octetsDe("questions_illisibles", run, join(repertoire, "questions.json"));
+  const { tirage, questions } = lireFichiersDuRun(join(racine, "runs", run.repertoire), run);
+  const declarees = questionsDeclarees(run);
   return {
     run_precedent: {
       id: run.id,
       tirage: { chemin: run.tirage.chemin, sha256: run.tirage.sha256 },
-      questions: { chemin: questions.chemin, sha256: questions.sha256 },
+      questions: { chemin: declarees.chemin, sha256: declarees.sha256 },
     },
-    tirage_precedent: tiragePrecedentVerifie(run, octets_tirage, octets_questions),
+    tirage_precedent: tiragePrecedentDepuis(tirage, questions),
   };
 }

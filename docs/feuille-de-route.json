@@ -1145,7 +1145,7 @@
         "D50",
         "D51"
       ],
-      "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
+      "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel. PR 4 livrée le 2026-10-16 (D51 (1)) : pnpm run:dry --run <répertoire gelé> lit périmètre, fenêtre, identifiant et questions tirées du gel, vérifie les empreintes de tirage.json et questions.json (vérification partagée avec le précédent), écrit en_cours avant la première tentative et reprend un run en_cours sans réécrire run.json ; le mode fixtures est inchangé."
     },
     {
       "id": "mesures-validees",
