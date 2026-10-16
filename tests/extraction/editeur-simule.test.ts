@@ -19,7 +19,7 @@ import {
 import { extraireSource } from "../../pipeline/extraction/extraction.ts";
 import { lireSortie } from "../../pipeline/extraction/lecture-sortie.ts";
 import { chargerPromptExtraction, rendrePromptExtraction, VERSION_PROMPT_EXTRACTION, type VariablesExtraction } from "../../pipeline/extraction/prompt.ts";
-import { CANDIDAT, entreeHtml, entreePdf, ports } from "./aides.ts";
+import { CANDIDAT, entreeHtml, entreePdf, lisible, ports } from "./aides.ts";
 
 const TEXTE_PROMPT = chargerPromptExtraction();
 const TEXTE = "Nous ouvrirons les centres de santé le dimanche.\nUne seconde phrase du document de démonstration.";
@@ -134,8 +134,8 @@ describe("cas limite 9 : de bout en bout avec le cœur", () => {
       ...entreeHtml(TEXTE, brutA, brutB),
       configuration: { modeles: [MODELE_SIMULE_ANTHROPIC, MODELE_SIMULE_MISTRAL] as const, version_prompt: VERSION_PROMPT_EXTRACTION },
       sorties: new Map([
-        [MODELE_SIMULE_ANTHROPIC, brutA],
-        [MODELE_SIMULE_MISTRAL, brutB],
+        [MODELE_SIMULE_ANTHROPIC, lisible(brutA)],
+        [MODELE_SIMULE_MISTRAL, lisible(brutB)],
       ]),
     };
     const resultat = extraireSource(entree, ports());
@@ -160,8 +160,8 @@ describe("cas limite 9 : de bout en bout avec le cœur", () => {
       ...entreePdf(pages, brutA, brutB),
       configuration: { modeles: [MODELE_SIMULE_ANTHROPIC, MODELE_SIMULE_MISTRAL] as const, version_prompt: VERSION_PROMPT_EXTRACTION },
       sorties: new Map([
-        [MODELE_SIMULE_ANTHROPIC, brutA],
-        [MODELE_SIMULE_MISTRAL, brutB],
+        [MODELE_SIMULE_ANTHROPIC, lisible(brutA)],
+        [MODELE_SIMULE_MISTRAL, lisible(brutB)],
       ]),
     };
     const resultat = extraireSource(entree, ports());

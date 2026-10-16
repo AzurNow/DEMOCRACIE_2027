@@ -9,6 +9,7 @@
 import { createHash } from "node:crypto";
 import type { EntreeExtraction, Ports } from "../../pipeline/extraction/extraction.ts";
 import type { ExtracteurEpingle } from "../../pipeline/extraction/choix-texte.ts";
+import type { SortieModele } from "../../pipeline/extraction/types.ts";
 import { longueurPointsDeCode } from "../../validation/domaine/normalisation.ts";
 import type { Source } from "../../validation/domaine/types.ts";
 
@@ -128,8 +129,23 @@ export function sortie(...items: readonly Record<string, unknown>[]): string {
   return JSON.stringify({ items });
 }
 
+/** La sortie lisible d'un modèle : le texte reçu, tel quel. */
+export function lisible(texte: string): SortieModele {
+  return { lisible: true, texte };
+}
+
+/** La sortie d'un modèle dont la réponse ne donne aucun texte, avec sa raison. */
+export function illisible(raison: string): SortieModele {
+  return { lisible: false, raison };
+}
+
+/** Une chaîne est la sortie lisible d'un modèle ; une `SortieModele` passe telle quelle. */
+function sortieModele(brut: string | SortieModele): SortieModele {
+  return typeof brut === "string" ? lisible(brut) : brut;
+}
+
 /** Une entrée complète pour une source HTML ; chaque test remplace ce qu'il vise. */
-export function entreeHtml(texte: string, brutA: string, brutB: string): EntreeExtraction {
+export function entreeHtml(texte: string, brutA: string | SortieModele, brutB: string | SortieModele): EntreeExtraction {
   return {
     configuration: { modeles: [MODELE_A, MODELE_B], version_prompt: "prompts/extraction-1.0.0" },
     extracteur_epingle: HTML,
@@ -139,8 +155,8 @@ export function entreeHtml(texte: string, brutA: string, brutB: string): EntreeE
     texte,
     vtt: null,
     sorties: new Map([
-      [MODELE_A, brutA],
-      [MODELE_B, brutB],
+      [MODELE_A, sortieModele(brutA)],
+      [MODELE_B, sortieModele(brutB)],
     ]),
     commit: COMMIT,
   };

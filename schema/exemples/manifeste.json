@@ -2057,7 +2057,7 @@
       "objet": "journal-extraction",
       "fichier": "journal-extraction/valide-02-refusee-sortie-illisible.json",
       "attendu": "valide",
-      "motif": "Source refusée : la réponse du second modèle est un 500, sa lecture est illisible, la sortie transmise au cœur est rejetée et la source porte extraction_double_incomplete (D53 (2))."
+      "motif": "Source refusée : la réponse du second modèle est un 500, sa lecture est illisible, le cœur la rejette en lecture_illisible avec la raison lue et la source porte extraction_double_incomplete (D53 (2))."
     },
     {
       "objet": "journal-extraction",

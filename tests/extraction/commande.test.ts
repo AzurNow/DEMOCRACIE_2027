@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { valider } from "../../outils/schemas/valider.ts";
+import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
 import { CODE_PLAFOND_ATTEINT, CODE_SOURCES_NON_TRAITEES } from "../../pipeline/extraction/commande.ts";
 import { transportSousDelai } from "../../pipeline/extraction/delai.ts";
 import { MODELE_SIMULE_ANTHROPIC, MODELE_SIMULE_MISTRAL } from "../../pipeline/extraction/editeur-simule.ts";
@@ -118,6 +118,40 @@ describe("cas 7 : une sortie illisible refuse la source", () => {
     const [, mistral] = journal(sortie).reponses;
     expect(mistral).toMatchObject({ modele: MODELE_SIMULE_MISTRAL, statut_http: 500, lecture: { lisible: false } });
     expect(mistral?.lecture).toMatchObject({ raison: expect.stringContaining("HTTP 500") as unknown });
+  });
+
+  it("réponse HTTP 500 gardée ⇒ journal refusee validé, rejet lecture_illisible à la raison du journal, réponse gardée inchangée", async () => {
+    const racine = racineDeTest();
+    const sortie = temporaire();
+    await lancer(simule(racine, sortie), { issues: { anthropic: "conforme", mistral: "http_500" } });
+    const lu = valider<JournalExtraction>("journal-extraction", journal(sortie), "journal");
+    const [, mistral] = lu.reponses;
+    expect(mistral?.lecture.lisible).toBe(false);
+    const raison = mistral?.lecture.lisible === false ? mistral.lecture.raison : null;
+    expect(raison).toContain("HTTP 500");
+    expect(lu.issue).toEqual({
+      statut: "refusee",
+      rejets: [
+        { portee: "sortie", modele: MODELE_SIMULE_MISTRAL, motif: "lecture_illisible", detail: raison },
+        expect.objectContaining({ portee: "source", motif: "extraction_double_incomplete" }) as unknown,
+      ],
+    });
+    const corps = JSON.stringify({ object: "error", message: "Erreur interne simulée.", type: "internal_error", code: "simule_500" });
+    const gardee = reponses(sortie).find((reponse) => reponse.modele === MODELE_SIMULE_MISTRAL);
+    expect(gardee).toMatchObject({ statut_http: 500, brut: JSON.parse(corps) as unknown, brut_octets_sha256: sha256(corps) });
+    expect(mistral?.brut_octets_sha256).toBe(sha256(corps));
+  });
+
+  it("schéma : lecture_illisible est un motif de portée sortie, jamais de portée item", async () => {
+    const racine = racineDeTest();
+    const sortie = temporaire();
+    await lancer(simule(racine, sortie), { issues: { anthropic: "http_500", mistral: "conforme" } });
+    const lu = journal(sortie);
+    expect(lu.issue.rejets[0]).toMatchObject({ portee: "sortie", motif: "lecture_illisible" });
+    expect(erreurDeSchema("journal-extraction", lu, "journal")).toBeNull();
+    const [premier, ...suite] = lu.issue.rejets;
+    const enItem = { ...lu, issue: { ...lu.issue, rejets: [{ ...premier, portee: "item", index: 0 }, ...suite] } };
+    expect(erreurDeSchema("journal-extraction", enItem, "journal")).not.toBeNull();
   });
 
   it("mode réel : sortie coupée par max_tokens chez Mistral ⇒ source refusée", async () => {

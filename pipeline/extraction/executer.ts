@@ -16,12 +16,11 @@
  *    échec de transport, un délai dépassé ou un corps non UTF-8 n'écrit rien : la source reste à
  *    traiter et sera reprise sans repayer l'appel déjà gardé ;
  * 4. les deux réponses gardées sont relues depuis ce qui est écrit, par l'enveloppe de leur éditeur
- *    (`editeur.ts:lectureDe`), et le texte de chaque modèle est passé au cœur. **Une lecture
+ *    (`editeur.ts:lectureDe`), et chaque lecture est passée au cœur telle quelle. **Une lecture
  *    illisible** (statut hors 2xx, sortie coupée, refus, enveloppe inattendue) n'a pas de texte :
- *    le cœur reçoit pour ce modèle la chaîne vide, qu'il rejette en entier (`json_invalide`), ce qui
- *    refuse la source (D53 (2), `extraction_double_incomplete`). La raison réelle est consignée dans
- *    le journal, à côté de la réponse. `extraireSource` n'accepte qu'une chaîne par modèle : c'est la
- *    seule transmission possible sans changer son interface (voir le rapport de la PR) ;
+ *    le cœur la rejette en entier sous `lecture_illisible`, avec sa raison, ce qui refuse la source
+ *    (D53 (2), `extraction_double_incomplete`). La raison figure aussi dans le journal, à côté de la
+ *    réponse ;
  * 5. items et mesures écrits sous `items/` et `mesures/`, puis le journal en dernier.
  */
 
@@ -203,13 +202,8 @@ function lire(gardees: readonly ReponseGardee[], editeurs: readonly EditeurExtra
   });
 }
 
-/** La sortie transmise au cœur : le texte du modèle, ou la chaîne vide qu'il rejette (voir l'en-tête). */
-function sortieDe(lecture: LectureTexteModele): string {
-  return lecture.lisible ? lecture.texte : "";
-}
-
 function extraire(demande: Demande, materiau: Materiau, lues: readonly Lue[], contexte: ContexteExtraction): ResultatExtraction {
-  const resultat = extraireSource(
+  return extraireSource(
     {
       configuration: contexte.configuration,
       extracteur_epingle: demande.lue.entree.extracteur_epingle,
@@ -218,16 +212,11 @@ function extraire(demande: Demande, materiau: Materiau, lues: readonly Lue[], co
       fiches: materiau.fiches,
       texte: materiau.texte,
       vtt: materiau.vtt,
-      sorties: new Map(lues.map((lue) => [lue.reponse.modele, sortieDe(lue.lecture)])),
+      sorties: new Map(lues.map((lue) => [lue.reponse.modele, lue.lecture])),
       commit: contexte.commit,
     },
     { maintenant: () => instantParis(contexte.maintenant()), nouvelUlid: contexte.nouvelUlid },
   );
-  const illisible = lues.some((lue) => !lue.lecture.lisible);
-  if (illisible && !resultat.rejets.some((rejet) => rejet.portee === "source")) {
-    throw new Error(`Source ${demande.lue.cle} : une lecture illisible n'a pas refusé la source (D53 (2)) ; la commande s'arrête.`);
-  }
-  return resultat;
 }
 
 function issueDe(resultat: ResultatExtraction): IssueJournal {

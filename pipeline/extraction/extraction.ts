@@ -5,7 +5,8 @@
  * Entrées : le texte canonique de la source, ses fiches d'extraction et l'extracteur épinglé, sa
  * transcription pour un enregistrement, le bloc `source` déjà assemblé (par
  * `pipeline/collecte/source.py:source_de`, seul assembleur, appelé sans citation : ni page ni
- * extrait), et les **sorties brutes** des deux modèles, chaînes reçues telles quelles. Sorties : les
+ * extrait), et les **sorties** des deux modèles : chaîne reçue telle quelle, ou raison pour laquelle la
+ * réponse n'en donne pas (`SortieModele`, rejetée en `lecture_illisible`). Sorties : les
  * items et les mesures proposés, conformes à leurs schémas, prêts à être déposés dans `staging/`, et
  * le journal des rejets.
  *
@@ -33,8 +34,8 @@ import { accordDe } from "./comparaison.ts";
 import { exigerConfiguration, type ConfigurationExtraction } from "./configuration.ts";
 import { lireSortie } from "./lecture-sortie.ts";
 import { localiser, type Localisation, type Reperes } from "./localisation.ts";
-import type { Rejet, RejetDepot, RejetItem, RejetSortie } from "./rejets.ts";
-import type { ItemPropose, RangModele, SortieExtraction } from "./types.ts";
+import type { MotifRejetSortieEntiere, Rejet, RejetDepot, RejetItem, RejetSortie } from "./rejets.ts";
+import type { ItemPropose, RangModele, SortieExtraction, SortieModele } from "./types.ts";
 
 export { ModelesIdentiques } from "./configuration.ts";
 
@@ -52,8 +53,8 @@ export interface EntreeExtraction {
   readonly texte: string;
   /** Transcription `.vtt` d'un enregistrement audio ou vidéo, `null` pour les autres formats. */
   readonly vtt: string | null;
-  /** Sortie brute de chaque modèle, par identifiant ; exactement les deux modèles configurés. */
-  readonly sorties: ReadonlyMap<string, string>;
+  /** Sortie de chaque modèle, lisible ou non, par identifiant ; exactement les deux modèles configurés. */
+  readonly sorties: ReadonlyMap<string, SortieModele>;
   /** Commit du code qui extrait, inscrit dans l'historique. */
   readonly commit: string;
 }
@@ -122,14 +123,14 @@ export class TranscriptionIncoherente extends Error {
 /** Formats dont le texte est dérivé d'une transcription minutée (docs/CONTRATS.md §2). */
 const FORMATS_MINUTES: ReadonlySet<Source["format"]> = new Set(["audio", "video"]);
 
-function sortiesOrdonnees(entree: EntreeExtraction): readonly [string, string] {
+function sortiesOrdonnees(entree: EntreeExtraction): readonly [SortieModele, SortieModele] {
   const [premier, second] = entree.configuration.modeles;
-  const brutA = entree.sorties.get(premier);
-  const brutB = entree.sorties.get(second);
-  if (brutA === undefined || brutB === undefined || entree.sorties.size !== 2) {
+  const sortieA = entree.sorties.get(premier);
+  const sortieB = entree.sorties.get(second);
+  if (sortieA === undefined || sortieB === undefined || entree.sorties.size !== 2) {
     throw new SortiesIncompletes(entree.configuration.modeles, [...entree.sorties.keys()]);
   }
-  return [brutA, brutB];
+  return [sortieA, sortieB];
 }
 
 function verifierSource(source: Source, fiche: FicheExtraction, texte: string): void {
@@ -267,8 +268,18 @@ type Lectures =
   | { readonly ok: true; readonly sorties: readonly [SortieExtraction, SortieExtraction] }
   | { readonly ok: false; readonly rejets: readonly RejetSortie[] };
 
-function lireLesSorties(bruts: readonly [string, string], modeles: readonly [string, string]): Lectures {
-  const lectures = [lireSortie(bruts[0]), lireSortie(bruts[1])] as const;
+type LectureModele =
+  | { readonly ok: true; readonly sortie: SortieExtraction }
+  | { readonly ok: false; readonly motif: MotifRejetSortieEntiere; readonly detail: string };
+
+/** Une sortie illisible est rejetée avec sa raison, telle quelle ; une sortie lisible est lue par `lireSortie`. */
+function lireSortieModele(sortie: SortieModele): LectureModele {
+  if (!sortie.lisible) return { ok: false, motif: "lecture_illisible", detail: sortie.raison };
+  return lireSortie(sortie.texte);
+}
+
+function lireLesSorties(sorties: readonly [SortieModele, SortieModele], modeles: readonly [string, string]): Lectures {
+  const lectures = [lireSortieModele(sorties[0]), lireSortieModele(sorties[1])] as const;
   const [premiere, seconde] = lectures;
   if (premiere.ok && seconde.ok) return { ok: true, sorties: [premiere.sortie, seconde.sortie] };
   const rejets = lectures.flatMap((lecture, rang): RejetSortie[] =>
@@ -285,12 +296,12 @@ function exigerEntree(entree: EntreeExtraction): void {
 
 export function extraireSource(entree: EntreeExtraction, ports: Ports): ResultatExtraction {
   exigerEntree(entree);
-  const bruts = sortiesOrdonnees(entree);
+  const sorties = sortiesOrdonnees(entree);
   const fiche = choisirFiche(entree.fiches, entree.extracteur_epingle, entree.source.sha256);
   verifierSource(entree.source, fiche, entree.texte);
   const reperes = reperesDe(entree, fiche);
   const { modeles } = entree.configuration;
-  const lectures = lireLesSorties(bruts, modeles);
+  const lectures = lireLesSorties(sorties, modeles);
   if (!lectures.ok) return refusDeLaSource(lectures.rejets);
   const lot = localiserLesItems(lectures.sorties, modeles, {
     candidat_id: entree.candidat_id,
