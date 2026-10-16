@@ -15,6 +15,7 @@
     "graines",
     "balise",
     "engagement",
+    "run_precedent",
     "perimetre",
     "juges",
     "taux_echantillon_humain",
@@ -227,6 +228,30 @@
           }
         }
       }
+    },
+    "run_precedent": {
+      "description": "Décision D45 (3), §5 (reprises à 80 %) : le run dont les questions peuvent être reprises, c'est-à-dire le run de runs/ dont la date_gel est la plus récente strictement avant celle-ci, hors statut invalide et hors type_run pilote, choisi par pnpm geler (pipeline/gel/precedent.ts). null : aucun run ne remplit ces conditions au gel, et le tirage est fait sans reprise. L'absence est déclarée, jamais omise : le champ est exigé de tout run.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "tirage"],
+          "properties": {
+            "id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid" },
+            "tirage": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["chemin", "sha256"],
+              "description": "Le tirage du run précédent tel que son run.json le déclare (tirage.chemin, tirage.sha256) ; pnpm geler a recalculé l'empreinte de ses octets et l'a trouvée égale avant de le lire.",
+              "properties": {
+                "chemin": { "type": "string", "pattern": "^runs/[0-9]{4}-[0-9]{2}-[0-9]{2}/tirage\\.json$" },
+                "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+              }
+            }
+          }
+        }
+      ]
     },
     "perimetre": {
       "type": "object",

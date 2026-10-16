@@ -6,14 +6,19 @@
  * 2. Lectures : `config/gel.json`, `data/items/` et `data/mesures/` (les lecteurs de la barrière,
  *    chaque fichier validé contre son schéma), `data/formulations/` (son seul lecteur,
  *    `validation/io/data-formulations.ts`), `config/perimetre.yaml`.
- * 3. Périmètre, fenêtre, questions (`assemblage.ts:preparer`) ; destination libre, ou refus
- *    (`destination.ts`) ; l'empreinte des octets de `docs/PROTOCOLE.md` (`versions.protocole_sha256` ;
- *    le dépôt est propre, le fichier sur disque est celui du commit).
- * 4. Le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus, sans aucun appel
- *    réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
+ * 3. Périmètre, fenêtre, questions (`assemblage.ts:preparer`), dont une fenêtre ouverte avant
+ *    `date_gel`, refusée (D45 (4)) ; destination libre, ou refus (`destination.ts`) ; l'empreinte des
+ *    octets de `docs/PROTOCOLE.md` (`versions.protocole_sha256` ; le dépôt est propre, le fichier sur
+ *    disque est celui du commit).
+ * 4. L'ordre des instants (D45 (4), `instants.ts`) : un gel exécuté avant `date_gel` est refusé.
+ *    Puis le run précédent (D45 (3), `precedent.ts`) : lu sous `runs/` du dépôt, son tirage vérifié
+ *    sur l'empreinte que son `run.json` déclare, ou son absence déclarée ; tout défaut est refusé.
+ *    Puis le tour drand de `date_gel` (`balise.ts:tourAuGel`) : pas encore émis, refus. Rien de tout
+ *    cela n'appelle le réseau. Puis l'engagement archivé (D46, `engagement.ts`) : capture du commit HEAD, antérieure à
  *    `date_gel`, servie par la Wayback Machine. Puis la balise, lue sur les deux relais (D44,
  *    `balise.ts:lireBalise`). Chaque refus est nommé ; aucun repli.
- * 5. Graines et identifiant du run, dérivés de l'aléa (D44, D45 (1)) ; tirage.
+ * 5. Graines et identifiant du run, dérivés de l'aléa (D44, D45 (1)) ; tirage, avec les reprises du
+ *    run précédent (§5).
  * 6. La barrière de `pnpm symmetry`, les mêmes fonctions (`barriere.ts:jugerBarriere`), items et
  *    mesures recoupés avec le commit inscrit. Bloquée — refus nommé, symétrie rouge, invariant
  *    violé — : `GelBloque`, rien n'est écrit (règle 4). `ecart_tolere` : le gel continue, l'écart
@@ -47,6 +52,8 @@ import { ecrireToutOuRien } from "./ecriture.ts";
 import type { EcrireFichier } from "./ecriture.ts";
 import { verifierEngagement } from "./engagement.ts";
 import type { EngagementVerifie } from "./engagement.ts";
+import { exigerGelApresDateGel } from "./instants.ts";
+import { lirePrecedent } from "./precedent.ts";
 import type { LireHttp } from "./reseau.ts";
 
 export interface OptionsGel {
@@ -61,7 +68,10 @@ export interface OptionsGel {
   readonly relais: LireHttp;
   /** Le port de l'API de disponibilité de la Wayback Machine. */
   readonly wayback: LireHttp;
-  /** L'instant présent, en millisecondes : un tour pas encore émis est refusé sans appel réseau. */
+  /**
+   * L'instant présent, en millisecondes : un gel avant `date_gel`, ou dont le tour n'est pas encore
+   * émis, est refusé sans appel réseau.
+   */
   readonly maintenant: () => number;
   readonly ecrire: EcrireFichier;
 }
@@ -162,9 +172,11 @@ export async function geler(options: OptionsGel): Promise<ResultatGel> {
   const protocole_sha256 = sha256DuFichier(chemins.protocole);
 
   const date_gel_ms = lireInstant(prepare.perimetre.date_gel, `${chemins.perimetre}, date_gel`);
+  exigerGelApresDateGel(options.maintenant(), date_gel_ms);
+  const precedent = lirePrecedent(options.racine, date_gel_ms);
   const { engagement, balise } = await lireAlea(options, commit, date_gel_ms);
   const run_id = identifiantDuRun(date_gel_ms, balise.alea);
-  const tire = tirerAuGel(prepare, entrees, run_id, valeursDesGraines(balise.alea));
+  const tire = tirerAuGel(prepare, entrees, run_id, valeursDesGraines(balise.alea), precedent);
   const verdict = jugerBarriere({
     repertoire_items: chemins.items,
     repertoire_mesures: chemins.mesures,

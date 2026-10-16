@@ -56,7 +56,7 @@ il n'a pas encore d'écrivain dans le dépôt.
 pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
 ```
 
-Le gel d'un run (décisions D41, D44, D45 (1), D46, D47 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai
+Le gel d'un run (décisions D41, D44, D45, D46, D47 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai
 run**, c'est-à-dire lance la commande sans `--sortie` : elle écrit alors sous `runs/<date>/`. Un agent
 ou un test gèle toujours vers une `--sortie` hors de `runs/` (une sortie sous `runs/` est refusée), et
 jamais avec le réseau : la commande appelle les deux relais drand et la Wayback Machine, rien d'autre.
@@ -65,15 +65,17 @@ refus nommé, aucune nouvelle tentative.
 
 Lit `data/items/`, `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`
 (version du protocole, début de fenêtre, juges, alias aveugles ; `schema/config-gel.schema.json`),
-`docs/PROTOCOLE.md` et le commit courant ; vérifie l'engagement archivé, lit la balise ; écrit, au
+`docs/PROTOCOLE.md`, le commit courant et le run précédent sous `runs/` du dépôt (section suivante) ;
+vérifie l'engagement archivé, lit la balise ; écrit, au
 statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
 
 - `questions.json` : le jeu complet des questions engendrées au gel, chacune avec ses formulations
   relues (`data/formulations/`), `engendree_le` égal à `date_gel` (D44) ;
-- `tirage.json` : le tirage (`pipeline/questions/tirage.ts`), graine du tirage et quotas du périmètre ;
+- `tirage.json` : le tirage (`pipeline/questions/tirage.ts`), graine du tirage, quotas du périmètre et
+  reprises du run précédent (§5) ;
 - `run.json` : fenêtre, `versions.code_commit` et `versions.donnees_commit` (HEAD : `data/` est dans le
   même dépôt), `versions.protocole_sha256` (SHA-256 des octets de `docs/PROTOCOLE.md` au commit gelé),
-  graines, `balise`, `engagement`, périmètre au gel, juges, symétrie, et `tirage`
+  graines, `balise`, `engagement`, `run_precedent`, périmètre au gel, juges, symétrie, et `tirage`
   (`runs/<date>/tirage.json`, SHA-256 de ses octets, nombre de questions tirées) — même quand
   `--sortie` est donnée ;
 - `balise/api.drand.sh.json` et `balise/drand.cloudflare.com.json` : la réponse de chaque relais au
@@ -86,14 +88,37 @@ statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
 Refuse, sans rien écrire, code 1 : un dépôt sale (`git status --porcelain` non vide, fichiers non
 suivis compris), vérifié avant toute autre lecture ; un répertoire `<date>/` qui existe déjà, même
 vide (un gel s'invalide, il ne se refait pas) ; un champ de `config/gel.json` à `null` ou absent,
-nommé ; une question sans formulations relues sur son texte neutre et sa position courants
-(`FormulationsEnDefautAuGel`) ; un tour drand pas encore émis (`date_gel` dans le futur), **avant tout
-appel réseau** ; un engagement absent, mal formé, d'un autre commit, non antérieur à `date_gel` ou que
+nommé ; un alias aveugle qui contient le libellé ou l'éditeur d'un outil du périmètre, ou que deux
+outils partagent, après normalisation (`PerimetreRefuse`, D45 (2)) ; une fenêtre ouverte avant
+`date_gel` (`OrdreDesInstantsRefuse`, D45 (4)) ; une question sans formulations relues sur son texte
+neutre et sa position courants (`FormulationsEnDefautAuGel`) ; **avant tout appel réseau**, un gel
+exécuté avant `date_gel` (`OrdreDesInstantsRefuse`), un run précédent illisible ou incohérent
+(`PrecedentRefuse`) et un tour drand pas encore émis (`BaliseRefusee`) ; un engagement absent, mal formé, d'un autre commit, non antérieur à `date_gel` ou que
 la Wayback Machine ne sert pas (`EngagementRefuse`) ; une balise refusée (`BaliseRefusee` : relais
 injoignable, muet au-delà de 30 s ou en erreur HTTP, réponse illisible, chaîne différente de l'épinglée, tour différent,
 `randomness` différent de SHA-256(signature), relais en désaccord) ; et tout ce que la barrière de
 `pnpm symmetry` refuse — les mêmes fonctions (`pipeline/gel/barriere.ts`), items et mesures recoupés
 avec le commit inscrit. Une symétrie `ecart_tolere` est écrite, l'écart dans `run.json#/symetrie`.
+
+### Run précédent (D45 (3))
+
+Le précédent est le run de `runs/` du dépôt dont la `date_gel` est la plus récente **strictement**
+avant celle du gel, hors `statut` `invalide` et hors `type_run` `pilote` (`pipeline/gel/precedent.ts`).
+Le gel lit toujours `runs/` du dépôt, `--sortie` ou non. Il est inscrit dans `run.json#/run_precedent`
+— son `id`, et le chemin et le SHA-256 de son tirage tels que son `run.json` les déclare — ou
+`run_precedent: null` quand aucun run ne remplit ces conditions : l'absence est déclarée, jamais omise,
+et le tirage est fait sans reprise. Son `tirage.json` est relu, son SHA-256 recalculé et comparé à
+celui que son `run.json` déclare ; ses questions sont lues dans son `questions.json`. Une question est
+reprise si elle porte le même identifiant et les mêmes empreintes de texte qu'alors (§5,
+`pipeline/questions/signature.ts`).
+
+Refus nommé (`PrecedentRefuse`), jamais « pas de précédent » : un répertoire de `runs/` sans
+`run.json` lisible ou dont `id`, `date_gel`, `type_run`, `statut` ou `tirage` n'est pas conforme au
+schéma (`run_illisible`) ; deux runs retenables à la même `date_gel` (`precedent_ambigu`) ; un
+`tirage.chemin` qui n'est pas `runs/<son répertoire>/tirage.json` (`chemin_incoherent`) ; un tirage
+absent ou non conforme (`tirage_illisible`), d'empreinte différente (`empreinte_differente`) ou d'un
+autre run (`tirage_d_un_autre_run`) ; un `questions.json` absent ou non conforme
+(`questions_illisibles`), ou qui ne contient pas une question tirée (`question_introuvable`).
 
 ### Engagement archivé (D46)
 

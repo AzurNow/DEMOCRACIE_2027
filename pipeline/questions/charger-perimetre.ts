@@ -16,7 +16,8 @@
  *      les dix thèmes exactement, les identifiants uniques, la liste officielle selon le régime, un
  *      candidat retiré non interrogé, la règle d'inclusion du §3 (`perimetre.ts:inclusionAvantListe`)
  *      pour chaque candidat non retiré du régime `avant_liste_officielle`, et un alias aveugle pour
- *      chaque assistant inclus ;
+ *      chaque assistant inclus, qui ne contient ni le libellé ni l'éditeur d'un outil du périmètre et
+ *      qu'aucun autre outil ne partage, après normalisation (`normaliserAlias`, D45 (2)) ;
  *   4. l'instantané est calculé — `items_p_au_gel` par `couverture.ts:itemsPAuGel`,
  *      `items_p_verifies` en est la longueur (la définition de `itemsPComptesAuGel`), `sous_seuil`
  *      le seuil du §4 — puis validé contre `run.schema.json#/properties/perimetre`.
@@ -288,6 +289,44 @@ function exigeAlias(outil: OutilCommun): boolean {
   return outil.famille === "assistant" && outil.inclus;
 }
 
+/**
+ * D45 (2) : la seule comparaison des alias aveugles, entre eux et avec le libellé et l'éditeur des
+ * outils — NFKD, diacritiques (marques combinantes) retirés, minuscules, espaces repliés en un seul
+ * et retirés aux deux bouts. « Éditeur  Alpha » et « editeur alpha » sont le même texte.
+ */
+export function normaliserAlias(texte: string): string {
+  return texte.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/gu, " ").trim();
+}
+
+/**
+ * Ce qui, dans un outil saisi, le nomme : `libelle` (le périmètre ne porte pas de champ « nom »
+ * distinct de lui) et `editeur`. Un alias qui contient l'un d'eux, de n'importe quel outil du
+ * périmètre, trahit un outil au juge (§7).
+ */
+const CHAMPS_REVELATEURS = ["libelle", "editeur"] as const;
+
+function motifsRevelateurs(outil_id: string, alias: string, outils: readonly OutilSaisi[]): readonly string[] {
+  const normalise = normaliserAlias(alias);
+  return outils.flatMap((outil) =>
+    CHAMPS_REVELATEURS.filter((champ) => normalise.includes(normaliserAlias(outil[champ]))).map(
+      (champ) =>
+        `alias_aveugle « ${alias} » de ${outil_id} contient le ${champ} « ${outil[champ]} » de l'outil ${outil.outil_id} : ` +
+        `l'aveuglement des juges ne tient plus (§7, D45 (2))`,
+    ),
+  );
+}
+
+/** Les alias, groupés par texte normalisé : un groupe de plus d'un est partagé par plusieurs outils. */
+function motifsPartages(alias: ReadonlyMap<string, string>): readonly string[] {
+  const valeurs = [...alias.values()];
+  const normalises = valeurs.map(normaliserAlias);
+  return doublons(normalises).map((normalise) => {
+    const saisis = [...new Set(valeurs.filter((_, rang) => normalises[rang] === normalise))];
+    const textes = saisis.map((valeur) => `« ${valeur} »`).join(", ");
+    return `alias_aveugle ${textes} attribué à plusieurs outils : l'aveuglement des juges ne tient plus (§7)`;
+  });
+}
+
 function motifsAlias(outils: readonly OutilSaisi[], alias: ReadonlyMap<string, string>): readonly string[] {
   const connus = new Set(outils.map((outil) => outil.outil_id));
   return [
@@ -297,9 +336,8 @@ function motifsAlias(outils: readonly OutilSaisi[], alias: ReadonlyMap<string, s
     ...[...alias.keys()]
       .filter((id) => !connus.has(id))
       .map((id) => `alias_aveugle fourni pour « ${id} », absent des outils du périmètre`),
-    ...doublons([...alias.values()]).map(
-      (valeur) => `alias_aveugle « ${valeur} » attribué à plusieurs outils : l'aveuglement des juges ne tient plus (§7)`,
-    ),
+    ...motifsPartages(alias),
+    ...[...alias].flatMap(([outil_id, valeur]) => motifsRevelateurs(outil_id, valeur, outils)),
   ];
 }
 

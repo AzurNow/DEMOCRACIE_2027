@@ -88,6 +88,13 @@
       "sha256": "d9398a96ceeb11b887f7dc0a5d2aa8c80659d0831eaf13c08d40f550b163a006"
     }
   },
+  "run_precedent": {
+    "id": "01K95Q7RG0PRECEDENT0EXEMP0",
+    "tirage": {
+      "chemin": "runs/2026-11-03/tirage.json",
+      "sha256": "5b2e6f0c9a1d4e7b8c3f2a1d0e9b8c7a6f5e4d3c2b1a09f8e7d6c5b4a3928170"
+    }
+  },
   "perimetre": {
     "regime_inclusion": "avant_liste_officielle",
     "candidats": [
