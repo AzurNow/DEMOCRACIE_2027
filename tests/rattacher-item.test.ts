@@ -22,7 +22,7 @@ import { cheminRattachements } from "../validation/io/rattachements-fichier.ts";
 import { ItemStagingModifie } from "../validation/io/staging-renvoi.ts";
 import { creerBac, lotDe, type Bac } from "./aides/bac.ts";
 import { commiterTout, executerOutil, head, initialiserDepot } from "./aides/depot.ts";
-import { decision, itemA, itemF, itemO, itemP, mesure, source } from "./aides/fabriques.ts";
+import { decision, itemA, itemF, itemO, itemP, mesure } from "./aides/fabriques.ts";
 
 const DATE = "2026-10-16";
 /** La mesure cible, partagée : version 2 pour vérifier que l'item épingle la version courante. */
@@ -214,21 +214,7 @@ describe("`pnpm mesures --rattacher` : type de l'item et caractère fictif de la
   /** Mesure fictive proposée par l'extraction pour l'item F seul. */
   const FICTIVE_PROPRE = { ...FICTIVE, id: "01JBANCESSA90000000MESVRF2", libelle: "Prime à la marche" };
   const F = itemF({ id: "01JBANCESSA1000000000TEMF1", candidat_id: "demo-beta", mesure_id: FICTIVE_PROPRE.id, mesure_version: 1 });
-  /**
-   * Un item O lisible en staging : la fabrique `itemO` porte une source T2 sans `extrait`, que
-   * `item.schema.json` refuse depuis le protocole 0.17 ; l'extrait est donc posé ici.
-   */
-  const O = ((base: Item): Item => {
-    if (base.obsolescence === undefined) throw new Error("fabrique itemO sans obsolescence");
-    const posterieur = base.obsolescence.etat_posterieur;
-    const extrait = { debut: "00:01:00", fin: "00:01:30" };
-    return itemO({
-      id: "01JBANCESSA1000000000TEMC1",
-      mesure_id: MESURE_B.id,
-      mesure_version: 1,
-      obsolescence: { ...base.obsolescence, etat_posterieur: { ...posterieur, source: source({ ...posterieur.source, extrait }) } },
-    });
-  })(itemO());
+  const O = itemO({ id: "01JBANCESSA1000000000TEMC1", mesure_id: MESURE_B.id, mesure_version: 1 });
 
   /** Un dépôt avec les mesures A, B, les deux fictives, et l'item à rattacher ; hors lot. */
   function avecItem(item: Item, corps: (bac: Bac) => void): void {

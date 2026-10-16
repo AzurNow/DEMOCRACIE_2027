@@ -142,7 +142,8 @@ export function itemO(surcharges: Partial<Item> = {}): Item {
         position: "conditionnel",
         paraphrase: "Abaisser l'âge légal à 62 ans, sauf carrières longues.",
         citation_verbatim: "Ce sera 62 ans, et 60 ans pour les carrières longues.",
-        source: source({ tier: "T2", type_document: "enregistrement_video" }),
+        // Protocole 0.17 : une source T2 délimite l'extrait de l'enregistrement qu'elle cite.
+        source: source({ tier: "T2", type_document: "enregistrement_video", extrait: { debut: "00:01:00", fin: "00:01:30" } }),
       },
       remplace_item_id: null,
     },

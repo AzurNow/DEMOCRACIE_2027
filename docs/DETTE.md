@@ -38,7 +38,7 @@ toutes les mesures publiées.
 
 **Ce qu'il faut faire.** Rien ; l'en-tête de `relectures-mesure.ts` et le schéma le disent.
 
-### 3. La fabrique `itemO` de `tests/aides/fabriques.ts` produit un item invalide depuis la 0.17 — *basse*
+### ~~3. La fabrique `itemO` de `tests/aides/fabriques.ts` produit un item invalide depuis la 0.17~~ — réglé le 2026-10-16 : extrait T2 dans la fabrique, contournement retiré, fabriques validées contre leur schéma (`tests/fabriques-schemas.test.ts`)
 
 Sa source T2 n'a pas d'`extrait`, que `item.schema.json` exige désormais : l'item ne passe pas
 `chargerStaging`. `tests/rattacher-item.test.ts` contourne en ajoutant l'extrait localement.
