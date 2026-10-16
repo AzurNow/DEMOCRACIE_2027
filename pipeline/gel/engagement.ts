@@ -20,10 +20,15 @@
  * que la capture nommée existe. L'API rend l'horodatage de la capture la plus proche, que l'on
  * compare à l'égal ; c'est l'appel et le statut retenu (`"200"`, D21) déjà employés par le test des
  * liens. Tout écart est un refus nommé (`EngagementRefuse`), avant toute lecture de la balise.
+ *
+ * D47 (3) : la réponse brute de l'API est archivée telle que reçue, octet pour octet (règle 7), dans
+ * `runs/<date>/engagement/wayback.json` ; `run.json#/engagement/disponibilite` porte l'URL appelée,
+ * le chemin de l'archive et son SHA-256.
  */
 
+import { createHash } from "node:crypto";
 import { ErreurSchema, validerFragment } from "../../outils/schemas/valider.ts";
-import { jsonDesOctets, messageDErreur } from "./reseau.ts";
+import { DelaiDepasse, jsonDesOctets, messageDErreur } from "./reseau.ts";
 import type { LireHttp, ReponseHttp } from "./reseau.ts";
 
 /** D46 : le dépôt public dont la page de commit est capturée. */
@@ -47,6 +52,7 @@ export type MotifEngagement =
   | "horodatage_invalide"
   | "tardif"
   | "injoignable"
+  | "delai_depasse"
   | "statut_http"
   | "illisible"
   | "non_servie";
@@ -146,20 +152,46 @@ export function exigerCaptureServie(engagement: Engagement, reponse: ReponseHttp
   }
 }
 
-/** Les contrôles sans réseau, puis un appel à la Wayback Machine. */
-export async function verifierEngagement(url: string | undefined, head: string, date_gel_ms: number, lire: LireHttp): Promise<Engagement> {
-  const engagement = lireEngagement(url, head, date_gel_ms);
-  let reponse: ReponseHttp;
-  try {
-    reponse = await lire(urlDisponibilite(engagement));
-  } catch (erreur) {
-    throw new EngagementRefuse("injoignable", `${DISPONIBILITE} : ${messageDErreur(erreur)}.`);
-  }
-  exigerCaptureServie(engagement, reponse);
-  return engagement;
+/** L'engagement vérifié, avec la réponse de l'API telle que reçue (D47 (3)). */
+export interface EngagementVerifie extends Engagement {
+  /** L'URL de l'API de disponibilité appelée. */
+  readonly url_disponibilite: string;
+  /** Le corps de sa réponse, octet pour octet, archivé tel quel (règle 7). */
+  readonly octets: Uint8Array;
 }
 
-/** `run.json#/engagement`. */
-export function engagementDuRun(engagement: Engagement): { readonly url: string; readonly horodatage: string } {
-  return { url: engagement.url, horodatage: engagement.horodatage };
+/** Le chemin de l'archive de la réponse Wayback, relatif au répertoire du run. */
+export const ARCHIVE_WAYBACK = "engagement/wayback.json";
+
+/** Les contrôles sans réseau, puis un appel à la Wayback Machine. */
+export async function verifierEngagement(
+  url: string | undefined,
+  head: string,
+  date_gel_ms: number,
+  lire: LireHttp,
+): Promise<EngagementVerifie> {
+  const engagement = lireEngagement(url, head, date_gel_ms);
+  const url_disponibilite = urlDisponibilite(engagement);
+  let reponse: ReponseHttp;
+  try {
+    reponse = await lire(url_disponibilite);
+  } catch (erreur) {
+    const motif = erreur instanceof DelaiDepasse ? "delai_depasse" : "injoignable";
+    throw new EngagementRefuse(motif, `${url_disponibilite} : ${messageDErreur(erreur)}.`);
+  }
+  exigerCaptureServie(engagement, reponse);
+  return { ...engagement, url_disponibilite, octets: reponse.octets };
+}
+
+/** `run.json#/engagement` : la capture, et l'archive de la réponse qui l'a vérifiée. */
+export function engagementDuRun(engagement: EngagementVerifie, date_repertoire: string): unknown {
+  return {
+    url: engagement.url,
+    horodatage: engagement.horodatage,
+    disponibilite: {
+      url: engagement.url_disponibilite,
+      chemin: `runs/${date_repertoire}/${ARCHIVE_WAYBACK}`,
+      sha256: createHash("sha256").update(engagement.octets).digest("hex"),
+    },
+  };
 }

@@ -30,7 +30,7 @@ import { ErreurSchema, validerFragment } from "../../outils/schemas/valider.ts";
 import { ulidDe } from "../../validation/domaine/ulid.ts";
 import { NOMS_GRAINES } from "./graines.ts";
 import type { NomGraine, ValeursDesGraines } from "./graines.ts";
-import { jsonDesOctets, messageDErreur } from "./reseau.ts";
+import { DelaiDepasse, jsonDesOctets, messageDErreur } from "./reseau.ts";
 import type { LireHttp, ReponseHttp } from "./reseau.ts";
 
 /** D44 : la chaîne quicknet de la League of Entropy. */
@@ -71,6 +71,7 @@ export type MotifBalise =
   | "avant_genese"
   | "pas_encore_emis"
   | "injoignable"
+  | "delai_depasse"
   | "statut_http"
   | "illisible"
   | "chaine_differente"
@@ -233,7 +234,8 @@ async function lireAuRelais(lire: LireHttp, relais: Relais, url: string): Promis
   try {
     return await lire(url);
   } catch (erreur) {
-    throw new BaliseRefusee("injoignable", relais.nom, `${url} : ${messageDErreur(erreur)}.`);
+    const motif = erreur instanceof DelaiDepasse ? "delai_depasse" : "injoignable";
+    throw new BaliseRefusee(motif, relais.nom, `${url} : ${messageDErreur(erreur)}.`);
   }
 }
 

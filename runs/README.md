@@ -19,6 +19,9 @@ runs/<date>/
                                     (schema/question.schema.json ; lu par pnpm symmetry)
   balise/<relais>.json        Git   la réponse brute de chaque relais drand au tour du gel, octets
                                     exacts (règle 7), référencée par run.json#/balise/relais
+  engagement/wayback.json     Git   la réponse brute de l'API de disponibilité de la Wayback
+                                    Machine qui a vérifié l'engagement, octets exacts (D47 (3)),
+                                    référencée par run.json#/engagement/disponibilite
   verdicts/<id>.json          Git   un verdict par objet noté (schema/verdict.schema.json)
   metriques/…                 Git   les sorties d'analysis/ (§8)
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
@@ -39,23 +42,26 @@ et `pnpm symmetry --mesures=data/mesures` recoupe ce répertoire avec lui-même 
 (`outils/items-au-gel.ts:exigerMesuresDuGel`) : une mesure en plus, en moins ou modifiée depuis le gel
 arrête la barrière.
 
-`pnpm geler` écrit `run.json`, `tirage.json`, `questions.json` et `balise/` (section suivante).
+`pnpm geler` écrit `run.json`, `tirage.json`, `questions.json`, `balise/` et `engagement/` (section
+suivante).
 L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
 `volume/tentatives/`. La notation (`pipeline/notation/stockage.ts:DepotNotation`) écrit
 `verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`
 et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outils/symmetry.ts`). Le nom `metriques/` reste la disposition proposée pour le lot de l'analyse ;
 il n'a pas encore d'écrivain dans le dépôt.
 
-## `pnpm geler` — `run.json`, `tirage.json`, `questions.json`, `balise/`
+## `pnpm geler` — `run.json`, `tirage.json`, `questions.json`, `balise/`, `engagement/`
 
 ```
 pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
 ```
 
-Le gel d'un run (décisions D41, D44, D45 (1), D46 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai
+Le gel d'un run (décisions D41, D44, D45 (1), D46, D47 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai
 run**, c'est-à-dire lance la commande sans `--sortie` : elle écrit alors sous `runs/<date>/`. Un agent
 ou un test gèle toujours vers une `--sortie` hors de `runs/` (une sortie sous `runs/` est refusée), et
 jamais avec le réseau : la commande appelle les deux relais drand et la Wayback Machine, rien d'autre.
+Chaque appel est abandonné au bout de 30 s (D47 (4), `pipeline/gel/reseau.ts:DELAI_APPEL_RESEAU_MS`) :
+refus nommé, aucune nouvelle tentative.
 
 Lit `data/items/`, `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`
 (version du protocole, début de fenêtre, juges, alias aveugles ; `schema/config-gel.schema.json`),
@@ -71,7 +77,11 @@ statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
   (`runs/<date>/tirage.json`, SHA-256 de ses octets, nombre de questions tirées) — même quand
   `--sortie` est donnée ;
 - `balise/api.drand.sh.json` et `balise/drand.cloudflare.com.json` : la réponse de chaque relais au
-  tour du gel, octet pour octet (règle 7), et son SHA-256 dans `run.json#/balise/relais`.
+  tour du gel, octet pour octet (règle 7), et son SHA-256 dans `run.json#/balise/relais` ;
+- `engagement/wayback.json` : la réponse de l'API de disponibilité de la Wayback Machine, octet pour
+  octet (D47 (3)), avec l'URL appelée et son SHA-256 dans `run.json#/engagement/disponibilite`.
+
+`balise` et `engagement` sont exigés de tout run, pilote compris (D47 (2)).
 
 Refuse, sans rien écrire, code 1 : un dépôt sale (`git status --porcelain` non vide, fichiers non
 suivis compris), vérifié avant toute autre lecture ; un répertoire `<date>/` qui existe déjà, même
@@ -80,7 +90,7 @@ nommé ; une question sans formulations relues sur son texte neutre et sa positi
 (`FormulationsEnDefautAuGel`) ; un tour drand pas encore émis (`date_gel` dans le futur), **avant tout
 appel réseau** ; un engagement absent, mal formé, d'un autre commit, non antérieur à `date_gel` ou que
 la Wayback Machine ne sert pas (`EngagementRefuse`) ; une balise refusée (`BaliseRefusee` : relais
-injoignable ou en erreur HTTP, réponse illisible, chaîne différente de l'épinglée, tour différent,
+injoignable, muet au-delà de 30 s ou en erreur HTTP, réponse illisible, chaîne différente de l'épinglée, tour différent,
 `randomness` différent de SHA-256(signature), relais en désaccord) ; et tout ce que la barrière de
 `pnpm symmetry` refuse — les mêmes fonctions (`pipeline/gel/barriere.ts`), items et mesures recoupés
 avec le commit inscrit. Une symétrie `ecart_tolere` est écrite, l'écart dans `run.json#/symetrie`.
@@ -95,7 +105,9 @@ et ne peut pas porter l'URL de sa propre capture. Le gel exige que `<sha>` soit 
 l'horodatage soit une date réelle strictement antérieure à `date_gel`, et que
 `https://archive.org/wayback/available?url=<page>&timestamp=<horodatage>` rende comme capture la plus
 proche celle-là exactement (même horodatage, statut `"200"`, `available: true`). L'URL et
-l'horodatage sont inscrits dans `run.json#/engagement`.
+l'horodatage sont inscrits dans `run.json#/engagement`, avec l'URL de l'API appelée, le chemin et le
+SHA-256 de sa réponse archivée (`engagement/wayback.json`). La source `--engagement` est retenue par
+D47 (1).
 
 ### Balise drand (D44) et identifiant (D45 (1))
 
@@ -116,7 +128,7 @@ l'horodatage sont inscrits dans `run.json#/engagement`.
   aléatoire les 10 premiers octets de SHA-256(aléa hex ‖ U+0000 ‖ `run_id`), en base 32 de Crockford
   (`run.json#/balise/cle_identifiant`). Le tirage dépend de l'identifiant (`tirage.json#/run_id`,
   `tirage.ts:amorce`) : deux gels du même commit et de la même balise donnent donc `run.json`,
-  `tirage.json`, `questions.json` et `balise/` identiques, octet pour octet.
+  `tirage.json`, `questions.json`, `balise/` et `engagement/` identiques, octet pour octet.
 
 **Vérifier par un tiers.** Le gel ne vérifie pas la signature BLS (D44 : aucune dépendance). Un tiers
 le fait hors du dépôt : (1) relire `balise/<relais>.json`, recalculer son SHA-256 et le comparer à

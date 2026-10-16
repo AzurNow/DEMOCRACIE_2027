@@ -18,7 +18,9 @@ import { BaliseRefusee, identifiantDuRun, QUICKNET, RELAIS, urlTour, valeursDesG
 import { DepotSale } from "../../pipeline/gel/depot.ts";
 import { RunDejaGele, SortieSousRuns } from "../../pipeline/gel/destination.ts";
 import { ConfigurationGelIncomplete } from "../../pipeline/gel/configuration.ts";
-import { EngagementRefuse } from "../../pipeline/gel/engagement.ts";
+import { DEPOT_PUBLIC, EngagementRefuse } from "../../pipeline/gel/engagement.ts";
+import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../../pipeline/gel/reseau.ts";
+import type { Envoi } from "../../pipeline/gel/reseau.ts";
 import { geler, GelBloque } from "../../pipeline/gel/geler.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
@@ -39,14 +41,16 @@ import {
 } from "./fixtures.ts";
 import type { Jeu } from "./fixtures.ts";
 import { ITEM_FIN_AU_GEL, ITEM_P1, jeuEcartTolere, jeuNominal, jeuRouge, MESURE_FISC_1 } from "./jeux.ts";
-import { octetsJson, relaisDeFixture, reponseJson, reponseTour, waybackDeFixture } from "./reseau-fixture.ts";
+import { capturePresente, octetsJson, relaisDeFixture, reponseJson, reponseTour, waybackDeFixture } from "./reseau-fixture.ts";
 
 const DATE = "2026-12-01";
 const RUNS_DU_PROJET = join(RACINE_PROJET, "runs");
 /** `GEL` tombe exactement sur l'émission de ce tour (`tests/gel/balise.test.ts`, cas 1). */
 const TOUR_DU_GEL = 34426612;
 const ARCHIVES = RELAIS.map((relais) => `balise/${relais.nom}.json`);
-const FICHIERS_DU_RUN = ["balise", ...ARCHIVES, "questions.json", "run.json", "tirage.json"].sort();
+/** D47 (3) : la réponse brute de l'API de disponibilité de la Wayback Machine. */
+const ARCHIVE_WAYBACK = "engagement/wayback.json";
+const FICHIERS_DU_RUN = ["balise", ...ARCHIVES, "engagement", ARCHIVE_WAYBACK, "questions.json", "run.json", "tirage.json"].sort();
 
 function sha256(octets: string | Uint8Array): string {
   return createHash("sha256").update(octets).digest("hex");
@@ -120,7 +124,7 @@ async function gelNominal(jeu: Jeu = jeuNominal()) {
 describe("gel nominal", () => {
   it("écrit run.json, tirage.json et questions.json, statut planifie, commits inscrits", async () => {
     const { racine, run, resultat } = await gelNominal();
-    expect(readdirSync(run).sort()).toEqual(["balise", "questions.json", "run.json", "tirage.json"]);
+    expect(readdirSync(run).sort()).toEqual(["balise", "engagement", "questions.json", "run.json", "tirage.json"]);
     expect(readdirSync(join(run, "balise")).sort()).toEqual(RELAIS.map((relais) => `${relais.nom}.json`).sort());
     const objet = json(run, "run.json");
     expect(objet["statut"]).toBe("planifie");
@@ -223,7 +227,7 @@ describe("cas 3 : --sortie", () => {
   it("cas 3 : sans --sortie, le gel écrit sous runs/ du dépôt lu, et seulement là", async () => {
     const racine = depot(jeuNominal());
     await geler(optionsGel(racine, undefined));
-    expect(readdirSync(join(racine, "runs", DATE)).sort()).toEqual(["balise", "questions.json", "run.json", "tirage.json"]);
+    expect(readdirSync(join(racine, "runs", DATE)).sort()).toEqual(["balise", "engagement", "questions.json", "run.json", "tirage.json"]);
     expect(readdirSync(join(racine, "runs"))).toEqual([DATE]);
   });
 
@@ -411,7 +415,7 @@ describe("cas 11 : reproductibilité", () => {
     await geler(optionsGel(racine, b));
     expect(arborescence(join(b, DATE))).toEqual(FICHIERS_DU_RUN);
     expect(arborescence(join(a, DATE))).toEqual(FICHIERS_DU_RUN);
-    for (const nom of ["questions.json", "tirage.json", "run.json", ...ARCHIVES]) {
+    for (const nom of ["questions.json", "tirage.json", "run.json", ...ARCHIVES, ARCHIVE_WAYBACK]) {
       expect(readFileSync(join(b, DATE, nom))).toEqual(readFileSync(join(a, DATE, nom)));
     }
     expect(json(join(a, DATE), "tirage.json")["run_id"]).toBe(json(join(a, DATE), "run.json")["id"]);
@@ -484,7 +488,7 @@ interface BaliseDuRun {
 }
 
 describe("balise, cas 11 : run.json porte la balise et l'engagement", () => {
-  it("balise, cas 11 : run.json passe le schéma, même déclaré mensuel (balise et engagement exigés hors pilote)", async () => {
+  it("balise, cas 11 : run.json passe le schéma ; balise et engagement exigés de tout run, pilote compris (D47 (2))", async () => {
     const { run } = await gelNominal();
     const objet = json(run, "run.json");
     expect(() => valider("run", objet, "run.json du gel")).not.toThrow();
@@ -493,6 +497,9 @@ describe("balise, cas 11 : run.json porte la balise et l'engagement", () => {
     expect(() => valider("run", { ...sans_balise, type_run: "mensuel" }, "sans balise")).toThrow(/balise/);
     const { engagement: _e, ...sans_engagement } = objet;
     expect(() => valider("run", { ...sans_engagement, type_run: "mensuel" }, "sans engagement")).toThrow(/engagement/);
+    expect(objet["type_run"]).toBe("pilote");
+    expect(() => valider("run", sans_balise, "pilote sans balise")).toThrow(/balise/);
+    expect(() => valider("run", sans_engagement, "pilote sans engagement")).toThrow(/engagement/);
   });
 
   it("la balise inscrite : chaîne, tour, signature, aléa recalculé, relais et empreinte de chaque archive, clés", async () => {
@@ -526,7 +533,16 @@ describe("balise, cas 11 : run.json porte la balise et l'engagement", () => {
 
   it("l'engagement inscrit : l'URL de capture et son horodatage", async () => {
     const { racine, run } = await gelNominal();
-    expect(json(run, "run.json")["engagement"]).toEqual({ url: engagementDe(head(racine)), horodatage: HORODATAGE_ENGAGEMENT });
+    const page = `${DEPOT_PUBLIC}/commit/${head(racine)}`;
+    const url_disponibilite = `https://archive.org/wayback/available?${new URLSearchParams({ url: page, timestamp: HORODATAGE_ENGAGEMENT }).toString()}`;
+    const archive = readFileSync(join(run, ARCHIVE_WAYBACK));
+    // D47 (3), règle 7 : la réponse de l'API telle que reçue, octet pour octet, et son empreinte.
+    expect(Buffer.from(archive)).toEqual(Buffer.from(octetsJson(capturePresente(page, HORODATAGE_ENGAGEMENT))));
+    expect(json(run, "run.json")["engagement"]).toEqual({
+      url: engagementDe(head(racine)),
+      horodatage: HORODATAGE_ENGAGEMENT,
+      disponibilite: { url: url_disponibilite, chemin: `runs/${DATE}/${ARCHIVE_WAYBACK}`, sha256: sha256(archive) },
+    });
   });
 
   it("balise, cas 11 : la sortie du gel passe pnpm symmetry, archives de balise comprises", async () => {
@@ -662,6 +678,62 @@ describe("balise, cas 10 : écriture tout ou rien des archives", () => {
     // Les trois fichiers et la première archive ont été écrits dans le temporaire, puis retirés.
     expect(ecrits).toHaveLength(4);
     expect(arborescence(sortie)).toEqual([]);
+  });
+
+  it("D47 (3) : une erreur à l'écriture de l'archive Wayback ne laisse aucun fichier", async () => {
+    const racine = depot(jeuNominal());
+    const sortie = temporaire("banc-gel-sortie-");
+    const ecrits: string[] = [];
+    const ecrire = (chemin: string, contenu: string | Uint8Array): void => {
+      if (chemin.endsWith(ARCHIVE_WAYBACK)) throw new Error("disque plein à l'archive Wayback (simulé)");
+      writeFileSync(chemin, contenu, { flag: "wx" });
+      ecrits.push(chemin);
+    };
+    const erreur = await refusDe(optionsGel(racine, sortie, { ecrire }));
+    expect(erreur.message).toBe("disque plein à l'archive Wayback (simulé)");
+    // Les trois fichiers et les deux archives de balise ont été écrits dans le temporaire, puis retirés.
+    expect(ecrits).toHaveLength(3 + ARCHIVES.length);
+    expect(arborescence(sortie)).toEqual([]);
+  });
+});
+
+/** Un `fetch` qui ne répond jamais, mais respecte le signal d'abandon. */
+const fetchMuet: Envoi = (_url, init) =>
+  new Promise((_resolu, rejete) => {
+    const signal = init.signal;
+    if (signal === undefined || signal === null) {
+      rejete(new Error("appel sans signal d'abandon"));
+      return;
+    }
+    signal.addEventListener("abort", () => rejete(signal.reason));
+  });
+
+describe("D47 (4) : délai de 30 s par appel réseau", () => {
+  it("le délai est une constante nommée de 30 s", () => {
+    expect(DELAI_APPEL_RESEAU_MS).toBe(30_000);
+  });
+
+  it("un relais qui ne répond pas dans le délai ⇒ refus nommé (relais, URL), rien écrit, aucune nouvelle tentative", async () => {
+    const appels: string[] = [];
+    const muet: Envoi = (url, init) => {
+      appels.push(url);
+      return fetchMuet(url, init);
+    };
+    const erreur = await refusSansEcriture(() => ({ relais: lectureParFetch(muet, 5) }));
+    expect(erreur).toBeInstanceOf(BaliseRefusee);
+    expect((erreur as BaliseRefusee).motif).toBe("delai_depasse");
+    expect((erreur as BaliseRefusee).relais).toBe((RELAIS[0] as (typeof RELAIS)[number]).nom);
+    expect(erreur.message).toContain(`${(RELAIS[0] as (typeof RELAIS)[number]).base}/${QUICKNET.empreinte}/info`);
+    expect(appels).toHaveLength(1);
+  });
+
+  it("la Wayback Machine qui ne répond pas dans le délai ⇒ refus nommé (URL), rien écrit, la balise n'est pas lue", async () => {
+    const relais = relaisDeFixture();
+    const erreur = await refusSansEcriture(() => ({ wayback: lectureParFetch(fetchMuet, 5), relais: relais.lire }));
+    expect(erreur).toBeInstanceOf(EngagementRefuse);
+    expect((erreur as EngagementRefuse).motif).toBe("delai_depasse");
+    expect(erreur.message).toContain("https://archive.org/wayback/available?");
+    expect(relais.appels).toEqual([]);
   });
 });
 

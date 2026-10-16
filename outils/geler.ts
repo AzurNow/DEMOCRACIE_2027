@@ -1,10 +1,11 @@
 /**
- * `pnpm geler` — gel d'un run (lot gel ; décisions D41, D44, D45 (1), D46).
+ * `pnpm geler` — gel d'un run (lot gel ; décisions D41, D44, D45 (1), D46, D47).
  *
  *   pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
  *
  * Écrit, en une fois et tout ou rien, `run.json`, `tirage.json`, `questions.json` et les réponses
- * brutes des deux relais drand (`balise/<relais>.json`) dans `runs/<date>/` (sans `--sortie`) ou
+ * brutes des deux relais drand (`balise/<relais>.json`) et de la Wayback Machine
+ * (`engagement/wayback.json`, D47 (3)) dans `runs/<date>/` (sans `--sortie`) ou
  * `<sortie>/<date>/`, où `<date>` est la date de `date_gel` à Paris ; au statut `planifie`, à partir de
  * `data/`, de `config/perimetre.yaml`, de `config/gel.json`, du commit courant et de la balise drand
  * quicknet. Refuse, sans rien écrire et avec le code 1 : un dépôt sale, un répertoire de run qui
@@ -12,7 +13,7 @@
  * formulations relues sur son texte neutre et sa position courants, un tour drand pas encore émis
  * (avant tout appel réseau), un engagement archivé absent, d'un autre commit, postérieur à
  * `date_gel` ou que la Wayback Machine ne sert pas, deux relais en désaccord ou l'un d'eux injoignable,
- * et un run que la barrière de symétrie refuse (`pipeline/gel/barriere.ts`).
+ * un appel réseau sans réponse en 30 s (D47 (4), aucune nouvelle tentative), et un run que la barrière de symétrie refuse (`pipeline/gel/barriere.ts`).
  *
  * D41 : seul l'auteur gèle un vrai run, c'est-à-dire lance cette commande sans `--sortie`. Un agent
  * ou un test gèle toujours vers un répertoire hors de `runs/`, et jamais avec le réseau : cette
@@ -21,7 +22,7 @@
  * `--engagement` : l'URL `https://web.archive.org/web/<14 chiffres>/https://github.com/AzurNow/
  * DEMOCRACIE_2027/commit/<HEAD complet>` de la capture faite avant `date_gel` (D46). Elle vient de la
  * ligne de commande, pas de `config/gel.json` : ce fichier est dans le commit capturé, il ne peut pas
- * porter l'URL de sa propre capture.
+ * porter l'URL de sa propre capture (retenu par D47 (1)).
  *
  * `--type-run` : l'une des valeurs de `run.schema.json#/properties/type_run`.
  */
@@ -32,7 +33,7 @@ import { validerFragment } from "./schemas/valider.ts";
 import { geler } from "../pipeline/gel/geler.ts";
 import type { ResultatGel } from "../pipeline/gel/geler.ts";
 import { ecrireExclusif } from "../pipeline/gel/ecriture.ts";
-import { lectureParFetch } from "../pipeline/gel/reseau.ts";
+import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../pipeline/gel/reseau.ts";
 import { MOTIFS_EXCLUSION } from "../pipeline/questions/types.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
@@ -65,7 +66,7 @@ async function principal(): Promise<void> {
     "engagement",
     "l'URL de la capture Wayback de la page GitHub du commit gelé, faite avant date_gel (D46)",
   );
-  const lire = lectureParFetch((url, init) => fetch(url, init));
+  const lire = lectureParFetch((url, init) => fetch(url, init), DELAI_APPEL_RESEAU_MS);
   const resultat = await geler({
     racine: RACINE,
     sortie: table.get("sortie"),

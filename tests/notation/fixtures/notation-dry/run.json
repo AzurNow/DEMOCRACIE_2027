@@ -80,7 +80,12 @@
   },
   "engagement": {
     "url": "https://web.archive.org/web/20261126080000/https://github.com/AzurNow/DEMOCRACIE_2027/commit/0000000000000000000000000000000000000000",
-    "horodatage": "20261126080000"
+    "horodatage": "20261126080000",
+    "disponibilite": {
+      "url": "https://archive.org/wayback/available?url=https%3A%2F%2Fgithub.com%2FAzurNow%2FDEMOCRACIE_2027%2Fcommit%2F0000000000000000000000000000000000000000&timestamp=20261126080000",
+      "chemin": "runs/2026-11-27/engagement/wayback.json",
+      "sha256": "02bfeb0372b93c0f11f7f85265cce955476cd3cc02a7592bce08d4d4b4ff6f4a"
+    }
   },
   "perimetre": {
     "regime_inclusion": "liste_officielle",

@@ -4,6 +4,7 @@
  * la Wayback Machine la sert. Adaptateur de fixture seulement ; « balise, cas 8 » du brief.
  */
 
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   DEPOT_PUBLIC,
@@ -14,7 +15,7 @@ import {
   urlDisponibilite,
   verifierEngagement,
 } from "../../pipeline/gel/engagement.ts";
-import { capturePresente, reponseJson, waybackDeFixture } from "./reseau-fixture.ts";
+import { capturePresente, octetsJson, reponseJson, waybackDeFixture } from "./reseau-fixture.ts";
 
 const HEAD = "0123456789abcdef0123456789abcdef01234567";
 const AUTRE = "fedcba9876543210fedcba9876543210fedcba98";
@@ -102,7 +103,18 @@ describe("balise, cas 8 : la Wayback Machine sert la capture", () => {
     );
     expect(parametres.get("url")).toBe(PAGE);
     expect(parametres.get("timestamp")).toBe(HORODATAGE);
-    expect(engagementDuRun(engagement)).toEqual({ url: URL_CAPTURE, horodatage: HORODATAGE });
+    // D47 (3) : la réponse de l'API, telle que reçue, et son empreinte dans run.json.
+    const corps = octetsJson(capturePresente(PAGE, HORODATAGE));
+    expect(Buffer.from(engagement.octets)).toEqual(Buffer.from(corps));
+    expect(engagementDuRun(engagement, "2026-12-01")).toEqual({
+      url: URL_CAPTURE,
+      horodatage: HORODATAGE,
+      disponibilite: {
+        url: urlDisponibilite(engagement),
+        chemin: "runs/2026-12-01/engagement/wayback.json",
+        sha256: createHash("sha256").update(corps).digest("hex"),
+      },
+    });
   });
 
   it("une URL refusée n'appelle pas la Wayback Machine", async () => {

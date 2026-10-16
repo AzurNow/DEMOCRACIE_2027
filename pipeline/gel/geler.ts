@@ -18,7 +18,8 @@
  *    mesures recoupés avec le commit inscrit. Bloquée — refus nommé, symétrie rouge, invariant
  *    violé — : `GelBloque`, rien n'est écrit (règle 4). `ecart_tolere` : le gel continue, l'écart
  *    est inscrit dans `run.json#/symetrie`.
- * 7. Les trois fichiers et les réponses brutes des relais, écrits tout ou rien (`ecriture.ts`).
+ * 7. Les trois fichiers et les réponses brutes des relais et de la Wayback Machine, écrits tout ou
+ *    rien (`ecriture.ts`).
  *
  * Le gel lit `data/` et n'y écrit jamais (règle 3) : il écrit sous `runs/` ou sous la sortie demandée.
  * Le réseau ne passe que par les ports `relais` et `wayback` ; l'heure, que par `maintenant`.
@@ -45,7 +46,7 @@ import { destinationDuRun } from "./destination.ts";
 import { ecrireToutOuRien } from "./ecriture.ts";
 import type { EcrireFichier } from "./ecriture.ts";
 import { verifierEngagement } from "./engagement.ts";
-import type { Engagement } from "./engagement.ts";
+import type { EngagementVerifie } from "./engagement.ts";
 import type { LireHttp } from "./reseau.ts";
 
 export interface OptionsGel {
@@ -139,7 +140,7 @@ function sha256DuFichier(chemin: string): string {
 }
 
 interface Alea {
-  readonly engagement: Engagement;
+  readonly engagement: EngagementVerifie;
   readonly balise: BaliseLue;
 }
 

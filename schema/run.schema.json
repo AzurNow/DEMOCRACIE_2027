@@ -13,6 +13,8 @@
     "statut",
     "versions",
     "graines",
+    "balise",
+    "engagement",
     "perimetre",
     "juges",
     "taux_echantillon_humain",
@@ -156,7 +158,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["chaine", "tour", "signature", "alea", "relais", "cles", "cle_identifiant"],
-      "description": "§5 (protocole 0.16), décisions D44 et D45 (1) : la balise publique d'aléa dont les graines et l'identifiant du run sont dérivés, écrite par pnpm geler (pipeline/gel/balise.ts). Le tour est le premier émis à date_gel ou après ; aléa = SHA-256 des octets de la signature, recalculé au gel et égal au randomness de chaque relais ; graine(clé) = les 8 premiers octets gros-boutistes de SHA-256(aléa en hexadécimal minuscule ‖ U+0000 ‖ clé, UTF-8), décalés de 11 bits vers la droite ; la partie aléatoire de id = les 10 premiers octets de SHA-256(aléa ‖ U+0000 ‖ cle_identifiant). La signature BLS n'est pas vérifiée au gel : un tiers la vérifie sur les réponses archivées (runs/README.md). Obligatoire pour tout run sauf un pilote (règle de allOf).",
+      "description": "§5 (protocole 0.16), décisions D44 et D45 (1) : la balise publique d'aléa dont les graines et l'identifiant du run sont dérivés, écrite par pnpm geler (pipeline/gel/balise.ts). Le tour est le premier émis à date_gel ou après ; aléa = SHA-256 des octets de la signature, recalculé au gel et égal au randomness de chaque relais ; graine(clé) = les 8 premiers octets gros-boutistes de SHA-256(aléa en hexadécimal minuscule ‖ U+0000 ‖ clé, UTF-8), décalés de 11 bits vers la droite ; la partie aléatoire de id = les 10 premiers octets de SHA-256(aléa ‖ U+0000 ‖ cle_identifiant). La signature BLS n'est pas vérifiée au gel : un tiers la vérifie sur les réponses archivées (runs/README.md). Obligatoire pour tout run, pilote compris (D47 (2)).",
       "properties": {
         "chaine": {
           "type": "object",
@@ -208,11 +210,22 @@
     "engagement": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["url", "horodatage"],
-      "description": "Décision D46 : la capture Wayback de la page GitHub du commit gelé (versions.code_commit), faite avant date_gel. pnpm geler vérifie que l'URL désigne ce commit, que l'horodatage est strictement antérieur à date_gel et que la Wayback Machine sert la capture (pipeline/gel/engagement.ts). Obligatoire pour tout run sauf un pilote (règle de allOf).",
+      "required": ["url", "horodatage", "disponibilite"],
+      "description": "Décision D46 : la capture Wayback de la page GitHub du commit gelé (versions.code_commit), faite avant date_gel. pnpm geler vérifie que l'URL désigne ce commit, que l'horodatage est strictement antérieur à date_gel et que la Wayback Machine sert la capture (pipeline/gel/engagement.ts). Obligatoire pour tout run, pilote compris (D47 (2)).",
       "properties": {
         "url": { "type": "string", "pattern": "^https://web\\.archive\\.org/web/[0-9]{14}/https://github\\.com/.+/commit/[0-9a-f]{40}$" },
-        "horodatage": { "type": "string", "pattern": "^[0-9]{14}$", "description": "Les 14 chiffres de la capture, en UTC." }
+        "horodatage": { "type": "string", "pattern": "^[0-9]{14}$", "description": "Les 14 chiffres de la capture, en UTC." },
+        "disponibilite": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "chemin", "sha256"],
+          "description": "D47 (3) : la réponse de l'API de disponibilité qui a vérifié la capture, archivée telle que reçue (règle 7).",
+          "properties": {
+            "url": { "type": "string", "pattern": "^https://archive\\.org/wayback/available\\?" },
+            "chemin": { "type": "string", "minLength": 1, "description": "runs/<date>/engagement/wayback.json, octets exacts." },
+            "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256", "description": "Empreinte des octets archivés." }
+          }
+        }
       }
     },
     "perimetre": {
@@ -1378,11 +1391,6 @@
     }
   },
   "allOf": [
-    {
-      "$comment": "Décisions D44 et D46 (lot gel, PR 2a) : tout run porte sa balise et son engagement archivé, sauf un pilote, qui ne publie aucune mesure (§6).",
-      "if": { "properties": { "type_run": { "const": "pilote" } }, "required": ["type_run"] },
-      "else": { "required": ["balise", "engagement"] }
-    },
     {
       "if": {
         "properties": {
