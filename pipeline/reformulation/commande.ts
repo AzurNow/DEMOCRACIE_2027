@@ -117,7 +117,8 @@ function cheminReel(absolu: string): string {
   return join(cheminReel(parent), basename(absolu));
 }
 
-function exigerHorsDuStagingDuDepot(sortie: string, depot: string): void {
+/** Refuse une sortie simulée sous le `staging/` du dépôt ; repris par `pnpm extraire --simule`. */
+export function exigerHorsDuStagingDuDepot(sortie: string, depot: string): void {
   const reel = cheminReel(sortie);
   const interdit = cheminReel(join(depot, "staging"));
   if (reel === interdit || reel.startsWith(`${interdit}${sep}`)) {

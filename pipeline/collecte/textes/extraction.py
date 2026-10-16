@@ -144,20 +144,22 @@ def _consigner(contenu: Contenu, extraction: Extraction, deps: Dependances) -> R
     return Extrait(contenu.sha256, extraction.texte.sha256, extraction.outil)
 
 
-def _genre(contenu: Contenu) -> str:
-    if contenu.type_contenu is None:
+def genre_de(type_contenu: str | None) -> str:
+    """Le genre d'extraction d'un contenu, d'après le `type_contenu_recu` de son manifeste. Seule
+    règle : l'extraction l'applique, et `en_service.extracteur_en_service` aussi."""
+    if type_contenu is None:
         raise ExtractionRefusee("aucun Content-Type reçu : type inconnu, jamais deviné")
-    if est_media(contenu.type_contenu):
+    if est_media(type_contenu):
         return GENRE_TRANSCRIPTION
-    media = type_media(contenu.type_contenu)
+    media = type_media(type_contenu)
     if media not in GENRES:
-        raise ExtractionRefusee(f"type de contenu non pris en charge : {contenu.type_contenu}")
+        raise ExtractionRefusee(f"type de contenu non pris en charge : {type_contenu}")
     return GENRES[media]
 
 
 def extraire_contenu(contenu: Contenu, deps: Dependances) -> ResultatTexte:
     try:
-        return _consigner(contenu, _extraire(_genre(contenu), contenu, deps), deps)
+        return _consigner(contenu, _extraire(genre_de(contenu.type_contenu), contenu, deps), deps)
     except ExtractionRefusee as refus:
         return Refuse(contenu.sha256, refus.motif)
 

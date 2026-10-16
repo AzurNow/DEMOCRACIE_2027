@@ -12,7 +12,7 @@ import hashlib
 import platform
 
 from pipeline.collecte.textes.canonique import TexteCanonique
-from pipeline.collecte.textes.fiche import Extraction
+from pipeline.collecte.textes.fiche import Extracteur, Extraction
 from pipeline.collecte.textes.refus import ExtractionRefusee
 from pipeline.collecte.transcription.webvtt import ErreurVtt, texte_derive
 
@@ -29,11 +29,15 @@ def _decoder(octets: bytes) -> str:
         raise ExtractionRefusee(f"transcription illisible : octet non UTF-8 à la position {erreur.start}") from None
 
 
-def extraire_vtt(octets: bytes) -> Extraction:
+def extracteur() -> Extracteur:
     """`platform.python_version()` en version : la NFC dépend de la table Unicode de Python."""
+    return Extracteur(OUTIL, platform.python_version(), {"regle": REGLE})
+
+
+def extraire_vtt(octets: bytes) -> Extraction:
     try:
         texte = texte_derive(_decoder(octets))
     except ErreurVtt as erreur:
         raise ExtractionRefusee(f"transcription illisible : {erreur}") from None
     vtt_sha256 = hashlib.sha256(octets).hexdigest()
-    return Extraction(TexteCanonique(texte), OUTIL, platform.python_version(), {"regle": REGLE}, vtt_sha256=vtt_sha256)
+    return Extraction(TexteCanonique(texte), *extracteur(), vtt_sha256=vtt_sha256)

@@ -2014,6 +2014,64 @@
       "attendu": "invalide",
       "motif": "Champ page fourni par le modèle : la page est calculée par le code depuis les offsets (D35), tout champ en plus rejette la sortie entière.",
       "regle_protocole": "§4, page comptée comme rang dans le fichier ; décision D35"
+    },
+    {
+      "objet": "entree-extraction",
+      "fichier": "entree-extraction/valide-01-programme-pdf.json",
+      "attendu": "valide",
+      "motif": "Entrée d'un programme PDF, copie du fichier doré tests/collecte/dore/entrees-extraction/entree-programme-pdf.json : extracteur pymupdf épinglé, un bloc source assemblé par source_de sans page ni extrait."
+    },
+    {
+      "objet": "entree-extraction",
+      "fichier": "entree-extraction/invalide-01-bloc-deja-localise.json",
+      "attendu": "invalide",
+      "motif": "Bloc source portant déjà une page : la page et l'extrait se calculent de chaque citation à l'extraction, jamais avant.",
+      "regle_protocole": "§4, citation paginée ; décision D52"
+    },
+    {
+      "objet": "reponse-extraction",
+      "fichier": "reponse-extraction/valide-01-corps-json.json",
+      "attendu": "valide",
+      "motif": "Réponse 200 dont le corps est un objet JSON, gardé tel quel dans brut."
+    },
+    {
+      "objet": "reponse-extraction",
+      "fichier": "reponse-extraction/valide-02-corps-non-json.json",
+      "attendu": "valide",
+      "motif": "Réponse 502 dont le corps n'est pas du JSON : gardée octet pour octet dans brut_texte, jamais écartée."
+    },
+    {
+      "objet": "reponse-extraction",
+      "fichier": "reponse-extraction/invalide-01-brut-et-brut-texte.json",
+      "attendu": "invalide",
+      "motif": "brut et brut_texte à la fois : un corps reçu est stocké sous une seule forme, telle quelle.",
+      "regle_protocole": "Règle 7 de CLAUDE.md, réponses brutes immuables"
+    },
+    {
+      "objet": "journal-extraction",
+      "fichier": "journal-extraction/valide-01-extraite.json",
+      "attendu": "valide",
+      "motif": "Source extraite : un item et sa mesure déposés, un item de l'autre modèle rejeté (citation introuvable)."
+    },
+    {
+      "objet": "journal-extraction",
+      "fichier": "journal-extraction/valide-02-refusee-sortie-illisible.json",
+      "attendu": "valide",
+      "motif": "Source refusée : la réponse du second modèle est un 500, sa lecture est illisible, la sortie transmise au cœur est rejetée et la source porte extraction_double_incomplete (D53 (2))."
+    },
+    {
+      "objet": "journal-extraction",
+      "fichier": "journal-extraction/invalide-01-refus-sans-rejet-de-source.json",
+      "attendu": "invalide",
+      "motif": "Issue refusee sans rejet de portée source : un refus dit toujours que la source n'a pas été extraite deux fois.",
+      "regle_protocole": "§4, extraction double ; décision D53 (2)"
+    },
+    {
+      "objet": "journal-extraction",
+      "fichier": "journal-extraction/invalide-02-extraite-avec-rejet-de-source.json",
+      "attendu": "invalide",
+      "motif": "Issue extraite portant extraction_double_incomplete : une source refusée ne dépose aucun item.",
+      "regle_protocole": "§4, extraction double ; décision D53 (2)"
     }
   ]
 }

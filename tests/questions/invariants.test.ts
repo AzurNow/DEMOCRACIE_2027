@@ -369,8 +369,9 @@ describe("exemples de schema/exemples/", () => {
   // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
   // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
   // 294 → 300 : décision D52 (lot extraction, PR 1), deux valides (exemple du prompt ; aucun item) et quatre invalides (type A ; position sans_objet ; thème hors des dix ; page donnée par le modèle) du nouveau schéma sortie-extraction.
-  it("charge les 300 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(300);
+  // 300 → 309 : décisions D52 et D53 (lot extraction, PR 3), un valide et un invalide d'entree-extraction, deux valides et un invalide de reponse-extraction, deux valides et deux invalides de journal-extraction.
+  it("charge les 309 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(309);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

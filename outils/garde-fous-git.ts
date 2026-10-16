@@ -15,6 +15,16 @@ export function arbrePropre(racine: string): boolean {
   return sortie.trim().length === 0;
 }
 
+/**
+ * Arbre propre hors de `staging/` : le code et la configuration sont ceux du commit courant. Pour une
+ * commande du pipeline qui écrit elle-même dans `staging/` (`pnpm extraire`), et dont les sorties
+ * d'un lancement précédent ne changent pas le code qui extrait.
+ */
+export function arbreDuCodePropre(racine: string): boolean {
+  const sortie = execFileSync("git", ["status", "--porcelain", "--", ".", ":(exclude)staging"], { cwd: racine, encoding: "utf8" });
+  return sortie.trim().length === 0;
+}
+
 export function commitCourant(racine: string): string {
   return execFileSync("git", ["rev-parse", "HEAD"], { cwd: racine, encoding: "utf8" }).trim();
 }

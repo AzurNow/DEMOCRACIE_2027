@@ -1,0 +1,14 @@
+{
+  "cle_source": "b821820ffc1103409b8918e88d7b469493faa71122db2d19860c4ccb369b5864",
+  "sha256_source": "14699e34b84745c46e85d8ecf9e998ca117b3aa238491b2b911f754b6231d494",
+  "modele": "modele-exemple-a",
+  "version_prompt": "prompts/extraction-1.0.0",
+  "prompt_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "date": "2026-10-16T14:00:00+02:00",
+  "statut_http": 502,
+  "brut_octets_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "brut_texte": "<html><body>Bad Gateway</body></html>\n",
+  "brut": {
+    "erreur": "x"
+  }
+}

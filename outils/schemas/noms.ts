@@ -80,6 +80,13 @@
  * (§4, décision D52), dans la forme exacte de `prompts/extraction-1.0.0.md` ; lue par
  * `pipeline/extraction/lecture-sortie.ts`, qui rejette en entier une sortie non conforme. Le
  * trente-deuxième.
+ *
+ * `entree-extraction`, `reponse-extraction` et `journal-extraction` décrivent les trois fichiers de
+ * `pnpm extraire` (§4, décisions D52 et D53, PR 3 du lot extraction) : l'entrée d'une source, écrite
+ * par `pnpm extraction:entrees` (Python, vérifiée comme la collecte par un fichier doré de
+ * `tests/collecte/dore/entrees-extraction/`) ; chaque réponse HTTP d'un extracteur, gardée telle
+ * quelle (règle 7) ; et le journal d'une source, écrit en dernier, qui la marque traitée. Les
+ * trente-troisième à trente-cinquième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -114,6 +121,9 @@ export const NOMS_SCHEMAS = [
   "refus-formulation",
   "config-gel",
   "sortie-extraction",
+  "entree-extraction",
+  "reponse-extraction",
+  "journal-extraction",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

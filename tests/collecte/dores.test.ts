@@ -191,6 +191,32 @@ describe("source assemblée par pipeline/collecte/source.py:source_de", () => {
   });
 });
 
+describe("entrée d'extraction écrite par pipeline/collecte/entrees_extraction.py (D52, PR 3)", () => {
+  const { ajv } = construireRegistre(racineSchema);
+  const entree = lireDore("entrees-extraction/entree-programme-pdf.json");
+
+  it("entrees-extraction/entree-programme-pdf.json est conforme à schema/entree-extraction.schema.json", () => {
+    const valider = ajv.getSchema(urnSchema("entree-extraction"));
+    if (valider === undefined) throw new Error("schéma entree-extraction absent du registre");
+    const valide = valider(entree);
+    expect(valider.errors).toBeNull();
+    expect(valide).toBe(true);
+  });
+
+  it("son bloc est, au champ près, la source dorée de source_de privée de sa page", () => {
+    const { page: _page, ...attendu } = lireDore("sources/source-programme-pdf.json");
+    const extraction = lireDore("extraction-pdf.json");
+    const sources = entree["sources"] as Record<string, unknown>;
+    expect(sources).toEqual({ [extraction["texte_sha256"] as string]: attendu });
+    expect(entree["extracteur_epingle"]).toEqual(extraction["extracteur"]);
+  });
+
+  it("l'exemple valide du schéma en est la copie, octet pour octet", () => {
+    const exemple = readFileSync(resolve(racineExemples, "entree-extraction/valide-01-programme-pdf.json"));
+    expect(exemple.equals(readFileSync(resolve(racineDore, "entrees-extraction/entree-programme-pdf.json")))).toBe(true);
+  });
+});
+
 const SAUT_DE_LIGNE = String.fromCodePoint(0x0a);
 const LIGATURE_FI = String.fromCodePoint(0xfb01);
 

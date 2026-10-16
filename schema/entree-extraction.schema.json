@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:entree-extraction",
+  "title": "Entrée de l'extraction double d'une source",
+  "description": "staging/entrees-extraction/<cle_source>/<sha256_source>.json, écrit une fois par `pnpm extraction:entrees` (pipeline/collecte/entrees_extraction.py) et lu par `pnpm extraire` (pipeline/extraction/entrees.ts), frontière Python → TypeScript retenue par l'auteur le 2026-10-16 (§4, décision D52). Porte l'extracteur de texte épinglé par le code pour ce contenu (D52 (4), pipeline/collecte/textes/en_service.py:extracteur_en_service) et un bloc source par fiche d'extraction du contenu, assemblé par pipeline/collecte/source.py:source_de, seul assembleur, sans citation : ni page ni extrait. Aucun choix de texte n'est fait ici : pipeline/extraction/choix-texte.ts:choisirFiche choisit la fiche, puis le bloc de son texte_sha256 est retenu. Les variables type_document et format du prompt se lisent dans ce bloc. Python ne valide pas contre ce schéma : un fichier doré de tests/collecte/dore/entrees-extraction/ l'est par tests/collecte/dores.test.ts, et pnpm extraire revalide chaque entrée à la lecture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cle_source",
+    "sha256_source",
+    "candidat_id",
+    "extracteur_epingle",
+    "sources"
+  ],
+  "properties": {
+    "cle_source": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Clé de l'entrée de config/sources.toml (sha256 de candidat_id, saut de ligne, url) ; égale au nom du répertoire."
+    },
+    "sha256_source": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "Empreinte du document archivé ; égale au nom du fichier."
+    },
+    "candidat_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court",
+      "description": "candidat_id de la fiche de source : l'extraction refuse tout item rattaché à un autre candidat."
+    },
+    "extracteur_epingle": {
+      "$ref": "urn:banc-essai-2027:schema:extraction-texte#/properties/extracteur",
+      "description": "L'extracteur que le code utiliserait aujourd'hui pour ce contenu (D52 (4)), version lue à l'exécution comme dans les fiches : une fiche d'un autre extracteur, d'une autre version ou d'autres options n'est jamais lue."
+    },
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Un bloc source par fiche d'extraction du contenu, indexé par texte_sha256.",
+      "propertyNames": {
+        "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/source_avant_citation"
+      }
+    }
+  },
+  "$defs": {
+    "source_avant_citation": {
+      "type": "object",
+      "description": "Le bloc commun#/$defs/source tel que source_de le rend sans citation. Il ne peut pas être validé contre commun#/$defs/source : celle-ci exige la page d'un programme PDF et l'extrait d'une source T2, qui se calculent de chaque citation, à l'extraction (pipeline/extraction/extraction.ts). Chaque champ renvoie donc à celui de commun#/$defs/source ; page, extrait et l'attestation d'écoute sont absents par construction (additionalProperties), et l'item déposé est revalidé en entier contre item.schema.json.",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "url",
+        "type_document",
+        "format",
+        "sha256",
+        "texte_sha256",
+        "archive_url",
+        "date_source",
+        "date_collecte",
+        "publication"
+      ],
+      "properties": {
+        "tier": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/tier"
+        },
+        "url": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/url"
+        },
+        "type_document": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/type_document"
+        },
+        "format": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/format"
+        },
+        "site_parti_tient_lieu_de_campagne": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/site_parti_tient_lieu_de_campagne"
+        },
+        "sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/sha256"
+        },
+        "texte_sha256": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/texte_sha256"
+        },
+        "archive_url": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/archive_url"
+        },
+        "date_source": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/date_source"
+        },
+        "date_collecte": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/date_collecte"
+        },
+        "chemin_local": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/chemin_local"
+        },
+        "publication": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/source/properties/publication"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/tier_selon_type_document"
+        },
+        {
+          "if": {
+            "properties": {
+              "type_document": {
+                "const": "site_parti"
+              }
+            },
+            "required": [
+              "type_document"
+            ]
+          },
+          "then": {
+            "required": [
+              "site_parti_tient_lieu_de_campagne"
+            ]
+          },
+          "$comment": "Même règle que commun#/$defs/source."
+        }
+      ]
+    }
+  }
+}
