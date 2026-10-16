@@ -24,6 +24,20 @@ import type { EntreeDecision, Item, ItemDuLot, Mesure } from "./types.ts";
 /** Préfixe de l'entrée d'historique d'un renvoi : écrit par `repinglerSurMesure`, lu par `renvoyeDepuis`. */
 export const CHANGEMENT_RENVOI = "renvoi en attente";
 
+/**
+ * Préfixe de l'entrée d'historique d'un rattachement à une autre mesure (décision D53 (1)) : écrit
+ * par `rattachements-item.ts:rattacherItem`, lu par `renvoyeDepuis`. Défini ici, avec la liste qui
+ * le lit, pour que ce module n'importe pas celui qui l'écrit.
+ */
+export const CHANGEMENT_RATTACHEMENT = "rattachement à une autre mesure";
+
+/**
+ * Les changements d'historique qui renvoient un item en attente : le lot qui épinglait une version
+ * antérieure ne le juge plus. Une donnée, pas une branche par cas : un nouveau chemin de renvoi
+ * s'ajoute ici.
+ */
+export const CHANGEMENTS_QUI_RENVOIENT: readonly string[] = [CHANGEMENT_RENVOI, CHANGEMENT_RATTACHEMENT];
+
 /** Le renvoi n'existe qu'après une correction de thème acceptée au registre et portée par la mesure. */
 export class RenvoiSansCorrectionAppliquee extends Error {
   readonly mesure_id: string;
@@ -140,8 +154,11 @@ function porteLaDemande(entree: EntreeDecision, decision: DecisionCorrectionMesu
   );
 }
 
-/** Chaque annotateur du lot a une décision active sur l'item. Un lot sans annotateur n'est jamais complet. */
-function jugementComplet(jugement: JugementEnCours): boolean {
+/**
+ * Chaque annotateur du lot a une décision active sur l'item. Un lot sans annotateur n'est jamais
+ * complet. Exporté pour le rattachement (`rattachements-item.ts`), qui refuse comme le renvoi.
+ */
+export function jugementComplet(jugement: JugementEnCours): boolean {
   if (jugement.annotateurs.length === 0) return false;
   return jugement.annotateurs.every((annotateur) =>
     jugement.decisions.some((entree) => entree.annotateur_id === annotateur),
@@ -189,7 +206,7 @@ export function repinglerSurMesure(item: Item, mesure: Mesure, trace: TraceRenvo
 
 /* --------------------------------------------------------- supersession par version */
 
-/** Vrai si l'item a été renvoyé en attente après la version donnée. */
+/** Vrai si l'item a été renvoyé en attente (renvoi ou rattachement) après la version donnée. */
 export function renvoyeDepuis(item: Item, version: number): boolean {
   if (item.historique === undefined) return false;
   return item.historique.some((entree) => estRenvoiPosterieur(entree, version));
@@ -198,12 +215,13 @@ export function renvoyeDepuis(item: Item, version: number): boolean {
 function estRenvoiPosterieur(entree: unknown, version: number): boolean {
   const { changement, version_resultante } = entree as { changement?: unknown; version_resultante?: unknown };
   if (typeof changement !== "string" || typeof version_resultante !== "number") return false;
-  return changement.startsWith(`${CHANGEMENT_RENVOI} :`) && version_resultante > version;
+  return version_resultante > version && CHANGEMENTS_QUI_RENVOIENT.some((prefixe) => changement.startsWith(`${prefixe} :`));
 }
 
 /**
  * Un lot juge encore l'item qu'il épingle, sauf si l'item a été renvoyé en attente depuis la version
- * épinglée : les décisions du lot restent au journal, mais ne comptent plus pour cet item.
+ * épinglée, par un renvoi ou un rattachement : les décisions du lot restent au journal, mais ne
+ * comptent plus pour cet item.
  */
 export function lotJugeEncore(item: Item, reference: Pick<ItemDuLot, "item_version">): boolean {
   return !renvoyeDepuis(item, reference.item_version);

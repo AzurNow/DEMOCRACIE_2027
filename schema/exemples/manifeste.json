@@ -952,6 +952,33 @@
       "regle_protocole": "Règle 3 de CLAUDE.md, décision D53 (1)"
     },
     {
+      "objet": "rattachement-item",
+      "fichier": "rattachement-item/valide-01-rattachement.json",
+      "attendu": "valide",
+      "motif": "Rattachement d'un item de staging à une autre mesure : item et version d'avant, mesure d'avant, mesure cible et sa version, date civile (décision D53 (1))."
+    },
+    {
+      "objet": "rattachement-item",
+      "fichier": "rattachement-item/invalide-01-sans-mesure-avant.json",
+      "attendu": "invalide",
+      "motif": "Rattachement sans la mesure d'avant : on ne saurait plus de quel référent l'item a été détaché, la décision publiée ne se relirait pas.",
+      "regle_protocole": "§4, contenu notant d'un item ; décision D53 (1)"
+    },
+    {
+      "objet": "rattachement-item",
+      "fichier": "rattachement-item/invalide-02-version-cible-nulle.json",
+      "attendu": "invalide",
+      "motif": "Version de la mesure cible à 0 : une mesure commence en version 1, l'épinglage ne désignerait aucun contenu.",
+      "regle_protocole": "§4, la version de la mesure fait partie du contenu notant (protocole 0.13)"
+    },
+    {
+      "objet": "rattachement-item",
+      "fichier": "rattachement-item/invalide-03-libelle-recopie.json",
+      "attendu": "invalide",
+      "motif": "Entrée recopiant le libellé de la mesure : le registre ne porte que des identifiants et des versions ; un champ en trop est rejeté, jamais ignoré.",
+      "regle_protocole": "Décision D53 (1)"
+    },
+    {
       "objet": "diagnostic-lot",
       "fichier": "diagnostic-lot/valide-01-lot-supersede.json",
       "attendu": "valide",

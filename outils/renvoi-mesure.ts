@@ -61,8 +61,16 @@ function mesureCourante(staging: Staging, mesure_id: string): Mesure {
 
 /* ------------------------------------------------------------------ lecture */
 
-/** Items de la mesure qu'un lot juge encore, avec ses décisions actives. */
-function jugementsDeLaMesure(staging: Staging, mesure: Mesure, options: OptionsRenvoi): ReadonlyMap<string, JugementEnCours> {
+/**
+ * Items de la mesure qu'un lot juge encore, avec ses décisions actives. Exporté pour
+ * `rattachement-mesure.ts`, qui y cherche le lot de l'item à rattacher : seul l'identifiant de la
+ * mesure est lu.
+ */
+export function jugementsDeLaMesure(
+  staging: Staging,
+  mesure: Pick<Mesure, "id">,
+  options: Pick<OptionsRenvoi, "lots" | "decisions">,
+): ReadonlyMap<string, JugementEnCours> {
   const jugements = new Map<string, JugementEnCours>();
   for (const effectif of lotsApresSupersession(lireLots(options.lots))) {
     const concernes = itemsJugesDeLaMesure(effectif, staging, mesure);
@@ -73,7 +81,7 @@ function jugementsDeLaMesure(staging: Staging, mesure: Mesure, options: OptionsR
   return jugements;
 }
 
-function itemsJugesDeLaMesure(effectif: LotEffectif, staging: Staging, mesure: Mesure): readonly Item[] {
+function itemsJugesDeLaMesure(effectif: LotEffectif, staging: Staging, mesure: Pick<Mesure, "id">): readonly Item[] {
   const items: Item[] = [];
   for (const reference of effectif.items) {
     const item = staging.items.get(reference.item_id);

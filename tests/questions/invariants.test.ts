@@ -371,8 +371,9 @@ describe("exemples de schema/exemples/", () => {
   // 294 → 300 : décision D52 (lot extraction, PR 1), deux valides (exemple du prompt ; aucun item) et quatre invalides (type A ; position sans_objet ; thème hors des dix ; page donnée par le modèle) du nouveau schéma sortie-extraction.
   // 300 → 309 : décisions D52 et D53 (lot extraction, PR 3), un valide et un invalide d'entree-extraction, deux valides et un invalide de reponse-extraction, deux valides et deux invalides de journal-extraction.
   // 309 → 312 : décision D53 (1) (verrou de relecture des mesures), un valide et deux invalides de relecture-mesure.
-  it("charge les 312 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(312);
+  // 312 → 316 : décision D53 (1) (rattachement d'un item à une autre mesure), un valide et trois invalides de rattachement-item.
+  it("charge les 316 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(316);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

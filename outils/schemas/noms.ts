@@ -92,6 +92,11 @@
  * `validation/mesures/relectures.json`, publié en ajout seul et relu par `pnpm promote`, qui refuse
  * d'écrire dans `data/mesures/` toute mesure dont le contenu exact n'a pas été relu par l'auteur
  * (décision D53 (1)). Le trente-sixième.
+ *
+ * `rattachement-item` décrit une entrée du registre des rattachements d'item,
+ * `validation/mesures/rattachements.json`, publié en ajout seul et écrit par
+ * `pnpm mesures --rattacher`, qui réécrit un item de staging sur une autre mesure existante
+ * (décision D53 (1)). Le trente-septième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -130,6 +135,7 @@ export const NOMS_SCHEMAS = [
   "reponse-extraction",
   "journal-extraction",
   "relecture-mesure",
+  "rattachement-item",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

@@ -13,6 +13,41 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — D53 (1), PR B : `pnpm mesures --relire` et `--rattacher` (branche `lots/relecture-rattacher` : `outils/mesures.ts`, `outils/rattachement-mesure.ts`, `validation/domaine/rattachements-item.ts`, `validation/io/rattachements-fichier.ts`, `validation/io/relectures-fichier.ts`, `schema/rattachement-item.schema.json`)
+
+### 1. `--rattacher` ne vérifie pas que l'item et la mesure cible s'accordent — *à trancher*
+
+Rien n'empêche de rattacher un item P à une mesure fictive, ni deux items du même candidat à la
+même mesure. Un tel contrôle serait une règle d'inclusion, donc une décision de l'auteur.
+
+**Ce qu'il faut faire.** Trancher entre aucun contrôle, refus si `fictive` ne correspond pas au type
+de l'item, ou ce refus plus celui du doublon candidat × mesure ; l'écrire au §4 avec la PR C.
+
+### 2. Un rattachement interrompu entre staging et registre se répare à la main — *basse*
+
+L'item est réécrit en staging, puis l'entrée est ajoutée au registre. Si l'ajout échoue, une
+relance tombe sur `deja_rattache` sans rien inscrire : seule la remise en état donnée par
+`RattachementInacheve` (`git checkout -- staging/items/<id>.json`, l'arbre était propre) rattrape
+le cas.
+
+**Ce qu'il faut faire.** Rien tant que le cas reste théorique (tous les contrôles passent avant la
+première écriture).
+
+### 3. Tout nouveau chemin de renvoi doit s'inscrire dans `CHANGEMENTS_QUI_RENVOIENT` — *moyenne*
+
+`renvoyeDepuis` (`validation/domaine/renvoi-mesure.ts`) ne reconnaît que les préfixes de cette
+liste. Une réécriture d'item qui l'oublierait laisserait un lot juger encore un contenu qui a changé.
+
+**Ce qu'il faut faire.** Le rappeler à toute PR qui ajoute une écriture dans `staging-renvoi.ts`.
+
+### 4. `poserRegistreAjoutSeul` vit dans `relectures-fichier.ts` et sert aux deux registres — *basse*
+
+Déplacer ou renommer ce module casse aussi celui des rattachements.
+
+**Ce qu'il faut faire.** Le sortir dans un module commun si un troisième registre en ajout seul apparaît.
+
+---
+
 ## 2026-10-16 — D53 (1), PR A : verrou de relecture des mesures avant promotion (branche `lots/relecture-verrou` : `validation/domaine/relectures-mesure.ts`, `validation/io/relectures-fichier.ts`, `validation/io/data-mesures.ts`, `schema/relecture-mesure.schema.json`)
 
 ### 1. Toute nouvelle version d'une mesure bloque `pnpm promote` jusqu'à sa relecture, sans commande pour l'inscrire — *basse*
