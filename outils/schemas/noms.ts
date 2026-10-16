@@ -75,6 +75,11 @@
  * `config-gel` décrit `config/gel.json`, les paramètres du gel d'un run que run.json exige et
  * qu'aucune autre source ne porte (version du protocole, début de fenêtre, juges, alias aveugles),
  * saisis par l'auteur et lus par `pnpm geler` (décision D41). Le trente et unième.
+ *
+ * `sortie-extraction` décrit la sortie brute de chacun des deux modèles de l'extraction double
+ * (§4, décision D52), dans la forme exacte de `prompts/extraction-1.0.0.md` ; lue par
+ * `pipeline/extraction/lecture-sortie.ts`, qui rejette en entier une sortie non conforme. Le
+ * trente-deuxième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -108,6 +113,7 @@ export const NOMS_SCHEMAS = [
   "formulations-validees",
   "refus-formulation",
   "config-gel",
+  "sortie-extraction",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

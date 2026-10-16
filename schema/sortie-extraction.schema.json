@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:sortie-extraction",
+  "title": "Sortie d'un modèle extracteur",
+  "description": "Forme exacte de la sortie que prompts/extraction-1.0.0.md (« Sortie attendue ») demande à chacun des deux modèles de l'extraction double (§4, décision D52) : un seul objet {\"items\": [...]}, aucun champ en plus à aucun niveau. Lu par pipeline/extraction/lecture-sortie.ts sur la chaîne reçue telle quelle (règle 7) : une sortie non conforme est rejetée en entier, jamais réparée. Ce que le modèle ne donne pas (page, offsets, horodatage, source, dates, identifiants) est absent ici et ajouté par le code ; un champ page fourni par le modèle est donc un champ en trop (D35). candidat_id doit en outre égaler celui de la source : JSON Schema ne compare pas une valeur à une donnée extérieure, le contrôle vit dans pipeline/extraction/extraction.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "Un document sans position dans le périmètre donne {\"items\": []}, sortie conforme.",
+      "items": { "$ref": "#/$defs/item_propose" }
+    }
+  },
+  "$defs": {
+    "item_propose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "candidat_id", "mesure_proposee", "position", "citation_verbatim", "paraphrase"],
+      "properties": {
+        "type": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/type_item",
+          "enum": ["P", "O"],
+          "description": "P ou O seulement : les types A et F ne s'extraient pas d'une source (prompt, « Ce que ce prompt ne fait pas »)."
+        },
+        "candidat_id": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/identifiant_court" },
+        "mesure_proposee": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["libelle", "theme"],
+          "description": "Proposition de mesure, que la validation humaine rattache à une mesure. Le thème appartient à la mesure (annexe A).",
+          "properties": {
+            "libelle": { "$ref": "urn:banc-essai-2027:schema:mesure#/properties/libelle" },
+            "theme": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/theme" }
+          }
+        },
+        "position": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/position",
+          "not": { "const": "sans_objet" },
+          "description": "sans_objet est réservé aux types A et F, qui ne s'extraient pas."
+        },
+        "citation_verbatim": { "$ref": "urn:banc-essai-2027:schema:item#/$defs/etat_positionnel/properties/citation_verbatim" },
+        "paraphrase": { "$ref": "urn:banc-essai-2027:schema:item#/$defs/etat_positionnel/properties/paraphrase" },
+        "quantification": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/quantification" }
+      }
+    }
+  }
+}

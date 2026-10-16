@@ -13,6 +13,69 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — Lot extraction, PR 1 : cœur pur de l'extraction double (branche `lots/extraction-coeur` : `pipeline/extraction/`, `schema/sortie-extraction.schema.json`, `tests/extraction/`)
+
+### 1. La mesure d'un item extrait reçoit le libellé du modèle comme formulation canonique, et aucune mesure n'est partagée — *haute*
+
+`mesure.schema.json` exige `formulation_canonique`, que le prompt ne demande pas.
+`pipeline/extraction/assemblage.ts:formulationProposee` y recopie le libellé proposé. Chaque item
+extrait reçoit en outre sa propre mesure de staging : l'interface de validation ne sait ni rattacher
+un item à une mesure existante (`mesure_id` n'est pas un chemin corrigeable), ni corriger un libellé
+ou une formulation (seul `/theme` passe par le registre).
+
+**Pourquoi ça casse.** `pnpm promote` crée la mesure dans `data/mesures/` telle quelle. La
+formulation canonique est le texte substitué dans les gabarits (§5) : un libellé écrit par un modèle
+deviendrait le texte des questions, sans relecture humaine. Et deux candidats qui proposent la même
+mesure resteraient sur deux mesures : la liste attendue d'une Q-ATT et le drapeau « mauvaise
+attribution » seraient faux sans que rien n'échoue.
+
+**Ce qu'il faut faire.** Avant toute promotion d'un item extrait, l'auteur tranche comment une
+mesure proposée devient une mesure, et qui écrit sa formulation canonique. Ensuite, l'interface
+devra savoir rattacher un item à une mesure existante. La règle ne vit qu'à un seul endroit,
+`formulationProposee`.
+
+### 2. Trois règles proposées par le cœur ne sont écrites ni au §4 ni dans `docs/CONTRATS.md` — *moyenne*
+
+(a) Une citation présente plusieurs fois garde sa première occurrence, et donc la page de cette
+occurrence. Elle est rendue dans `ambiguites`. (b) L'extrait minuté d'une source T2 va du début du
+cue de son premier point de code à la fin du cue de son dernier, arrondi à la seconde vers
+l'extérieur, même à cheval sur plusieurs cues. (c) Une sortie rejetée en entier fait refuser la
+source, au lieu de déposer en `desaccord_existence` les items de l'autre modèle.
+
+**Pourquoi ça casse.** Ces trois règles décident de la page et de l'extrait montrés à l'annotateur,
+et de ce qui entre en validation. Un auteur qui en choisit une autre doit retrouver chaque test qui
+fixe la règle actuelle (`tests/extraction/`, blocs marqués « comportement proposé »).
+
+**Ce qu'il faut faire.** Les trancher avec l'auteur, puis les écrire au §4 avec les points 2 à 4 de
+D52 et dans `docs/CONTRATS.md` §1.1 et §2.
+
+### 3. Les items O ne sont pas déposés — *moyenne*
+
+Un item O tiré d'une seule source n'a que son état postérieur, alors que `item.schema.json` exige
+les deux. L'item retenu d'une paire qui est un O part donc au journal (`portee: "depot"`,
+`etat_o_sans_etat_anterieur`), pas dans `staging/`.
+
+**Pourquoi ça casse.** Toute position modifiée déclarée par une source reste hors de la validation,
+tant que le rapprochement de l'état antérieur n'existe pas. C'est visible dans le journal, mais le
+journal n'est pas encore écrit sur le disque.
+
+**Ce qu'il faut faire.** Au lot qui écrira le rapprochement des deux états : lire ces entrées du
+journal.
+
+### 4. La page d'une citation se calcule à deux endroits, en Python et en TypeScript — *basse*
+
+`pipeline/extraction/localisation.ts:pageDe` reproduit `pipeline/collecte/textes/pages.py:page_de`.
+`source_de` sait aussi calculer la page quand on lui passe une citation. Le cœur, lui, attend une
+source assemblée sans citation et calcule la page seul.
+
+**Pourquoi ça casse.** Si l'on change la règle d'un côté seulement, l'interface et l'extraction
+divergent sur la page d'une même citation.
+
+**Ce qu'il faut faire.** À la PR 3, qui obtiendra la source : appeler `source_de` sans citation, et
+ajouter un test qui confronte les deux règles sur les mêmes intervalles.
+
+---
+
 ## 2026-10-16 — Lot gel, PR 2b à 4 : taux d'échantillon, statuts du run, `run:invalider`, `run:dry --run`, D51 ; dépôts de test sans gc (PR #135, #137, #138 : `pipeline/run/`, `pipeline/interrogation/run-gele.ts`, `pipeline/gel/precedent.ts`, `tests/aides/depot.ts`)
 
 ### ~~1. Le taux de l'échantillon humain est encore écrit en dur dans le test contrefactuel~~ — réglé le 2026-10-16 par la branche `qualite/dette-taux-contrefactuel` (constantes de `taux-echantillon.ts` importées par les deux fichiers, ajoutés à `APPELANTS`)
@@ -956,7 +1019,7 @@ ou ajoute une troisième garde.
 
 ## 2026-09-23 — Lot collecte, sous-lot C2 : texte canonique PDF et HTML (`pipeline/collecte/textes/`, `pipeline/collecte/source.py`, `schema/extraction-texte.schema.json`, `docs/CONTRATS.md` §1, `.gitattributes`)
 
-### 1. Plusieurs textes d'un même document coexistent sans règle qui désigne celui à extraire — *moyenne*
+### ~~1. Plusieurs textes d'un même document coexistent sans règle qui désigne celui à extraire~~ — réglé le 2026-10-16 par la branche `lots/extraction-coeur` (décision D52 (4) : `pipeline/extraction/choix-texte.ts:choisirFiche` retient la seule fiche de l'extracteur épinglé par l'appelant, outil, version et options comparés en entier ; aucune ou plusieurs : refus nommé, sans repli ; un item validé reste attaché à son texte et à ses offsets)
 
 Le texte est rangé sous sa propre empreinte (`staging/textes/<texte_sha256>.txt`) et chaque
 extraction ajoute une fiche `staging/extractions/<sha256_source>/<texte_sha256>.json`. Une montée de
