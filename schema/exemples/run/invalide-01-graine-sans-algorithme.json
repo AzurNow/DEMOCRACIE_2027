@@ -87,6 +87,7 @@
       "sha256": "d9398a96ceeb11b887f7dc0a5d2aa8c80659d0831eaf13c08d40f550b163a006"
     }
   },
+  "run_precedent": null,
   "perimetre": {
     "regime_inclusion": "avant_liste_officielle",
     "candidats": [

@@ -1,5 +1,5 @@
 /**
- * `pnpm geler` — gel d'un run (lot gel ; décisions D41, D44, D45 (1), D46, D47).
+ * `pnpm geler` — gel d'un run (lot gel ; décisions D41, D44, D45, D46, D47).
  *
  *   pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
  *
@@ -7,11 +7,13 @@
  * brutes des deux relais drand (`balise/<relais>.json`) et de la Wayback Machine
  * (`engagement/wayback.json`, D47 (3)) dans `runs/<date>/` (sans `--sortie`) ou
  * `<sortie>/<date>/`, où `<date>` est la date de `date_gel` à Paris ; au statut `planifie`, à partir de
- * `data/`, de `config/perimetre.yaml`, de `config/gel.json`, du commit courant et de la balise drand
+ * `data/`, de `config/perimetre.yaml`, de `config/gel.json`, du commit courant, du run précédent de `runs/` et de la balise drand
  * quicknet. Refuse, sans rien écrire et avec le code 1 : un dépôt sale, un répertoire de run qui
  * existe déjà, une `--sortie` sous `runs/`, un `config/gel.json` incomplet, une question sans
- * formulations relues sur son texte neutre et sa position courants, un tour drand pas encore émis
- * (avant tout appel réseau), un engagement archivé absent, d'un autre commit, postérieur à
+ * formulations relues sur son texte neutre et sa position courants, un alias aveugle qui trahit un
+ * outil ou que deux outils partagent, une fenêtre ouverte avant `date_gel`, et avant tout appel
+ * réseau un gel exécuté avant `date_gel`, un run précédent illisible ou incohérent (D45 (2) à (4)) et
+ * un tour drand pas encore émis, un engagement archivé absent, d'un autre commit, postérieur à
  * `date_gel` ou que la Wayback Machine ne sert pas, deux relais en désaccord ou l'un d'eux injoignable,
  * un appel réseau sans réponse en 30 s (D47 (4), aucune nouvelle tentative), et un run que la barrière de symétrie refuse (`pipeline/gel/barriere.ts`).
  *

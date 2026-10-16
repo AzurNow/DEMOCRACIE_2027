@@ -21,6 +21,7 @@ import { SEUIL_RETRAIT } from "./contrefactuel.ts";
 import { jugesDuRun } from "./decision.ts";
 import { tirerEchantillonHumain } from "./echantillons.ts";
 import { porteDrapeauGrave } from "./note-retenue.ts";
+import { TAUX_ECHANTILLON_APRES_RETRAIT, TAUX_ECHANTILLON_SANS_RETRAIT } from "./taux-echantillon.ts";
 import type { JugeDuRun, ModeResolution, NotationIndividuelle, RunDeNotation, VerdictProduit } from "./types.ts";
 
 export const CODES_VIOLATION = [
@@ -114,7 +115,7 @@ function violationsDuRun(run: RunDeNotation): Violation[] {
 /** §7 : le taux passe à 25 % quand un juge est retiré, et à ce seul cas. */
 function tauxEchantillon(run: RunDeNotation): Violation[] {
   const retrait = run.juges.some((j) => j.retire);
-  const attendu = retrait ? 0.25 : 0.1;
+  const attendu = retrait ? TAUX_ECHANTILLON_APRES_RETRAIT : TAUX_ECHANTILLON_SANS_RETRAIT;
   if (run.taux_echantillon_humain === attendu) return [];
   return [
     {

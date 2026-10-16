@@ -22,6 +22,7 @@ import { DEPOT_PUBLIC, EngagementRefuse } from "../../pipeline/gel/engagement.ts
 import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../../pipeline/gel/reseau.ts";
 import type { Envoi } from "../../pipeline/gel/reseau.ts";
 import { geler, GelBloque } from "../../pipeline/gel/geler.ts";
+import { OrdreDesInstantsRefuse } from "../../pipeline/gel/instants.ts";
 import type { OptionsGel } from "../../pipeline/gel/geler.ts";
 import { FormulationsEnDefautAuGel } from "../../pipeline/reformulation/lecture-au-gel.ts";
 import { head, RACINE_PROJET } from "../aides/depot.ts";
@@ -611,8 +612,10 @@ describe("balise, cas 3, 4 et 7 : refus de la balise, rien écrit", () => {
       wayback: wayback.lire,
       maintenant: () => Date.parse(GEL) - 1,
     }));
-    expect(erreur).toBeInstanceOf(BaliseRefusee);
-    expect((erreur as BaliseRefusee).motif).toBe("pas_encore_emis");
+    // PR 2b (D45 (4)) : le refus général d'ordre des instants précède celui du tour non émis, qui
+    // reste éprouvé dans tests/gel/instants.test.ts (date_gel passée, tour pas encore émis).
+    expect(erreur).toBeInstanceOf(OrdreDesInstantsRefuse);
+    expect((erreur as OrdreDesInstantsRefuse).motif).toBe("gel_avant_date_gel");
     expect(relais.appels).toEqual([]);
     expect(wayback.appels).toEqual([]);
   });

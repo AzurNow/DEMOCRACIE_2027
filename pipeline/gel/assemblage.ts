@@ -13,9 +13,10 @@
  *    `engendree_le` de chaque question vaut `date_gel`, pour que deux gels du même commit donnent
  *    le même `questions.json`, octet pour octet. Rien ici ne dépend des graines ni de l'identifiant.
  * 2. `tirerAuGel` puis `fichiersDuGel` : le tirage (`tirage.ts:tirer`, graine du tirage, quotas du
- *    périmètre), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` par son
+ *    périmètre, tirage du run précédent pour les reprises du §5), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` par son
  *    chemin et le SHA-256 de ses octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
- *    l'engagement archivé (D46) et l'empreinte du protocole ; enfin les réponses brutes des relais
+ *    l'engagement archivé (D46), le run précédent (D45 (3), `precedent.ts`) et l'empreinte du
+ *    protocole ; enfin les réponses brutes des relais
  *    (sous `balise/`) et de la Wayback Machine (`engagement/wayback.json`, D47 (3)), octet pour
  *    octet. Chaque objet est validé contre son schéma avant d'être rendu.
  *
@@ -35,6 +36,7 @@ import type { PerimetreCharge } from "../questions/charger-perimetre.ts";
 import { tirer } from "../questions/tirage.ts";
 import type { ResultatTirage } from "../questions/tirage.ts";
 import type { Item, Mesure, Question, RunAuGel, Symetrie, Tirage } from "../questions/types.ts";
+import { TAUX_ECHANTILLON_SANS_RETRAIT } from "../notation/taux-echantillon.ts";
 import { tachesDe } from "../reformulation/entrees.ts";
 import { questionsAuGel } from "../reformulation/lecture-au-gel.ts";
 import type { FormulationsValidees } from "../reformulation/relecture.ts";
@@ -45,13 +47,8 @@ import { ARCHIVE_WAYBACK, engagementDuRun } from "./engagement.ts";
 import type { EngagementVerifie } from "./engagement.ts";
 import { grainesDuRun } from "./graines.ts";
 import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
-
-/**
- * §7 : « 10 % par défaut, 25 % après retrait d'un juge pour biais contrefactuel ». Au gel, aucun
- * juge n'est retiré (le retrait suit le test contrefactuel) : le taux est celui du protocole sans
- * retrait, que `pipeline/notation/controle-croise.ts:tauxEchantillon` revérifie sur le run noté.
- */
-export const TAUX_ECHANTILLON_SANS_RETRAIT = 0.1;
+import { exigerFenetreApresDateGel } from "./instants.ts";
+import type { PrecedentDuGel } from "./precedent.ts";
 
 /** Le statut d'un run qui vient d'être gelé : il n'est ni lancé ni publié. */
 export const STATUT_AU_GEL = "planifie";
@@ -84,7 +81,10 @@ export interface GelPrepare {
   readonly date_repertoire: string;
 }
 
-/** Phase 1 : périmètre, fenêtre, questions. Lève sur toute entrée qui ne permet pas de geler. */
+/**
+ * Phase 1 : périmètre, fenêtre, questions. Lève sur toute entrée qui ne permet pas de geler, dont
+ * une fenêtre ouverte avant `date_gel` (D45 (4), `instants.ts`).
+ */
 export function preparer(entrees: EntreesGel): GelPrepare {
   const perimetre = construirePerimetre(
     entrees.perimetre_brut,
@@ -94,7 +94,9 @@ export function preparer(entrees: EntreesGel): GelPrepare {
   const fenetre = ouvrirFenetre(entrees.configuration.fenetre_debut);
   const taches = tachesDe({ items: entrees.items, mesures: entrees.mesures, candidats: perimetre.perimetre.candidats });
   const questions = questionsAuGel(taches, entrees.formulations, perimetre.date_gel);
-  const date_repertoire = dateParis(lireInstant(perimetre.date_gel, `${entrees.provenance_perimetre}, date_gel`));
+  const date_gel_ms = lireInstant(perimetre.date_gel, `${entrees.provenance_perimetre}, date_gel`);
+  exigerFenetreApresDateGel(fenetre.debut_ms, date_gel_ms);
+  const date_repertoire = dateParis(date_gel_ms);
   return { perimetre, fenetre, questions, date_repertoire };
 }
 
@@ -107,11 +109,23 @@ export interface GelTire {
   readonly run_id: string;
   readonly graines: GrainesDuRun;
   readonly resultat: ResultatTirage;
+  /** Le run précédent (D45 (3)), inscrit dans `run.json#/run_precedent`. */
+  readonly precedent: PrecedentDuGel;
 }
 
-/** Phase 2a : le tirage, avec la graine du tirage et les quotas du périmètre. */
-export function tirerAuGel(prepare: GelPrepare, entrees: EntreesGel, run_id: string, valeurs: ValeursDesGraines): GelTire {
+/**
+ * Phase 2a : le tirage, avec la graine du tirage, les quotas du périmètre et le tirage du run
+ * précédent (§5, reprises), absent quand aucun run ne précède.
+ */
+export function tirerAuGel(
+  prepare: GelPrepare,
+  entrees: EntreesGel,
+  run_id: string,
+  valeurs: ValeursDesGraines,
+  precedent: PrecedentDuGel,
+): GelTire {
   const graines = grainesDuRun(valeurs);
+  const reprise = precedent.tirage_precedent === undefined ? {} : { tirage_precedent: precedent.tirage_precedent };
   const resultat = tirer({
     questions: prepare.questions,
     items: entrees.items,
@@ -119,8 +133,9 @@ export function tirerAuGel(prepare: GelPrepare, entrees: EntreesGel, run_id: str
     run: runAuGel(prepare, run_id),
     graine: graines.tirage,
     parametres: prepare.perimetre.parametres_tirage,
+    ...reprise,
   });
-  return { run_id, graines, resultat };
+  return { run_id, graines, resultat, precedent };
 }
 
 /** Ce qui s'inscrit dans `run.json` et ne vient ni du périmètre ni du tirage. */
@@ -166,6 +181,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     graines: tire.graines,
     balise: baliseDuRun(meta.balise, prepare.date_repertoire),
     engagement: engagementDuRun(meta.engagement, prepare.date_repertoire),
+    run_precedent: tire.precedent.run_precedent,
     perimetre: prepare.perimetre.perimetre,
     juges: entrees.configuration.juges.map(jugeAuGel),
     taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT,

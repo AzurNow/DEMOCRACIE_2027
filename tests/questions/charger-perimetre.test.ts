@@ -18,6 +18,7 @@ import { parse, stringify } from "yaml";
 import {
   chargerPerimetre,
   construirePerimetre,
+  normaliserAlias,
   PerimetreIncomplet,
   PerimetreRefuse,
   SEUIL_COUVERTURE_ITEMS_P,
@@ -460,6 +461,45 @@ describe("cas 11 : alias aveugle et motif d'exclusion", () => {
 
   it("porte l'alias fourni sur l'assistant inclus", () => {
     expect(charger(perimetreComplet()).perimetre.outils[0]).toMatchObject({ outil_id: "outil-alpha", alias_aveugle: "O07" });
+  });
+});
+
+describe("gel, PR 2b, cas 8 : alias aveugle qui trahit un outil (D45 (2))", () => {
+  it("normalisation fixe : NFKD, diacritiques retirés, minuscules, espaces repliés", () => {
+    expect(normaliserAlias("  Éditeur \t  ALPHA\n")).toBe("editeur alpha");
+    expect(normaliserAlias("Outil Bêta")).toBe("outil beta");
+    // NFKD replie aussi les formes de compatibilité : ligature et chiffre en exposant.
+    expect(normaliserAlias("ﬁable²")).toBe("fiable2");
+    expect(normaliserAlias("O07")).toBe("o07");
+  });
+
+  it("cas 8 : alias contenant le libellé d'un autre outil, en casse et accents différents ⇒ refus", () => {
+    const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "Juge OUTIL   BÊTA n° 7"]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("contient le libelle « Outil Beta » de l'outil outil-beta")]);
+  });
+
+  it("cas 8 : alias contenant le libellé de son propre outil ⇒ refus", () => {
+    const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "outil alpha"]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("contient le libelle « Outil Alpha » de l'outil outil-alpha")]);
+  });
+
+  it("cas 8 : alias contenant un éditeur ⇒ refus", () => {
+    const editeur = refus(perimetreComplet(), contexte([["outil-alpha", "par EDITEUR ALPHA"]]));
+    expect(editeur.motifs).toEqual([expect.stringContaining("contient le editeur « Éditeur Alpha » de l'outil outil-alpha")]);
+  });
+
+  it("cas 8 : l'éditeur d'un comparateur du périmètre trahit aussi ⇒ refus", () => {
+    const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "association  gamma"]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("de l'outil comparateur-gamma")]);
+  });
+
+  it("cas 8 : même alias pour deux outils, après normalisation ⇒ refus", () => {
+    const erreur = refus(perimetreComplet(), contexte([["outil-alpha", "O07"], ["outil-beta", " o07 "]]));
+    expect(erreur.motifs).toEqual([expect.stringContaining("« O07 », «  o07  » attribué à plusieurs outils")]);
+  });
+
+  it("cas 8 : un alias neutre, distinct des autres, passe", () => {
+    expect(charger(perimetreComplet(), contexte([["outil-alpha", "O07"], ["outil-beta", "O08"]])).perimetre.outils[0]).toMatchObject({ alias_aveugle: "O07" });
   });
 });
 
