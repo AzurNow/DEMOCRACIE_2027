@@ -17,7 +17,8 @@
  *    est écrite et notée par les deux juges (contexte `contrefactuel_candidat`, motif `contrefactuel`).
  * 3. **Test et inscription.** `testerContrefactuel`, `publierContrefactuel`, puis l'inscription dans
  *    `run.json` (`inscription-contrefactuel.ts`) : retrait éventuel d'un juge, échantillon à 25 %.
- *    Deux juges retirés (D16 (3)) : le run est invalide, la chaîne s'arrête là.
+ *    Deux juges retirés (D16 (3)) : le test est inscrit avec l'invalidation du run (la raison, la
+ *    date ; statut inchangé, D51 (2)), et la chaîne s'arrête là.
  * 4. **Masse.** Le run est relu ; chaque réponse obtenue est notée par les juges non retirés (un juge
  *    retiré n'est plus appelé, ses notations du sous-ensemble restent écrites et sont écartées par
  *    `decider`, D13), puis décidée (`decider`) avec l'appartenance à l'échantillon humain
@@ -36,6 +37,11 @@
  * (`identifiantDerive`) : une relance retrouve les mêmes. Une notation de juge déjà écrite (même
  * contexte, même objet, même juge) n'est pas redemandée ; une réponse contrefactuelle ou un verdict
  * déjà écrits ne sont pas réécrits ; `run.json` n'est inscrit qu'une fois. Rien n'est jamais réécrit.
+ *
+ * **Run invalidé (D51 (2)).** Un `run.json` qui porte une `invalidation` est refusé avant toute
+ * écriture (`RunInvalideRefuse`) : un run invalidé par `pnpm run:invalider` n'est plus noté. Seule
+ * exception, la reprise d'un D16 (3) : le test contrefactuel est inscrit et ses deux juges retirés ;
+ * la relance recalcule le test sans rien réécrire et s'arrête au même point.
  *
  * **Humains.** La chaîne n'en simule aucun. Elle lit les notations humaines déjà écrites (écran
  * `pnpm notation:humaine`) et les passe à `decider` : une relance après la saisie humaine résout les
@@ -93,7 +99,7 @@ export interface Attente {
 export type EtatContrefactuel =
   | { readonly statut: IssueInscription; readonly resultat: ResultatContrefactuel }
   | { readonly statut: "en_attente_test_liens"; readonly reponse_ids: readonly Ulid[] }
-  | { readonly statut: "run_invalide"; readonly raison: string; readonly resultat: ResultatContrefactuel };
+  | { readonly statut: "run_invalide"; readonly raison: string; readonly resultat: ResultatContrefactuel; readonly inscription: IssueInscription };
 
 export interface ResultatChaine {
   readonly run_id: Ulid;
@@ -108,6 +114,14 @@ export class JugesNonConformes extends Error {
   constructor(detail: string) {
     super(`Juges refusés : ${detail}`);
     this.name = "JugesNonConformes";
+  }
+}
+
+/** D51 (2) : un run qui porte une invalidation n'est plus noté. */
+export class RunInvalideRefuse extends Error {
+  constructor(run_id: Ulid, motif: string) {
+    super(`Run ${run_id} refusé : il porte une invalidation (« ${motif} ») ; un run invalidé n'est plus noté (décision D51). Rien n'est écrit.`);
+    this.name = "RunInvalideRefuse";
   }
 }
 
@@ -198,6 +212,7 @@ export async function noterRun(reponses: readonly ReponseANoter[], env: Environn
 
 function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): Etat {
   const run = lireRunJson(env.repertoire_run);
+  exigerNotable(run);
   verifierJuges(run, env.juges);
   const depot = DepotNotation.ouvrir(env.repertoire_run);
   const lues = lireNotationsDuRun(env.repertoire_run, run.id);
@@ -216,6 +231,20 @@ function ouvrir(reponses: readonly ReponseANoter[], env: EnvironnementChaine): E
     contrefactuelles: new Map(lues.reponses_contrefactuelles.map((r) => [r.id, canoniser(r)])),
     verdicts: new Set(lireVerdicts(env.repertoire_run, run.id).map((v) => v.objet_note.id)),
   };
+}
+
+/**
+ * D16 (3) déjà inscrit : le test contrefactuel est dans `run.json` et ses deux juges sont retirés.
+ * L'invalidation vient alors de la notation elle-même, et la relance est une reprise.
+ */
+function estRepriseD16(run: RunLu): boolean {
+  return run.contrefactuel_candidats !== undefined && run.juges.every((juge) => juge.retire);
+}
+
+/** D51 (2) : refus, avant toute écriture, d'un run qui porte une invalidation, sauf la reprise d'un D16 (3). */
+function exigerNotable(run: RunLu): void {
+  if (run.invalidation === undefined || estRepriseD16(run)) return;
+  throw new RunInvalideRefuse(run.id, run.invalidation.motif);
 }
 
 /** Ce que `run.schema.json` exige de chaque juge déclaré (`required`), et que `RunLu` ne type pas. */
@@ -393,8 +422,9 @@ async function passerContrefactuel(etat: Etat): Promise<EtatContrefactuel> {
   for (const id of sous_ensemble.reponse_ids) paires.push(await noterPaire(etat, exigerPreparee(etat, id), derangement));
   const resultat = testerContrefactuel({ run, sous_ensemble, paires, notations: notationsDesPaires(etat, paires), renvois: renvoisDesPaires(etat, paires) });
   const publication = publierContrefactuel(resultat, sous_ensemble, derangement, run);
-  if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat };
-  return { statut: inscrireContrefactuel(etat.env.repertoire_run, publication), resultat };
+  const inscription = inscrireContrefactuel(etat.env.repertoire_run, publication, () => etat.env.maintenant());
+  if (resultat.statut === "run_invalide") return { statut: "run_invalide", raison: resultat.raison, resultat, inscription };
+  return { statut: inscription, resultat };
 }
 
 async function noterPaire(etat: Etat, r: Preparee, derangement: Derangement): Promise<PaireContrefactuelle> {

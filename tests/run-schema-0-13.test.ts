@@ -51,7 +51,7 @@ function toutesSous(cible: string): (liste: readonly string[]) => boolean {
 function runInvalide(symetrie: "vert" | "rouge"): Objet {
   const run = runValide();
   run["statut"] = "invalide";
-  run["invalidation"] = { motif: "Incident technique : fenêtre de collecte interrompue." };
+  run["invalidation"] = { motif: "Incident technique : fenêtre de collecte interrompue.", date: "2026-12-02T10:00:00+01:00" };
   (run["symetrie"] as Objet)["statut_global"] = symetrie;
   delete run["go_no_go"];
   return run;

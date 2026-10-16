@@ -699,6 +699,19 @@
       "recommandation": "Option 1 sur les deux points.",
       "retenu": "Option 1 sur les deux points. Dans la PR 2c (#134) ; écrit au texte 0.17 (§5 Gel, §7 alias).",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D51",
+      "statut": "tranchee",
+      "question": "Statuts du run (PR 3 du lot gel) : qui écrit en_cours, comment enregistrer une invalidation connue avant le dépôt Zenodo, comment relier une réexécution au run invalidé, depuis quels statuts invalider.",
+      "contexte": "Personne n’écrit en_cours. Le schéma exige d’un run invalide sa publication et son dépôt (§12), inconnus au moment de l’incident ; la notation lève donc InscriptionImpossible en D16 (3). Le seul lien est invalidation.run_remplacant_id, inconnu à l’invalidation.",
+      "options": [
+        "(1) en_cours écrit par l’interrogation avant la première tentative ; invalidation {motif, date} enregistrée tout de suite, statut inchangé, invalide écrit avec le dépôt ; run_remplace_id exigé d’une reexecution et écrit au gel ; invalider depuis planifie ou en_cours seulement.",
+        "Variantes : commande pnpm run:demarrer ; invalide écrit en une fois avec le dépôt ; pointeur avant rempli après ; invalider aussi après publication."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Dans la PR 3 du lot gel ; à écrire aux §6 et §12.",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
@@ -1129,7 +1142,8 @@
         "D47",
         "D48",
         "D49",
-        "D50"
+        "D50",
+        "D51"
       ],
       "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
     },

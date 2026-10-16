@@ -79,7 +79,7 @@ describe("conformité n° 21 : symétrie rouge ⇒ planifié ou invalide", () =>
 
   it("accepte un run invalide dont la symétrie est rouge, avec sa raison", () => {
     const run = rougeAvecStatut("invalide");
-    run["invalidation"] = { motif: "Tests de symétrie rouges : répartition des gabarits non conforme." };
+    run["invalidation"] = { motif: "Tests de symétrie rouges : répartition des gabarits non conforme.", date: "2026-12-02T10:00:00+01:00" };
     expect(chemins(run)).toEqual([]);
   });
 

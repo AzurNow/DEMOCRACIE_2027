@@ -13,14 +13,22 @@
  * écrit ; sinon, `ContrefactuelDejaInscrit` lève, et rien n'est écrit non plus. Un résultat de test
  * ne se corrige pas en silence.
  *
- * **Run invalide** (D16 (3), les deux juges retirés) : non inscrit ici. Le schéma exige d'un run
- * invalide sa publication et son dépôt (§12), que la notation ne connaît pas : `InscriptionImpossible`.
+ * **Run invalide** (D16 (3), les deux juges retirés ; D51 (2)) : le test est inscrit avec
+ * `invalidation { motif: <la raison>, date }`, posée par la transition pure
+ * (`pipeline/run/statut.ts:invalider`), en une seule écriture validée. Le statut n'est pas
+ * touché : `invalide` s'écrit avec le dépôt (§12). Une reprise retrouve le test et l'invalidation
+ * déjà inscrits : la fusion recalculée est comparée à `run.json` avec la date déjà écrite, et rien
+ * n'est réécrit ; un motif différent lève `ContrefactuelDejaInscrit`.
  */
 
-import { closeSync, fsyncSync, openSync, readFileSync, renameSync, writeSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dispositionRunNote } from "../../analysis/lecture-run.ts";
+import type { Instant } from "../../analysis/types.ts";
 import { valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../../validation/domaine/empreinte.ts";
+import { ecrireParRenommage } from "../run/ecriture.ts";
+import { invalider } from "../run/statut.ts";
+import type { RunAvecStatut } from "../run/statut.ts";
 import type { JugePublie, PublicationContrefactuel } from "./publication-contrefactuel.ts";
 
 export type IssueInscription = "inscrit" | "deja_inscrit";
@@ -44,20 +52,43 @@ type Objet = Readonly<Record<string, unknown>>;
 /** Les champs d'un juge que le test fixe : retirés de l'ancien juge avant la fusion. */
 export const CHAMPS_DU_TEST = ["retire", "motif_retrait", "taux_changement_contrefactuel", "changements_contrefactuel", "paires_ecartees_contrefactuel", "motif_indefini_contrefactuel"] as const;
 
-export function inscrireContrefactuel(repertoire_run: string, publication: PublicationContrefactuel): IssueInscription {
-  if (publication.statut !== undefined) {
-    throw new InscriptionImpossible("les deux juges sont retirés (D16 (3)) ; un run invalide exige sa publication et son dépôt (§12), que la notation ne connaît pas.");
-  }
+/**
+ * `maintenant` date l'invalidation d'un run invalide (D16 (3)) ; l'horloge n'est pas lue sinon, ni à
+ * la reprise, où la date déjà écrite fait foi.
+ */
+export function inscrireContrefactuel(repertoire_run: string, publication: PublicationContrefactuel, maintenant: () => Instant): IssueInscription {
   const chemin = dispositionRunNote(repertoire_run).run_json;
   const actuel = JSON.parse(readFileSync(chemin, "utf8")) as Objet;
-  const fusionne = fusionner(actuel, publication);
-  if (actuel["contrefactuel_candidats"] !== undefined) {
-    if (canoniser(fusionne) !== canoniser(actuel)) throw new ContrefactuelDejaInscrit(chemin);
-    return "deja_inscrit";
-  }
+  if (actuel["contrefactuel_candidats"] !== undefined) return reprise(chemin, actuel, publication);
+  const fusionne = avecInvalidation(fusionner(actuel, publication), publication, maintenant);
   valider("run", fusionne, `${chemin} après inscription du test contrefactuel`);
-  ecrireParRenommage(chemin, fusionne);
+  ecrireParRenommage(chemin, fusionne, "inscription");
   return "inscrit";
+}
+
+/** Une reprise : la fusion recalculée, avec l'invalidation attendue datée comme celle déjà écrite. */
+function reprise(chemin: string, actuel: Objet, publication: PublicationContrefactuel): IssueInscription {
+  const recalcule = { ...fusionner(actuel, publication), ...invalidationAttendue(actuel, publication) };
+  if (canoniser(recalcule) !== canoniser(actuel)) throw new ContrefactuelDejaInscrit(chemin);
+  return "deja_inscrit";
+}
+
+/**
+ * Sans invalidation recalculée, aucune n'est attendue : une invalidation écrite ferait diverger la
+ * reprise (la chaîne refuse en amont un run invalidé par `pnpm run:invalider`).
+ */
+function invalidationAttendue(actuel: Objet, publication: PublicationContrefactuel): Objet {
+  if (publication.invalidation === undefined) return { invalidation: undefined };
+  const ecrite = actuel["invalidation"] as { readonly date?: unknown } | undefined;
+  return { invalidation: { motif: publication.invalidation.motif, date: ecrite?.date } };
+}
+
+/** D16 (3), D51 (2) : la raison du test devient l'invalidation du run, statut inchangé. */
+function avecInvalidation(run: Objet, publication: PublicationContrefactuel, maintenant: () => Instant): Objet {
+  if (publication.invalidation === undefined) return run;
+  const issue = invalider(run as Objet & RunAvecStatut, publication.invalidation.motif, maintenant());
+  if (issue.issue === "deja_inscrite") throw new InscriptionImpossible("une invalidation identique est déjà inscrite sans test contrefactuel.");
+  return issue.run;
 }
 
 function fusionner(run: Objet, publication: PublicationContrefactuel): Objet {
@@ -76,16 +107,4 @@ function jugeFusionne(juge: Objet, publies: readonly JugePublie[]): Objet {
   if (publie === undefined) throw new InscriptionImpossible(`le juge ${String(juge["juge_id"])} du run n'a pas de résultat publié.`);
   const conserve = Object.fromEntries(Object.entries(juge).filter(([cle]) => !(CHAMPS_DU_TEST as readonly string[]).includes(cle)));
   return { ...conserve, ...publie };
-}
-
-function ecrireParRenommage(chemin: string, valeur: unknown): void {
-  const temporaire = `${chemin}.inscription`;
-  const descripteur = openSync(temporaire, "wx");
-  try {
-    writeSync(descripteur, `${JSON.stringify(valeur, null, 2)}\n`);
-    fsyncSync(descripteur);
-  } finally {
-    closeSync(descripteur);
-  }
-  renameSync(temporaire, chemin);
 }

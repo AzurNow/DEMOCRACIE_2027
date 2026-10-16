@@ -133,6 +133,18 @@ non conforme (`questions_illisibles`), ou qui ne contient pas une question tiré
 (`question_introuvable`). `questions`, exigé par le schéma, n'est lu que du précédent retenu : son
 absence dans le `run.json` d'un run sauté ne bloque aucun gel.
 
+### Réexécution (D51 (3))
+
+`pnpm geler --type-run=reexecution --remplace=<id>` gèle la réexécution d'un run invalidé (§6) et
+inscrit `run_remplace_id: <id>` dans son `run.json`, exigé d'une réexécution et interdit pour tout
+autre type (`run.schema.json`). Avant tout appel réseau, le gel vérifie que `runs/` du dépôt contient
+un run de cet `id` qui porte une `invalidation` (`pipeline/gel/remplacement.ts`). Refus nommés
+(`RemplacementRefuse`), rien n'étant écrit : `--remplace` sans `--type-run=reexecution`
+(`remplace_sans_reexecution`) ou l'inverse (`reexecution_sans_remplace`), aucun run de cet `id`
+(`run_remplace_introuvable`), plusieurs (`run_remplace_ambigu`), un run sans invalidation
+(`run_remplace_sans_invalidation`). Le run invalidé n'est jamais réécrit par le gel :
+`invalidation.run_remplacant_id` reste facultatif, et aucun code ne l'écrit.
+
 ### Engagement archivé (D46)
 
 Avant `date_gel`, l'auteur pousse le commit à geler, puis fait capturer par la Wayback Machine sa page
@@ -313,6 +325,30 @@ Le contrôle croisé n° 18 (§7 ; D13) sur un run enregistré : lit `run.json`,
 `volume/notations/` (et `volume/reponses-contrefactuelles/`) et `verdicts/`, imprime chaque violation.
 Sortie 0 sans violation, 1 avec au moins une, 2 si le run n'a pas pu être lu. N'écrit rien.
 
+## Statuts du run et `pnpm run:invalider <repertoire_run> --motif=<raison>` (D51)
+
+Le gel écrit `statut: planifie`. L'interrogation écrira `en_cours` avant la première tentative
+(lot gel, PR 4) par la transition pure `pipeline/run/statut.ts:demarrer`, qui refuse tout départ
+autre que `planifie` et un run qui porte une `invalidation`. `publie`, `publie_provisoire` et
+`invalide` s'écrivent à la publication, avec le dépôt (§12) : aucune commande ne le fait encore.
+
+`pnpm run:invalider` enregistre l'invalidation dès l'incident (§6), avant le dépôt Zenodo :
+`invalidation { motif, date }` dans `run.json`, la date étant l'horloge au moment de la commande à
+l'heure de Paris, **statut inchangé** (`planifie` ou `en_cours`) ; le statut `invalide` viendra avec
+la publication et le dépôt, que le schéma exige alors (§12). Refus nommés (`TransitionRefusee`),
+rien n'étant écrit : `--motif` absent, sans valeur ou vide (`motif_vide`) ; un run `publie`,
+`publie_provisoire` ou `invalide` (`statut_de_depart` : un défaut découvert après publication serait
+un erratum, que le protocole ne prévoit pas) ; une date avant `date_gel` (`date_avant_gel` ; à
+`date_gel` exactement, admise) ; une invalidation déjà présente et différente
+(`invalidation_differente`, règle 7). Identique (même motif, même date) : rien n'est écrit, et la
+commande le dit. Sortie 0 ou 2.
+
+Un run qui porte une `invalidation` n'est plus noté (`RunInvalideRefuse`, avant toute écriture) ni
+décidé (`pnpm go-no-go` : `GoNoGoRefuse`). Seule exception, D16 (3) : quand les deux juges sont
+retirés au test contrefactuel, la notation inscrit en une écriture validée le test et
+`invalidation { motif: <la raison>, date }`, statut inchangé, et s'arrête ; relancée, elle retrouve
+les deux et ne réécrit rien. Sa réexécution se gèle avec `--remplace` (ci-dessus).
+
 ## `pnpm go-no-go <repertoire_run>` et `pnpm go-no-go:contresigner`
 
 Les sept critères du §12 et la décision qui en découle (D24, `pipeline/go-no-go/`). Lit `run.json`,
@@ -322,7 +358,7 @@ retenu (`kappa_echantillon_humain`, ou son motif d'indéfinition), le nombre de 
 l'échantillon à note humaine indéterminée, écartées de ce kappa (`indeterminees_echantillon_humain`,
 D25), et `motif_provisoire` si la décision
 est provisoire ; écrit `checklist.json` sans contreseing. Ne touche jamais `statut`. Refuse un run
-`invalide`, `planifie` ou à symétrie rouge ; un go/no-go déjà écrit et différent du recalcul est une
+`invalide`, `planifie`, à symétrie rouge, ou qui porte une `invalidation` (D51 (2)) ; un go/no-go déjà écrit et différent du recalcul est une
 erreur, identique un no-op. `metriques/` présent arrête la commande : aucun format n'y est encore
 défini. Sortie 0 ou 2.
 

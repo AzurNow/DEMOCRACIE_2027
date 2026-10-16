@@ -2,6 +2,7 @@
  * `pnpm geler` — gel d'un run (lot gel ; décisions D41, D44, D45, D46, D47).
  *
  *   pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
+ *   pnpm geler --type-run=reexecution --remplace=<id du run invalidé> --engagement=<url> [--sortie=<répertoire>]
  *
  * Écrit, en une fois et tout ou rien, `run.json`, `tirage.json`, `questions.json` et les réponses
  * brutes des deux relais drand (`balise/<relais>.json`) et de la Wayback Machine
@@ -27,6 +28,10 @@
  * porter l'URL de sa propre capture (retenu par D47 (1)).
  *
  * `--type-run` : l'une des valeurs de `run.schema.json#/properties/type_run`.
+ *
+ * `--remplace` (D51 (3)) : l'`id` (ULID) du run invalidé que remplace une réexécution, inscrit dans
+ * `run_remplace_id`. Exigé avec `--type-run=reexecution`, refusé avec tout autre type ; le run doit
+ * être sous `runs/` et porter une invalidation (`pnpm run:invalider`). Il n'est jamais réécrit.
  */
 
 import { resolve } from "node:path";
@@ -39,7 +44,7 @@ import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../pipeline/gel/reseau.t
 import { MOTIFS_EXCLUSION } from "../pipeline/questions/types.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
-const OPTIONS: readonly string[] = ["type-run", "engagement", "sortie"];
+const OPTIONS: readonly string[] = ["type-run", "remplace", "engagement", "sortie"];
 
 function imprimer(resultat: ResultatGel): void {
   const exclusions = MOTIFS_EXCLUSION.map((motif) => [motif, resultat.tirage.exclusions.filter((e) => e.motif === motif).length] as const)
@@ -63,6 +68,8 @@ async function principal(): Promise<void> {
     obligatoire(table, "type-run", "le type du run (run.schema.json#/properties/type_run), sans valeur par défaut"),
     "--type-run",
   );
+  const remplace_brut = table.get("remplace");
+  const remplace = remplace_brut === undefined ? undefined : validerFragment<string>("run", "#/properties/run_remplace_id", remplace_brut, "--remplace");
   const engagement = obligatoire(
     table,
     "engagement",
@@ -73,6 +80,7 @@ async function principal(): Promise<void> {
     racine: RACINE,
     sortie: table.get("sortie"),
     type_run,
+    remplace,
     engagement,
     relais: lire,
     wayback: lire,

@@ -367,8 +367,9 @@ describe("exemples de schema/exemples/", () => {
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
   // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
-  it("charge les 288 exemples du dépôt", () => {
-    expect(EXEMPLES).toHaveLength(288);
+  // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
+  it("charge les 294 exemples du dépôt", () => {
+    expect(EXEMPLES).toHaveLength(294);
   });
 
   it("ne trouve aucune violation de grappe dans les exemples valides", () => {

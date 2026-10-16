@@ -148,6 +148,8 @@ export interface MetaDuRun {
   readonly protocole_sha256: string;
   readonly balise: BaliseLue;
   readonly engagement: EngagementVerifie;
+  /** D51 (3) : le run invalidé que remplace une réexécution, vérifié sous `runs/` ; `undefined` pour tout autre type. */
+  readonly run_remplace_id: string | undefined;
 }
 
 /** Un fichier JSON du run : deux espaces d'indentation, une fin de ligne. */
@@ -178,6 +180,7 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     fenetre: { debut: prepare.fenetre.debut, fin: prepare.fenetre.fin },
     type_run: meta.type_run,
     statut: STATUT_AU_GEL,
+    ...(meta.run_remplace_id === undefined ? {} : { run_remplace_id: meta.run_remplace_id }),
     versions: {
       protocole: entrees.configuration.version_protocole,
       protocole_sha256: meta.protocole_sha256,

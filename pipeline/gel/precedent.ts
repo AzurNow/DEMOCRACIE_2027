@@ -84,6 +84,8 @@ export interface RunDeRuns {
   readonly tirage: FichierDeclare;
   /** D48 (4) ; `undefined` : son `run.json` ne le déclare pas, refusé s'il est le précédent. */
   readonly questions: FichierDeclare | undefined;
+  /** D51 (2) : présente si le run a été invalidé ; lue pour `pnpm geler --remplace` (`remplacement.ts`). */
+  readonly invalidation?: { readonly motif: string; readonly date: string };
 }
 
 /** `run.json#/run_precedent` quand un précédent existe. */
@@ -172,6 +174,7 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
   return ou("run_illisible", repertoire, () => {
     const objet = objetJson(texte);
     const date_gel = fragment<string>(objet, "date_gel", provenance);
+    const invalidation = fragmentSiPresent<NonNullable<RunDeRuns["invalidation"]>>(objet, "invalidation", provenance);
     return {
       repertoire,
       id: fragment<string>(objet, "id", provenance),
@@ -180,6 +183,7 @@ export function runDeRuns(repertoire: string, texte: string, provenance: string)
       statut: fragment<string>(objet, "statut", provenance),
       tirage: fragment<FichierDeclare>(objet, "tirage", provenance),
       questions: fragmentSiPresent<FichierDeclare>(objet, "questions", provenance),
+      ...(invalidation === undefined ? {} : { invalidation }),
     };
   });
 }
@@ -283,7 +287,8 @@ export function tiragePrecedentVerifie(run: RunDeRuns, octets_tirage: Uint8Array
 
 /* ---------------------------------------------------------------- lecture */
 
-function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
+/** Chaque run de `runs/` (le répertoire reçu), lu dans ses seuls champs utiles ; un seul illisible, refus. */
+export function lireRunsDuDepot(runs: string): readonly RunDeRuns[] {
   if (!existsSync(runs)) return [];
   return readdirSync(runs, { withFileTypes: true })
     .filter((entree) => entree.isDirectory())

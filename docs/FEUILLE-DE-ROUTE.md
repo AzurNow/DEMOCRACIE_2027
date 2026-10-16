@@ -192,6 +192,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-16 :** Option 1 sur les deux points. Dans la PR 2c (#134) ; écrit au texte 0.17 (§5 Gel, §7 alias).
 
+### D51 — Statuts du run (PR 3 du lot gel) : qui écrit en_cours, comment enregistrer une invalidation connue avant le dépôt Zenodo, comment relier une réexécution au run invalidé, depuis quels statuts invalider.
+
+**Décision du 2026-10-16 :** Option 1 sur les quatre points. Dans la PR 3 du lot gel ; à écrire aux §6 et §12.
+
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
 **Décision du 2026-09-20 :** Option 1 sur les six points : tronquées incluses dans les métriques primaires plus un quatrième recalcul de robustesse « hors tronquées » ; texte du dénominateur gardé et premisse_fausse interdite sur un item P dès l'engendrement ; Holm retiré de la famille des effets de condition, intervalles et qualificatif seuls publiés ; trois paires pour la famille des formulations ; exactitude globale dans la permutation ; comparateurs alignés sur les assistants.
