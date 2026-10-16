@@ -22,6 +22,7 @@ mesure** sont listés plus bas comme candidats à un amendement (§9).
 | `lecture-comparateur.schema.json` | lecture d'un comparateur | §6, QR9 |
 | `decision.schema.json` | entrée du journal de validation | §4, une ligne du journal append-only écrit par l'interface de validation humaine |
 | `decision-mesure.schema.json` | arbitrage d'une correction de thème | §4, décision de l'auteur sur une demande de correction du thème d'une mesure, publiée dans `validation/mesures/decisions.json` |
+| `relecture-mesure.schema.json` | relecture d'une mesure par l'auteur | Règle 3 de `CLAUDE.md`, décision D53 (1) : une entrée de `validation/mesures/relectures.json`, registre publié en ajout seul. Identifiant, version et empreinte (recalculée depuis {libelle, theme, formulation_canonique, fictive}) du contenu relu, et date civile ; jamais le texte. `pnpm promote` refuse (`sans_relecture`) d'écrire dans `data/mesures/` toute mesure, créée ou réécrite, qu'aucune entrée ne couvre exactement |
 | `gabarits.schema.json` | table des gabarits de questions | §5 (protocole 0.3) : les gabarits sont versionnés dans `prompts/` ; décrit `prompts/gabarits-1.0.0.json`, lu par `pipeline/questions/gabarits.ts` |
 | `collecte.schema.json` | manifeste de contenu collecté | §4, collecte horodatée et archivée : `staging/sources/<sha256>.json`, les faits d'un document archivé une seule fois (empreinte, copie locale, archivage Wayback), écrit par `pipeline/collecte` (Python), format dans `docs/CONTRATS.md` §5 |
 | `fiche-source.schema.json` | fiche d'une source listée | §4 : `staging/sources/par-source/<cle_source>/<sha256>.json`, une par entrée de `config/sources.toml` et par contenu obtenu, pour qu'aucune source ne perde ses métadonnées quand deux servent les mêmes octets ; avec le manifeste de contenu qu'elle pointe, alimente champ pour champ `commun#/$defs/source` |
@@ -184,6 +185,7 @@ ce sont eux les tests. Les rejets attendus, objet par objet :
 | entree-extraction | bloc `source` portant déjà une page |
 | reponse-extraction | `brut` et `brut_texte` ensemble |
 | journal-extraction | issue `refusee` sans rejet de portée `source` · issue `extraite` portant `extraction_double_incomplete` |
+| relecture-mesure | empreinte non hexadécimale · formulation recopiée dans l'entrée (champ en trop) |
 
 Vérification initiale faite avec `jsonschema` 4.26 (draft 2020-12) sur les douze premiers schémas ;
 depuis, `pnpm check` rejoue le tout et imprime les comptes : chaque schéma au registre, chaque exemple

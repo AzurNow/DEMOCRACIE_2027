@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:banc-essai-2027:schema:relecture-mesure",
+  "title": "Entrée du registre des relectures de mesure",
+  "description": "Une ligne de `validation/mesures/relectures.json` (décision D53 (1) du 2026-10-16). Une mesure est un référent partagé entre candidats, et sa `formulation_canonique` est le texte exact substitué dans les gabarits de questions (§5, symétrie) : elle n'entre dans `data/mesures/`, à sa création comme à chaque nouvelle version, qu'après relecture de l'auteur (règle 3 de `CLAUDE.md`). Ce schéma décrit UNE entrée de ce registre, pas le tableau qui les contient : `pnpm promote` les relit une à une et refuse d'écrire toute mesure qu'aucune entrée ne couvre exactement. Le registre est publié et en ajout seul ; deux entrées identiques sont inoffensives. Contrat publié, relié à `validerEntreeRelecture()` (`validation/domaine/relectures-mesure.ts`), frontière d'exécution, par un test d'accord (`tests/relectures-mesure.test.ts`).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mesure_id", "mesure_version", "empreinte", "date"],
+
+  "properties": {
+    "mesure_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "La mesure relue. Un identifiant opaque : le libellé et la formulation ne sont pas recopiés ici, l'empreinte les couvre."
+    },
+
+    "mesure_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version relue. Une relecture ne vaut que pour elle : une version supérieure, même issue d'une correction de thème acceptée, est relue à son tour avant d'entrer dans `data/mesures/`."
+    },
+
+    "empreinte": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+      "description": "sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive} de la mesure relue, recalculée depuis son contenu (définition de `mesure.empreinte`), et non recopiée du champ `empreinte` de la mesure. Une formulation modifiée après la relecture change cette empreinte : la relecture ne la couvre plus, même à version égale."
+    },
+
+    "date": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/date_civile",
+      "description": "Jour de la relecture, pas l'instant : une décision humaine relue à l'échelle du jour, comme les autres arbitrages publiés du §4."
+    }
+  }
+}

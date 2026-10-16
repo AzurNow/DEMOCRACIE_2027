@@ -22,6 +22,7 @@ import {
   reecrireMesure,
   ReecritureMesureSansVersionSuperieure,
 } from "../validation/io/data-mesures.ts";
+import { relectureDe, type RegistreRelecturesMesure } from "../validation/domaine/relectures-mesure.ts";
 import { itemP, mesure } from "./aides/fabriques.ts";
 
 let repertoire = "";
@@ -135,20 +136,25 @@ describe("reecrireMesure", () => {
 describe("planifierMesures", () => {
   const ITEM: Item = itemP();
 
-  function plan(items: readonly Item[], staging: readonly Mesure[]) {
+  function plan(items: readonly Item[], staging: readonly Mesure[], relectures: RegistreRelecturesMesure) {
     const table = new Map(staging.map((valeur) => [valeur.id, valeur]));
-    return planifierMesures(items, table, lireMesuresData(repertoire), repertoire);
+    return planifierMesures(items, table, lireMesuresData(repertoire), repertoire, relectures);
+  }
+
+  /** Chaque mesure donnée, relue dans son contenu exact (décision D53 (1)). */
+  function relues(...mesures: readonly Mesure[]): RegistreRelecturesMesure {
+    return mesures.map((valeur) => relectureDe(valeur, "2026-10-16"));
   }
 
   it("cas 1 : une mesure absente de data/ est à créer", () => {
-    const resultat = plan([ITEM], [mesure()]);
+    const resultat = plan([ITEM], [mesure()], relues(mesure()));
     expect(resultat.creer.map((valeur) => valeur.id)).toEqual([ITEM.mesure_id]);
     expect(resultat.refus).toEqual([]);
   });
 
   it("cas 2 : deux items qui citent la même mesure donnent une seule création", () => {
     const second = itemP({ id: "01JBANCESSA1000000001TEM02" });
-    const resultat = plan([ITEM, second], [mesure()]);
+    const resultat = plan([ITEM, second], [mesure()], relues(mesure()));
     expect(resultat.creer).toHaveLength(1);
   });
 
@@ -156,7 +162,7 @@ describe("planifierMesures", () => {
     const valeur = mesure();
     const inverse = Object.fromEntries(Object.entries(valeur).reverse());
     writeFileSync(cheminMesure(repertoire, valeur.id), JSON.stringify(inverse), "utf8");
-    const resultat = plan([ITEM], [valeur]);
+    const resultat = plan([ITEM], [valeur], []);
     expect(resultat.identiques.map((identique) => identique.id)).toEqual([valeur.id]);
     expect(resultat.creer).toEqual([]);
     expect(resultat.reecrire).toEqual([]);
@@ -165,32 +171,139 @@ describe("planifierMesures", () => {
 
   it("cas 4 : même version, contenu différent : refus nommé", () => {
     creerMesure(repertoire, mesure());
-    const resultat = plan([ITEM], [mesure({ libelle: "TVA réduite sur le gaz" })]);
+    const resultat = plan([ITEM], [mesure({ libelle: "TVA réduite sur le gaz" })], relues(mesure({ libelle: "TVA réduite sur le gaz" })));
     expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "meme_version_contenu_different" })]);
   });
 
   it("cas 5 : version du staging supérieure : à réécrire", () => {
     creerMesure(repertoire, mesure());
-    const resultat = plan([ITEM], [versionDeux(mesure())]);
+    const resultat = plan([ITEM], [versionDeux(mesure())], relues(versionDeux(mesure())));
     expect(resultat.reecrire.map((entree) => [entree.lu.mesure.version, entree.apres.version])).toEqual([[1, 2]]);
     expect(resultat.refus).toEqual([]);
   });
 
   it("cas 6 : version du staging inférieure à data/ : refus nommé", () => {
     creerMesure(repertoire, versionDeux(mesure()));
-    const resultat = plan([ITEM], [mesure()]);
+    const resultat = plan([ITEM], [mesure()], relues(mesure()));
     expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "regression_de_version" })]);
   });
 
   it("cas 7 : une mesure à écrire non conforme au schéma : refus nommé avec le schéma", () => {
-    const resultat = plan([ITEM], [mesure({ libelle: "x" })]);
+    const resultat = plan([ITEM], [mesure({ libelle: "x" })], relues(mesure({ libelle: "x" })));
     expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "non_conforme" })]);
     expect(resultat.refus[0]?.detail).toContain("« mesure »");
     expect(resultat.creer).toEqual([]);
   });
 
   it("une mesure citée absente de staging/ : refus nommé, jamais ignorée", () => {
-    const resultat = plan([ITEM], []);
+    const resultat = plan([ITEM], [], []);
     expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "absente_du_staging" })]);
+  });
+});
+
+/**
+ * Verrou de relecture (décision D53 (1)) : toute mesure que la promotion créerait ou réécrirait
+ * exige une relecture couvrant son `(id, version, empreinte)`. Une mesure publiée identique passe
+ * sans relecture, et les refus antérieurs priment.
+ */
+describe("planifierMesures : verrou de relecture", () => {
+  const ITEM: Item = itemP();
+  const DATE = "2026-10-16";
+
+  function plan(items: readonly Item[], staging: readonly Mesure[], relectures: RegistreRelecturesMesure) {
+    const table = new Map(staging.map((valeur) => [valeur.id, valeur]));
+    return planifierMesures(items, table, lireMesuresData(repertoire), repertoire, relectures);
+  }
+
+  function motifs(resultat: ReturnType<typeof plan>): readonly string[] {
+    return resultat.refus.map((refus) => refus.motif);
+  }
+
+  it("cas 1 et 2 : mesure nouvelle, registre vide : refus sans_relecture, rien à créer", () => {
+    const resultat = plan([ITEM], [mesure()], []);
+    expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "sans_relecture" })]);
+    expect(resultat.creer).toEqual([]);
+  });
+
+  it("le détail du refus nomme l'id, la version et l'empreinte attendus", () => {
+    const valeur = mesure();
+    const attendue = relectureDe(valeur, DATE);
+    const [refus] = plan([ITEM], [valeur], []).refus;
+    expect(refus?.detail).toContain(`mesure_id ${attendue.mesure_id}`);
+    expect(refus?.detail).toContain(`mesure_version ${attendue.mesure_version}`);
+    expect(refus?.detail).toContain(`empreinte ${attendue.empreinte}`);
+  });
+
+  it("cas 3 : relecture de la bonne mesure dans une autre version : refus", () => {
+    const relecture = { ...relectureDe(mesure(), DATE), mesure_version: 2 };
+    const resultat = plan([ITEM], [mesure()], [relecture]);
+    expect(motifs(resultat)).toEqual(["sans_relecture"]);
+    expect(resultat.creer).toEqual([]);
+  });
+
+  it("cas 4 : relecture de la bonne version, formulation modifiée depuis : refus", () => {
+    const modifiee = mesure({ formulation_canonique: "ramener la TVA sur le gaz à 5,5 %" });
+    const resultat = plan([ITEM], [modifiee], [relectureDe(mesure(), DATE)]);
+    expect(motifs(resultat)).toEqual(["sans_relecture"]);
+    expect(resultat.creer).toEqual([]);
+  });
+
+  it("cas 5 : relecture exacte : création permise", () => {
+    const resultat = plan([ITEM], [mesure()], [relectureDe(mesure(), DATE)]);
+    expect(resultat.creer.map((valeur) => valeur.id)).toEqual([ITEM.mesure_id]);
+    expect(resultat.refus).toEqual([]);
+  });
+
+  it("cas 6 : réécriture sans relecture de la nouvelle version, l'ancienne relue : refus", () => {
+    creerMesure(repertoire, mesure());
+    const resultat = plan([ITEM], [versionDeux(mesure())], [relectureDe(mesure(), DATE)]);
+    expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "sans_relecture" })]);
+    expect(resultat.reecrire).toEqual([]);
+  });
+
+  it("cas 6 : réécriture dont la nouvelle version est relue : permise", () => {
+    creerMesure(repertoire, mesure());
+    const resultat = plan([ITEM], [versionDeux(mesure())], [relectureDe(versionDeux(mesure()), DATE)]);
+    expect(resultat.reecrire).toHaveLength(1);
+    expect(resultat.refus).toEqual([]);
+  });
+
+  it("cas 7 : mesure publiée identique : passe sans relecture", () => {
+    creerMesure(repertoire, mesure());
+    const resultat = plan([ITEM], [mesure()], []);
+    expect(resultat.identiques.map((valeur) => valeur.id)).toEqual([ITEM.mesure_id]);
+    expect(resultat.refus).toEqual([]);
+  });
+
+  it("cas 8 : plusieurs items citant la même mesure non relue : un seul refus", () => {
+    const second = itemP({ id: "01JBANCESSA1000000001TEM02" });
+    const resultat = plan([ITEM, second], [mesure()], []);
+    expect(motifs(resultat)).toEqual(["sans_relecture"]);
+    expect(resultat.creer).toEqual([]);
+  });
+
+  it("cas 12 : deux relectures identiques : création permise", () => {
+    const relecture = relectureDe(mesure(), DATE);
+    expect(plan([ITEM], [mesure()], [relecture, relecture]).creer).toHaveLength(1);
+  });
+
+  describe("cas 13 : les refus antérieurs priment, inchangés", () => {
+    it("absente_du_staging, sans relecture", () => {
+      expect(motifs(plan([ITEM], [], []))).toEqual(["absente_du_staging"]);
+    });
+
+    it("non_conforme, sans relecture", () => {
+      expect(motifs(plan([ITEM], [mesure({ libelle: "x" })], []))).toEqual(["non_conforme"]);
+    });
+
+    it("regression_de_version, sans relecture", () => {
+      creerMesure(repertoire, versionDeux(mesure()));
+      expect(motifs(plan([ITEM], [mesure()], []))).toEqual(["regression_de_version"]);
+    });
+
+    it("meme_version_contenu_different, sans relecture", () => {
+      creerMesure(repertoire, mesure());
+      expect(motifs(plan([ITEM], [mesure({ libelle: "TVA réduite sur le gaz" })], []))).toEqual(["meme_version_contenu_different"]);
+    });
   });
 });

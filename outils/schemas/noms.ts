@@ -87,6 +87,11 @@
  * `tests/collecte/dore/entrees-extraction/`) ; chaque réponse HTTP d'un extracteur, gardée telle
  * quelle (règle 7) ; et le journal d'une source, écrit en dernier, qui la marque traitée. Les
  * trente-troisième à trente-cinquième.
+ *
+ * `relecture-mesure` décrit une entrée du registre des relectures de mesure,
+ * `validation/mesures/relectures.json`, publié en ajout seul et relu par `pnpm promote`, qui refuse
+ * d'écrire dans `data/mesures/` toute mesure dont le contenu exact n'a pas été relu par l'auteur
+ * (décision D53 (1)). Le trente-sixième.
  */
 export const NOMS_SCHEMAS = [
   "commun",
@@ -124,6 +129,7 @@ export const NOMS_SCHEMAS = [
   "entree-extraction",
   "reponse-extraction",
   "journal-extraction",
+  "relecture-mesure",
 ] as const;
 
 export type NomSchema = (typeof NOMS_SCHEMAS)[number];

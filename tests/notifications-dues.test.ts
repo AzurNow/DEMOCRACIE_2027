@@ -48,6 +48,7 @@ describe("une ligne due par événement, au même --ecrire", () => {
   for (const item of [verifie, rejete]) {
     bac.ecrireItem(item);
     bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
+    bac.relireMesure(mesure({ id: item.mesure_id, version: 1 }));
   }
   bac.ecrireLot(lotDe("lot-081", [verifie, rejete]));
   for (const annotateur_id of ["a1", "a2"]) {
@@ -135,6 +136,7 @@ describe("une file des notifications illisible arrête la commande avant toute �
   const item = itemP({ id: "01JBANCESSA1000000000TEM83", candidat_id: "demo-83" });
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
+  bac.relireMesure(mesure({ id: item.mesure_id, version: 1 }));
   bac.ecrireLot(lotDe("lot-083", [item]));
   for (const annotateur_id of ["a1", "a2"]) {
     bac.journal(annotateur_id).ajouter("lot-083", decision({ annotateur_id, item, decision: "accepter", lot_id: "lot-083" }));

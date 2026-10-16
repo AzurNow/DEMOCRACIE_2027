@@ -10,6 +10,8 @@ import { empreinteDe } from "../../validation/domaine/empreinte.ts";
 import type { EntreeJournal, Item, Lot, Mesure } from "../../validation/domaine/types.ts";
 import { creerContexte, type Configuration, type Contexte } from "../../validation/serveur/contexte.ts";
 import { JournalAnnotateur } from "../../validation/io/journal-fichier.ts";
+import { relectureDe } from "../../validation/domaine/relectures-mesure.ts";
+import { cheminRelectures, lireRelectures } from "../../validation/io/relectures-fichier.ts";
 import { mesure } from "./fabriques.ts";
 
 export interface Bac {
@@ -19,6 +21,12 @@ export interface Bac {
   journal(annotateur_id: string): JournalAnnotateur;
   ecrireItem(item: Item): void;
   ecrireMesure(mesure: Mesure): void;
+  /**
+   * Inscrit au registre `validation/mesures/relectures.json` une relecture couvrant exactement
+   * cette mesure (décision D53 (1)) : sans elle, `pnpm promote` refuse de la créer ou de la
+   * réécrire dans `data/mesures/`. Explicite à chaque appel, jamais implicite dans `ecrireMesure`.
+   */
+  relireMesure(mesure: Mesure): void;
   ecrireTexte(sha256: string, texte: string): void;
   ecrireLot(lot: Lot): void;
   detruire(): void;
@@ -76,6 +84,12 @@ export function creerBac(): Bac {
     },
     ecrireMesure(valeur: Mesure) {
       writeFileSync(join(racine, "staging/mesures", `${valeur.id}.json`), JSON.stringify(valeur), "utf8");
+    },
+    relireMesure(valeur: Mesure) {
+      const repertoire = join(racine, "validation/mesures");
+      mkdirSync(repertoire, { recursive: true });
+      const registre = [...lireRelectures(repertoire), relectureDe(valeur, "2026-10-16")];
+      writeFileSync(cheminRelectures(repertoire), JSON.stringify(registre, null, 2), "utf8");
     },
     ecrireTexte(sha256: string, texte: string) {
       writeFileSync(join(racine, "staging/textes", `${sha256}.txt`), texte, "utf8");

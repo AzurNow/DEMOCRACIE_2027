@@ -276,7 +276,8 @@ describe("6. pnpm promote", () => {
   });
 
   it("un item conforme reste à écrire comme avant, sans signalement", () => {
-    deciderLot([]);
+    const item = deciderLot([]);
+    bac.relireMesure(mesurePour(item));
     const resultat = promouvoir(bac.racine);
     expect(resultat.status).toBe(0);
     expect(resultat.sortie).toMatch(/À écrire par --ecrire : 1/);

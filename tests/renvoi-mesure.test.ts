@@ -287,6 +287,8 @@ function preparer(): Bac {
   bac.ecrireItem(X);
   bac.ecrireItem(Y);
   bac.ecrireMesure(MESURE_V2);
+  // Décision D53 (1) : la version 2, issue de la correction de thème acceptée, est relue à son tour.
+  bac.relireMesure(MESURE_V2);
   bac.ecrireLot(lotDe("lot-001", [X, Y]));
   for (const entree of [...demandes(X), ...acceptations(Y)]) bac.journal(entree.annotateur_id).ajouter("lot-001", entree);
   ajouterAuRegistre(join(bac.racine, "validation/mesures"), ACCEPTATION);

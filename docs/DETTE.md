@@ -13,6 +13,46 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — D53 (1), PR A : verrou de relecture des mesures avant promotion (branche `lots/relecture-verrou` : `validation/domaine/relectures-mesure.ts`, `validation/io/relectures-fichier.ts`, `validation/io/data-mesures.ts`, `schema/relecture-mesure.schema.json`)
+
+### 1. Toute nouvelle version d'une mesure bloque `pnpm promote` jusqu'à sa relecture, sans commande pour l'inscrire — *basse*
+
+Règle uniforme voulue (D53 (1), choix de l'auteur du 2026-10-16) : une correction de thème acceptée
+produit une version 2 qui doit être relue à son tour. Tant que la PR B (`pnpm mesures --rattacher`)
+n'existe pas, `validation/mesures/relectures.json` s'écrit à la main ; le refus `sans_relecture`
+affiche l'empreinte attendue.
+
+**Ce qu'il faut faire.** PR B : commande d'écriture du registre, réutilisant `relectureDe`.
+
+### 2. L'empreinte d'une mesure est définie à deux endroits — *moyenne*
+
+`pipeline/extraction/assemblage.ts:mesureDe` et `validation/domaine/relectures-mesure.ts:empreinteContenuMesure`
+calculent chacun le sha256 de {libelle, theme, formulation_canonique, fictive}.
+
+**Pourquoi ça casse.** Si l'une change sans l'autre, aucune relecture ne correspond plus (casse
+visible : tout est refusé), ou le champ `empreinte` stocké diverge du contenu relu.
+
+**Ce qu'il faut faire.** Faire appeler `empreinteContenuMesure` par `assemblage.ts` (PR B ou petit lot).
+
+### 3. Le champ `mesure.empreinte` n'est contrôlé nulle part contre le contenu — *moyenne*
+
+Le verrou compare la relecture à l'empreinte **recalculée**, donc il n'est pas trompé. Mais un
+fichier de `data/mesures/` peut porter une empreinte fausse sans que rien n'échoue (les fixtures
+portent `"3".repeat(64)`).
+
+**Ce qu'il faut faire.** Lot séparé : refus `empreinte_incoherente` à la promotion, fixtures corrigées.
+
+### 4. `alias`, `origine_fictive` et `verification_fictivite` changent sans relecture — *à trancher*
+
+L'empreinte de `mesure.schema.json` ne les couvre pas : une nouvelle version qui ne modifie qu'eux
+exige une relecture (version différente), mais une relecture d'une version couvre n'importe quelle
+valeur de ces champs. `alias` sert à l'appariement (§6) et `verification_fictivite` à la fictivité
+(§5) : deux entrées de mesure qui ne sont pas relues comme la formulation.
+
+**Ce qu'il faut faire.** Décision de l'auteur : étendre l'empreinte de relecture ou non.
+
+---
+
 ## 2026-10-16 — Lot extraction, PR 2 : éditeurs des deux extracteurs, rendu du prompt, éditeur simulé (branche `lots/extraction-editeurs` : `pipeline/extraction/editeur*.ts`, `configuration-editeurs.ts`, `prompt.ts`, `config/extraction.json`, `tests/extraction/`)
 
 ### 1. La requête Mistral de l'extraction est celle de la reformulation, par import — *moyenne*

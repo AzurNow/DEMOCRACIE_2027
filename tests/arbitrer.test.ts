@@ -31,6 +31,7 @@ function preparer(): { bac: Bac; item: Item; motivation: string } {
   const item = itemP({ id: "01JBANCESSA1000000000TEM61", candidat_id: "demo-61" });
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
+  bac.relireMesure(mesure({ id: item.mesure_id, version: 1 }));
   bac.ecrireLot(lotDe("lot-061", [item]));
   bac.journal("a1").ajouter("lot-061", decision({ annotateur_id: "a1", item, decision: "accepter", lot_id: "lot-061" }));
   bac.journal("a2").ajouter("lot-061", decision({ annotateur_id: "a2", item, decision: "rejeter", lot_id: "lot-061" }));

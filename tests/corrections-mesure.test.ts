@@ -418,6 +418,7 @@ function poserDemande(bac: Bac, demande: Demande): Item {
   });
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1, theme: demande.theme_mesure }));
+  bac.relireMesure(mesure({ id: item.mesure_id, version: 1, theme: demande.theme_mesure }));
   for (const annotateur of ["a1", "a2"]) {
     const entreeJournal = decision({
       annotateur_id: annotateur,

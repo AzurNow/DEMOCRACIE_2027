@@ -258,6 +258,7 @@ function poserItem(bac: Bac, suffixe: string): Item {
   });
   bac.ecrireItem(item);
   bac.ecrireMesure(mesure({ id: item.mesure_id, version: 1 }));
+  bac.relireMesure(mesure({ id: item.mesure_id, version: 1 }));
   return item;
 }
 
