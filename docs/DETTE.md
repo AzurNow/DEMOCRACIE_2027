@@ -13,6 +13,34 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — Lot extraction, PR 2 : éditeurs des deux extracteurs, rendu du prompt, éditeur simulé (branche `lots/extraction-editeurs` : `pipeline/extraction/editeur*.ts`, `configuration-editeurs.ts`, `prompt.ts`, `config/extraction.json`, `tests/extraction/`)
+
+### 1. La requête Mistral de l'extraction est celle de la reformulation, par import — *moyenne*
+
+`pipeline/extraction/editeur-mistral.ts:adaptateurMistralExtraction` réutilise
+`pipeline/reformulation/editeur-mistral.ts:adaptateurMistral` (corps, en-têtes, refus d'une clé
+vide), avec les réglages de `config/extraction.json`. Le prompt est lu par
+`pipeline/reformulation/prompt.ts:extraireTexteDuPrompt`, dont l'erreur dit « Prompt de
+reformulation illisible » même pour le prompt d'extraction (le chemin du fichier est nommé).
+
+**Pourquoi ça casse.** Un paramètre ajouté au corps de la reformulation partirait aussi dans chaque
+appel d'extraction, sans qu'aucun test de l'extraction n'échoue s'il n'en vérifie pas le corps
+exact ; le test « corps : exactement les réglages envoyés » de `tests/extraction/editeur-mistral.test.ts`
+est la seule garde.
+
+**Ce qu'il faut faire.** Si l'une des deux requêtes doit évoluer seule, déplacer la construction
+commune dans `pipeline/interrogation/` ou la dédoubler, par une PR qui touche la reformulation. Les
+petites règles de validation de la configuration (`modele`, `max_tokens`, `delai_abandon_ms`…) et
+l'accès à `choices[0]` sont redéclarés dans `pipeline/extraction/` : `REGLES` et `suivre` de la
+reformulation ne sont pas exportés.
+
+### 2. Une clé répétée dans `config/extraction.json` est nommée sans son chemin — *basse*
+
+`premiereCleDupliquee` rend la clé, pas sa position : `temperature : clé répétée`, sans
+`extracteurs[1].`. Le refus a lieu, seul le message est moins précis que les autres.
+
+---
+
 ## 2026-10-16 — Lot extraction, PR 1 : cœur pur de l'extraction double (branche `lots/extraction-coeur` : `pipeline/extraction/`, `schema/sortie-extraction.schema.json`, `tests/extraction/`)
 
 ### 1. La mesure d'un item extrait reçoit le libellé du modèle comme formulation canonique, et aucune mesure n'est partagée — *haute*
