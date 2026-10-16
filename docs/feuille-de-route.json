@@ -736,14 +736,14 @@
         "Variantes : item sans mesure en staging ; une mesure par item promue ; dépôt en desaccord_existence ; première occurrence gardée ; citation sur plusieurs cues refusée."
       ],
       "recommandation": "Option 1 sur les quatre points.",
-      "retenu": "Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52.",
+      "retenu": "Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52. Écrit au §4 par la 0.17 (#148) ; (1) livré par #146, #147 et #150.",
       "date_decision": "2026-10-16"
     }
   ],
   "lots": [
     {
       "id": "protocole",
-      "titre": "Protocole (0.15 au 2026-10-12), à geler en v1.0",
+      "titre": "Protocole (0.17 au 2026-10-16), à geler en v1.0",
       "jalon": "J1",
       "niveau": "T1",
       "agent": "auteur",
@@ -754,7 +754,7 @@
         "D4",
         "D5"
       ],
-      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur), 0.5 le 2026-09-24 (transcriptions T2 font foi telles que publiées), 0.6 le 2026-09-24 (attribution au gel, candidats interrogés, nom seul), 0.7 le 2026-09-24 (échantillon humain, graines de l'analyse), 0.8 le 2026-09-25 (contestation et kappa, dates, asymétrie, seuil de 20 %), 0.9 le 2026-09-25 (dix-sept constats moyens de conformité), 0.10 le 2026-09-25 (arbitrage, contestations, notification des campagnes), 0.11 le 2026-09-25 (treize constats bas). Le nom du fournisseur SMTP reste à écrire au §10. Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire. Révision 0.12 en attente de l'auteur (2026-09-27) : comptage des items P, candidats sous le seuil, référence du test d'asymétrie, annexe F par mode, grille T2, et les points ouverts des PR #39 à #42, rassemblés dans docs/TACHES-AUTEUR.md. Le 2026-09-27 : 0.12 (#45) et 0.13 (#48) écrites, seize décisions de l'auteur. Le 2026-09-28 : trois décisions sur le renvoi après correction de thème, à écrire à la prochaine révision ; passe de conformité sur la 0.13 due avant le gel. Le 2026-10-01 : 0.14 (#60), onze décisions. Le 2026-10-02 : 0.15 (#67), seize décisions issues de la conformité du 2026-09-29, annexe A corrigée et gardée par tests/protocole-annexe-a.test.ts. Reste avant le gel : signature, fournisseur SMTP, avocat, Zenodo."
+      "note": "Version 0.3 le 2026-09-20 (D4, D6, D7), 0.4 le 2026-09-22 (conditionnel sur un item O, Q-ORI selon la position en vigueur), 0.5 le 2026-09-24 (transcriptions T2 font foi telles que publiées), 0.6 le 2026-09-24 (attribution au gel, candidats interrogés, nom seul), 0.7 le 2026-09-24 (échantillon humain, graines de l'analyse), 0.8 le 2026-09-25 (contestation et kappa, dates, asymétrie, seuil de 20 %), 0.9 le 2026-09-25 (dix-sept constats moyens de conformité), 0.10 le 2026-09-25 (arbitrage, contestations, notification des campagnes), 0.11 le 2026-09-25 (treize constats bas). Le nom du fournisseur SMTP reste à écrire au §10. Auteur encore « @Someone » ; l'annexe A montre un identifiant lisible contredit par schema/README.md ; relecture avocat, dépôt Zenodo et transmission aux institutions restent à faire. Révision 0.12 en attente de l'auteur (2026-09-27) : comptage des items P, candidats sous le seuil, référence du test d'asymétrie, annexe F par mode, grille T2, et les points ouverts des PR #39 à #42, rassemblés dans docs/TACHES-AUTEUR.md. Le 2026-09-27 : 0.12 (#45) et 0.13 (#48) écrites, seize décisions de l'auteur. Le 2026-09-28 : trois décisions sur le renvoi après correction de thème, à écrire à la prochaine révision ; passe de conformité sur la 0.13 due avant le gel. Le 2026-10-01 : 0.14 (#60), onze décisions. Le 2026-10-02 : 0.15 (#67), seize décisions issues de la conformité du 2026-09-29, annexe A corrigée et gardée par tests/protocole-annexe-a.test.ts. Reste avant le gel : signature, fournisseur SMTP, avocat, Zenodo. Le 2026-10-16 : 0.17 (#148), extraction double, extrait T2, relecture et rattachement des mesures (D52, D53)."
     },
     {
       "id": "schemas",
@@ -870,7 +870,7 @@
       "id": "extraction",
       "titre": "Extraction double, test verbatim, écriture dans staging/",
       "jalon": "J2",
-      "niveau": "T0",
+      "niveau": "T3",
       "agent": "opus",
       "taille": "L",
       "temps_auteur_h": 1,
@@ -889,7 +889,7 @@
         "D52",
         "D53"
       ],
-      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification. Le 2026-10-16 : D52 tranchée (Claude Sonnet 5.5 et Mistral Large, appariement par recouvrement des citations, un item par paire, texte de l'extracteur épinglé). Découpage : PR 1 cœur pur, PR 2 éditeurs, PR 3 pnpm extraire. Le prompt 1.0.0 a été relu le 2026-10-12 (D35). D53 tranchée le même jour (mesure proposée, promotion bloquée jusqu'au rattachement dans l'interface ; sortie illisible ⇒ source refusée ; citation ambiguë rejetée ; extrait T2 par couverture des cues)."
+      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification. Le 2026-10-16 : D52 tranchée (Claude Sonnet 5.5 et Mistral Large, appariement par recouvrement des citations, un item par paire, texte de l'extracteur épinglé). Découpage : PR 1 cœur pur, PR 2 éditeurs, PR 3 pnpm extraire. Le prompt 1.0.0 a été relu le 2026-10-12 (D35). D53 tranchée le même jour (mesure proposée, promotion bloquée jusqu'au rattachement dans l'interface ; sortie illisible ⇒ source refusée ; citation ambiguë rejetée ; extrait T2 par couverture des cues). Le 2026-10-16 : PR 1 à 3 (#142 à #144) et lecture illisible (#145) fusionnées, pnpm extraire testé de bout en bout sur éditeurs simulés, jamais sur un appel réel. D53 (1) livrée : verrou de relecture des mesures avant promotion (#146), pnpm mesures --relire et --rattacher (#147), relecture étendue aux alias, à l'origine et à la vérification de fictivité, refus F ⇔ fictive au rattachement (#150), conformes au protocole 0.17 (#148)."
     },
     {
       "id": "questions-tirage-symetrie",

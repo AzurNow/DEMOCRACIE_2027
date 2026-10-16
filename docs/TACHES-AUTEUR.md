@@ -625,7 +625,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       Le code applique déjà D42 à D50 (D48 à D50 par la PR 2c du lot gel, #134) et D51 sauf
       l'écriture de `en_cours` (PR 3, #135 ; `en_cours` arrive avec la PR 4). Le prompt de
       reformulation 1.0.1 aligné sur D42 suit la 0.17 (lot reformulation).
-- [ ] **Écrire D52 (2) à (4) au §4 à la prochaine révision** (0.18). Proposition, après la phrase
+- [x] (2026-10-16, protocole 0.17, #148) **Écrire D52 (2) à (4) au §4 à la prochaine révision** (0.18). Proposition, après la phrase
       « l'extraction est faite deux fois par des modèles de familles différentes et tout désaccord
       d'existence ou de contenu est signalé » : « Les deux extractions portent sur le même texte
       canonique, celui que produit la version de l'extracteur de texte épinglée par le code ; un item
@@ -644,6 +644,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       contient le dernier, à la seconde supérieure. » Et (D53 (1)) : « Un item extrait n'est promu
       qu'une fois rattaché par la validation à une mesure, existante ou nouvelle, dont la
       formulation canonique a été relue. »
+- [ ] **Fusionner #149 (renommage du dépôt) et #150 (relecture étendue, F ⇔ fictive)** : CI verte ;
+      le contrôle de Claude Code refuse `gh pr merge`.
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
       une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
       avant `date_gel`.

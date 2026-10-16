@@ -25,6 +25,13 @@ Identifiants opaques, champs séparés, étiquette lisible décorative et gelée
 est portée par un champ unique (`date_changement`), pas recopiée dans les deux états. Deux dates
 décrivant le même instant finissent toujours par ne plus coïncider.
 
+**Avant d'unifier deux calculs identiques, vérifier qu'ils couvrent le même objet.** La PR A du
+16 octobre notait en dette que l'empreinte de relecture dupliquait `mesure.empreinte` et proposait
+de les fusionner. Le protocole 0.17 a ensuite exigé que la relecture couvre aussi alias, origine et
+vérification de fictivité : fusionner aurait soit sorti ces champs de la relecture, soit changé
+l'empreinte de toutes les mesures. Deux fonctions au même code aujourd'hui peuvent mesurer deux
+choses ; les nommer d'après ce qu'elles couvrent (`empreinteRelecture`), pas d'après leur code.
+
 **Un enum qui mélange des dimensions orthogonales est un bug qui attend.** Les sept statuts d'item du
 protocole mêlaient validation, contestation et temporalité — alors qu'un item peut être vérifié,
 contesté et obsolète en même temps. Trois champs indépendants, et l'obsolescence dérivée des dates.

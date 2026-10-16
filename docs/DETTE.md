@@ -13,9 +13,47 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — D53 (1), PR D : relecture étendue et rattachement F ⇔ fictive (branche `lots/relecture-etendue`, PR #150 : `validation/domaine/relectures-mesure.ts`, `validation/domaine/rattachements-item.ts`, `outils/mesures.ts`, `schema/relecture-mesure.schema.json`)
+
+### 1. Toute réécriture automatique des champs relus d'une mesure annule sa relecture — *basse*
+
+L'empreinte de relecture couvre désormais `alias`, `origine_fictive` et `verification_fictivite`,
+au caractère près, ordre des tableaux compris (`corpus_verifies`, `alias`). Un futur outil qui
+trierait les alias ou ajouterait un corpus balayé à une mesure déjà relue la ferait refuser par
+`pnpm promote` (`sans_relecture`).
+
+**Pourquoi ça casse.** Casse visible (refus), mais déroutante : rien n'a changé « au fond ».
+
+**Ce qu'il faut faire.** Tout code qui écrit dans `staging/mesures/` après l'extraction le fait
+avant la relecture, ou dit à l'auteur qu'une nouvelle `--relire` est due.
+
+### 2. Deux empreintes de mesure coexistent volontairement — *basse*
+
+`mesure.empreinte` (schéma, `assemblage.ts`) couvre quatre champs ; `empreinteRelecture` en couvre
+sept. Le nom « empreinte de la mesure » désigne donc deux choses.
+
+**Pourquoi ça casse.** Qui unifierait les deux « pour supprimer un doublon » (proposition de la
+PR A, point 2) ferait soit sortir les alias de la relecture, soit changer `mesure.empreinte` de
+toutes les mesures publiées.
+
+**Ce qu'il faut faire.** Rien ; l'en-tête de `relectures-mesure.ts` et le schéma le disent.
+
+### 3. La fabrique `itemO` de `tests/aides/fabriques.ts` produit un item invalide depuis la 0.17 — *basse*
+
+Sa source T2 n'a pas d'`extrait`, que `item.schema.json` exige désormais : l'item ne passe pas
+`chargerStaging`. `tests/rattacher-item.test.ts` contourne en ajoutant l'extrait localement.
+
+**Pourquoi ça casse.** Un test écrit sur la fabrique telle quelle échoue au chargement, pas sur la
+règle visée ; ou pire, un test qui attend un refus le reçoit pour la mauvaise raison.
+
+**Ce qu'il faut faire.** Petit lot : corriger la fabrique, retirer le contournement, et valider
+chaque fabrique contre son schéma dans un test.
+
+---
+
 ## 2026-10-16 — D53 (1), PR B : `pnpm mesures --relire` et `--rattacher` (branche `lots/relecture-rattacher` : `outils/mesures.ts`, `outils/rattachement-mesure.ts`, `validation/domaine/rattachements-item.ts`, `validation/io/rattachements-fichier.ts`, `validation/io/relectures-fichier.ts`, `schema/rattachement-item.schema.json`)
 
-### 1. `--rattacher` ne vérifie pas que l'item et la mesure cible s'accordent — *à trancher*
+### ~~1. `--rattacher` ne vérifie pas que l'item et la mesure cible s'accordent~~ — réglé le 2026-10-16 par le protocole 0.17 (§4 : F ⇔ fictive, sans refus du doublon candidat × mesure) et la PR #150 (refus `type_incompatible`)
 
 Rien n'empêche de rattacher un item P à une mesure fictive, ni deux items du même candidat à la
 même mesure. Un tel contrôle serait une règle d'inclusion, donc une décision de l'auteur.
@@ -50,7 +88,7 @@ Déplacer ou renommer ce module casse aussi celui des rattachements.
 
 ## 2026-10-16 — D53 (1), PR A : verrou de relecture des mesures avant promotion (branche `lots/relecture-verrou` : `validation/domaine/relectures-mesure.ts`, `validation/io/relectures-fichier.ts`, `validation/io/data-mesures.ts`, `schema/relecture-mesure.schema.json`)
 
-### 1. Toute nouvelle version d'une mesure bloque `pnpm promote` jusqu'à sa relecture, sans commande pour l'inscrire — *basse*
+### ~~1. Toute nouvelle version d'une mesure bloque `pnpm promote` jusqu'à sa relecture, sans commande pour l'inscrire~~ — réglé le 2026-10-16 par `pnpm mesures --relire` (PR #147)
 
 Règle uniforme voulue (D53 (1), choix de l'auteur du 2026-10-16) : une correction de thème acceptée
 produit une version 2 qui doit être relue à son tour. Tant que la PR B (`pnpm mesures --rattacher`)
@@ -59,7 +97,7 @@ affiche l'empreinte attendue.
 
 **Ce qu'il faut faire.** PR B : commande d'écriture du registre, réutilisant `relectureDe`.
 
-### 2. L'empreinte d'une mesure est définie à deux endroits — *moyenne*
+### ~~2. L'empreinte d'une mesure est définie à deux endroits~~ — sans objet le 2026-10-16 : les deux empreintes divergent volontairement (PR #150, `empreinteRelecture` sur sept champs ; voir PR D, point 2)
 
 `pipeline/extraction/assemblage.ts:mesureDe` et `validation/domaine/relectures-mesure.ts:empreinteContenuMesure`
 calculent chacun le sha256 de {libelle, theme, formulation_canonique, fictive}.
@@ -77,7 +115,7 @@ portent `"3".repeat(64)`).
 
 **Ce qu'il faut faire.** Lot séparé : refus `empreinte_incoherente` à la promotion, fixtures corrigées.
 
-### 4. `alias`, `origine_fictive` et `verification_fictivite` changent sans relecture — *à trancher*
+### ~~4. `alias`, `origine_fictive` et `verification_fictivite` changent sans relecture~~ — réglé le 2026-10-16 par le protocole 0.17 (§4) et la PR #150 (empreinte de relecture étendue)
 
 L'empreinte de `mesure.schema.json` ne les couvre pas : une nouvelle version qui ne modifie qu'eux
 exige une relecture (version différente), mais une relecture d'une version couvre n'importe quelle
