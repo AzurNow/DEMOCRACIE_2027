@@ -520,7 +520,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       position inventée, position opposée, quantification fausse, périmètre faux, omission, ajout
       fabriqué, autre. »
 
-- [ ] **Écrire la 0.17 : D42 à D49**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
+- [ ] **Écrire la 0.17 : D42 à D50**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
       propositions séparées de D42, D44, D45 et D46). En tête : « version 0.17 ».
 
       **§5, « Formulations ».** Remplacer « Les formulations sont produites par un modèle puis
@@ -543,7 +543,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       « **Gel.** Chaque run déclare un instant de gel, qui précède l'ouverture de sa fenêtre
       d'interrogation (section 6). Le gel engendre le jeu complet des questions, fait le tirage et
       dérive les graines. Il est exécuté à l'instant de gel ou après, et strictement avant
-      l'ouverture de la fenêtre. Un gel exécuté plus tôt est refusé. Un gel exécuté plus tard est
+      l'ouverture de la fenêtre ; une fenêtre qui ne s'ouvre pas strictement après l'instant de gel
+      est refusée. Un gel exécuté plus tôt est refusé. Un gel exécuté plus tard est
       refusé aussi : des réponses obtenues avant lui ne seraient couvertes par aucun tirage publié.
       Avant l'instant de gel, l'auteur publie le commit à geler et fait archiver sa page publique
       par la Wayback Machine. Le gel exige que le dépôt soit exactement à ce commit et vérifie auprès
@@ -584,7 +585,8 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       outils est refusé. Les alias sont comparés après une normalisation fixe : décomposition
       Unicode, diacritiques retirés, minuscules, espaces repliés. Un alias est aussi refusé s'il
       contient un mot de trois lettres au moins du nom, de l'éditeur ou de l'identifiant d'un outil
-      du périmètre, ou l'un de ces trois écrit sans espaces. »
+      du périmètre, ou l'un de ces trois écrit sans espaces quand il compte trois lettres au
+      moins. »
 
       **Ligne de révision** : « 0.17, 2026-10-16 : décisions de l'auteur des 15 et 16 octobre sur la
       reformulation et le gel. Section 5 : la formulation neutre est écrite par le gabarit, la
@@ -595,7 +597,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       il est engagé par les empreintes de son tirage et de ses questions. Section 6 : la fenêtre
       s'ouvre après le gel. Section 7 : format et règles de refus des alias aveugles. »
 
-      Le code applique déjà D42 à D47 ; D48 et D49 arrivent avec la PR 2c du lot gel. Le prompt de
+      Le code applique déjà D42 à D47 ; D48 à D50 arrivent avec la PR 2c du lot gel (#134). Le prompt de
       reformulation 1.0.1 aligné sur D42 suit la 0.17 (lot reformulation).
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
       une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),

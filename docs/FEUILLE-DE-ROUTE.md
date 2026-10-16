@@ -188,6 +188,10 @@ Aucune décision en attente.
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.
 
+### D50 — Deux points laissés par la PR 2c du lot gel (#134) : fenêtre ouverte exactement à date_gel, que D45 (4) accepte mais où D48 (1) ne laisse aucun instant de gel possible ; longueur minimale de la forme collée d’un nom comparée aux alias.
+
+**Décision du 2026-10-16 :** Option 1 sur les deux points. Dans la PR 2c (#134) ; écrit au texte 0.17 (§5 Gel, §7 alias).
+
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
 **Décision du 2026-09-20 :** Option 1 sur les six points : tronquées incluses dans les métriques primaires plus un quatrième recalcul de robustesse « hors tronquées » ; texte du dénominateur gardé et premisse_fausse interdite sur un item P dès l'engendrement ; Holm retiré de la famille des effets de condition, intervalles et qualificatif seuls publiés ; trois paires pour la famille des formulations ; exactitude globale dans la permutation ; comparateurs alignés sur les assistants.
