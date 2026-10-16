@@ -74,7 +74,6 @@ describe("extraction double : issue nominale", () => {
     expect(resultat.items).toHaveLength(2);
     expect(resultat.mesures).toHaveLength(2);
     expect(resultat.rejets).toEqual([]);
-    expect(resultat.ambiguites).toEqual([]);
     expect(resultat.items.map((item) => item.assertion?.extraction)).toEqual([
       { modeles: [MODELE_A, MODELE_B], accord: "accord" },
       { modeles: [MODELE_A, MODELE_B], accord: "accord" },
@@ -168,7 +167,7 @@ describe("cas 17 : conformité aux schémas et relecture par l'interface de vali
 
 describe("cas 2 et 3 : sorties vides", () => {
   it('cas 2 : {"items": []} des deux côtés ⇒ zéro item, zéro rejet, pas d\'erreur', () => {
-    expect(extraire(entreeHtml(TEXTE, VIDE, VIDE))).toEqual({ items: [], mesures: [], rejets: [], ambiguites: [] });
+    expect(extraire(entreeHtml(TEXTE, VIDE, VIDE))).toEqual({ items: [], mesures: [], rejets: [] });
   });
 
   it("cas 3 : un modèle rend des items, l'autre aucun ⇒ tous desaccord_existence, déposés", () => {
@@ -181,7 +180,7 @@ describe("cas 2 et 3 : sorties vides", () => {
   });
 });
 
-describe("cas 4 : une sortie rejetée en entier, l'autre valide (comportement proposé, à trancher)", () => {
+describe("cas 4 : une sortie rejetée en entier, l'autre valide (décision D53 (2))", () => {
   const resultat = extraire(entreeHtml(TEXTE, "```json\n{\"items\": []}\n```", sortie(propose(C_SANTE))));
 
   it("la source est refusée : aucun item, aucune mesure, l'extraction double n'a pas eu lieu", () => {
@@ -268,7 +267,7 @@ describe("item déposé depuis une paire (D52 (3))", () => {
     expect(item.assertion?.extraction).toMatchObject({ modeles: [MODELE_B, MODELE_A] });
   });
 
-  it("item O retenu : non déposable sans son état antérieur, porté au journal (comportement proposé)", () => {
+  it("item O retenu : non déposable sans son état antérieur, porté au journal (non tranché, signalé à l'auteur)", () => {
     const resultat = extraire(entreeHtml(TEXTE, sortie(propose(C_SANTE, { type: "O" })), sortie(propose(C_SANTE))));
     expect(resultat.items).toEqual([]);
     expect(resultat.mesures).toEqual([]);
@@ -293,25 +292,25 @@ describe("item déposé depuis une paire (D52 (3))", () => {
   });
 });
 
-describe("cas 9 : citation présente deux fois (comportement proposé, à trancher)", () => {
-  it("la première occurrence est retenue et l'ambiguïté est rendue visible", () => {
-    const texte = `${C_SANTE}\nRappel : ${C_SANTE}`;
-    const resultat = extraire(entreeHtml(texte, sortie(propose(C_SANTE)), sortie(propose(C_SANTE))));
-    expect(seul(resultat.items).assertion?.test_verbatim?.offset_debut).toBe(0);
-    expect(resultat.ambiguites).toEqual([
-      { modele: MODELE_A, index: 0, occurrences: 2 },
-      { modele: MODELE_B, index: 0, occurrences: 2 },
+describe("cas 9 : citation présente deux fois (décision D53 (3))", () => {
+  const TEXTE_REPETE = `${C_SANTE}\nRappel : ${C_SANTE}`;
+
+  it("rejetée des deux côtés, motif citation_ambigue : aucun item, rien n'est apparié", () => {
+    const resultat = extraire(entreeHtml(TEXTE_REPETE, sortie(propose(C_SANTE)), sortie(propose(C_SANTE))));
+    expect(resultat.items).toEqual([]);
+    expect(resultat.rejets).toEqual([
+      { portee: "item", modele: MODELE_A, index: 0, motif: "citation_ambigue", detail: expect.any(String) as string },
+      { portee: "item", modele: MODELE_B, index: 0, motif: "citation_ambigue", detail: expect.any(String) as string },
     ]);
   });
 
-  it("l'ambiguïté change l'appariement : la seconde occurrence citée plus largement n'est pas appariée", () => {
-    const texte = `${C_SANTE}\nRappel : ${C_SANTE}`;
+  it("la citation ambiguë n'entre pas dans l'appariement : l'autre modèle, qui cite un passage unique, est seul", () => {
     const large = `Rappel : ${C_SANTE}`;
-    const resultat = extraire(entreeHtml(texte, sortie(propose(C_SANTE)), sortie(propose(large))));
-    expect(resultat.items.map((item) => item.assertion?.extraction)).toMatchObject([
-      { accord: "desaccord_existence" },
-      { accord: "desaccord_existence" },
-    ]);
+    const resultat = extraire(entreeHtml(TEXTE_REPETE, sortie(propose(C_SANTE)), sortie(propose(large))));
+    expect(resultat.rejets.map((rejet) => [rejet.portee, rejet.motif])).toEqual([["item", "citation_ambigue"]]);
+    const item = seul(resultat.items);
+    expect(item.assertion?.citation_verbatim).toBe(large);
+    expect(item.assertion?.extraction).toMatchObject({ accord: "desaccord_existence" });
   });
 });
 

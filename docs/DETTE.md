@@ -29,25 +29,24 @@ deviendrait le texte des questions, sans relecture humaine. Et deux candidats qu
 mesure resteraient sur deux mesures : la liste attendue d'une Q-ATT et le drapeau « mauvaise
 attribution » seraient faux sans que rien n'échoue.
 
-**Ce qu'il faut faire.** Avant toute promotion d'un item extrait, l'auteur tranche comment une
-mesure proposée devient une mesure, et qui écrit sa formulation canonique. Ensuite, l'interface
-devra savoir rattacher un item à une mesure existante. La règle ne vit qu'à un seul endroit,
-`formulationProposee`.
+**Ce qu'il faut faire.** Décision D53 (1) du 2026-10-16 : le dépôt reste tel quel, et une PR
+séparée de l'interface de validation bloque la promotion d'un item extrait jusqu'à son
+rattachement à une mesure existante ou nouvelle et à la relecture de `formulation_canonique`. La
+règle ne vit qu'à un seul endroit, `formulationProposee`.
 
-### 2. Trois règles proposées par le cœur ne sont écrites ni au §4 ni dans `docs/CONTRATS.md` — *moyenne*
+### 2. Trois règles tranchées par D53 ne sont écrites ni au §4 ni dans `docs/CONTRATS.md` — *moyenne*
 
-(a) Une citation présente plusieurs fois garde sa première occurrence, et donc la page de cette
-occurrence. Elle est rendue dans `ambiguites`. (b) L'extrait minuté d'une source T2 va du début du
-cue de son premier point de code à la fin du cue de son dernier, arrondi à la seconde vers
-l'extérieur, même à cheval sur plusieurs cues. (c) Une sortie rejetée en entier fait refuser la
-source, au lieu de déposer en `desaccord_existence` les items de l'autre modèle.
+(a) D53 (3) : une citation présente plusieurs fois dans le texte est rejetée (`citation_ambigue`)
+et n'entre pas dans l'appariement. (b) D53 (4) : l'extrait minuté d'une source T2 va du début du cue
+de son premier point de code à la fin du cue de son dernier, arrondi à la seconde vers l'extérieur,
+même à cheval sur plusieurs cues. (c) D53 (2) : une sortie rejetée en entier fait refuser la source.
 
-**Pourquoi ça casse.** Ces trois règles décident de la page et de l'extrait montrés à l'annotateur,
-et de ce qui entre en validation. Un auteur qui en choisit une autre doit retrouver chaque test qui
-fixe la règle actuelle (`tests/extraction/`, blocs marqués « comportement proposé »).
+**Pourquoi ça casse.** Ces règles décident de l'extrait montré à l'annotateur et de ce qui entre en
+validation, mais ne vivent aujourd'hui que dans le code et `tests/extraction/` (blocs marqués
+« décision D53 »). Une réécriture du §4 qui les omettrait les rendrait invérifiables.
 
-**Ce qu'il faut faire.** Les trancher avec l'auteur, puis les écrire au §4 avec les points 2 à 4 de
-D52 et dans `docs/CONTRATS.md` §1.1 et §2.
+**Ce qu'il faut faire.** Les écrire au §4 avec les points 2 à 4 de D52, et dans `docs/CONTRATS.md`
+§2 pour l'extrait.
 
 ### 3. Les items O ne sont pas déposés — *moyenne*
 

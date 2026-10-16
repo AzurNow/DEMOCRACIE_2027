@@ -7,7 +7,7 @@
  * | Portée | Ce qui est écarté | Motifs |
  * | --- | --- | --- |
  * | `sortie` | la sortie entière d'un modèle, jamais réparée | `bloc_de_code`, `json_invalide`, `cle_dupliquee`, `non_conforme` |
- * | `item` | un item d'une sortie conforme, avant l'appariement | `candidat_different`, `saut_de_page`, `citation_vide`, `introuvable`, `citation_sans_page_unique` |
+ * | `item` | un item d'une sortie conforme, avant l'appariement | `candidat_different`, `saut_de_page`, `citation_vide`, `introuvable`, `citation_ambigue`, `citation_sans_page_unique` |
  * | `depot` | un item retenu qu'un item de staging ne peut pas porter | `etat_o_sans_etat_anterieur` |
  * | `source` | la source entière : rien n'est déposé | `extraction_double_incomplete` |
  *
@@ -55,10 +55,3 @@ export interface RejetSource {
 }
 
 export type Rejet = RejetSortie | RejetItem | RejetDepot | RejetSource;
-
-/** Une citation présente plusieurs fois dans le texte : la première occurrence est retenue. */
-export interface Ambiguite {
-  readonly modele: string;
-  readonly index: number;
-  readonly occurrences: number;
-}

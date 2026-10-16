@@ -6,8 +6,8 @@
  * transcription pour un enregistrement, le bloc `source` déjà assemblé (par
  * `pipeline/collecte/source.py:source_de`, seul assembleur, appelé sans citation : ni page ni
  * extrait), et les **sorties brutes** des deux modèles, chaînes reçues telles quelles. Sorties : les
- * items et les mesures proposés, conformes à leurs schémas, prêts à être déposés dans `staging/`, le
- * journal des rejets et les citations ambiguës.
+ * items et les mesures proposés, conformes à leurs schémas, prêts à être déposés dans `staging/`, et
+ * le journal des rejets.
  *
  * Pur et déterministe : aucun appel réseau, aucune écriture disque ; le temps et les identifiants
  * entrent par des ports. Le même appel rend les mêmes octets, quel que soit l'ordre des items dans
@@ -16,7 +16,7 @@
  * Phases : vérifier l'entrée ; lire chaque sortie (rejet entier possible) ; rejeter les items qui ne
  * se localisent pas ; apparier ; déposer un item par paire ou par item seul ; valider à la sortie.
  *
- * **Une sortie rejetée en entier** (comportement proposé, trou de D52 signalé à l'auteur) : la source
+ * **Une sortie rejetée en entier** (décision D53 (2)) : la source
  * est refusée, aucun item n'est déposé. Déposer les items de l'autre modèle en
  * `desaccord_existence` affirmerait que le modèle rejeté n'a rien trouvé, alors qu'il n'a rien rendu
  * de lisible : l'extraction n'a pas été faite deux fois.
@@ -33,7 +33,7 @@ import { accordDe } from "./comparaison.ts";
 import { exigerConfiguration, type ConfigurationExtraction } from "./configuration.ts";
 import { lireSortie } from "./lecture-sortie.ts";
 import { localiser, type Localisation, type Reperes } from "./localisation.ts";
-import type { Ambiguite, Rejet, RejetDepot, RejetItem, RejetSortie } from "./rejets.ts";
+import type { Rejet, RejetDepot, RejetItem, RejetSortie } from "./rejets.ts";
 import type { ItemPropose, RangModele, SortieExtraction } from "./types.ts";
 
 export { ModelesIdentiques } from "./configuration.ts";
@@ -68,7 +68,6 @@ export interface ResultatExtraction {
   readonly items: readonly Item[];
   readonly mesures: readonly MesureStaging[];
   readonly rejets: readonly Rejet[];
-  readonly ambiguites: readonly Ambiguite[];
 }
 
 /* ------------------------------------------------------------------- erreurs */
@@ -169,7 +168,6 @@ interface Lot {
   readonly candidats: Candidat[];
   readonly localisations: Map<Candidat, Localisation>;
   readonly rejets: RejetItem[];
-  readonly ambiguites: Ambiguite[];
 }
 
 interface ContexteLocalisation {
@@ -193,11 +191,10 @@ function examiner(lot: Lot, item: ItemPropose, rang: RangModele, index: number, 
   const candidat: Candidat = { rang, index, item, debut: localisation.offset_debut, fin: localisation.offset_fin };
   lot.candidats.push(candidat);
   lot.localisations.set(candidat, localisation);
-  if (localisation.occurrences > 1) lot.ambiguites.push({ modele, index, occurrences: localisation.occurrences });
 }
 
 function localiserLesItems(sorties: readonly [SortieExtraction, SortieExtraction], modeles: readonly [string, string], contexte: ContexteLocalisation): Lot {
-  const lot: Lot = { candidats: [], localisations: new Map(), rejets: [], ambiguites: [] };
+  const lot: Lot = { candidats: [], localisations: new Map(), rejets: [] };
   sorties.forEach((sortie, rang) => {
     sortie.items.forEach((item, index) => examiner(lot, item, rang as RangModele, index, modeles[rang] as string, contexte));
   });
@@ -263,7 +260,6 @@ function refusDeLaSource(rejets: readonly RejetSortie[]): ResultatExtraction {
         detail: `sortie de ${modeles} rejetée en entier : la source n'a pas été extraite deux fois (§4), aucun item déposé`,
       },
     ],
-    ambiguites: [],
   };
 }
 
@@ -307,5 +303,5 @@ export function extraireSource(entree: EntreeExtraction, ports: Ports): Resultat
   );
   const contexte: ContexteDepot = { ...entree, instant: ports.maintenant(), nouvelUlid: ports.nouvelUlid };
   const depot = deposerLesPaires(paires, lot, contexte);
-  return { items: depot.items, mesures: depot.mesures, rejets: [...lot.rejets, ...depot.rejets], ambiguites: lot.ambiguites };
+  return { items: depot.items, mesures: depot.mesures, rejets: [...lot.rejets, ...depot.rejets] };
 }

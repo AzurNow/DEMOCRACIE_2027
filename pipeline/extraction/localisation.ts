@@ -14,19 +14,22 @@
  *   qui contient le premier point de code de la citation, la fin celle du cue qui en contient le
  *   dernier, selon la règle de §2 (« un offset tombe dans le dernier cue dont le premier point de
  *   code le précède ou l'égale ») ; arrondis à la seconde, vers l'extérieur, au format `HH:MM:SS`
- *   du schéma. **Règle proposée** : ni docs/CONTRATS.md ni `webvtt.ts` ne disent comment remplir
- *   `extrait` ; elle est signalée à l'auteur avec le lot.
- *
- * Plusieurs occurrences : `testerVerbatim` retient la première et compte les autres. La
- * localisation garde cette première occurrence et rend le compte, pour que l'appelant le rende
- * visible (comportement à trancher par l'auteur, signalé avec le lot).
+ *   du schéma. Règle tranchée par la décision D53 (4) ; à écrire dans docs/CONTRATS.md §2.
+ * - **Citation ambiguë** : une citation qui figure plusieurs fois dans le texte (après
+ *   normalisation, `testerVerbatim` compte les occurrences) n'a pas de localisation exacte (§4) :
+ *   elle est rejetée, motif `citation_ambigue`, et n'entre pas dans l'appariement (décision D53 (3)).
  */
 
 import type { Cue, DocumentVtt } from "../../validation/domaine/webvtt.ts";
 import { testerVerbatim } from "../../validation/domaine/verbatim.ts";
 import type { PageFiche } from "./choix-texte.ts";
 
-export type MotifRejetCitation = "saut_de_page" | "citation_vide" | "introuvable" | "citation_sans_page_unique";
+export type MotifRejetCitation =
+  | "saut_de_page"
+  | "citation_vide"
+  | "introuvable"
+  | "citation_ambigue"
+  | "citation_sans_page_unique";
 
 export interface Extrait {
   readonly debut: string;
@@ -36,7 +39,6 @@ export interface Extrait {
 export interface Localisation {
   readonly offset_debut: number;
   readonly offset_fin: number;
-  readonly occurrences: number;
   /** Version de la normalisation du test verbatim, rendue par `testerVerbatim`. */
   readonly version_normalisation: string;
   /** `null` : la source n'a pas de pages (HTML, audio, vidéo). */
@@ -100,6 +102,9 @@ export function localiser(citation: string, texte: string, reperes: Reperes): Re
   const verbatim = testerVerbatim(citation, texte);
   if (verbatim.motif_echec !== null) return rejet(verbatim.motif_echec, "test verbatim échoué : la citation ne figure pas dans le texte canonique.");
   if (verbatim.offset_debut === null || verbatim.offset_fin === null) throw new Error("Test verbatim réussi sans offsets.");
+  if (verbatim.occurrences > 1) {
+    return rejet("citation_ambigue", `la citation figure ${verbatim.occurrences} fois dans le texte canonique : aucune localisation exacte.`);
+  }
   const { offset_debut, offset_fin } = verbatim;
   const page = pageExigee(reperes, offset_debut, offset_fin);
   if (page === "sans_page_unique") {
@@ -109,7 +114,6 @@ export function localiser(citation: string, texte: string, reperes: Reperes): Re
   return { ok: true, localisation: {
       offset_debut,
       offset_fin,
-      occurrences: verbatim.occurrences,
       version_normalisation: verbatim.version_normalisation,
       page,
       extrait,

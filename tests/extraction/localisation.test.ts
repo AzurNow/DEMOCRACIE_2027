@@ -94,7 +94,7 @@ describe("cas 8 : saut de page dans la citation, citation vide", () => {
   });
 });
 
-describe("cas 9 : citation présente deux fois dans le texte (comportement proposé, à trancher)", () => {
+describe("cas 9 : citation présente deux fois dans le texte (décision D53 (3))", () => {
   const PAGES = ["Nous baisserons la TVA.", "Rappel : Nous baisserons la TVA."];
 
   it("testerVerbatim rend la première occurrence et compte les autres", () => {
@@ -103,14 +103,21 @@ describe("cas 9 : citation présente deux fois dans le texte (comportement propo
     expect(resultat.occurrences).toBe(2);
   });
 
-  it("la localisation garde la première occurrence, sa page, et rend le nombre d'occurrences visible", () => {
-    const localisation = reussie("Nous baisserons la TVA.", PAGES.join("\f"), { pages: pagesDe(PAGES), vtt: null });
+  it("citation présente deux fois ⇒ citation_ambigue, aucune localisation", () => {
+    expect(motif("Nous baisserons la TVA.", PAGES.join("\f"), { pages: pagesDe(PAGES), vtt: null })).toBe("citation_ambigue");
+  });
+
+  it("deux occurrences identiques après normalisation seulement ⇒ citation_ambigue", () => {
+    expect(motif("l'âge", "Il dit « l’âge » puis l'âge.")).toBe("citation_ambigue");
+  });
+
+  it("la même citation élargie jusqu'à être unique ⇒ localisée, avec sa page", () => {
+    const localisation = reussie("Rappel : Nous baisserons la TVA.", PAGES.join("\f"), { pages: pagesDe(PAGES), vtt: null });
     expect(localisation).toEqual({
-      offset_debut: 0,
-      offset_fin: 23,
-      occurrences: 2,
+      offset_debut: 24,
+      offset_fin: 56,
       version_normalisation: "normalisation-v1",
-      page: 1,
+      page: 2,
       extrait: null,
     });
   });
@@ -156,7 +163,7 @@ describe("cas 10 : page d'une citation", () => {
   });
 });
 
-describe("cas 11 : extrait minuté d'un enregistrement (comportement proposé, à trancher)", () => {
+describe("cas 11 : extrait minuté d'un enregistrement (décision D53 (4))", () => {
   const CUES = [
     { debut: "00:42:10.000", fin: "00:42:14.500", texte: "Bonjour à tous." },
     { debut: "00:42:14.500", fin: "00:42:19.000", texte: "Nous recruterons des infirmiers," },

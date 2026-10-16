@@ -16,10 +16,10 @@
  *
  * **Mesure proposée** : une mesure de staging nouvelle par item, version 1, au libellé et au thème
  * proposés. Le prompt ne demande pas de `formulation_canonique`, que `mesure.schema.json` exige :
- * elle reçoit ici le libellé proposé, tel quel. C'est une **règle proposée**, signalée à l'auteur
- * avec le lot, isolée dans `formulationProposee` : la formulation canonique est le texte substitué
- * dans les gabarits des questions (§5), et l'interface de validation ne permet aujourd'hui de
- * corriger que le thème d'une mesure.
+ * elle reçoit ici le libellé proposé, tel quel, isolé dans `formulationProposee` (décision D53 (1)).
+ * La formulation canonique est le texte substitué dans les gabarits des questions (§5) : la
+ * promotion d'un item extrait reste bloquée tant que l'interface de validation ne sait pas
+ * rattacher l'item à une mesure ni relire cette formulation (PR séparée, D53 (1)).
  */
 
 import { empreinteContenuNotant, empreinteDe } from "../../validation/domaine/empreinte.ts";
@@ -65,7 +65,7 @@ const STATUT_INITIAL: Readonly<Record<Source["tier"], "en_attente" | "a_confirme
   T3: "a_confirmer",
 };
 
-/** Règle proposée, à trancher par l'auteur : la formulation canonique d'une mesure extraite est son libellé proposé. */
+/** Décision D53 (1) : la formulation canonique d'une mesure de staging extraite est son libellé proposé. */
 function formulationProposee(proposee: MesureProposee): string {
   return proposee.libelle;
 }
