@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { valider } from "../outils/schemas/valider.ts";
+import { empreinteMesure } from "../validation/domaine/empreinte.ts";
 import { empreinteRelecture, relectureDe } from "../validation/domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../validation/domaine/types.ts";
 import { cheminRelectures } from "../validation/io/relectures-fichier.ts";
@@ -36,7 +37,8 @@ function versionDeux(base: Mesure): Mesure {
     ...(base as unknown as { historique: readonly unknown[] }).historique,
     { date: "2026-10-01T10:00:00+02:00", changement: "libellé précisé", commit: "c".repeat(40), version_resultante: 2 },
   ];
-  return { ...base, version: 2, libelle: "TVA réduite sur toute l'énergie", historique } as Mesure;
+  const precisee = { ...base, version: 2, libelle: "TVA réduite sur toute l'énergie", historique } as Mesure;
+  return { ...precisee, empreinte: empreinteMesure(precisee) };
 }
 
 interface Scenario {
@@ -346,5 +348,20 @@ describe("verrou, cas 12 : la même relecture inscrite deux fois", () => {
     expect(bilan.status, bilan.erreur).toBe(0);
     expect(existsSync(cheminMesureData(bilan.bac))).toBe(true);
     expect(itemsEcrits(bilan.bac)).toEqual([`${bilan.items[0]?.id}.json`]);
+  });
+});
+
+describe("empreinte incohérente : libellé repris à la main, champ empreinte laissé tel quel", () => {
+  const publiee = JSON.stringify(mesure());
+  const incoherente: Mesure = { ...versionDeux(mesure()), empreinte: mesure().empreinte };
+  const bilan = promouvoir({ staging: incoherente, publiee, relues: [incoherente] });
+  afterAll(() => bilan.bac.detruire());
+
+  it("refus empreinte_incoherente avec l'empreinte attendue, rien n'est écrit", () => {
+    expect(bilan.status).not.toBe(0);
+    expect(bilan.sortie).toContain(`${MESURE_ID}  empreinte_incoherente`);
+    expect(bilan.sortie).toContain(empreinteMesure(incoherente));
+    expect(readFileSync(cheminMesureData(bilan.bac), "utf8")).toBe(publiee);
+    expect(itemsEcrits(bilan.bac)).toEqual([]);
   });
 });

@@ -10,11 +10,13 @@
  *   de validité, citation normalisée. La **paraphrase en est exclue** : deux humains qui
  *   réécrivent une phrase divergent toujours d'un mot, et faire échouer la concordance
  *   là-dessus enverrait en arbitrage des corrections identiques au fond.
+ * - `empreinteMesure` est le champ `empreinte` d'une mesure, tel que `mesure.schema.json` le
+ *   définit. Elle n'est pas l'empreinte de relecture (`relectures-mesure.ts`), qui couvre davantage.
  */
 
 import { createHash } from "node:crypto";
 import { normaliser } from "./normalisation.ts";
-import type { EtatPositionnel, Item } from "./types.ts";
+import type { EtatPositionnel, Item, Mesure } from "./types.ts";
 
 /** JSON canonique : clés triées, aucune espace. Deux objets égaux ont la même chaîne. */
 export function canoniser(valeur: unknown): string {
@@ -38,6 +40,20 @@ export function sha256(texte: string): string {
 
 export function empreinteDe(valeur: unknown): string {
   return sha256(canoniser(valeur));
+}
+
+/**
+ * Empreinte d'une mesure : « sha256 de la forme canonique de {libelle, theme,
+ * formulation_canonique, fictive} » (`mesure.schema.json`). Seule définition du dépôt :
+ * l'extraction la calcule, la promotion la vérifie.
+ */
+export function empreinteMesure(mesure: Pick<Mesure, "libelle" | "theme" | "formulation_canonique" | "fictive">): string {
+  return empreinteDe({
+    libelle: mesure.libelle,
+    theme: mesure.theme,
+    formulation_canonique: mesure.formulation_canonique,
+    fictive: mesure.fictive,
+  });
 }
 
 /**

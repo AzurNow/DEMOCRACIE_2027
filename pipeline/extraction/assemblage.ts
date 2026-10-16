@@ -5,7 +5,8 @@
  * paraphrase, quantification, libellé et thème proposés. Champs remplis par le code seul :
  *
  * - identifiants : un générateur d'ULID passé en port (`validation/domaine/ulid.ts` en production) ;
- * - `empreinte` : `validation/domaine/empreinte.ts:empreinteContenuNotant` ;
+ * - `empreinte` : `validation/domaine/empreinte.ts:empreinteContenuNotant` pour l'item,
+ *   `empreinteMesure` pour la mesure ;
  * - `valide_du` : la date de la source de la citation, règle de `validation/domaine/dates-sources.ts`
  *   pour un item P (§4, « date de la source ») ; `valide_au` à `null` ;
  * - `statut_validation` : `en_attente`, ou `a_confirmer` pour une source T3 (§4 : « un item T3 est
@@ -22,7 +23,7 @@
  * rattacher l'item à une mesure ni relire cette formulation (PR séparée, D53 (1)).
  */
 
-import { empreinteContenuNotant, empreinteDe } from "../../validation/domaine/empreinte.ts";
+import { empreinteContenuNotant, empreinteMesure } from "../../validation/domaine/empreinte.ts";
 import type { EtatPositionnel, Item, Mesure, Source } from "../../validation/domaine/types.ts";
 import type { Candidat } from "./appariement.ts";
 import type { AccordDePaire } from "./comparaison.ts";
@@ -93,8 +94,7 @@ function mesureDe(proposee: MesureProposee, contexte: ContexteDepot, accord: Acc
   return {
     id: contexte.nouvelUlid(),
     version: 1,
-    // mesure.schema.json : « sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive} ».
-    empreinte: empreinteDe(contenu),
+    empreinte: empreinteMesure(contenu),
     ...contenu,
     historique: historique(contexte, accord),
   };

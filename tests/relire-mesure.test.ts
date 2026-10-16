@@ -11,6 +11,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { empreinteMesure } from "../validation/domaine/empreinte.ts";
 import { empreinteRelecture, relectureDe } from "../validation/domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../validation/domaine/types.ts";
 import { cheminRelectures } from "../validation/io/relectures-fichier.ts";
@@ -157,7 +158,9 @@ describe("`pnpm mesures --relire`", () => {
   it("cas 5 : formulation éditée à la main après la relecture ⇒ promote refuse à nouveau ; une nouvelle --relire débloque", () => {
     avecBac((bac) => {
       expect(relire(bac, "--ecrire").status).toBe(0);
-      const editee: Mesure = { ...MESURE, formulation_canonique: "ramener la TVA sur l'électricité et le gaz à 5,5 %" };
+      // L'auteur reprend la formulation et met l'empreinte à jour ; sinon, empreinte_incoherente.
+      const reprise: Mesure = { ...MESURE, formulation_canonique: "ramener la TVA sur l'électricité et le gaz à 5,5 %" };
+      const editee: Mesure = { ...reprise, empreinte: empreinteMesure(reprise) };
       bac.ecrireMesure(editee);
 
       const refus = executerOutil("promote.ts", cheminsPromote(bac));
