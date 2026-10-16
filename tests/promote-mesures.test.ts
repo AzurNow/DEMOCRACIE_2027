@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { valider } from "../outils/schemas/valider.ts";
-import { empreinteContenuMesure, relectureDe } from "../validation/domaine/relectures-mesure.ts";
+import { empreinteRelecture, relectureDe } from "../validation/domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../validation/domaine/types.ts";
 import { cheminRelectures } from "../validation/io/relectures-fichier.ts";
 import { creerBac, lotDe, type Bac } from "./aides/bac.ts";
@@ -237,7 +237,7 @@ describe("cas 8 : simulation, sans --ecrire", () => {
 function attendreRefusSansRelecture(bilan: Bilan, attendue: Mesure): void {
   expect(bilan.status).toBe(1);
   expect(bilan.sortie).toContain(`${MESURE_ID}  sans_relecture`);
-  expect(bilan.sortie).toContain(`empreinte ${empreinteContenuMesure(attendue)}`);
+  expect(bilan.sortie).toContain(`empreinte ${empreinteRelecture(attendue)}`);
   expect(bilan.erreur).toMatch(/rien n'est écrit, ni item ni mesure/);
   expect(itemsEcrits(bilan.bac)).toEqual([]);
 }

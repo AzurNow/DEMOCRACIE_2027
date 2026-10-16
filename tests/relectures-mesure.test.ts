@@ -18,13 +18,14 @@ import { ErreurSchema } from "../outils/schemas/valider.ts";
 import { empreinteDe } from "../validation/domaine/empreinte.ts";
 import {
   EntreeRelectureInvalide,
-  empreinteContenuMesure,
+  empreinteRelecture,
   mesureRelue,
   relectureDe,
   validerEntreeRelecture,
   type RelectureMesure,
 } from "../validation/domaine/relectures-mesure.ts";
 import { cheminRelectures, lireRelectures, RegistreRelecturesIllisible } from "../validation/io/relectures-fichier.ts";
+import type { Mesure } from "../validation/domaine/types.ts";
 import { mesure } from "./aides/fabriques.ts";
 
 const RACINE = join(import.meta.dirname, "..");
@@ -32,10 +33,41 @@ const DATE = "2026-10-16";
 
 /* ------------------------------------------------------------------- empreinte */
 
-describe("empreinteContenuMesure", () => {
-  it("est le sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive}", () => {
+/** Une mesure fictive complète : alias, origine et vérification de fictivité présents. */
+const FICTIVE: Mesure = mesure({
+  id: "01JBANCESSA90000000MESVRF1",
+  libelle: "Prime aux marcheurs",
+  formulation_canonique: "verser une prime annuelle aux personnes qui vont au travail à pied",
+  fictive: true,
+  alias: ["prime marche", "indemnité piéton"],
+  origine_fictive: "Mesure de test inventée, sans rapport avec aucun candidat.",
+  verification_fictivite: {
+    date: "2026-10-15T11:00:00+02:00",
+    corpus_verifies: ["demo-alpha", "demo-beta"],
+    operateur: "a2",
+    resultat: "aucune_occurrence",
+  },
+});
+
+describe("empreinteRelecture", () => {
+  // Protocole 0.17, §4 : la relecture porte sur le libellé, le thème, la formulation canonique, le
+  // caractère fictif, les alias, et pour une mesure fictive son origine et la vérification de sa
+  // fictivité. Ce test figeait auparavant quatre champs ({libelle, theme, formulation_canonique,
+  // fictive}) ; il suit la nouvelle définition, distincte de celle de `mesure.empreinte`.
+  it("est le sha256 de la forme canonique des sept champs relus, champs absents omis", () => {
+    expect(empreinteRelecture(FICTIVE)).toBe(
+      empreinteDe({
+        libelle: FICTIVE.libelle,
+        theme: FICTIVE.theme,
+        formulation_canonique: FICTIVE.formulation_canonique,
+        fictive: FICTIVE.fictive,
+        alias: FICTIVE.alias,
+        origine_fictive: FICTIVE.origine_fictive,
+        verification_fictivite: FICTIVE.verification_fictivite,
+      }),
+    );
     const valeur = mesure();
-    expect(empreinteContenuMesure(valeur)).toBe(
+    expect(empreinteRelecture(valeur)).toBe(
       empreinteDe({
         libelle: valeur.libelle,
         theme: valeur.theme,
@@ -51,12 +83,47 @@ describe("empreinteContenuMesure", () => {
     const avant = mesure();
     const apres = mesure({ formulation_canonique: "ramener la TVA sur l'électricité à 5,5 %" });
     expect(apres.empreinte).toBe(avant.empreinte);
-    expect(empreinteContenuMesure(apres)).not.toBe(empreinteContenuMesure(avant));
+    expect(empreinteRelecture(apres)).not.toBe(empreinteRelecture(avant));
   });
 
   it("ne dépend ni de la version ni de l'historique", () => {
     const valeur = mesure();
-    expect(empreinteContenuMesure({ ...valeur, version: 7 })).toBe(empreinteContenuMesure(valeur));
+    expect(empreinteRelecture({ ...valeur, version: 7 })).toBe(empreinteRelecture(valeur));
+  });
+
+  it("cas 1 : ajouter seulement un alias change l'empreinte", () => {
+    const sans = mesure({ alias: ["TVA énergie"] });
+    const avec = mesure({ alias: ["TVA énergie", "TVA à 5,5 %"] });
+    expect(empreinteRelecture(avec)).not.toBe(empreinteRelecture(sans));
+  });
+
+  it("cas 2 : alias absent et alias vide ont des empreintes différentes (absent ≠ vide)", () => {
+    const absent = mesure();
+    const vide = mesure({ alias: [] });
+    expect("alias" in absent).toBe(false);
+    expect(empreinteRelecture(vide)).not.toBe(empreinteRelecture(absent));
+  });
+
+  it("cas 3 : modifier seulement origine_fictive change l'empreinte", () => {
+    const modifiee: Mesure = { ...FICTIVE, origine_fictive: "Mesure de test inventée, autre origine." };
+    expect(empreinteRelecture(modifiee)).not.toBe(empreinteRelecture(FICTIVE));
+  });
+
+  it("cas 4 : modifier seulement un champ de verification_fictivite (corpus_verifies) change l'empreinte", () => {
+    const verification = FICTIVE.verification_fictivite;
+    if (verification === undefined) throw new Error("fixture sans vérification de fictivité");
+    const modifiee: Mesure = { ...FICTIVE, verification_fictivite: { ...verification, corpus_verifies: ["demo-alpha"] } };
+    expect(empreinteRelecture(modifiee)).not.toBe(empreinteRelecture(FICTIVE));
+  });
+
+  it("cas 5 : l'ordre des clés de l'objet mesure ne change pas l'empreinte (canonisation)", () => {
+    const inversee = Object.fromEntries(Object.entries(FICTIVE).reverse()) as unknown as Mesure;
+    expect(Object.keys(inversee)).not.toEqual(Object.keys(FICTIVE));
+    expect(empreinteRelecture(inversee)).toBe(empreinteRelecture(FICTIVE));
+  });
+
+  it("cas 6 : le champ empreinte porté par la mesure n'influe pas sur l'empreinte de relecture", () => {
+    expect(empreinteRelecture({ ...FICTIVE, empreinte: "4".repeat(64) })).toBe(empreinteRelecture(FICTIVE));
   });
 });
 

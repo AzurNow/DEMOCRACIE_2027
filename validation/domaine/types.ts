@@ -219,6 +219,8 @@ export interface Mesure {
   readonly libelle: string;
   readonly theme: string;
   readonly formulation_canonique: string;
+  /** Variantes rencontrées à l'extraction (`mesure.schema.json`). Absent ≠ liste vide. */
+  readonly alias?: readonly string[];
   readonly fictive: boolean;
   readonly origine_fictive?: string;
   readonly verification_fictivite?: {

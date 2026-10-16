@@ -21,7 +21,7 @@
 
     "empreinte": {
       "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
-      "description": "sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive} de la mesure relue, recalculée depuis son contenu (définition de `mesure.empreinte`), et non recopiée du champ `empreinte` de la mesure. Une formulation modifiée après la relecture change cette empreinte : la relecture ne la couvre plus, même à version égale."
+      "description": "Empreinte de relecture (`empreinteRelecture`, `validation/domaine/relectures-mesure.ts`), distincte de `mesure.empreinte` : sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive, alias, origine_fictive, verification_fictivite} de la mesure relue, champs absents omis (un `alias` absent et un `alias` vide n'ont pas la même empreinte). Ce sont les champs que le §4 (protocole 0.17) fait relire. Recalculée depuis le contenu, jamais recopiée du champ `empreinte` de la mesure. Tout champ relu modifié après la relecture change cette empreinte : la relecture ne le couvre plus, même à version égale."
     },
 
     "date": {

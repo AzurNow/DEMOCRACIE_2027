@@ -12,10 +12,19 @@
  * selon la raison d'une nouvelle version (une correction de thème acceptée comprise) : une
  * relecture couvre un `(id, version, empreinte)`, et rien d'autre.
  *
- * **L'empreinte est recalculée depuis le contenu**, selon la définition de `mesure.empreinte`
- * (`mesure.schema.json` : sha256 de la forme canonique de {libelle, theme, formulation_canonique,
- * fictive}). Le champ `empreinte` porté par la mesure n'est contrôlé nulle part contre son contenu :
- * s'y fier laisserait passer une formulation modifiée après la relecture sans que ce champ suive.
+ * **L'empreinte de relecture n'est pas `mesure.empreinte`.** Elle couvre tout ce que l'auteur relit
+ * (protocole 0.17, §4 : « libellé, thème, formulation canonique, caractère fictif, alias, et pour
+ * une mesure fictive son origine et la vérification de sa fictivité ») : sha256 de la forme
+ * canonique de {libelle, theme, formulation_canonique, fictive, alias, origine_fictive,
+ * verification_fictivite}, champs absents omis. `mesure.empreinte` (`mesure.schema.json`, calculée
+ * à l'extraction) reste sur quatre champs et ne sert pas ici.
+ *
+ * **Absent ≠ vide.** Un champ absent n'entre pas dans l'objet canonisé ; un `alias: []` y entre.
+ * Les deux contenus diffèrent, leurs empreintes aussi.
+ *
+ * **L'empreinte est recalculée depuis le contenu.** Le champ `empreinte` porté par la mesure n'est
+ * contrôlé nulle part contre son contenu : s'y fier laisserait passer une formulation modifiée
+ * après la relecture sans que ce champ suive.
  */
 
 import { empreinteDe } from "./empreinte.ts";
@@ -24,7 +33,7 @@ import type { Mesure } from "./types.ts";
 export interface RelectureMesure {
   readonly mesure_id: string;
   readonly mesure_version: number;
-  /** `empreinteContenuMesure` de la mesure relue. */
+  /** `empreinteRelecture` de la mesure relue. */
   readonly empreinte: string;
   /** Date civile de la relecture, `AAAA-MM-JJ`. */
   readonly date: string;
@@ -44,14 +53,25 @@ export class EntreeRelectureInvalide extends Error {
   }
 }
 
-/** sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive}. */
-export function empreinteContenuMesure(mesure: Mesure): string {
+/**
+ * sha256 de la forme canonique de {libelle, theme, formulation_canonique, fictive, alias,
+ * origine_fictive, verification_fictivite}, champs absents omis (jamais remplacés par une valeur).
+ */
+export function empreinteRelecture(mesure: Mesure): string {
   return empreinteDe({
     libelle: mesure.libelle,
     theme: mesure.theme,
     formulation_canonique: mesure.formulation_canonique,
     fictive: mesure.fictive,
+    ...siPresent("alias", mesure.alias),
+    ...siPresent("origine_fictive", mesure.origine_fictive),
+    ...siPresent("verification_fictivite", mesure.verification_fictivite),
   });
+}
+
+/** `{ [cle]: valeur }` si la valeur est présente, `{}` sinon : la clé n'est jamais écrite à vide. */
+function siPresent<V>(cle: string, valeur: V | undefined): Readonly<Record<string, V>> {
+  return valeur === undefined ? {} : { [cle]: valeur };
 }
 
 /** L'entrée qui couvrirait exactement `mesure`, relue le jour `date`. */
@@ -59,14 +79,14 @@ export function relectureDe(mesure: Mesure, date: string): RelectureMesure {
   return {
     mesure_id: mesure.id,
     mesure_version: mesure.version,
-    empreinte: empreinteContenuMesure(mesure),
+    empreinte: empreinteRelecture(mesure),
     date,
   };
 }
 
 /** Vrai ssi une entrée porte exactement l'id, la version et l'empreinte du contenu de `mesure`. */
 export function mesureRelue(registre: RegistreRelecturesMesure, mesure: Mesure): boolean {
-  const empreinte = empreinteContenuMesure(mesure);
+  const empreinte = empreinteRelecture(mesure);
   return registre.some(
     (entree) => entree.mesure_id === mesure.id && entree.mesure_version === mesure.version && entree.empreinte === empreinte,
   );
