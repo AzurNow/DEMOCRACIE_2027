@@ -144,6 +144,11 @@ Texte canonique dérivé : `Première phrase de l'extrait.\nSeconde phrase de l'
 Un offset tombe dans le dernier cue dont le premier point de code le précède ou l'égale : le `\n`
 qui joint deux cues appartient au premier.
 
+**Extrait d'une citation.** L'extrait que l'annotateur écoute va de la borne de début du cue qui
+contient `offset_debut`, arrondie à la seconde inférieure, à la borne de fin du cue qui contient
+`offset_fin − 1`, arrondie à la seconde supérieure. Une citation à cheval sur plusieurs cues donne
+un extrait qui les couvre tous.
+
 ### 2.1 Copie locale d'un enregistrement — yt-dlp
 
 Une source `enregistrement_audio` ou `enregistrement_video` pointe une page ; `pnpm collecte` la
