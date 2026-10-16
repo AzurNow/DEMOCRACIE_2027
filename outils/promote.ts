@@ -19,7 +19,8 @@
  * créée si elle est absente, laissée telle quelle si elle est identique, réécrite si la version du
  * staging est supérieure. Même version et contenu différent, ou version du staging inférieure : la
  * mesure est nommée au rapport et rien n'est écrit, ni item ni mesure. Tous les contrôles passent
- * avant la première écriture.
+ * avant la première écriture. Une mesure dont le champ `empreinte` ne suit pas son contenu est
+ * refusée (`empreinte_incoherente`), avec l'empreinte attendue : la promotion ne la recalcule pas.
  *
  * Décision D53 (1) : une mesure à créer ou à réécrire n'entre dans `data/mesures/` que si une
  * relecture de l'auteur couvre exactement son identifiant, sa version et l'empreinte de son contenu,

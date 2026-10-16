@@ -78,10 +78,10 @@ describe("empreinteRelecture", () => {
   });
 
   it("est recalculée depuis le contenu, jamais recopiée du champ empreinte de la mesure", () => {
-    // La fabrique porte une empreinte factice ("3" × 64) : une formulation changée sans que ce
-    // champ suive ne doit pas garder la même empreinte de relecture.
+    // Une formulation changée sans que le champ empreinte suive ne doit pas garder la même
+    // empreinte de relecture.
     const avant = mesure();
-    const apres = mesure({ formulation_canonique: "ramener la TVA sur l'électricité à 5,5 %" });
+    const apres = { ...mesure({ formulation_canonique: "ramener la TVA sur l'électricité à 5,5 %" }), empreinte: avant.empreinte };
     expect(apres.empreinte).toBe(avant.empreinte);
     expect(empreinteRelecture(apres)).not.toBe(empreinteRelecture(avant));
   });

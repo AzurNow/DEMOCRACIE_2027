@@ -4,7 +4,7 @@
  * personne réelle est interdit sans réserve, et un fichier de test n'est pas une exception.
  */
 
-import { empreinteContenuNotant, empreinteDe } from "../../validation/domaine/empreinte.ts";
+import { empreinteContenuNotant, empreinteDe, empreinteMesure } from "../../validation/domaine/empreinte.ts";
 import type {
   Correction,
   Decision,
@@ -57,11 +57,15 @@ const HISTORIQUE_MESURE = [
   },
 ];
 
+/**
+ * L'empreinte est calculée depuis le contenu, surcharges comprises, comme celle des items : un test
+ * qui veut une empreinte incohérente la pose après coup, `{ ...mesure(), empreinte }`.
+ */
 export function mesure(surcharges: Partial<Mesure> = {}): Mesure {
   const socle = {
     id: "01JBANCESSA90000000MESVRE1",
     version: 1,
-    empreinte: "3".repeat(64),
+    empreinte: "",
     libelle: "TVA réduite sur l'énergie",
     theme: "fiscalite_pouvoir_achat",
     formulation_canonique: "ramener la TVA sur les produits énergétiques à 5,5 %",
@@ -69,7 +73,7 @@ export function mesure(surcharges: Partial<Mesure> = {}): Mesure {
     historique: HISTORIQUE_MESURE,
     ...surcharges,
   };
-  return socle;
+  return { ...socle, empreinte: empreinteMesure(socle) };
 }
 
 export function itemP(surcharges: Partial<Item> = {}): Item {

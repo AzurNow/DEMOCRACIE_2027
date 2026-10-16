@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ErreurSchema, valider } from "../outils/schemas/valider.ts";
+import { empreinteMesure } from "../validation/domaine/empreinte.ts";
 import type { Item, Mesure } from "../validation/domaine/types.ts";
 import { FichierModifieDepuisLecture } from "../validation/io/data-items.ts";
 import {
@@ -40,7 +41,8 @@ function versionDeux(base: Mesure): Mesure {
     ...(base as unknown as { historique: readonly unknown[] }).historique,
     { date: "2026-10-01T10:00:00+02:00", changement: "thème corrigé", commit: "c".repeat(40), version_resultante: 2 },
   ];
-  return { ...base, version: 2, theme: "sante", historique } as Mesure;
+  const corrigee = { ...base, version: 2, theme: "sante", historique } as Mesure;
+  return { ...corrigee, empreinte: empreinteMesure(corrigee) };
 }
 
 describe("creerMesure", () => {
@@ -305,5 +307,69 @@ describe("planifierMesures : verrou de relecture", () => {
       creerMesure(repertoire, mesure());
       expect(motifs(plan([ITEM], [mesure({ libelle: "TVA réduite sur le gaz" })], []))).toEqual(["meme_version_contenu_different"]);
     });
+  });
+});
+
+/**
+ * Le champ `empreinte` d'une mesure est défini par son contenu (`mesure.schema.json`) : une mesure à
+ * écrire dont l'empreinte ne suit pas son contenu est refusée, avec la valeur attendue, et jamais
+ * recalculée par la promotion.
+ */
+describe("planifierMesures : empreinte incohérente", () => {
+  const ITEM: Item = itemP();
+  const DATE = "2026-10-16";
+  const FAUSSE = "3".repeat(64);
+
+  function plan(staging: readonly Mesure[], relectures: RegistreRelecturesMesure) {
+    const table = new Map(staging.map((valeur) => [valeur.id, valeur]));
+    return planifierMesures([ITEM], table, lireMesuresData(repertoire), repertoire, relectures);
+  }
+
+  /** Thème corrigé à la main en version 2, empreinte laissée à celle de la version 1. */
+  function themeCorrigeSansEmpreinte(): Mesure {
+    const v2 = versionDeux(mesure());
+    return { ...v2, empreinte: mesure().empreinte };
+  }
+
+  it("création d'une mesure à l'empreinte fausse, pourtant relue : refus, rien à créer", () => {
+    const fausse = { ...mesure(), empreinte: FAUSSE };
+    const resultat = plan([fausse], [relectureDe(fausse, DATE)]);
+    expect(resultat.refus).toEqual([expect.objectContaining({ mesure_id: ITEM.mesure_id, motif: "empreinte_incoherente" })]);
+    expect(resultat.creer).toEqual([]);
+  });
+
+  it("le détail nomme l'empreinte portée et l'empreinte attendue", () => {
+    const [refus] = plan([{ ...mesure(), empreinte: FAUSSE }], []).refus;
+    expect(refus?.detail).toContain(FAUSSE);
+    expect(refus?.detail).toContain(mesure().empreinte);
+  });
+
+  it("thème corrigé à la main sans mettre l'empreinte à jour : réécriture refusée", () => {
+    creerMesure(repertoire, mesure());
+    const corrigee = themeCorrigeSansEmpreinte();
+    const resultat = plan([corrigee], [relectureDe(corrigee, DATE)]);
+    expect(resultat.refus).toEqual([expect.objectContaining({ motif: "empreinte_incoherente" })]);
+    expect(resultat.reecrire).toEqual([]);
+  });
+
+  it("le même thème corrigé, empreinte mise à jour : réécriture permise", () => {
+    creerMesure(repertoire, mesure());
+    const resultat = plan([versionDeux(mesure())], [relectureDe(versionDeux(mesure()), DATE)]);
+    expect(resultat.reecrire).toHaveLength(1);
+    expect(resultat.refus).toEqual([]);
+  });
+
+  it("la mesure staging identique à sa version publiée passe, l'empreinte étant cohérente", () => {
+    creerMesure(repertoire, mesure());
+    expect(plan([mesure()], []).identiques).toHaveLength(1);
+  });
+
+  it("l'incohérence prime sur l'absence de relecture : un seul refus, le plus précis", () => {
+    expect(plan([{ ...mesure(), empreinte: FAUSSE }], []).refus.map((refus) => refus.motif)).toEqual(["empreinte_incoherente"]);
+  });
+
+  it("la non-conformité au schéma prime sur l'incohérence", () => {
+    const resultat = plan([{ ...mesure({ libelle: "x" }), empreinte: FAUSSE }], []);
+    expect(resultat.refus.map((refus) => refus.motif)).toEqual(["non_conforme"]);
   });
 });

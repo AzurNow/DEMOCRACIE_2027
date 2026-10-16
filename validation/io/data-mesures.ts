@@ -13,7 +13,9 @@
  * - `reecrireMesure` refuse si le fichier a changé depuis sa lecture, si la version n'augmente pas,
  *   ou si la mesure à écrire n'est pas conforme au schéma ;
  * - `planifierMesures` dit, avant toute écriture, ce que la promotion ferait de chaque mesure citée
- *   et ce qui l'en empêche. Il n'écrit rien. Une mesure qu'il créerait ou réécrirait exige une
+ *   et ce qui l'en empêche. Il n'écrit rien. Une mesure à écrire dont le champ `empreinte` ne
+ *   correspond pas à son contenu (`empreinteMesure`) est refusée (`empreinte_incoherente`) : rien
+ *   ne la recalcule à sa place. Une mesure qu'il créerait ou réécrirait exige une
  *   relecture de l'auteur couvrant son `(id, version, empreinte)` au registre
  *   `validation/mesures/relectures.json` (décision D53 (1)) ; sinon, refus `sans_relecture`.
  *
@@ -25,7 +27,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
-import { canoniser } from "../domaine/empreinte.ts";
+import { canoniser, empreinteMesure } from "../domaine/empreinte.ts";
 import { empreinteRelecture, mesureRelue, type RegistreRelecturesMesure } from "../domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../domaine/types.ts";
 import { FichierModifieDepuisLecture } from "./data-items.ts";
@@ -137,6 +139,7 @@ export function reecrireMesure(repertoire: string, lu: MesureLue, apres: Mesure)
 export type MotifRefusMesure =
   | "absente_du_staging"
   | "non_conforme"
+  | "empreinte_incoherente"
   | "meme_version_contenu_different"
   | "regression_de_version"
   | "sans_relecture";
@@ -203,6 +206,22 @@ function exigerRelecture(sort: Sort, relectures: RegistreRelecturesMesure, chemi
   );
 }
 
+/**
+ * Le champ `empreinte` d'une mesure est défini par son contenu (`mesure.schema.json`). Une mesure
+ * éditée à la main en staging (thème corrigé, formulation reprise) sans que son empreinte suive est
+ * refusée, avec la valeur attendue : la promotion ne réécrit jamais une mesure en silence.
+ */
+function refusEmpreinte(mesure: Mesure, chemin: string): Sort | null {
+  const attendue = empreinteMesure(mesure);
+  if (mesure.empreinte === attendue) return null;
+  return refus(
+    mesure.id,
+    "empreinte_incoherente",
+    `${chemin} : la mesure porte l'empreinte ${mesure.empreinte}, son contenu {libelle, theme, ` +
+      `formulation_canonique, fictive} donne ${attendue}. Corriger le champ empreinte en staging/.`,
+  );
+}
+
 function trier(
   mesure_id: string,
   staging: ReadonlyMap<string, Mesure>,
@@ -215,6 +234,8 @@ function trier(
   if (courante === undefined) return refus(mesure_id, "absente_du_staging", `citée par un item à promouvoir, absente de staging/mesures/.`);
   const erreur = erreurDeSchema("mesure", courante, `mesure à écrire dans ${chemin}`);
   if (erreur !== null) return refus(mesure_id, "non_conforme", erreur.message);
+  const incoherente = refusEmpreinte(courante, chemin);
+  if (incoherente !== null) return incoherente;
   const publiee = data.get(mesure_id);
   const sort: Sort = publiee === undefined ? { sort: "creer", mesure: courante } : comparer(courante, publiee, chemin);
   return exigerRelecture(sort, relectures, chemin);

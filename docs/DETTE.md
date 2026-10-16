@@ -13,6 +13,31 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-16 — Refus `empreinte_incoherente` à la promotion des mesures (branche `lots/empreinte-mesure` : `validation/domaine/empreinte.ts`, `validation/io/data-mesures.ts`, `pipeline/extraction/assemblage.ts`, `tests/aides/fabriques.ts`)
+
+### 1. Toute mesure éditée à la main en staging doit voir son empreinte recopiée à la main — *basse*
+
+Après une correction de thème acceptée ou une formulation reprise, `pnpm promote` refuse la
+mesure tant que son champ `empreinte` n'est pas celui qu'indique le refus. Aucun outil ne le
+recalcule : c'est voulu (la promotion ne réécrit rien en silence), mais l'auteur doit copier un
+sha256 depuis le rapport.
+
+**Pourquoi ça casse.** Friction à chaque édition manuelle ; une erreur de copie donne un second
+refus, jamais une mesure fausse.
+
+**Ce qu'il faut faire.** Si la friction pèse : faire afficher l'empreinte attendue par
+`pnpm mesures --relire`, ou une commande explicite qui la recalcule en staging. Décision de l'auteur.
+
+### 2. `data/mesures/` n'est pas contrôlé à la lecture — *basse*
+
+`lireMesuresData` valide le schéma mais pas l'empreinte. Une mesure publiée ne peut y entrer que
+par la promotion, qui la contrôle désormais ; un fichier de `data/mesures/` modifié à la main ne
+serait pas détecté avant la promotion suivante qui le compare.
+
+**Ce qu'il faut faire.** Rien tant que `data/` reste écrit par la seule promotion.
+
+---
+
 ## 2026-10-16 — D53 (1), PR D : relecture étendue et rattachement F ⇔ fictive (branche `lots/relecture-etendue`, PR #150 : `validation/domaine/relectures-mesure.ts`, `validation/domaine/rattachements-item.ts`, `outils/mesures.ts`, `schema/relecture-mesure.schema.json`)
 
 ### 1. Toute réécriture automatique des champs relus d'une mesure annule sa relecture — *basse*
@@ -107,7 +132,7 @@ visible : tout est refusé), ou le champ `empreinte` stocké diverge du contenu 
 
 **Ce qu'il faut faire.** Faire appeler `empreinteContenuMesure` par `assemblage.ts` (PR B ou petit lot).
 
-### 3. Le champ `mesure.empreinte` n'est contrôlé nulle part contre le contenu — *moyenne*
+### ~~3. Le champ `mesure.empreinte` n'est contrôlé nulle part contre le contenu~~ — réglé le 2026-10-16 : refus `empreinte_incoherente` dans `planifierMesures`, définition unique `empreinteMesure`, fixtures corrigées (branche `lots/empreinte-mesure`)
 
 Le verrou compare la relecture à l'empreinte **recalculée**, donc il n'est pas trompé. Mais un
 fichier de `data/mesures/` peut porter une empreinte fausse sans que rien n'échoue (les fixtures
