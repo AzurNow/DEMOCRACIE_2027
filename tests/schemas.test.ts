@@ -124,12 +124,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
   // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
   // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
-  it("1. les 294 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 294 → 300 : décision D52 (lot extraction, PR 1), deux valides (exemple du prompt ; aucun item) et quatre invalides (type A ; position sans_objet ; thème hors des dix ; page donnée par le modèle) du nouveau schéma sortie-extraction.
+  it("1. les 300 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(294);
+    expect(manifeste.exemples).toHaveLength(300);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -143,9 +144,10 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 27 → 28 : proposition-formulation (staging de la reformulation), décisions D39 et D42 de l'auteur.
   // 28 → 30 : formulations-validees (data/formulations/) et refus-formulation (validation/formulations/refus.jsonl), décisions D39 et D42 de l'auteur.
   // 30 → 31 : config-gel (config/gel.json), décision D41 de l'auteur.
-  it("2. les trente et un schémas réels sont conformes au méta-schéma draft 2020-12", () => {
+  // 31 → 32 : sortie-extraction (sortie brute d'un modèle extracteur), décision D52 de l'auteur.
+  it("2. les trente-deux schémas réels sont conformes au méta-schéma draft 2020-12", () => {
     const conformites = verifierConformiteMetaSchema(racineSchema);
-    expect(conformites).toHaveLength(31);
+    expect(conformites).toHaveLength(32);
     for (const conformite of conformites) {
       expect(conformite.erreurs, `schéma "${conformite.nom}"`).toEqual([]);
       expect(conformite.conforme, `schéma "${conformite.nom}"`).toBe(true);
@@ -279,7 +281,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
   // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
   // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 294 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(294);
+  // 294 → 300 : décision D52 (lot extraction, PR 1), deux valides (exemple du prompt ; aucun item) et quatre invalides (type A ; position sans_objet ; thème hors des dix ; page donnée par le modèle) du nouveau schéma sortie-extraction.
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 300 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(300);
   });
 });

@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "type": "P",
+      "candidat_id": "candidat-a",
+      "mesure_proposee": {
+        "libelle": "Ouvrir les centres de santé municipaux le dimanche",
+        "theme": "sante"
+      },
+      "position": "pour",
+      "citation_verbatim": "Nous ouvrirons tous les centres de santé municipaux le dimanche.",
+      "paraphrase": "Ouvrir tous les centres de santé municipaux le dimanche."
+    },
+    {
+      "type": "P",
+      "candidat_id": "candidat-a",
+      "mesure_proposee": {
+        "libelle": "Créer une prime pour les apprentis de première année",
+        "theme": "travail_emploi"
+      },
+      "position": "pour",
+      "citation_verbatim": "Nous créeront une prime de 150 euros pour chaque apprenti de première année.",
+      "paraphrase": "Créer une prime de 150 euros pour chaque apprenti de première année.",
+      "quantification": {
+        "dimensions": [
+          {
+            "type": "montant",
+            "valeur": 150,
+            "unite": "EUR",
+            "operateur": "exact"
+          },
+          {
+            "type": "perimetre",
+            "valeur": "apprentis de première année"
+          }
+        ]
+      }
+    }
+  ]
+}

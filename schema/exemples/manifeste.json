@@ -1974,6 +1974,46 @@
       "attendu": "invalide",
       "motif": "Début de fenêtre sans décalage : un instant se lit à l'heure de Paris, décalage explicite (commun#/$defs/instant).",
       "regle_protocole": "§6, fenêtre ouverte le mardi à 6 h, heure de Paris"
+    },
+    {
+      "objet": "sortie-extraction",
+      "fichier": "sortie-extraction/valide-01-exemple-du-prompt.json",
+      "attendu": "valide",
+      "motif": "La sortie de l'exemple fictif de prompts/extraction-1.0.0.md : deux items P, l'un avec quantification structurée, la coquille « créeront » recopiée telle quelle, aucun champ page."
+    },
+    {
+      "objet": "sortie-extraction",
+      "fichier": "sortie-extraction/valide-02-aucun-item.json",
+      "attendu": "valide",
+      "motif": "Un document sans position dans le périmètre donne {\"items\": []} : sortie conforme, pas une erreur."
+    },
+    {
+      "objet": "sortie-extraction",
+      "fichier": "sortie-extraction/invalide-01-type-a.json",
+      "attendu": "invalide",
+      "motif": "Item de type A : les types A et F ne s'extraient pas d'une source, la sortie entière est rejetée.",
+      "regle_protocole": "§4, types d'item ; prompts/extraction-1.0.0.md ; décision D52"
+    },
+    {
+      "objet": "sortie-extraction",
+      "fichier": "sortie-extraction/invalide-02-position-sans-objet.json",
+      "attendu": "invalide",
+      "motif": "Position sans_objet : réservée aux types A et F, exclue de la sortie d'extraction.",
+      "regle_protocole": "§4 ; prompts/extraction-1.0.0.md, « position »"
+    },
+    {
+      "objet": "sortie-extraction",
+      "fichier": "sortie-extraction/invalide-03-theme-hors-des-dix.json",
+      "attendu": "invalide",
+      "motif": "Thème « culture », hors des dix codes : une position hors des dix thèmes n'est pas enregistrée.",
+      "regle_protocole": "§3, thèmes"
+    },
+    {
+      "objet": "sortie-extraction",
+      "fichier": "sortie-extraction/invalide-04-page-donnee-par-le-modele.json",
+      "attendu": "invalide",
+      "motif": "Champ page fourni par le modèle : la page est calculée par le code depuis les offsets (D35), tout champ en plus rejette la sortie entière.",
+      "regle_protocole": "§4, page comptée comme rang dans le fichier ; décision D35"
     }
   ]
 }

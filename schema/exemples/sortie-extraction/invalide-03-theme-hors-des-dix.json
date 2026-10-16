@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "type": "P",
+      "candidat_id": "candidat-a",
+      "mesure_proposee": {
+        "libelle": "Ouvrir les centres de santé municipaux le dimanche",
+        "theme": "culture"
+      },
+      "position": "pour",
+      "citation_verbatim": "Nous ouvrirons tous les centres de santé municipaux le dimanche.",
+      "paraphrase": "Ouvrir tous les centres de santé municipaux le dimanche."
+    }
+  ]
+}
