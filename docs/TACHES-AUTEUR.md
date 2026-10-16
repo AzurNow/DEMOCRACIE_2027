@@ -522,7 +522,7 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       position inventée, position opposée, quantification fausse, périmètre faux, omission, ajout
       fabriqué, autre. »
 
-- [ ] **Écrire la 0.17 : D42 à D51**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
+- [x] (2026-10-16, écrit en 0.18 : le numéro 0.17 a été pris par #148) **Écrire la 0.17 : D42 à D51**, texte relu par l'auteur le 2026-10-16 (il remplace les quatre
       propositions séparées de D42, D44, D45 et D46 ; D51 ajoutée le même jour). En tête : « version 0.17 ».
 
       **§5, « Formulations ».** Remplacer « Les formulations sont produites par un modèle puis
