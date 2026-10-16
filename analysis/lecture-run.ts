@@ -186,6 +186,8 @@ export interface RunLu extends Run {
   readonly taux_echantillon_humain: TauxEchantillonHumain;
   readonly graines: { readonly echantillon_humain: GraineTirage; readonly contrefactuel: GraineTirage };
   readonly contrefactuel_candidats?: { readonly taille: number };
+  /** D51 (2) : posée par `pnpm run:invalider` ou par la notation en D16 (3) ; le run n'est alors plus noté ni décidé. */
+  readonly invalidation?: { readonly motif: string; readonly date: string; readonly run_remplacant_id?: string };
 }
 
 export interface TirageLu {

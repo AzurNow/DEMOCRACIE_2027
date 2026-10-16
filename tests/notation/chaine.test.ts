@@ -13,7 +13,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispositionRunNote, lireNotationsDuRun, lireRunJson, lireVerdicts, runDeNotationDe } from "../../analysis/lecture-run.ts";
 import { bilanNotation, ReponsePerdue } from "../../pipeline/notation/bilan-notation.ts";
-import { identifiantDerive, JugesNonConformes, noterRun, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { identifiantDerive, JugesNonConformes, noterRun, RunInvalideRefuse, type EnvironnementChaine, type ResultatChaine } from "../../pipeline/notation/chaine.ts";
+import { invaliderRun } from "../../pipeline/run/invalidation.ts";
 import { DepotNotation } from "../../pipeline/notation/stockage.ts";
 import { renvoiJuge } from "./fabriques.ts";
 import { SEUIL_RETRAIT } from "../../pipeline/notation/contrefactuel.ts";
@@ -220,15 +221,63 @@ describe("3. un juge simulé réglé au-delà de SEUIL_RETRAIT", () => {
     expect(violations(repertoire_run)).toEqual([]);
   });
 
-  it("les deux juges au-delà : run invalide, aucune notation de masse, aucun verdict, run.json intact (D16 (3))", async () => {
+  // Modifié ouvertement (D51 (2)) : ce test attendait run.json intact (contrefactuel_candidats
+  // absent), faute de pouvoir écrire un run invalide. Désormais la notation inscrit le test et
+  // l'invalidation, statut inchangé : l'attendu change, les autres assertions restent.
+  it("les deux juges au-delà : run invalide, aucune notation de masse, aucun verdict ; run.json porte le test et l'invalidation, statut inchangé (D16 (3), D51 (2))", async () => {
     const sortie = nouvelleSortie();
-    const execution = await noter(sortie, avecBiais({ "juge-simule-a": BIAIS_BETA, "juge-simule-b": BIAIS_BETA }));
+    const parametres = avecBiais({ "juge-simule-a": BIAIS_BETA, "juge-simule-b": BIAIS_BETA });
+    const statut_avant = lireRunJson((await preparerNotationSimulee(options(sortie))).repertoire_run).statut;
+    const execution = await noter(sortie, parametres);
     const { repertoire_run } = execution.prepare;
     expect(execution.resultat.contrefactuel.statut).toBe("run_invalide");
     expect(execution.resultat.verdicts).toEqual([]);
     expect(readdirSync(dispositionRunNote(repertoire_run).verdicts)).toEqual([]);
-    expect(lireRunJson(repertoire_run).contrefactuel_candidats).toBeUndefined();
     expect(execution.bilan.attentes_par_motif.run_invalide).toBe(execution.bilan.reponses_obtenues);
+    const contrefactuel = execution.resultat.contrefactuel;
+    if (contrefactuel.statut !== "run_invalide") throw new Error("run_invalide attendu");
+    expect(contrefactuel.inscription).toBe("inscrit");
+    const run = lireRunJson(repertoire_run);
+    expect(run.contrefactuel_candidats).toBeDefined();
+    expect(run.juges.every((juge) => juge.retire)).toBe(true);
+    expect(run.invalidation).toEqual({ motif: contrefactuel.raison, date: parametres.date_notation });
+    expect(run.statut).toBe(statut_avant);
+  });
+});
+
+describe("D51, cas 8 : D16 (3) relancée", () => {
+  it("D51, cas 8 : relancée ⇒ reprise sans réécriture : run.json, notations et réponses contrefactuelles identiques octet pour octet", async () => {
+    const sortie = nouvelleSortie();
+    const parametres = avecBiais({ "juge-simule-a": BIAIS_BETA, "juge-simule-b": BIAIS_BETA });
+    const premiere = await noter(sortie, parametres);
+    const { repertoire_run } = premiere.prepare;
+    const disposition = dispositionRunNote(repertoire_run);
+    const avant = { run: readFileSync(disposition.run_json, "utf8"), notations: contenus(disposition.notations), permutees: contenus(disposition.reponses_contrefactuelles) };
+    const appels: Appel[] = [];
+    const seconde = await noterRun(premiere.prepare.reponses, { ...environnementSimule(repertoire_run, { ...parametres, date_notation: "2027-01-05T12:00:00+01:00" }), juges: enregistreurs(environnementSimule(repertoire_run, parametres).juges, appels) });
+    expect(seconde.contrefactuel.statut).toBe("run_invalide");
+    if (seconde.contrefactuel.statut !== "run_invalide") return;
+    expect(seconde.contrefactuel.inscription).toBe("deja_inscrit");
+    expect(appels).toEqual([]);
+    expect(readFileSync(disposition.run_json, "utf8")).toBe(avant.run);
+    expect(contenus(disposition.notations)).toEqual(avant.notations);
+    expect(contenus(disposition.reponses_contrefactuelles)).toEqual(avant.permutees);
+  });
+});
+
+describe("D51, cas 9 : un run invalidé par pnpm run:invalider n'est plus noté", () => {
+  it("D51, cas 9 : run.json porte une invalidation ⇒ RunInvalideRefuse avant toute écriture", async () => {
+    const sortie = nouvelleSortie();
+    const prepare = await preparerNotationSimulee(options(sortie));
+    const { repertoire_run } = prepare;
+    const run = JSON.parse(readFileSync(dispositionRunNote(repertoire_run).run_json, "utf8")) as Record<string, unknown>;
+    invaliderRun(repertoire_run, "Incident technique pendant la fenêtre (§6).", Date.parse(String(run["date_gel"])));
+    const avant = instantane(repertoire_run);
+    const appels: Appel[] = [];
+    const env = environnementSimule(repertoire_run, parametresDeReference());
+    await expect(noterRun(prepare.reponses, { ...env, juges: enregistreurs(env.juges, appels) })).rejects.toThrow(RunInvalideRefuse);
+    expect(appels).toEqual([]);
+    expect(instantane(repertoire_run)).toEqual(avant);
   });
 });
 

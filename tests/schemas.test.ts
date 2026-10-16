@@ -123,12 +123,13 @@ describe("schémas réels : manifeste et méta-schéma", () => {
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
   // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
-  it("1. les 288 exemples du manifeste réel donnent tous le résultat attendu", () => {
+  // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
+  it("1. les 294 exemples du manifeste réel donnent tous le résultat attendu", () => {
     const manifeste = chargerManifeste(manifesteReel);
     const { ajv } = construireRegistre(racineSchema);
     const rapport = validerContreManifeste(ajv, racineExemplesReels, manifeste);
 
-    expect(manifeste.exemples).toHaveLength(288);
+    expect(manifeste.exemples).toHaveLength(294);
     const echecs = rapport.resultats.filter((resultat) => !resultat.reussi);
     expect(echecs).toEqual([]);
     expect(rapport.fichiersOrphelins).toEqual([]);
@@ -277,7 +278,8 @@ describe("aucun fichier du disque n'est ignoré", () => {
   // 284, inchangé : D47 (2), le valide pilote sans balise est remplacé par un invalide équivalent (invalide-46-pilote-sans-balise).
   // 284 → 286 : lot gel, PR 2b (D45 (3)), deux invalides du schéma run (sans run_precedent ; run précédent sans empreinte de son tirage).
   // 286 → 288 : lot gel, PR 2c (D48 (4)), deux invalides du schéma run (sans questions ; run précédent sans empreinte de ses questions).
-  it("le lister des exemples réels ne rate ni la table de vérité ni les 288 exemples", () => {
-    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(288);
+  // 288 → 294 : lot gel, PR 3 (D51), deux valides et quatre invalides du schéma run (invalidation en cours, réexécution).
+  it("le lister des exemples réels ne rate ni la table de vérité ni les 294 exemples", () => {
+    expect(listerFichiersExemplesSurDisque(racineExemplesReels)).toHaveLength(294);
   });
 });

@@ -75,17 +75,28 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "motif"
+        "motif",
+        "date"
       ],
+      "description": "D51 (2) : l'invalidation d'un run, enregistrée dès l'incident (pnpm run:invalider, ou la notation en D16 (3)), le statut inchangé (planifie ou en_cours) ; le statut invalide s'écrit plus tard, avec la publication et le dépôt (§12). Permise pour planifie, en_cours et invalide, exigée pour invalide, interdite pour publie et publie_provisoire. Jamais réécrite (règle 7).",
       "properties": {
         "motif": {
           "type": "string",
           "minLength": 1
         },
+        "date": {
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/instant",
+          "description": "D51 (2) : l'instant de l'invalidation, l'horloge au moment de la commande ; jamais avant date_gel."
+        },
         "run_remplacant_id": {
-          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid"
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+          "description": "Pointeur avant vers la réexécution, facultatif. D51 (3) : aucun code ne l'écrit ; le lien est run_remplace_id, porté par la réexécution."
         }
       }
+    },
+    "run_remplace_id": {
+      "$ref": "urn:banc-essai-2027:schema:commun#/$defs/ulid",
+      "description": "D51 (3), §6 : l'identifiant du run invalidé qu'une réexécution remplace, écrit au gel par pnpm geler --remplace après vérification que runs/ porte ce run et son invalidation. Exigé d'un run de type_run reexecution, interdit pour tout autre type."
     },
     "motif_provisoire": {
       "type": "string",
@@ -1448,6 +1459,7 @@
   },
   "allOf": [
     {
+      "$comment": "D51 (2) : un run invalide porte son invalidation ; un run planifie ou en_cours peut la porter, enregistrée dès l'incident, le statut inchangé jusqu'au dépôt (§12).",
       "if": {
         "properties": {
           "statut": {
@@ -1462,11 +1474,52 @@
         "required": [
           "invalidation"
         ]
+      }
+    },
+    {
+      "$comment": "D51 (2) et (4) : un run publié, même provisoire, ne porte jamais d'invalidation ; un défaut découvert après publication serait un erratum, que le protocole ne prévoit pas.",
+      "if": {
+        "properties": {
+          "statut": {
+            "enum": [
+              "publie",
+              "publie_provisoire"
+            ]
+          }
+        },
+        "required": [
+          "statut"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "invalidation"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "D51 (3), §6 : une réexécution déclare le run invalidé qu'elle remplace ; aucun autre type de run ne le fait.",
+      "if": {
+        "properties": {
+          "type_run": {
+            "const": "reexecution"
+          }
+        },
+        "required": [
+          "type_run"
+        ]
+      },
+      "then": {
+        "required": [
+          "run_remplace_id"
+        ]
       },
       "else": {
         "not": {
           "required": [
-            "invalidation"
+            "run_remplace_id"
           ]
         }
       }

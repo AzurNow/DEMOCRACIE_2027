@@ -156,11 +156,27 @@ describe("pnpm go-no-go, refus", () => {
     "run invalide : refusé, rien n'est écrit",
     async () => {
       const run = await runSimuleNote();
-      modifierRun(run, (r) => ({ ...r, statut: "invalide", invalidation: { motif: "Incident technique." }, ...PUBLICATION_ET_DEPOT }));
+      modifierRun(run, (r) => ({ ...r, statut: "invalide", invalidation: { motif: "Incident technique.", date: "2026-12-02T10:00:00+01:00" }, ...PUBLICATION_ET_DEPOT }));
       const avant = octets(run, "run.json");
       expect(() => goNoGo(run)).toThrow(/run invalide/);
       expect(octets(run, "run.json")).toEqual(avant);
       expect(octets(run, "checklist.json")).toBeNull();
+    },
+    TEMPS,
+  );
+
+  it(
+    "D51, cas 9 : run en cours qui porte une invalidation (pnpm run:invalider) : GoNoGoRefuse, rien n'est écrit, statut inchangé",
+    async () => {
+      const run = await runSimuleNote();
+      const statut = lireObjet(join(run, "run.json"))["statut"];
+      modifierRun(run, (r) => ({ ...r, invalidation: { motif: "Incident technique pendant la fenêtre (§6).", date: String(r["date_gel"]) } }));
+      const avant = octets(run, "run.json");
+      expect(() => goNoGo(run)).toThrow(GoNoGoRefuse);
+      expect(() => goNoGo(run)).toThrow(/run invalidé/);
+      expect(octets(run, "run.json")).toEqual(avant);
+      expect(octets(run, "checklist.json")).toBeNull();
+      expect(lireObjet(join(run, "run.json"))["statut"]).toBe(statut);
     },
     TEMPS,
   );

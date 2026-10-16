@@ -13,7 +13,9 @@
  * gel et la publication ne sont pas l'affaire de cette commande.
  *
  * Refus, avant toute écriture : symétrie rouge (le run est invalide ou ne part pas, et ne porte
- * aucun go/no-go), run `invalide`, run `planifie`. Un `run.json` qui porte déjà un go/no-go (ou un
+ * aucun go/no-go), run `invalide`, run qui porte une `invalidation` (D51 (2) : enregistrée par
+ * `pnpm run:invalider` ou par la notation en D16 (3), statut encore `planifie` ou `en_cours`), run
+ * `planifie`. Un `run.json` qui porte déjà un go/no-go (ou un
  * kappa d'échantillon, ou un motif provisoire) différent du recalcul, ou une checklist dont la part
  * calculée diffère, lève : jamais d'écrasement silencieux. Identique : rien n'est réécrit, et
  * l'issue le dit. `run.json` et `checklist.json` sont validés contre leur schéma avant d'être écrits.
@@ -69,6 +71,7 @@ import type { GoNoGo } from "./types.ts";
 /** La part de `run.json` que lit le go/no-go, en plus de `RunLu`. */
 interface VueGoNoGo {
   readonly statut: string;
+  readonly invalidation?: { readonly motif: string };
   readonly fenetre: { readonly debut: string; readonly fin: string };
   readonly symetrie: Symetrie;
   readonly graines: { readonly tirage: GraineTirage; readonly bootstrap: GraineTirage; readonly permutation: GraineTirage };
@@ -132,6 +135,9 @@ function refuser(vue: VueGoNoGo): void {
     throw new GoNoGoRefuse("symétrie rouge (§5, §12) : le run est invalide ou ne part pas, et un run invalide ne porte aucune décision de publication.");
   }
   if (vue.statut === "invalide") throw new GoNoGoRefuse("run invalide (§12) : il ne porte aucune décision de publication.");
+  if (vue.invalidation !== undefined) {
+    throw new GoNoGoRefuse(`run invalidé (« ${vue.invalidation.motif} », D51 (2)) : il sera publié invalide, sans décision de publication (§12).`);
+  }
   if (vue.statut === "planifie") throw new GoNoGoRefuse("run planifié : il n'a été ni interrogé ni noté.");
 }
 

@@ -80,7 +80,9 @@ function fusionner(publication: PublicationContrefactuel, ajuster: (run: RunBrut
     ...champs,
     juges,
     ...(statut === undefined ? {} : { statut }),
-    ...(invalidation === undefined ? {} : { invalidation }),
+    // Modifié ouvertement (D51 (2)) : l'appelant date l'invalidation qu'il inscrit (inscription-contrefactuel.ts),
+    // et le schéma exige désormais cette date ; la publication n'en porte pas.
+    ...(invalidation === undefined ? {} : { invalidation: { ...invalidation, date: "2026-12-02T10:00:00+01:00" } }),
   };
   return ajuster(run);
 }

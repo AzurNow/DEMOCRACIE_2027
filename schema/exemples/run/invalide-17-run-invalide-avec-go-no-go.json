@@ -8,7 +8,8 @@
   "type_run": "mensuel",
   "statut": "invalide",
   "invalidation": {
-    "motif": "Tests de symétrie rouges constatés après le lancement : répartition des gabarits et des formulations hors tolérance (écart de 2 pour un seuil de 1). Run publié tel quel et réexécuté (§12)."
+    "motif": "Tests de symétrie rouges constatés après le lancement : répartition des gabarits et des formulations hors tolérance (écart de 2 pour un seuil de 1). Run publié tel quel et réexécuté (§12).",
+    "date": "2026-12-02T10:00:00+01:00"
   },
   "versions": {
     "protocole": "1.0",

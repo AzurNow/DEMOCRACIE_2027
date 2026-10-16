@@ -231,6 +231,7 @@ export function optionsGel(racine: string, sortie: string | undefined, surcharge
     racine,
     sortie,
     type_run: "pilote",
+    remplace: undefined,
     engagement: engagementDe(head(racine)),
     relais: relaisDeFixture().lire,
     wayback: waybackDeFixture().lire,
