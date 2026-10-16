@@ -202,7 +202,7 @@ Aucune décision en attente.
 
 ### D53 — Quatre points laissés par la PR 1 du lot extraction : mesure d'un item extrait ; une des deux sorties illisible ; citation présente plusieurs fois dans le texte ; extrait minuté d'une source T2.
 
-**Décision du 2026-10-16 :** Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52.
+**Décision du 2026-10-16 :** Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52. Écrit au §4 par la 0.17 (#148) ; (1) livré par #146, #147 et #150.
 
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
@@ -228,12 +228,12 @@ Légende : couleur par niveau de preuve — T0 gris, T1 ambre, T2 bleu, T3 vert,
 flowchart LR
   subgraph jalon_J1["J1 · 15 oct. 2026"]
     lot_perimetre_prompts["perimetre-prompts<br/>config/perimetre.yaml et prompts/ versionnés<br/>T1"]:::T1
-    lot_protocole["protocole<br/>Protocole (0.15 au 2026-10-12), à geler en v1.0<br/>T1"]:::T1
+    lot_protocole["protocole<br/>Protocole (0.17 au 2026-10-16), à geler en v1.0<br/>T1"]:::T1
   end
   subgraph jalon_J2["J2 · 31 oct. 2026"]
     lot_ci["ci<br/>Intégration continue : check et test sur chaque PR<br/>T3"]:::T3
     lot_collecte["collecte<br/>Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback<br/>T2"]:::T2
-    lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T0"]:::T0
+    lot_extraction["extraction<br/>Extraction double, test verbatim, écriture dans staging/<br/>T3"]:::T3
     lot_feuille_de_route["feuille-de-route<br/>Feuille de route générée depuis ce fichier<br/>T2"]:::T2
     lot_mesures_validees["mesures-validees<br/>data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel<br/>T2"]:::T2
     lot_outillage["outillage<br/>ajv sur les exemples de schéma, ESLint à deux règles de complexité<br/>T3"]:::T3
@@ -298,10 +298,10 @@ flowchart LR
 | Lot | Titre | Jalon | Niveau | État | Agent | Taille | Temps auteur (h) | Dépend de |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | perimetre-prompts | config/perimetre.yaml et prompts/ versionnés | J1 | T1 | débloqué | auteur avec fable | S | 5 | — |
-| protocole | Protocole (0.15 au 2026-10-12), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
+| protocole | Protocole (0.17 au 2026-10-16), à geler en v1.0 | J1 | T1 | débloqué | auteur | S | 4 | — |
 | ci | Intégration continue : check et test sur chaque PR | J2 | T3 | atteint | sonnet | S | 0.25 | — |
 | collecte | Collecte et archivage : crawl, PDF, yt-dlp, transcription, SHA-256, Wayback | J2 | T2 | débloqué | sonnet | L | 1 | — |
-| extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T0 | bloqué par perimetre-prompts | opus | L | 1 | collecte (informe), perimetre-prompts |
+| extraction | Extraction double, test verbatim, écriture dans staging/ | J2 | T3 | atteint | opus | L | 1 | collecte (informe), perimetre-prompts |
 | feuille-de-route | Feuille de route générée depuis ce fichier | J2 | T2 | débloqué | sonnet | S | 0.5 | — |
 | mesures-validees | data/mesures/ promues par pnpm promote, lues en répertoire par symmetry et le gel | J2 | T2 | bloqué par dette-validation | opus | M | 0.5 | dette-validation |
 | outillage | ajv sur les exemples de schéma, ESLint à deux règles de complexité | J2 | T3 | atteint | sonnet puis opus | M | 0.5 | — |
@@ -341,7 +341,7 @@ flowchart LR
 
 - ci (T3)
 - collecte (T2)
-- extraction (T0)
+- extraction (T3)
 - feuille-de-route (T2)
 - mesures-validees (T2)
 - outillage (T3)

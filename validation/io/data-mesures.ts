@@ -26,7 +26,7 @@ import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync,
 import { join } from "node:path";
 import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
 import { canoniser } from "../domaine/empreinte.ts";
-import { empreinteContenuMesure, mesureRelue, type RegistreRelecturesMesure } from "../domaine/relectures-mesure.ts";
+import { empreinteRelecture, mesureRelue, type RegistreRelecturesMesure } from "../domaine/relectures-mesure.ts";
 import type { Item, Mesure } from "../domaine/types.ts";
 import { FichierModifieDepuisLecture } from "./data-items.ts";
 
@@ -198,7 +198,7 @@ function exigerRelecture(sort: Sort, relectures: RegistreRelecturesMesure, chemi
     mesure.id,
     "sans_relecture",
     `${chemin} : aucune relecture au registre validation/mesures/relectures.json ne couvre ` +
-      `mesure_id ${mesure.id}, mesure_version ${mesure.version}, empreinte ${empreinteContenuMesure(mesure)}. ` +
+      `mesure_id ${mesure.id}, mesure_version ${mesure.version}, empreinte ${empreinteRelecture(mesure)}. ` +
       `Toute mesure créée ou réécrite dans data/mesures/ est d'abord relue par l'auteur dans ce contenu exact.`,
   );
 }

@@ -22,7 +22,7 @@ import { cheminRattachements } from "../validation/io/rattachements-fichier.ts";
 import { ItemStagingModifie } from "../validation/io/staging-renvoi.ts";
 import { creerBac, lotDe, type Bac } from "./aides/bac.ts";
 import { commiterTout, executerOutil, head, initialiserDepot } from "./aides/depot.ts";
-import { decision, itemP, mesure } from "./aides/fabriques.ts";
+import { decision, itemA, itemF, itemO, itemP, mesure, source } from "./aides/fabriques.ts";
 
 const DATE = "2026-10-16";
 /** La mesure cible, partagée : version 2 pour vérifier que l'item épingle la version courante. */
@@ -189,6 +189,87 @@ describe("`pnpm mesures --rattacher` : refus", () => {
       expect(resultat.erreur).toMatch(/Registre des rattachements d'item illisible/);
       expect(lireStaging(bac, Y.id)).toBe(avant);
       expect(readFileSync(registre(bac), "utf8")).toBe("[{ pas du json");
+    });
+  });
+});
+
+/*
+ * Protocole 0.17, §4 : « Un item F ne se rattache qu'à une mesure fictive, un item d'un autre type
+ * qu'à une mesure qui ne l'est pas. »
+ */
+describe("`pnpm mesures --rattacher` : type de l'item et caractère fictif de la cible", () => {
+  const FICTIVE = mesure({
+    id: "01JBANCESSA90000000MESVRF1",
+    libelle: "Prime aux marcheurs",
+    formulation_canonique: "verser une prime annuelle aux personnes qui vont au travail à pied",
+    fictive: true,
+    origine_fictive: "Mesure de test inventée, sans rapport avec aucun candidat.",
+    verification_fictivite: {
+      date: "2026-10-15T11:00:00+02:00",
+      corpus_verifies: ["demo-alpha", "demo-beta"],
+      operateur: "a2",
+      resultat: "aucune_occurrence",
+    },
+  });
+  /** Mesure fictive proposée par l'extraction pour l'item F seul. */
+  const FICTIVE_PROPRE = { ...FICTIVE, id: "01JBANCESSA90000000MESVRF2", libelle: "Prime à la marche" };
+  const F = itemF({ id: "01JBANCESSA1000000000TEMF1", candidat_id: "demo-beta", mesure_id: FICTIVE_PROPRE.id, mesure_version: 1 });
+  /**
+   * Un item O lisible en staging : la fabrique `itemO` porte une source T2 sans `extrait`, que
+   * `item.schema.json` refuse depuis le protocole 0.17 ; l'extrait est donc posé ici.
+   */
+  const O = ((base: Item): Item => {
+    if (base.obsolescence === undefined) throw new Error("fabrique itemO sans obsolescence");
+    const posterieur = base.obsolescence.etat_posterieur;
+    const extrait = { debut: "00:01:00", fin: "00:01:30" };
+    return itemO({
+      id: "01JBANCESSA1000000000TEMC1",
+      mesure_id: MESURE_B.id,
+      mesure_version: 1,
+      obsolescence: { ...base.obsolescence, etat_posterieur: { ...posterieur, source: source({ ...posterieur.source, extrait }) } },
+    });
+  })(itemO());
+
+  /** Un dépôt avec les mesures A, B, les deux fictives, et l'item à rattacher ; hors lot. */
+  function avecItem(item: Item, corps: (bac: Bac) => void): void {
+    const bac = creerBac();
+    try {
+      bac.ecrireItem(item);
+      for (const valeur of [MESURE_A, MESURE_B, FICTIVE, FICTIVE_PROPRE]) bac.ecrireMesure(valeur);
+      initialiserDepot(bac.racine);
+      corps(bac);
+    } finally {
+      bac.detruire();
+    }
+  }
+
+  it("cas 11 : item F vers une mesure non fictive ⇒ refus type_incompatible, registre et staging inchangés", () => {
+    avecItem(F, (bac) => {
+      const avant = lireStaging(bac, F.id);
+      attendreRefus(bac, rattacher(bac, F.id, MESURE_A.id, "--ecrire"), /type_incompatible[\s\S]*type F[\s\S]*non fictive/);
+      expect(lireStaging(bac, F.id)).toBe(avant);
+    });
+  });
+
+  it.each<readonly [string, Item]>([
+    ["P", itemP({ id: "01JBANCESSA1000000000TEMP1", mesure_id: MESURE_B.id, mesure_version: 1 })],
+    ["A", itemA({ id: "01JBANCESSA1000000000TEMA1", mesure_id: MESURE_B.id, mesure_version: 1 })],
+    ["O", O],
+  ])("cas 12 : item %s vers une mesure fictive ⇒ refus type_incompatible, registre et staging inchangés", (type, item) => {
+    avecItem(item, (bac) => {
+      const avant = lireStaging(bac, item.id);
+      attendreRefus(bac, rattacher(bac, item.id, FICTIVE.id, "--ecrire"), new RegExp(`type_incompatible[\\s\\S]*type ${type}[\\s\\S]*fictive`));
+      expect(lireStaging(bac, item.id)).toBe(avant);
+    });
+  });
+
+  it("cas 13 : item F vers une mesure fictive ⇒ rattaché, entrée au registre", () => {
+    avecItem(F, (bac) => {
+      const resultat = rattacher(bac, F.id, FICTIVE.id, "--ecrire");
+      expect(resultat.status, resultat.erreur).toBe(0);
+      const f = JSON.parse(lireStaging(bac, F.id)) as Item;
+      expect([f.type, f.mesure_id, f.mesure_version, f.version]).toEqual(["F", FICTIVE.id, 1, F.version + 1]);
+      expect(JSON.parse(readFileSync(registre(bac), "utf8"))).toEqual([entreeRattachement(F, FICTIVE, DATE)]);
     });
   });
 });

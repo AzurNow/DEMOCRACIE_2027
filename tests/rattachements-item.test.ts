@@ -34,7 +34,8 @@ import {
   RegistreRattachementsIllisible,
 } from "../validation/io/rattachements-fichier.ts";
 import { poserRegistreAjoutSeul, RegistreModifieDepuisLecture } from "../validation/io/relectures-fichier.ts";
-import { decision, itemP, mesure } from "./aides/fabriques.ts";
+import type { Item } from "../validation/domaine/types.ts";
+import { decision, itemA, itemF, itemO, itemP, mesure } from "./aides/fabriques.ts";
 
 const RACINE = join(import.meta.dirname, "..");
 const DATE = "2026-10-16";
@@ -43,6 +44,22 @@ const MESURE_A = mesure({ id: "01JBANCESSA90000000MESVRE1", version: 3 });
 const MESURE_B = mesure({ id: "01JBANCESSA90000000MESVRE2", libelle: "TVA à 5,5 % sur l'énergie" });
 /** L'item, proposé par l'extraction sur sa propre mesure B, à rattacher à A. */
 const ITEM = itemP({ id: "01JBANCESSA1000000000TEMY1", mesure_id: MESURE_B.id, mesure_version: 1 });
+
+/** Une mesure fictive complète, cible des items F. */
+const MESURE_FICTIVE = mesure({
+  id: "01JBANCESSA90000000MESVRF1",
+  libelle: "Prime aux marcheurs",
+  fictive: true,
+  origine_fictive: "Mesure de test inventée, sans rapport avec aucun candidat.",
+  verification_fictivite: {
+    date: "2026-10-15T11:00:00+02:00",
+    corpus_verifies: ["demo-alpha"],
+    operateur: "a2",
+    resultat: "aucune_occurrence",
+  },
+});
+/** Un item F sur sa propre mesure B, à rattacher. */
+const ITEM_F = itemF({ id: "01JBANCESSA1000000000TEMF1", mesure_id: MESURE_B.id, mesure_version: 1 });
 
 const TRACE = { commit: "c".repeat(40), horodatage: "2026-10-16T21:00:00+02:00", date: DATE };
 
@@ -103,6 +120,34 @@ describe("verifierRattachable : mêmes refus que le renvoi, règle uniforme", ()
     expect(motifDuRefus(contexte({ cible: MESURE_B }))).toBe("deja_rattache");
   });
 
+  it("cas 11 : item F vers une mesure non fictive ⇒ refus type_incompatible", () => {
+    expect(motifDuRefus(contexte({ item: ITEM_F, cible: MESURE_A }))).toBe("type_incompatible");
+  });
+
+  it.each<readonly [string, Item]>([
+    ["P", ITEM],
+    ["A", itemA({ id: "01JBANCESSA1000000000TEMA1", mesure_id: MESURE_B.id, mesure_version: 1 })],
+    ["O", itemO({ id: "01JBANCESSA1000000000TEMC1", mesure_id: MESURE_B.id, mesure_version: 1 })],
+  ])("cas 12 : item %s vers une mesure fictive ⇒ refus type_incompatible", (_type, item) => {
+    expect(motifDuRefus(contexte({ item, cible: MESURE_FICTIVE }))).toBe("type_incompatible");
+  });
+
+  it("cas 13 : item F vers une mesure fictive ⇒ rattachable", () => {
+    expect(motifDuRefus(contexte({ item: ITEM_F, cible: MESURE_FICTIVE }))).toBe("accepte");
+  });
+
+  it("type_incompatible : le détail nomme le type de l'item, le caractère fictif de la cible et la règle du §4", () => {
+    expect(() => verifierRattachable(contexte({ item: ITEM_F, cible: MESURE_A }))).toThrow(
+      /type_incompatible[\s\S]*item de type F[\s\S]*non fictive[\s\S]*§4/,
+    );
+  });
+
+  it("ordre des refus : deja_rattache passe avant type_incompatible, type_incompatible avant publie", () => {
+    const fictiveActuelle = { ...MESURE_FICTIVE, id: MESURE_B.id };
+    expect(motifDuRefus(contexte({ cible: fictiveActuelle }))).toBe("deja_rattache");
+    expect(motifDuRefus(contexte({ cible: MESURE_FICTIVE, publie: true }))).toBe("type_incompatible");
+  });
+
   it("le refus nomme l'item et la raison", () => {
     expect(() => verifierRattachable(contexte({ jugement: jugement(["a1"]) }))).toThrow(
       new RegExp(`${ITEM.id}[\\s\\S]*lot-001`),
@@ -152,6 +197,27 @@ describe("rattacherItem : la nouvelle version de l'item, sur le modèle de repin
   it("refuse un item non en attente, ou déjà sur la cible", () => {
     expect(() => rattacherItem({ ...ITEM, statut_validation: "rejete" }, MESURE_A, TRACE)).toThrow(RattachementRefuse);
     expect(() => rattacherItem(ITEM, MESURE_B, TRACE)).toThrow(RattachementRefuse);
+  });
+
+  it("cas 14 : appelé directement sur un couple incompatible, lève RattachementRefuse de motif type_incompatible", () => {
+    const motifs = [
+      [ITEM_F, MESURE_A],
+      [ITEM, MESURE_FICTIVE],
+    ].map(([item, cible]) => {
+      try {
+        rattacherItem(item as Item, cible as typeof MESURE_A, TRACE);
+      } catch (erreur) {
+        if (erreur instanceof RattachementRefuse) return erreur.motif;
+        throw erreur;
+      }
+      return "accepte";
+    });
+    expect(motifs).toEqual(["type_incompatible", "type_incompatible"]);
+  });
+
+  it("cas 13 : un item F rattaché à une mesure fictive est réécrit sur elle", () => {
+    const rattacheF = rattacherItem(ITEM_F, MESURE_FICTIVE, TRACE);
+    expect([rattacheF.mesure_id, rattacheF.type]).toEqual([MESURE_FICTIVE.id, "F"]);
   });
 
   it("refuse un item sans historique : le rattachement ne s'y inscrirait pas", () => {

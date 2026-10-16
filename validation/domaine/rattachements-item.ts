@@ -17,6 +17,9 @@
  * plus l'item (`lotJugeEncore`), et ses décisions restent au journal. Mêmes refus que le renvoi,
  * sans exception : item publié, item dont le lot n'a pas fini, item non en attente.
  *
+ * **Type de l'item et caractère fictif de la cible** (protocole 0.17, §4) : « Un item F ne se
+ * rattache qu'à une mesure fictive, un item d'un autre type qu'à une mesure qui ne l'est pas. »
+ *
  * La commande ne rédige ni ne modifie le contenu d'une mesure : elle change l'identifiant de
  * rattachement d'un item, rien d'autre.
  */
@@ -43,11 +46,18 @@ export type RegistreRattachementsItem = readonly RattachementItem[];
 
 /**
  * - `deja_rattache` : la cible est déjà la mesure de l'item ; rien à faire (une relance tombe ici) ;
+ * - `type_incompatible` : un item F vers une mesure non fictive, ou un item P, A ou O vers une
+ *   mesure fictive (§4, protocole 0.17) ;
  * - `publie` : l'item est dans `data/items` ; il ne change que par contestation et panel ;
  * - `pas_en_attente` : seul un item en attente se rattache, comme seul il se renvoie ;
  * - `decisions_incompletes` : son lot ne l'a pas jugé jusqu'au bout ; à relancer à la fin du lot.
  */
-export type MotifRefusRattachement = "deja_rattache" | "publie" | "pas_en_attente" | "decisions_incompletes";
+export type MotifRefusRattachement =
+  | "deja_rattache"
+  | "type_incompatible"
+  | "publie"
+  | "pas_en_attente"
+  | "decisions_incompletes";
 
 export class RattachementRefuse extends Error {
   readonly motif: MotifRefusRattachement;
@@ -83,6 +93,14 @@ const CONTROLES: readonly Controle[] = [
     motif: "deja_rattache",
     refuse: ({ item, cible }) => item.mesure_id === cible.id,
     detail: ({ cible }) => `il cite déjà la mesure ${cible.id} ; rien à faire.`,
+  },
+  {
+    motif: "type_incompatible",
+    refuse: ({ item, cible }) => (item.type === "F") !== cible.fictive,
+    detail: ({ item, cible }) =>
+      `c'est un item de type ${item.type} et la mesure ${cible.id} est ${cible.fictive ? "fictive" : "non fictive"}. ` +
+      "§4 (protocole 0.17) : un item F ne se rattache qu'à une mesure fictive, un item d'un autre type " +
+      "qu'à une mesure qui ne l'est pas.",
   },
   {
     motif: "publie",

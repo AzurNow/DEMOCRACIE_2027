@@ -10,7 +10,9 @@
  *
  * Mêmes garde-fous que `--renvoyer` (`renvoi-mesure.ts`) : simulation par défaut, `--ecrire` sur
  * un arbre Git propre, HEAD inscrit dans l'historique de l'item, aucun commit. Mêmes refus : item
- * publié, item dont le lot n'a pas fini, item non en attente. Rien n'est écrit dans `data/`, rien
+ * publié, item dont le lot n'a pas fini, item non en attente ; s'y ajoute le refus d'un type
+ * incompatible avec la cible (item F vers une mesure non fictive, item P, A ou O vers une mesure
+ * fictive ; §4, protocole 0.17). Rien n'est écrit dans `data/`, rien
  * n'est effacé du journal, et la mesure d'avant reste en `staging/mesures/` (plus citée, elle n'est
  * pas promue). La cible doit exister en `staging/mesures/` : une mesure absente de staging n'est
  * jamais copiée depuis `data/mesures/`.

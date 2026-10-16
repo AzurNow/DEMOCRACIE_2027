@@ -24,13 +24,14 @@
  * de la mesure, jugés contre l'ancien thème (protocole 0.13, §4), détaillé dans `renvoi-mesure.ts`.
  *
  * Décision D53 (1) : `--relire` imprime en entier le contenu actuel d'une mesure de
- * `staging/mesures/` (libellé, thème, fictive, formulation canonique) et son empreinte, puis, avec
- * `--ecrire`, inscrit cette relecture au registre publié en ajout seul
+ * `staging/mesures/` (libellé, thème, fictive, formulation canonique, alias, origine fictive,
+ * vérification de fictivité ; un champ absent est dit absent) et son empreinte de relecture,
+ * puis, avec `--ecrire`, inscrit cette relecture au registre publié en ajout seul
  * `validation/mesures/relectures.json`, sans lequel `pnpm promote` refuse d'écrire la mesure
  * (`sans_relecture`). Elle ne réécrit jamais la mesure : une formulation à reprendre s'édite à la
  * main en staging, avant la relecture. `--rattacher` rattache un item de staging à une autre
- * mesure existante (`rattachement-mesure.ts`). Avec `--renvoyer`, ce sont les seules écritures de
- * la commande dans `staging/`.
+ * mesure existante (`rattachement-mesure.ts`), de même caractère fictif que l'item (F ⇔ fictive).
+ * Avec `--renvoyer`, ce sont les seules écritures de la commande dans `staging/`.
  *
  * Les quatre modes (`--mesure`, `--renvoyer`, `--relire`, `--rattacher`) s'excluent : en demander
  * deux est refusé avant toute lecture.
@@ -307,14 +308,7 @@ function relire(table: Arguments, options: Options): void {
   const relecture = validerEntreeRelecture(relectureDe(mesure, dateDuJour(table)), "arguments de la commande");
   // Lu avant tout, y compris en simulation : un registre corrompu arrête la commande.
   const registre = lireRelectures(options.mesures);
-  process.stdout.write(
-    `Mesure ${mesure.id}, version ${mesure.version}\n` +
-      `  libellé : ${mesure.libelle}\n` +
-      `  thème : ${mesure.theme}\n` +
-      `  fictive : ${String(mesure.fictive)}\n` +
-      `  formulation canonique : ${mesure.formulation_canonique}\n` +
-      `  empreinte du contenu relu : ${relecture.empreinte}\n`,
-  );
+  process.stdout.write(`${contenuRelu(mesure)}  empreinte du contenu relu : ${relecture.empreinte}\n`);
 
   const chemin = cheminRelectures(options.mesures);
   if (mesureRelue(registre, mesure)) {
@@ -331,8 +325,43 @@ function relire(table: Arguments, options: Options): void {
   const relu = ajouterRelecture(options.mesures, relecture);
   process.stdout.write(
     `\nRelecture ajoutée le ${relecture.date} : le registre compte ${relu.length} entrée(s).\n` +
-      "Toute modification ultérieure du libellé, du thème, de fictive ou de la formulation change\n" +
+      "Toute modification ultérieure du libellé, du thème, de fictive, de la formulation, des alias,\n" +
+      "de l'origine fictive ou de la vérification de fictivité (ajout ou retrait compris) change\n" +
       "l'empreinte : `pnpm promote` refusera à nouveau la mesure jusqu'à une nouvelle relecture.\n",
+  );
+}
+
+/**
+ * Tout ce que la relecture atteste (§4, protocole 0.17), un champ par ligne. Un champ absent est
+ * dit absent, jamais omis ; une liste d'alias vide est dite vide, jamais confondue avec l'absence.
+ */
+function contenuRelu(mesure: Mesure): string {
+  return (
+    `Mesure ${mesure.id}, version ${mesure.version}\n` +
+    `  libellé : ${mesure.libelle}\n` +
+    `  thème : ${mesure.theme}\n` +
+    `  fictive : ${String(mesure.fictive)}\n` +
+    `  formulation canonique : ${mesure.formulation_canonique}\n` +
+    aliasRelus(mesure.alias) +
+    `  origine fictive : ${mesure.origine_fictive === undefined ? "absente" : mesure.origine_fictive}\n` +
+    verificationRelue(mesure.verification_fictivite)
+  );
+}
+
+function aliasRelus(alias: Mesure["alias"]): string {
+  if (alias === undefined) return "  alias : absent\n";
+  if (alias.length === 0) return "  alias : liste vide\n";
+  return `  alias :\n${alias.map((variante) => `    - ${variante}\n`).join("")}`;
+}
+
+function verificationRelue(verification: Mesure["verification_fictivite"]): string {
+  if (verification === undefined) return "  vérification de fictivité : absente\n";
+  return (
+    "  vérification de fictivité :\n" +
+    `    date : ${verification.date}\n` +
+    `    corpus vérifiés : ${verification.corpus_verifies.join(", ")}\n` +
+    `    opérateur : ${verification.operateur}\n` +
+    `    résultat : ${verification.resultat}\n`
   );
 }
 
