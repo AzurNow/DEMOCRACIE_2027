@@ -172,6 +172,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-16 :** Option 1. Appel Wayback au gel autorisé, lancé par l’auteur seul. À écrire au §5 en 0.17. Dans la PR 2a du lot gel.
 
+### D47 — Quatre points laissés par la PR 2a du lot gel (#130) : source de l’URL d’engagement, dispense du pilote, archivage de la réponse Wayback, délai des appels réseau du gel.
+
+**Décision du 2026-10-16 :** Option 1 sur les quatre points. Paramètre --engagement et archive Wayback à écrire au §5 en 0.17 avec D46. Dans la PR 2a (#130).
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.

@@ -646,6 +646,19 @@
       "recommandation": "Option 1 : vérifiable par un tiers, service déjà employé par la collecte.",
       "retenu": "Option 1. Appel Wayback au gel autorisé, lancé par l’auteur seul. À écrire au §5 en 0.17. Dans la PR 2a du lot gel.",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D47",
+      "statut": "tranchee",
+      "question": "Quatre points laissés par la PR 2a du lot gel (#130) : source de l’URL d’engagement, dispense du pilote, archivage de la réponse Wayback, délai des appels réseau du gel.",
+      "contexte": "Un fichier versionné ne peut contenir l’URL de la capture du commit qui le contient. Le schéma dispensait le pilote de balise et d’engagement sans base au protocole. Seules les réponses des relais étaient archivées. Aucun délai : un relais muet bloque la commande.",
+      "options": [
+        "(1) --engagement=<url> obligatoire, inscrit dans run.json ; balise et engagement exigés de tout run, pilote compris ; réponse Wayback archivée telle que reçue avec son SHA-256 ; délai fixe de 30 s par appel, refus nommé, aucune nouvelle tentative.",
+        "Variantes : fichier non versionné ; pilote dispensé ; URL seule ; délai dans config/gel.json ou aucun délai."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. Paramètre --engagement et archive Wayback à écrire au §5 en 0.17 avec D46. Dans la PR 2a (#130).",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
@@ -1072,7 +1085,8 @@
         "D41",
         "D44",
         "D45",
-        "D46"
+        "D46",
+        "D47"
       ],
       "note": "Plan du 2026-10-15 : PR mesures validées (D38), cœur pnpm geler testé sur fixtures, graines drand (D40), statuts planifie → en_cours et run:invalider (branche D16 (3)), bout en bout run:dry depuis le gel."
     },
