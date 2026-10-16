@@ -200,6 +200,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-16 :** Option 1 sur les quatre points. Lot extraction, PR 1 (cœur) et PR 2 (éditeurs). Points 2 à 4 à écrire au §4 à la prochaine révision, car ils influent sur ce qui est proposé à la validation.
 
+### D53 — Quatre points laissés par la PR 1 du lot extraction : mesure d'un item extrait ; une des deux sorties illisible ; citation présente plusieurs fois dans le texte ; extrait minuté d'une source T2.
+
+**Décision du 2026-10-16 :** Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52.
+
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
 **Décision du 2026-09-20 :** Option 1 sur les six points : tronquées incluses dans les métriques primaires plus un quatrième recalcul de robustesse « hors tronquées » ; texte du dénominateur gardé et premisse_fausse interdite sur un item P dès l'engendrement ; Holm retiré de la famille des effets de condition, intervalles et qualificatif seuls publiés ; trois paires pour la famille des formulations ; exactitude globale dans la permutation ; comparateurs alignés sur les assistants.

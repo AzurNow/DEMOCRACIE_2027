@@ -725,6 +725,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. Lot extraction, PR 1 (cœur) et PR 2 (éditeurs). Points 2 à 4 à écrire au §4 à la prochaine révision, car ils influent sur ce qui est proposé à la validation.",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D53",
+      "statut": "tranchee",
+      "question": "Quatre points laissés par la PR 1 du lot extraction : mesure d'un item extrait ; une des deux sorties illisible ; citation présente plusieurs fois dans le texte ; extrait minuté d'une source T2.",
+      "contexte": "Le schéma d'item exige mesure_id ; l'extraction ne propose qu'un libellé et un thème, et l'interface ne sait pas rattacher un item à une mesure existante (seul le thème se corrige) : promu tel quel, chaque item aurait sa mesure, et un libellé écrit par un modèle deviendrait formulation_canonique (§5) sans relecture. testerVerbatim rend la première occurrence d'une citation. Le schéma exige un extrait pour une source T2 sans règle de calcul.",
+      "options": [
+        "(1) mesure de staging proposée déposée, promotion d'un item extrait refusée tant que l'interface ne sait pas rattacher l'item à une mesure existante ou nouvelle et faire relire formulation_canonique ; (2) source refusée, entrée extraction_double_incomplete au journal ; (3) citation rejetée, motif citation_ambigue ; (4) extrait du début du cue du premier caractère (seconde inférieure) à la fin du cue du dernier (seconde supérieure), plusieurs cues couverts.",
+        "Variantes : item sans mesure en staging ; une mesure par item promue ; dépôt en desaccord_existence ; première occurrence gardée ; citation sur plusieurs cues refusée."
+      ],
+      "recommandation": "Option 1 sur les quatre points.",
+      "retenu": "Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52.",
+      "date_decision": "2026-10-16"
     }
   ],
   "lots": [
@@ -873,9 +886,10 @@
       ],
       "decisions": [
         "D3",
-        "D52"
+        "D52",
+        "D53"
       ],
-      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification. Le 2026-10-16 : D52 tranchée (Claude Sonnet 5.5 et Mistral Large, appariement par recouvrement des citations, un item par paire, texte de l'extracteur épinglé). Découpage : PR 1 cœur pur, PR 2 éditeurs, PR 3 pnpm extraire. Le prompt 1.0.0 a été relu le 2026-10-12 (D35)."
+      "note": "Développable sur validation/fixtures/ avant que la collecte existe. Réutilise validation/domaine/verbatim.ts. Assemble chaque source par pipeline/collecte/source.py:source_de (page d'une citation PDF comprise) ; doit écrire la règle qui choisit le texte quand un document en a plusieurs (docs/DETTE.md, 2026-09-23, point 1). Porte aussi la revérification des items A à chaque run (§4, conformité n° 18 point 3) : recherche automatique de nouvelles sources T1, confirmation humaine écrite par le module d'écriture de data/items du lot contestation-notification. Le 2026-10-16 : D52 tranchée (Claude Sonnet 5.5 et Mistral Large, appariement par recouvrement des citations, un item par paire, texte de l'extracteur épinglé). Découpage : PR 1 cœur pur, PR 2 éditeurs, PR 3 pnpm extraire. Le prompt 1.0.0 a été relu le 2026-10-12 (D35). D53 tranchée le même jour (mesure proposée, promotion bloquée jusqu'au rattachement dans l'interface ; sortie illisible ⇒ source refusée ; citation ambiguë rejetée ; extrait T2 par couverture des cues)."
     },
     {
       "id": "questions-tirage-symetrie",

@@ -637,6 +637,13 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       contenu. Une paire donne un seul item, dont les champs viennent du modèle nommé en premier ; le
       libellé et la paraphrase ne sont pas comparés. » Nommer au §4 les deux modèles (D52 (1)) :
       Claude Sonnet 5.5 et Mistral Large, version exacte au premier appel réel.
+      Ajouter ensuite (D53 (2) à (4)) : « Si l'une des deux sorties est illisible, la source n'est pas
+      proposée et l'extraction est relancée. Une citation qui figure plusieurs fois dans le texte
+      canonique est rejetée. L'extrait d'une source T2 va du début du segment de transcription qui
+      contient le premier caractère de la citation, à la seconde inférieure, à la fin de celui qui
+      contient le dernier, à la seconde supérieure. » Et (D53 (1)) : « Un item extrait n'est promu
+      qu'une fois rattaché par la validation à une mesure, existante ou nouvelle, dont la
+      formulation canonique a été relue. »
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
       une capture de sa page GitHub (`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`),
       avant `date_gel`.
