@@ -9,10 +9,21 @@ import { join, resolve } from "node:path";
 
 export const RACINE_PROJET = resolve(import.meta.dirname, "../..");
 
+/**
+ * `gc.auto=0` et `maintenance.auto=false` : sans eux, un `commit` peut détacher un `git gc --auto`
+ * qui écrit encore dans `.git/objects` pendant que le test supprime le bac (`ENOTEMPTY` en CI).
+ */
 function git(racine: string, arguments_: readonly string[]): string {
   const resultat = spawnSync(
     "git",
-    ["-c", "user.name=Bac", "-c", "user.email=bac@demo.invalid", "-c", "commit.gpgsign=false", ...arguments_],
+    [
+      "-c", "user.name=Bac",
+      "-c", "user.email=bac@demo.invalid",
+      "-c", "commit.gpgsign=false",
+      "-c", "gc.auto=0",
+      "-c", "maintenance.auto=false",
+      ...arguments_,
+    ],
     { cwd: racine, encoding: "utf8" },
   );
   if (resultat.status !== 0) throw new Error(`git ${arguments_.join(" ")} : ${resultat.stderr}`);
