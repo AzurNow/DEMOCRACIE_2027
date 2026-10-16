@@ -15,7 +15,7 @@ from urllib.robotparser import RobotFileParser
 from pipeline.collecte.horloge import Horloge
 from pipeline.collecte.reseau import ErreurReseau, ReponseHttp, Transport
 
-AGENT_UTILISATEUR = "BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRACIE_2027)"
+AGENT_UTILISATEUR = "BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRATIE_2027)"
 INTERVALLE_PAR_HOTE_S = 1.0
 MAX_REDIRECTIONS = 5
 STATUTS_REDIRECTION = frozenset({301, 302, 303, 307, 308})

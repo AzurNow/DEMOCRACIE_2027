@@ -23,7 +23,7 @@
  * commande appelle les deux relais drand et la Wayback Machine (D44, D46), et rien d'autre.
  *
  * `--engagement` : l'URL `https://web.archive.org/web/<14 chiffres>/https://github.com/AzurNow/
- * DEMOCRACIE_2027/commit/<HEAD complet>` de la capture faite avant `date_gel` (D46). Elle vient de la
+ * DEMOCRATIE_2027/commit/<HEAD complet>` de la capture faite avant `date_gel` (D46). Elle vient de la
  * ligne de commande, pas de `config/gel.json` : ce fichier est dans le commit capturé, il ne peut pas
  * porter l'URL de sa propre capture (retenu par D47 (1)).
  *

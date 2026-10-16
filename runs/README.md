@@ -148,8 +148,8 @@ un run de cet `id` qui porte une `invalidation` (`pipeline/gel/remplacement.ts`)
 ### Engagement archivé (D46)
 
 Avant `date_gel`, l'auteur pousse le commit à geler, puis fait capturer par la Wayback Machine sa page
-`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha complet>`. Au gel, il passe l'URL de la
-capture, `https://web.archive.org/web/<14 chiffres UTC>/https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`,
+`https://github.com/AzurNow/DEMOCRATIE_2027/commit/<sha complet>`. Au gel, il passe l'URL de la
+capture, `https://web.archive.org/web/<14 chiffres UTC>/https://github.com/AzurNow/DEMOCRATIE_2027/commit/<sha>`,
 par `--engagement`. Elle ne vit pas dans `config/gel.json` : ce fichier fait partie du commit capturé
 et ne peut pas porter l'URL de sa propre capture. Le gel exige que `<sha>` soit HEAD, que
 l'horodatage soit une date réelle strictement antérieure à `date_gel`, et que

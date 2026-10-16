@@ -294,7 +294,7 @@ Un tier qui contredit son type refuse tout le fichier, comme tout autre problèm
 
 Norme du §6, appliquée à toute la collecte : respect de `robots.txt` et au plus une requête par
 seconde **par hôte**, mesurée entre deux débuts de requête, `robots.txt` et redirections compris.
-User-Agent : `BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRACIE_2027)`.
+User-Agent : `BancEssai2027-collecte/0.1 (+https://github.com/AzurNow/DEMOCRATIE_2027)`.
 
 | `robots.txt` répond | Effet |
 | --- | --- |

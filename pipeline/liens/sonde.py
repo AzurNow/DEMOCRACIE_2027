@@ -46,7 +46,7 @@ from pipeline.collecte.reseau import (
 from pipeline.liens.constat import REPONSE_HTTP, Constat
 from pipeline.liens.iri import IriInconvertible
 
-AGENT_LIENS = "BancEssai2027-liens/0.1 (+https://github.com/AzurNow/DEMOCRACIE_2027)"
+AGENT_LIENS = "BancEssai2027-liens/0.1 (+https://github.com/AzurNow/DEMOCRATIE_2027)"
 
 ISSUE_PAR_ERREUR: dict[type[ErreurReseau], str] = {
     ErreurReseau: "erreur_reseau",
