@@ -14,12 +14,15 @@
  *    le même `questions.json`, octet pour octet. Rien ici ne dépend des graines ni de l'identifiant.
  * 2. `tirerAuGel` puis `fichiersDuGel` : le tirage (`tirage.ts:tirer`, graine du tirage, quotas du
  *    périmètre), puis, une fois la barrière passée, `run.json` qui référence `tirage.json` par son
- *    chemin et le SHA-256 de ses octets exacts. Chaque objet est validé contre son schéma avant
- *    d'être rendu.
+ *    chemin et le SHA-256 de ses octets exacts, et porte la balise (`balise.ts:baliseDuRun`),
+ *    l'engagement archivé (D46) et l'empreinte du protocole ; enfin les réponses brutes des relais
+ *    (sous `balise/`) et de la Wayback Machine (`engagement/wayback.json`, D47 (3)), octet pour
+ *    octet. Chaque objet est validé contre son schéma avant d'être rendu.
  *
  * Le tirage dépend de l'identifiant du run : `tirage.ts:amorce` amorce le générateur avec la graine
- * ET `run.id`. Deux gels du même commit, mêmes graines, ne donnent donc le même `tirage.json` que
- * s'ils portent le même identifiant (voir `tests/gel/geler.test.ts`, cas 11).
+ * ET `run.id`. L'un et l'autre sont dérivés de la balise et de `date_gel` (D44, D45 (1)) : deux gels
+ * du même commit et de la même balise donnent les mêmes fichiers, octet pour octet (voir
+ * `tests/gel/geler.test.ts`, cas 11).
  */
 
 import { createHash } from "node:crypto";
@@ -35,7 +38,11 @@ import type { Item, Mesure, Question, RunAuGel, Symetrie, Tirage } from "../ques
 import { tachesDe } from "../reformulation/entrees.ts";
 import { questionsAuGel } from "../reformulation/lecture-au-gel.ts";
 import type { FormulationsValidees } from "../reformulation/relecture.ts";
+import { archivesDeLaBalise, baliseDuRun } from "./balise.ts";
+import type { BaliseLue } from "./balise.ts";
 import type { ConfigurationGel, JugeAuGel } from "./configuration.ts";
+import { ARCHIVE_WAYBACK, engagementDuRun } from "./engagement.ts";
+import type { EngagementVerifie } from "./engagement.ts";
 import { grainesDuRun } from "./graines.ts";
 import type { GrainesDuRun, ValeursDesGraines } from "./graines.ts";
 
@@ -49,13 +56,11 @@ export const TAUX_ECHANTILLON_SANS_RETRAIT = 0.1;
 /** Le statut d'un run qui vient d'être gelé : il n'est ni lancé ni publié. */
 export const STATUT_AU_GEL = "planifie";
 
-/** Les noms des trois fichiers, dans l'ordre d'écriture. */
-export const FICHIERS_DU_GEL = ["questions.json", "tirage.json", "run.json"] as const;
-export type NomFichierDuGel = (typeof FICHIERS_DU_GEL)[number];
-
+/** Un fichier du run : chemin relatif au répertoire du run, contenu exact. */
 export interface FichierDuGel {
-  readonly nom: NomFichierDuGel;
-  readonly texte: string;
+  readonly chemin: string;
+  /** Un texte (UTF-8), ou des octets tels que reçus (règle 7). */
+  readonly contenu: string | Uint8Array;
 }
 
 /** Les entrées lues par l'appelant, sans graines ni identifiant. */
@@ -124,6 +129,10 @@ export interface MetaDuRun {
   /** HEAD au gel : `data/` est dans le même dépôt que le code (D41). */
   readonly commit: string;
   readonly symetrie: Symetrie;
+  /** SHA-256 des octets de `docs/PROTOCOLE.md` au commit gelé. */
+  readonly protocole_sha256: string;
+  readonly balise: BaliseLue;
+  readonly engagement: EngagementVerifie;
 }
 
 /** Un fichier JSON du run : deux espaces d'indentation, une fin de ligne. */
@@ -150,10 +159,13 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
     statut: STATUT_AU_GEL,
     versions: {
       protocole: entrees.configuration.version_protocole,
+      protocole_sha256: meta.protocole_sha256,
       code_commit: meta.commit,
       donnees_commit: meta.commit,
     },
     graines: tire.graines,
+    balise: baliseDuRun(meta.balise, prepare.date_repertoire),
+    engagement: engagementDuRun(meta.engagement, prepare.date_repertoire),
     perimetre: prepare.perimetre.perimetre,
     juges: entrees.configuration.juges.map(jugeAuGel),
     taux_echantillon_humain: TAUX_ECHANTILLON_SANS_RETRAIT,
@@ -167,8 +179,9 @@ function runDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta:
 }
 
 /**
- * Phase 2b, après la barrière : les trois fichiers, chacun validé contre son schéma. `run.json`
- * porte l'empreinte des octets exacts de `tirage.json` tel qu'il sera écrit.
+ * Phase 2b, après la barrière : les trois fichiers, chacun validé contre son schéma, puis les
+ * archives de la balise et de l'engagement. `run.json` porte l'empreinte des octets exacts de
+ * `tirage.json` tel qu'il sera écrit, et de chaque archive.
  */
 export function fichiersDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: GelTire, meta: MetaDuRun): readonly FichierDuGel[] {
   const provenance = `gel du run ${tire.run_id}`;
@@ -178,8 +191,10 @@ export function fichiersDuGel(prepare: GelPrepare, entrees: EntreesGel, tire: Ge
   const tirage_texte = texteJson(tirage);
   const run = valider<unknown>("run", runDuGel(prepare, entrees, tire, meta, tirage_texte), `${provenance}, run.json`);
   return [
-    { nom: "questions.json", texte: texteJson(questions) },
-    { nom: "tirage.json", texte: tirage_texte },
-    { nom: "run.json", texte: texteJson(run) },
+    { chemin: "questions.json", contenu: texteJson(questions) },
+    { chemin: "tirage.json", contenu: tirage_texte },
+    { chemin: "run.json", contenu: texteJson(run) },
+    ...archivesDeLaBalise(meta.balise).map((archive) => ({ chemin: archive.chemin, contenu: archive.octets })),
+    { chemin: ARCHIVE_WAYBACK, contenu: meta.engagement.octets },
   ];
 }

@@ -1,22 +1,28 @@
 /**
- * `pnpm geler` — gel d'un run (lot gel, PR 1 ; décisions D41, D44).
+ * `pnpm geler` — gel d'un run (lot gel ; décisions D41, D44, D45 (1), D46, D47).
  *
- *   pnpm geler --type-run=<type> --graines-fixes=<fichier.json> [--sortie=<répertoire>]
+ *   pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
  *
- * Écrit, en une fois et tout ou rien, `run.json`, `tirage.json` et `questions.json` du run dans
- * `runs/<date>/` (sans `--sortie`) ou `<sortie>/<date>/`, où `<date>` est la date de `date_gel` à
- * Paris ; au statut `planifie`, à partir de `data/`, de `config/perimetre.yaml`, de `config/gel.json`
- * et du commit courant. Refuse, sans rien écrire et avec le code 1 : un dépôt sale, un répertoire de
- * run qui existe déjà, une `--sortie` sous `runs/`, un `config/gel.json` incomplet, une question sans
- * formulations relues sur son texte neutre et sa position courants, et un run que la barrière de
- * symétrie refuse (`pipeline/gel/barriere.ts`, les contrôles de `pnpm symmetry`).
+ * Écrit, en une fois et tout ou rien, `run.json`, `tirage.json`, `questions.json` et les réponses
+ * brutes des deux relais drand (`balise/<relais>.json`) et de la Wayback Machine
+ * (`engagement/wayback.json`, D47 (3)) dans `runs/<date>/` (sans `--sortie`) ou
+ * `<sortie>/<date>/`, où `<date>` est la date de `date_gel` à Paris ; au statut `planifie`, à partir de
+ * `data/`, de `config/perimetre.yaml`, de `config/gel.json`, du commit courant et de la balise drand
+ * quicknet. Refuse, sans rien écrire et avec le code 1 : un dépôt sale, un répertoire de run qui
+ * existe déjà, une `--sortie` sous `runs/`, un `config/gel.json` incomplet, une question sans
+ * formulations relues sur son texte neutre et sa position courants, un tour drand pas encore émis
+ * (avant tout appel réseau), un engagement archivé absent, d'un autre commit, postérieur à
+ * `date_gel` ou que la Wayback Machine ne sert pas, deux relais en désaccord ou l'un d'eux injoignable,
+ * un appel réseau sans réponse en 30 s (D47 (4), aucune nouvelle tentative), et un run que la barrière de symétrie refuse (`pipeline/gel/barriere.ts`).
  *
  * D41 : seul l'auteur gèle un vrai run, c'est-à-dire lance cette commande sans `--sortie`. Un agent
- * ou un test gèle toujours vers un répertoire hors de `runs/`.
+ * ou un test gèle toujours vers un répertoire hors de `runs/`, et jamais avec le réseau : cette
+ * commande appelle les deux relais drand et la Wayback Machine (D44, D46), et rien d'autre.
  *
- * Graines : la balise drand (D40) est la PR 2. En attendant, `--graines-fixes` est obligatoire : un
- * fichier JSON des cinq valeurs (`schema/config-gel.schema.json#/$defs/graines_fixes`). Rien dans
- * `run.json` ne dit qu'elles viennent d'une balise ; un run gelé ainsi ne remplit pas le §5.
+ * `--engagement` : l'URL `https://web.archive.org/web/<14 chiffres>/https://github.com/AzurNow/
+ * DEMOCRACIE_2027/commit/<HEAD complet>` de la capture faite avant `date_gel` (D46). Elle vient de la
+ * ligne de commande, pas de `config/gel.json` : ce fichier est dans le commit capturé, il ne peut pas
+ * porter l'URL de sa propre capture (retenu par D47 (1)).
  *
  * `--type-run` : l'une des valeurs de `run.schema.json#/properties/type_run`.
  */
@@ -24,20 +30,14 @@
 import { resolve } from "node:path";
 import { analyserArguments, obligatoire } from "./arguments.ts";
 import { validerFragment } from "./schemas/valider.ts";
-import { lireJson } from "../pipeline/gel/barriere.ts";
 import { geler } from "../pipeline/gel/geler.ts";
 import type { ResultatGel } from "../pipeline/gel/geler.ts";
 import { ecrireExclusif } from "../pipeline/gel/ecriture.ts";
-import { grainesFixes } from "../pipeline/gel/graines.ts";
+import { DELAI_APPEL_RESEAU_MS, lectureParFetch } from "../pipeline/gel/reseau.ts";
 import { MOTIFS_EXCLUSION } from "../pipeline/questions/types.ts";
-import { ulid } from "../validation/domaine/ulid.ts";
 
 const RACINE = resolve(import.meta.dirname, "..");
-const OPTIONS: readonly string[] = ["type-run", "graines-fixes", "sortie"];
-
-const AVERTISSEMENT_GRAINES =
-  "Graines fixes (--graines-fixes) : l'adaptateur de la balise drand (D40) n'existe pas encore. Un run gelé\n" +
-  "ainsi ne remplit pas le §5 (« Nul, l'auteur compris, ne peut connaître une graine avant le gel »).\n";
+const OPTIONS: readonly string[] = ["type-run", "engagement", "sortie"];
 
 function imprimer(resultat: ResultatGel): void {
   const exclusions = MOTIFS_EXCLUSION.map((motif) => [motif, resultat.tirage.exclusions.filter((e) => e.motif === motif).length] as const)
@@ -46,7 +46,7 @@ function imprimer(resultat: ResultatGel): void {
     .join(", ");
   process.stdout.write(
     `Run gelé (statut planifie) — ${resultat.repertoire}\n` +
-      `  id ${resultat.run_id}, commit ${resultat.commit}\n` +
+      `  id ${resultat.run_id}, commit ${resultat.commit}, tour drand ${resultat.tour}\n` +
       `  ${resultat.questions.length} question(s) engendrée(s) au gel, ${resultat.tirage.entrees.length} tirée(s)\n` +
       `  ${resultat.tirage.exclusions.length} exclue(s) du tirage${exclusions.length === 0 ? "" : ` (${exclusions})`}\n` +
       `  symétrie : ${resultat.symetrie.statut_global}\n`,
@@ -61,19 +61,20 @@ async function principal(): Promise<void> {
     obligatoire(table, "type-run", "le type du run (run.schema.json#/properties/type_run), sans valeur par défaut"),
     "--type-run",
   );
-  const chemin_graines = obligatoire(
+  const engagement = obligatoire(
     table,
-    "graines-fixes",
-    "les cinq graines du run, tant que l'adaptateur de la balise drand (D40) n'existe pas",
+    "engagement",
+    "l'URL de la capture Wayback de la page GitHub du commit gelé, faite avant date_gel (D46)",
   );
-  const source_graines = grainesFixes(lireJson(chemin_graines), chemin_graines);
-  process.stderr.write(AVERTISSEMENT_GRAINES);
+  const lire = lectureParFetch((url, init) => fetch(url, init), DELAI_APPEL_RESEAU_MS);
   const resultat = await geler({
     racine: RACINE,
     sortie: table.get("sortie"),
     type_run,
-    source_graines,
-    identifiant: () => ulid(),
+    engagement,
+    relais: lire,
+    wayback: lire,
+    maintenant: () => Date.now(),
     ecrire: ecrireExclusif,
   });
   imprimer(resultat);

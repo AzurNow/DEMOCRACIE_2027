@@ -17,6 +17,11 @@ runs/<date>/
                                     run.json#/tirage/chemin et son sha256
   questions.json              Git   le jeu complet des questions engendrées au gel, un tableau
                                     (schema/question.schema.json ; lu par pnpm symmetry)
+  balise/<relais>.json        Git   la réponse brute de chaque relais drand au tour du gel, octets
+                                    exacts (règle 7), référencée par run.json#/balise/relais
+  engagement/wayback.json     Git   la réponse brute de l'API de disponibilité de la Wayback
+                                    Machine qui a vérifié l'engagement, octets exacts (D47 (3)),
+                                    référencée par run.json#/engagement/disponibilite
   verdicts/<id>.json          Git   un verdict par objet noté (schema/verdict.schema.json)
   metriques/…                 Git   les sorties d'analysis/ (§8)
   checklist.json              Git   la checklist de l'annexe F (schema/checklist.schema.json), écrite
@@ -37,51 +42,104 @@ et `pnpm symmetry --mesures=data/mesures` recoupe ce répertoire avec lui-même 
 (`outils/items-au-gel.ts:exigerMesuresDuGel`) : une mesure en plus, en moins ou modifiée depuis le gel
 arrête la barrière.
 
-`pnpm geler` écrit `run.json`, `tirage.json` et `questions.json` (section suivante).
+`pnpm geler` écrit `run.json`, `tirage.json`, `questions.json`, `balise/` et `engagement/` (section
+suivante).
 L'interrogation (`pipeline/interrogation/stockage.ts`) écrit `volume/reponses/` et
 `volume/tentatives/`. La notation (`pipeline/notation/stockage.ts:DepotNotation`) écrit
 `verdicts/`, `volume/notations/` et `volume/reponses-contrefactuelles/`. `run.json`, `tirage.json`
 et `questions.json` suivent l'usage déjà documenté de `pnpm symmetry` (`outils/symmetry.ts`). Le nom `metriques/` reste la disposition proposée pour le lot de l'analyse ;
 il n'a pas encore d'écrivain dans le dépôt.
 
-## `pnpm geler` — `run.json`, `tirage.json`, `questions.json`
+## `pnpm geler` — `run.json`, `tirage.json`, `questions.json`, `balise/`, `engagement/`
 
 ```
-pnpm geler --type-run=<type> --graines-fixes=<fichier.json> [--sortie=<répertoire>]
+pnpm geler --type-run=<type> --engagement=<url de capture> [--sortie=<répertoire>]
 ```
 
-Le gel d'un run (décisions D41, D44 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai run**, c'est-à-dire
-lance la commande sans `--sortie` : elle écrit alors sous `runs/<date>/`. Un agent ou un test gèle
-toujours vers une `--sortie` hors de `runs/` (une sortie sous `runs/` est refusée).
+Le gel d'un run (décisions D41, D44, D45 (1), D46, D47 ; `pipeline/gel/`). **Seul l'auteur gèle un vrai
+run**, c'est-à-dire lance la commande sans `--sortie` : elle écrit alors sous `runs/<date>/`. Un agent
+ou un test gèle toujours vers une `--sortie` hors de `runs/` (une sortie sous `runs/` est refusée), et
+jamais avec le réseau : la commande appelle les deux relais drand et la Wayback Machine, rien d'autre.
+Chaque appel est abandonné au bout de 30 s (D47 (4), `pipeline/gel/reseau.ts:DELAI_APPEL_RESEAU_MS`) :
+refus nommé, aucune nouvelle tentative.
 
 Lit `data/items/`, `data/mesures/`, `data/formulations/`, `config/perimetre.yaml`, `config/gel.json`
-(version du protocole, début de fenêtre, juges, alias aveugles ; `schema/config-gel.schema.json`) et
-le commit courant ; écrit, au statut `planifie` et tout ou rien (un temporaire voisin renommé d'un
-geste), les trois fichiers :
+(version du protocole, début de fenêtre, juges, alias aveugles ; `schema/config-gel.schema.json`),
+`docs/PROTOCOLE.md` et le commit courant ; vérifie l'engagement archivé, lit la balise ; écrit, au
+statut `planifie` et tout ou rien (un temporaire voisin renommé d'un geste) :
 
 - `questions.json` : le jeu complet des questions engendrées au gel, chacune avec ses formulations
   relues (`data/formulations/`), `engendree_le` égal à `date_gel` (D44) ;
 - `tirage.json` : le tirage (`pipeline/questions/tirage.ts`), graine du tirage et quotas du périmètre ;
 - `run.json` : fenêtre, `versions.code_commit` et `versions.donnees_commit` (HEAD : `data/` est dans le
-  même dépôt), graines, périmètre au gel, juges, symétrie, et `tirage` (`runs/<date>/tirage.json`,
-  SHA-256 de ses octets, nombre de questions tirées) — même quand `--sortie` est donnée.
+  même dépôt), `versions.protocole_sha256` (SHA-256 des octets de `docs/PROTOCOLE.md` au commit gelé),
+  graines, `balise`, `engagement`, périmètre au gel, juges, symétrie, et `tirage`
+  (`runs/<date>/tirage.json`, SHA-256 de ses octets, nombre de questions tirées) — même quand
+  `--sortie` est donnée ;
+- `balise/api.drand.sh.json` et `balise/drand.cloudflare.com.json` : la réponse de chaque relais au
+  tour du gel, octet pour octet (règle 7), et son SHA-256 dans `run.json#/balise/relais` ;
+- `engagement/wayback.json` : la réponse de l'API de disponibilité de la Wayback Machine, octet pour
+  octet (D47 (3)), avec l'URL appelée et son SHA-256 dans `run.json#/engagement/disponibilite`.
+
+`balise` et `engagement` sont exigés de tout run, pilote compris (D47 (2)).
 
 Refuse, sans rien écrire, code 1 : un dépôt sale (`git status --porcelain` non vide, fichiers non
 suivis compris), vérifié avant toute autre lecture ; un répertoire `<date>/` qui existe déjà, même
 vide (un gel s'invalide, il ne se refait pas) ; un champ de `config/gel.json` à `null` ou absent,
 nommé ; une question sans formulations relues sur son texte neutre et sa position courants
-(`FormulationsEnDefautAuGel`) ; et tout ce que la barrière de `pnpm symmetry` refuse — les mêmes
-fonctions (`pipeline/gel/barriere.ts`), items et mesures recoupés avec le commit inscrit. Une symétrie
-`ecart_tolere` est écrite, l'écart dans `run.json#/symetrie`.
+(`FormulationsEnDefautAuGel`) ; un tour drand pas encore émis (`date_gel` dans le futur), **avant tout
+appel réseau** ; un engagement absent, mal formé, d'un autre commit, non antérieur à `date_gel` ou que
+la Wayback Machine ne sert pas (`EngagementRefuse`) ; une balise refusée (`BaliseRefusee` : relais
+injoignable, muet au-delà de 30 s ou en erreur HTTP, réponse illisible, chaîne différente de l'épinglée, tour différent,
+`randomness` différent de SHA-256(signature), relais en désaccord) ; et tout ce que la barrière de
+`pnpm symmetry` refuse — les mêmes fonctions (`pipeline/gel/barriere.ts`), items et mesures recoupés
+avec le commit inscrit. Une symétrie `ecart_tolere` est écrite, l'écart dans `run.json#/symetrie`.
 
-Graines : tant que l'adaptateur de la balise drand (D40) n'existe pas, `--graines-fixes` est
-obligatoire (cinq entiers, `schema/config-gel.schema.json#/$defs/graines_fixes`). Rien dans `run.json`
-ne dit qu'elles viennent d'une balise, et un run gelé ainsi ne remplit pas le §5.
+### Engagement archivé (D46)
 
-Le tirage dépend de l'identifiant du run (ULID, `validation/domaine/ulid.ts`) : il figure dans
-`tirage.json#/run_id` et amorce le générateur (`tirage.ts:amorce`). Deux gels du même commit et des
-mêmes graines donnent le même `questions.json` ; `tirage.json` et `run.json` ne sont identiques que
-pour le même identifiant.
+Avant `date_gel`, l'auteur pousse le commit à geler, puis fait capturer par la Wayback Machine sa page
+`https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha complet>`. Au gel, il passe l'URL de la
+capture, `https://web.archive.org/web/<14 chiffres UTC>/https://github.com/AzurNow/DEMOCRACIE_2027/commit/<sha>`,
+par `--engagement`. Elle ne vit pas dans `config/gel.json` : ce fichier fait partie du commit capturé
+et ne peut pas porter l'URL de sa propre capture. Le gel exige que `<sha>` soit HEAD, que
+l'horodatage soit une date réelle strictement antérieure à `date_gel`, et que
+`https://archive.org/wayback/available?url=<page>&timestamp=<horodatage>` rende comme capture la plus
+proche celle-là exactement (même horodatage, statut `"200"`, `available: true`). L'URL et
+l'horodatage sont inscrits dans `run.json#/engagement`, avec l'URL de l'API appelée, le chemin et le
+SHA-256 de sa réponse archivée (`engagement/wayback.json`). La source `--engagement` est retenue par
+D47 (1).
+
+### Balise drand (D44) et identifiant (D45 (1))
+
+- **Chaîne** : quicknet, empreinte `52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971`,
+  genèse 1692803367 s, période 3 s, schéma `bls-unchained-g1-rfc9380` ; épinglée dans
+  `pipeline/gel/balise.ts`, vérifiée contre `/<empreinte>/info` de chaque relais, inscrite dans
+  `run.json#/balise/chaine`.
+- **Tour** : le premier émis à `date_gel` ou après, `r = ⌈(date_gel − genèse) / 3 s⌉ + 1` (le tour r
+  est émis à genèse + (r − 1) × 3 s) ; `run.json#/balise/tour`.
+- **Relais** : `https://api.drand.sh` et `https://drand.cloudflare.com`, `/<empreinte>/public/<r>` lu
+  sur les deux ; même tour, même signature, sinon refus. Aucun repli sur un relais unique.
+- **Aléa** : SHA-256 des 48 octets de la signature, recalculé au gel, égal au `randomness` de chaque
+  relais ; `run.json#/balise/alea`.
+- **Graines** : graine(clé) = les 8 premiers octets, lus gros-boutistes, de SHA-256(aléa en
+  hexadécimal minuscule ‖ U+0000 ‖ clé, en UTF-8), décalés de 11 bits vers la droite (dans
+  [0, 2^53 − 1]) ; la clé de chaque graine est dans `run.json#/balise/cles` (son nom).
+- **Identifiant** : l'ULID du run a pour horodatage `date_gel` en millisecondes et pour partie
+  aléatoire les 10 premiers octets de SHA-256(aléa hex ‖ U+0000 ‖ `run_id`), en base 32 de Crockford
+  (`run.json#/balise/cle_identifiant`). Le tirage dépend de l'identifiant (`tirage.json#/run_id`,
+  `tirage.ts:amorce`) : deux gels du même commit et de la même balise donnent donc `run.json`,
+  `tirage.json`, `questions.json`, `balise/` et `engagement/` identiques, octet pour octet.
+
+**Vérifier par un tiers.** Le gel ne vérifie pas la signature BLS (D44 : aucune dépendance). Un tiers
+le fait hors du dépôt : (1) relire `balise/<relais>.json`, recalculer son SHA-256 et le comparer à
+`run.json#/balise/relais[].sha256` ; (2) vérifier `signature` pour le tour `tour` contre la clé
+publique de la chaîne (`public_key` de `https://api.drand.sh/<empreinte>/info`, qui doit rendre la
+même empreinte) avec un client drand qui vérifie les signatures — la bibliothèque JavaScript
+`drand-client` ou le client Go de `github.com/drand/drand`, configurés sur cette empreinte. Pour le
+schéma `bls-unchained-g1-rfc9380`, le message signé est SHA-256 du numéro de tour sur 8 octets
+gros-boutistes, la signature est sur G1 ; (3) recalculer l'aléa, les cinq graines et l'identifiant
+par les règles ci-dessus, et les comparer à `run.json#/balise/alea`, `run.json#/graines` et
+`run.json#/id`. Cette procédure n'a pas encore été rejouée de bout en bout sur un vrai run.
 
 ## `verdicts/`, `volume/notations/`, `volume/reponses-contrefactuelles/`
 

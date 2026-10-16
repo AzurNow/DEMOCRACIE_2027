@@ -13,6 +13,8 @@
     "statut",
     "versions",
     "graines",
+    "balise",
+    "engagement",
     "perimetre",
     "juges",
     "taux_echantillon_humain",
@@ -103,7 +105,8 @@
           "minLength": 1
         },
         "protocole_sha256": {
-          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256"
+          "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256",
+          "description": "SHA-256 des octets de docs/PROTOCOLE.md au commit gelé, inscrit par pnpm geler (le dépôt est propre au gel : le fichier sur disque est celui du commit)."
         },
         "code_commit": {
           "$ref": "urn:banc-essai-2027:schema:commun#/$defs/commit_git"
@@ -148,6 +151,80 @@
         },
         "contrefactuel": {
           "$ref": "#/$defs/graine_generateur_du_tirage"
+        }
+      }
+    },
+    "balise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chaine", "tour", "signature", "alea", "relais", "cles", "cle_identifiant"],
+      "description": "§5 (protocole 0.16), décisions D44 et D45 (1) : la balise publique d'aléa dont les graines et l'identifiant du run sont dérivés, écrite par pnpm geler (pipeline/gel/balise.ts). Le tour est le premier émis à date_gel ou après ; aléa = SHA-256 des octets de la signature, recalculé au gel et égal au randomness de chaque relais ; graine(clé) = les 8 premiers octets gros-boutistes de SHA-256(aléa en hexadécimal minuscule ‖ U+0000 ‖ clé, UTF-8), décalés de 11 bits vers la droite ; la partie aléatoire de id = les 10 premiers octets de SHA-256(aléa ‖ U+0000 ‖ cle_identifiant). La signature BLS n'est pas vérifiée au gel : un tiers la vérifie sur les réponses archivées (runs/README.md). Obligatoire pour tout run, pilote compris (D47 (2)).",
+      "properties": {
+        "chaine": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["empreinte", "genese", "periode", "schema_id"],
+          "description": "La chaîne drand lue, épinglée dans le code et vérifiée contre /<empreinte>/info de chaque relais au gel.",
+          "properties": {
+            "empreinte": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" },
+            "genese": { "type": "integer", "minimum": 0, "description": "En secondes depuis l'époque Unix." },
+            "periode": { "type": "integer", "minimum": 1, "description": "En secondes." },
+            "schema_id": { "type": "string", "minLength": 1 }
+          }
+        },
+        "tour": { "type": "integer", "minimum": 1 },
+        "signature": { "$ref": "#/$defs/signature_g1" },
+        "alea": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256", "description": "SHA-256 des octets de la signature, recalculé au gel." },
+        "relais": {
+          "type": "array",
+          "minItems": 2,
+          "description": "Les relais lus, tous d'accord sur le tour et la signature ; aucun repli sur un relais unique.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["base", "url", "chemin", "sha256"],
+            "properties": {
+              "base": { "type": "string", "pattern": "^https://" },
+              "url": { "type": "string", "pattern": "^https://" },
+              "chemin": { "type": "string", "minLength": 1, "description": "La réponse brute du relais, octets exacts (règle 7) : runs/<date>/balise/<relais>.json." },
+              "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256", "description": "Empreinte des octets archivés." }
+            }
+          }
+        },
+        "cles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tirage", "echantillon_humain", "bootstrap", "permutation", "contrefactuel"],
+          "description": "§5 : la clé lisible dont chaque graine de run.graines est dérivée.",
+          "properties": {
+            "tirage": { "type": "string", "minLength": 1 },
+            "echantillon_humain": { "type": "string", "minLength": 1 },
+            "bootstrap": { "type": "string", "minLength": 1 },
+            "permutation": { "type": "string", "minLength": 1 },
+            "contrefactuel": { "type": "string", "minLength": 1 }
+          }
+        },
+        "cle_identifiant": { "type": "string", "minLength": 1, "description": "D45 (1) : la clé de la partie aléatoire de l'ULID du run." }
+      }
+    },
+    "engagement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "horodatage", "disponibilite"],
+      "description": "Décision D46 : la capture Wayback de la page GitHub du commit gelé (versions.code_commit), faite avant date_gel. pnpm geler vérifie que l'URL désigne ce commit, que l'horodatage est strictement antérieur à date_gel et que la Wayback Machine sert la capture (pipeline/gel/engagement.ts). Obligatoire pour tout run, pilote compris (D47 (2)).",
+      "properties": {
+        "url": { "type": "string", "pattern": "^https://web\\.archive\\.org/web/[0-9]{14}/https://github\\.com/.+/commit/[0-9a-f]{40}$" },
+        "horodatage": { "type": "string", "pattern": "^[0-9]{14}$", "description": "Les 14 chiffres de la capture, en UTC." },
+        "disponibilite": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "chemin", "sha256"],
+          "description": "D47 (3) : la réponse de l'API de disponibilité qui a vérifié la capture, archivée telle que reçue (règle 7).",
+          "properties": {
+            "url": { "type": "string", "pattern": "^https://archive\\.org/wayback/available\\?" },
+            "chemin": { "type": "string", "minLength": 1, "description": "runs/<date>/engagement/wayback.json, octets exacts." },
+            "sha256": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256", "description": "Empreinte des octets archivés." }
+          }
         }
       }
     },
@@ -1947,6 +2024,54 @@
         },
         "version": {
           "const": "1"
+        }
+      }
+    },
+    "signature_g1": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{96}$",
+      "description": "Une signature BLS sur G1 (quicknet) : 48 octets, en hexadécimal minuscule."
+    },
+    "drand_info": {
+      "type": "object",
+      "required": ["hash", "genesis_time", "period", "schemeID"],
+      "description": "La réponse de /<empreinte>/info d'un relais drand, lue par pnpm geler pour vérifier la chaîne épinglée (D44). Les autres champs sont admis et ignorés.",
+      "properties": {
+        "hash": { "type": "string" },
+        "genesis_time": { "type": "integer" },
+        "period": { "type": "integer" },
+        "schemeID": { "type": "string" }
+      }
+    },
+    "drand_tour": {
+      "type": "object",
+      "required": ["round", "signature", "randomness"],
+      "description": "La réponse de /<empreinte>/public/<tour> d'un relais drand, archivée telle quelle sous runs/<date>/balise/ (D44). Les autres champs sont admis et archivés avec elle.",
+      "properties": {
+        "round": { "type": "integer", "minimum": 1 },
+        "signature": { "$ref": "#/$defs/signature_g1" },
+        "randomness": { "$ref": "urn:banc-essai-2027:schema:commun#/$defs/sha256" }
+      }
+    },
+    "wayback_disponibilite": {
+      "type": "object",
+      "required": ["archived_snapshots"],
+      "description": "La réponse de https://archive.org/wayback/available, lue par pnpm geler pour vérifier l'engagement archivé (D46). Sans closest, aucune capture n'est servie.",
+      "properties": {
+        "archived_snapshots": {
+          "type": "object",
+          "properties": {
+            "closest": {
+              "type": "object",
+              "required": ["timestamp", "status", "available", "url"],
+              "properties": {
+                "timestamp": { "type": "string" },
+                "status": { "type": "string" },
+                "available": { "type": "boolean" },
+                "url": { "type": "string" }
+              }
+            }
+          }
         }
       }
     }
