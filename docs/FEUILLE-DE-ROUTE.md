@@ -176,6 +176,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-16 :** Option 1 sur les quatre points. Paramètre --engagement et archive Wayback à écrire au §5 en 0.17 avec D46. Dans la PR 2a (#130).
 
+### D48 — Cinq points laissés par la PR 2b du lot gel (#131) : gel exécuté après l’ouverture de sa fenêtre, champs comparés aux alias aveugles, variantes proches d’un nom, empreinte des questions du run précédent, statuts admis pour un run précédent.
+
+**Décision du 2026-10-16 :** Option 1 sur les cinq points. Gel tardif (§5, §6), alias (§7), empreinte des questions et statut du précédent (§5) à écrire en 0.17. Dans une PR 2c du lot gel, après #131.
+
 ### D5 — Quelle est la liste nominative des outils et des candidats du premier run, et où vit-elle ?
 
 **Décision du 2026-09-20 :** L'auteur applique les règles du §3 à la date du jour, archive les preuves d'inclusion et écrit config/perimetre.yaml, avec révision au gel du 15 octobre. Les lots dépendants démarrent sur un périmètre provisoire dès que le format est fixé.
