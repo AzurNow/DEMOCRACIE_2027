@@ -59,6 +59,16 @@ describe("run simulé complet", () => {
     expect(second.bilan).toEqual(premier.bilan);
   });
 
+  it("run gelé, cas 11 : sans --run, le bilan des fixtures est celui d'avant le lot gel, PR 4 (relevé sur main 49a0577)", async () => {
+    const { bilan } = await lancerRunSimule({ sortie: sortie(), fixtures: FIXTURES });
+    const releve = bilan.map((l) => [l.outil_id, l.mode, l.obtenues, l.refus_api, l.manquantes_echecs, l.manquantes_hors_fenetre, l.part_manquantes.numerateur, l.part_manquantes.denominateur]);
+    expect(releve).toEqual([
+      ["outil-alpha", "web_activee", 18, 3, 0, 0, 0, 18],
+      ["outil-alpha", "web_desactivee", 18, 3, 0, 0, 0, 18],
+      ["outil-beta", "web_desactivee", 17, 12, 1, 0, 1, 18],
+    ]);
+  });
+
   it("le bilan compte, par outil × mode, obtenues, refus et manquantes par motif", async () => {
     const { bilan } = await lancerRunSimule({ sortie: sortie(), fixtures: FIXTURES });
     expect(bilan.map((l) => `${l.outil_id}/${l.mode}`)).toEqual([

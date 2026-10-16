@@ -369,9 +369,33 @@ déclarée sans état, une case non faite sans motif, une checklist déjà contr
 
 ## `pnpm run:dry`
 
-Le run simulé écrit cette même disposition sous un répertoire temporaire, ou sous
-`--sortie <chemin>` : `<chemin>/<date>/volume/…`. **Jamais dans `runs/` par défaut** : un run simulé
-n'est pas un run.
+Le run simulé interroge l'éditeur simulé (aucun appel réseau, aucun SDK) en temps virtuel, dans
+l'un de deux modes. **Jamais dans `runs/`, ni par défaut ni sur demande** : un run simulé n'est pas
+un run, et `--sortie` ou `--run` sous `runs/` est refusé avant toute lecture ou écriture.
+
+```
+pnpm run:dry                      fixtures, sous un répertoire temporaire neuf
+pnpm run:dry --sortie <chemin>    fixtures, sous <chemin>/<date>/volume/…
+pnpm run:dry --run <répertoire>   le run gelé par pnpm geler --sortie, sous <répertoire>/volume/…
+```
+
+- **Fixtures** (sans `--run`) : périmètre, questions, identifiant et fenêtre viennent de
+  `tests/interrogation/fixtures/run-simule/` ; seul le volume est écrit (`run.json` et
+  `questions.json` ne le sont pas). C'est le mode de la CI et de `pnpm notation:dry`.
+- **Run gelé** (`--run <répertoire>` ou `--run=<répertoire>`, lot gel, PR 4) : le répertoire
+  `<sortie>/<date>/` qu'écrit `pnpm geler --sortie`. `run.json` est validé contre son schéma, les
+  octets de `tirage.json` et de `questions.json` vérifiés contre les SHA-256 qu'il déclare (la
+  vérification du précédent, `pipeline/gel/precedent.ts`), puis outils, modes, modèles demandés et
+  alias aveugles sont lus de `run.json#/perimetre/outils`, la fenêtre de `run.json#/fenetre`, le
+  `run_id` de `run.json#/id`, et seules les questions des entrées du tirage sont interrogées, avec
+  leurs formulations de `questions.json`. Seuls la clé d'API fictive et les profils de l'éditeur
+  simulé viennent d'une fixture (`tests/interrogation/fixtures/run-gele/profils-simules.json`) ; un
+  outil interrogé sans profil est refusé. **`en_cours`** (D51 (1)) : `planifie ⇒ en_cours` est écrit
+  dans `run.json`, une seule fois, par renommage, avant la première tentative ; un run déjà
+  `en_cours` reprend sans transition ni réécriture (les réponses écrites sont sautées). Refusés, sans
+  rien écrire : un `run.json` absent, illisible ou non conforme, une empreinte qui diffère, une
+  question tirée absente de `questions.json`, un statut `publie`, `publie_provisoire` ou `invalide`,
+  un run `planifie` ou `en_cours` qui porte une `invalidation`, et `--run` avec `--sortie`.
 
 ## `pnpm notation:dry`
 

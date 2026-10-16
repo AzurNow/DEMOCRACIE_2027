@@ -1,33 +1,56 @@
 /**
  * `pnpm run:dry` — un run d'interrogation complet en mode simulé : aucun appel réseau, aucun SDK.
  *
- *   pnpm run:dry                     écrit dans un répertoire temporaire neuf
- *   pnpm run:dry --sortie <chemin>   écrit sous <chemin> (relancer sur le même chemin reprend le run)
+ *   pnpm run:dry                     fixtures, écrit dans un répertoire temporaire neuf
+ *   pnpm run:dry --sortie <chemin>   fixtures, écrit sous <chemin> (relancer sur le même chemin reprend le run)
+ *   pnpm run:dry --run <répertoire>  interroge le run gelé par `pnpm geler --sortie` (lot gel, PR 4)
+ *
+ * `--run` (ou `--run=<répertoire>`) : périmètre, fenêtre, identifiant et questions tirées sont lus du
+ * gel, `tirage.json` et `questions.json` vérifiés sur les empreintes que `run.json` déclare ;
+ * `statut: en_cours` est écrit dans `run.json` avant la première tentative (D51 (1)), et un run déjà
+ * `en_cours` reprend sans le réécrire. Seuls la clé d'API fictive et les profils de l'éditeur simulé
+ * viennent d'une fixture (`tests/interrogation/fixtures/run-gele/profils-simules.json`). Réponses et
+ * tentatives sous `<répertoire>/volume/`. `--run` et `--sortie` ensemble sont refusés.
  *
  * Jamais dans `runs/`, ni par défaut ni sur demande : un run simulé n'est pas un run, et `--sortie`
- * sous `runs/` est refusé (`exigerHorsDeRuns`) avant toute écriture. Chaque réponse est validée contre
- * `schema/reponse.schema.json` au moment de son écriture ; le bilan imprimé est relu du disque.
+ * ou `--run` sous `runs/` est refusé (`exigerHorsDeRuns`) avant toute lecture ou écriture. Chaque
+ * réponse est validée contre `schema/reponse.schema.json` au moment de son écriture ; le bilan
+ * imprimé est relu du disque.
  */
 
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { LigneBilan } from "../pipeline/interrogation/bilan.ts";
-import { lancerRunSimule } from "../pipeline/interrogation/run-simule.ts";
+import { lancerRunGeleSimule, lancerRunSimule, type ResultatRunSimule } from "../pipeline/interrogation/run-simule.ts";
 import { exigerHorsDeRuns } from "../pipeline/notation/garde-simule.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
+const PROFILS_RUN_GELE = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-gele/profils-simules.json");
 
-/** `--sortie <chemin>` ou `--sortie=<chemin>` ; absent, un répertoire temporaire neuf. */
-function sortieDemandee(argv: readonly string[]): string {
-  const rang = argv.findIndex((a) => a === "--sortie" || a.startsWith("--sortie="));
-  if (rang === -1) return mkdtempSync(join(tmpdir(), "banc-run-dry-"));
-  const argument = argv[rang] as string;
-  const valeur = argument === "--sortie" ? argv[rang + 1] : argument.slice("--sortie=".length);
-  if (valeur === undefined || valeur.length === 0 || valeur.startsWith("--")) {
-    throw new Error("--sortie attend un chemin.");
+class ArgumentsRunDryRefuses extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ArgumentsRunDryRefuses";
   }
-  const sortie = resolve(valeur);
+}
+
+/** `--<nom> <valeur>` ou `--<nom>=<valeur>` ; `undefined` si l'option est absente, refus si sa valeur l'est. */
+function valeurDOption(argv: readonly string[], nom: string): string | undefined {
+  const drapeau = `--${nom}`;
+  const rang = argv.findIndex((a) => a === drapeau || a.startsWith(`${drapeau}=`));
+  if (rang === -1) return undefined;
+  const argument = argv[rang] as string;
+  const valeur = argument === drapeau ? argv[rang + 1] : argument.slice(drapeau.length + 1);
+  if (valeur === undefined || valeur.length === 0 || valeur.startsWith("--")) {
+    throw new ArgumentsRunDryRefuses(`${drapeau} attend un chemin.`);
+  }
+  return resolve(valeur);
+}
+
+/** `--sortie` sous `runs/` refusée ; absente, un répertoire temporaire neuf. */
+function sortieDemandee(sortie: string | undefined): string {
+  if (sortie === undefined) return mkdtempSync(join(tmpdir(), "banc-run-dry-"));
   exigerHorsDeRuns(sortie);
   return sortie;
 }
@@ -47,15 +70,34 @@ function imprimerLigne(ligne: LigneBilan): void {
   );
 }
 
-async function principal(): Promise<void> {
-  const sortie = sortieDemandee(process.argv.slice(2));
-  const resultat = await lancerRunSimule({ sortie, fixtures: FIXTURES });
+function imprimerBilan(resultat: ResultatRunSimule, statut: string): void {
   process.stdout.write(`Run simulé (aucun appel réseau) — ${resultat.disposition.run}\n`);
+  if (statut.length > 0) process.stdout.write(`${statut}\n`);
   process.stdout.write(
     `Requêtes : ${resultat.execution.ecrites} écrites, ${resultat.execution.deja_ecrites} déjà écrites (reprise).\n`,
   );
   process.stdout.write("Bilan par outil × mode :\n");
   resultat.bilan.forEach(imprimerLigne);
+}
+
+const STATUT_DU_DEMARRAGE = {
+  demarre: "run.json : statut planifie ⇒ en_cours, écrit avant la première tentative (D51 (1)).",
+  reprend: "run.json : déjà en_cours, reprise sans nouvelle transition ni réécriture.",
+} as const;
+
+async function principal(): Promise<void> {
+  const argv = process.argv.slice(2);
+  const run = valeurDOption(argv, "run");
+  const sortie = valeurDOption(argv, "sortie");
+  if (run !== undefined && sortie !== undefined) {
+    throw new ArgumentsRunDryRefuses("--run et --sortie s'excluent : un run gelé s'interroge dans son propre répertoire.");
+  }
+  if (run === undefined) {
+    imprimerBilan(await lancerRunSimule({ sortie: sortieDemandee(sortie), fixtures: FIXTURES }), "");
+    return;
+  }
+  const resultat = await lancerRunGeleSimule({ repertoire: run, profils: PROFILS_RUN_GELE });
+  imprimerBilan(resultat, STATUT_DU_DEMARRAGE[resultat.demarrage]);
 }
 
 await principal();
