@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-16",
+  "date_maj": "2026-10-17",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -738,6 +738,32 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52. Écrit au §4 par la 0.17 (#148) ; (1) livré par #146, #147 et #150.",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D54",
+      "statut": "tranchee",
+      "question": "Huit points laissés par la revue de code du 2026-10-17 (docs/revues/2026-10-17.md, constats 1, 2, 4, 5, 8, 16, 17, 23) : précédence des décisions de thème ; erreur HTTP passagère à l'extraction ; entrée d'extraction après montée de version de l'extracteur de texte ; position affirmée par l'orientée d'un état « sans_objet » ; relance de run:invalider ; description du thème dans commun.schema.json ; modèle servi par l'API d'extraction ; fichiers parasites en staging.",
+      "contexte": "(1) derniereDecision retient la plus grande date tapée dans --date, contrôlée par un motif seulement. (2) lectureDe rend « illisible » toute réponse hors 2xx : une 429 refuse la source pour toujours, code de sortie 0. (3) pnpm extraire lit une entrée dont l'épinglage n'est plus celui du code, contre D52 (4). (4) D42 (3) ne dit pas ce qu'affirme l'orientée d'une Q-DIR sur un état « sans_objet » : tachesDe lève et bloque reformulation, relecture et gel. (5) La date à la milliseconde rend toute relance différente : « non enregistrée » affiché à tort. (6) La description contredit le §3 depuis la 0.11. (7) Le champ model de la réponse n'est jamais comparé à l'identifiant épinglé que l'item inscrit. (8) Un .DS_Store dans staging/formulations/<id>/ bloque pnpm reformuler et l'écran (409).",
+      "options": [
+        "(1) précédence par l'ordre du registre, date contrôlée comme vraie date civile ; (2) 408, 429 et 5xx traités comme un échec de transport : réponse gardée, pas de journal, source reprise à la relance ; (3) pnpm extraire refuse, par un refus nommé, une entrée dont l'épinglage n'est plus celui du code ; (4) AUCUNE position pour un état « sans_objet », comme pour une Q-ATT ; (5) même motif déjà inscrit ⇒ « déjà inscrite », code 0, quelle que soit la date ; (6) description corrigée selon le §3, texte seul ; (7) réponse au model différent gardée, extraction de la source refusée (modele_different) ; (8) .DS_Store seul ignoré, liste fermée en données, tout autre fichier reste un refus nommé.",
+        "Variantes : (1) date avec refus d'antidatation, ou date seule contrôlée ; (2) refus maintenu avec code non nul, ou les deux ; (3) entrée nommée par épinglage, ou réécriture admise ; (4) pas d'orientée, ou Q-DIR exclue ; (5) refus strict mieux dit ; (6) laisser ; (7) relever sans refuser ; (8) .DS_Store et .tmp ignorés, ou rien."
+      ],
+      "recommandation": "Option 1 sur les huit points.",
+      "retenu": "Option 1 sur les huit points. (2) précise D53 (2) et (4) amende D42 (3) : à écrire au §4 et au §5 à la prochaine révision (TACHES-AUTEUR). (7) avant le premier appel réel. Le reste est du code, sans amendement.",
+      "date_decision": "2026-10-17"
+    },
+    {
+      "id": "D55",
+      "statut": "tranchee",
+      "question": "Onze décisions laissées par la revue de code du 2026-10-12 (docs/revues/2026-10-12.md, constats 1, 2, 4, 5, 6, 13, 17, 20, 24, 42, 54), reprises par la revue du 2026-10-17 : normalisation dans la charge du juge ; décodage de Location ; schéma du manifeste de lot ; interroges sous permutation d'une Q-ATT ; réponse reçue non stockée ; retrait d'un item contesté sur un GET ; qui écrit par_mode ; plomberie HTTP partagée ; opacité de candidat_id ; amorce « attribution » ; mise à jour de CLAUDE.md.",
+      "contexte": "(1) reponse.normalisation.fonction (normaliser_<éditeur>) est remise au juge, qui inscrit a_vu_identite_outil: false. (2) http.client relit Location en latin-1 : une redirection UTF-8 brute mène à un 404 rangé sous mort (table D21). (3) JSON.parse … as Lot : un doublon gonfle le n du kappa, un troisième annotateur est ignoré. (4) Le dérangement permute la liste attendue, pas interroges : les paires d'erreur d'attribution sont écartées mécaniquement (D31 (1)). (5) Une réponse reçue mais non stockable est perdue, puis renvoyée ; au bout de trois, manquante imputée à l'outil. (6) vueItem écrit retrait_item au journal d'un lot figé sur un GET. (7) run.json.par_mode est exigé par le schéma, écrit et recoupé par rien. (8) notation-humaine recopie la plomberie HTTP ; la validation renvoie String(erreur) au navigateur. (9) identifiant_court admet un slug lisible : une Q-ATT remettrait les noms au juge. (10) Un candidat_id « attribution » partagerait le flux aléatoire du groupe d'attribution. (11) CLAUDE.md promet des commandes absentes, omet des dossiers, et ne dit pas l'exception pipeline/ → analysis/.",
+      "options": [
+        "(1) normalisation retirée de ReponseSoumise, charge du juge en v4, trace gardée dans la réponse publiée ; (2) Location relue en UTF-8 quand l'aller-retour latin-1 → UTF-8 réussit, sinon telle quelle, dans sonde.py et politesse.py, nouvelle version de la table des liens, tests d'abord ; (3) schema/lot.schema.json vérifié par lireLot et ecrireLot, plus exactement deux annotateurs dans etatsDesDeux et doublon refusé dans apparier ; (4) le dérangement d'une Q-ATT ne permute que des candidats interrogés au run, cas construit testé d'abord ; (5) octets reçus écrits sous volume/ avant interprétation, événement recue_non_stockee, la relance ne renvoie pas la requête et exige l'opérateur ; même règle pour la reformulation et l'extraction ; (6) sur un lot figé, l'item contesté est montré retiré sans rien écrire ; sur un lot ouvert, le retrait s'écrit sous verrou à la prochaine écriture ; (7) une fonction d'analysis/ produit par_mode, la publication l'écrit, lireRun refuse un désaccord ; (8) un module HTTP partagé, pnpm validate prend la règle de la notation (400 pour un JSON illisible, message masqué) ; (9) candidat_id pseudonymisé dans la charge du juge par un alias aveugle stable du run, note ramenée aux vrais identifiants ; (10) le chargement du périmètre refuse un candidat_id égal à l'identifiant du groupe d'attribution ; (11) diff de CLAUDE.md proposé dans une PR à part, relu et fusionné par l'auteur.",
+        "Variantes : (1) nom neutre imposé ; (2) latin-1 gardé ; (3) gardes sans schéma ; (4) permuter aussi interroges, ou documenter ; (5) garder puis renvoyer ; (6) refuser le retrait sur un lot figé ; (7) par_mode retiré du schéma ; (8) masquer seulement ; (9) identifiants opaques exigés, ou texte seul ; (10) amorces préfixées ; (11) l'auteur s'en charge."
+      ],
+      "recommandation": "Option 1 sur les onze points.",
+      "retenu": "Option 1 sur les onze points. (4) précise le §7 (« un dérangement des candidats interrogés au run »), (5) le §6, (9) le §7 (alias aveugles des candidats dans la charge du juge) : à écrire à la prochaine révision (TACHES-AUTEUR). (1), (2), (9) et (10) avant le premier appel réel ou le premier tirage réel ; (7) avant le premier run publié.",
+      "date_decision": "2026-10-17"
     }
   ],
   "lots": [

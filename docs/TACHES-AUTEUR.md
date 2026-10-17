@@ -323,7 +323,8 @@ Mis à jour le 2026-10-16. Sources relues : `docs/feuille-de-route.json`, `docs/
       (1) dans l'échantillon, deux humains d'accord au sens de `notationsConcordent` sans note
       commune restent en attente : le §7 n'admet pas d'arbitre ici ; faut-il un troisième humain ?
       (2) `reponse.normalisation.fonction` est montrée au juge et à l'humain : imposer aux
-      adaptateurs un nom neutre, qui ne trahisse pas l'outil ? (3) double soumission : garder deux
+      adaptateurs un nom neutre, qui ne trahisse pas l'outil ? Tranché en D55 (1) le 2026-10-17 :
+      `normalisation` sort de la charge du juge. (3) double soumission : garder deux
       messages (« tâche indisponible », « fichier déjà écrit ») ou un seul ?
 
 - [ ] **Cadrer l'écrivain du gel** (lot notation, #89) : aucun code n'écrit `run.json` ni
@@ -644,6 +645,19 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       contient le dernier, à la seconde supérieure. » Et (D53 (1)) : « Un item extrait n'est promu
       qu'une fois rattaché par la validation à une mesure, existante ou nouvelle, dont la
       formulation canonique a été relue. »
+- [ ] (D54, 2026-10-17) **Écrire D54 (2) au §4 et D54 (4) au §5 à la prochaine révision.**
+      Proposition au §4, après « Si l'une des deux sorties est illisible, la source n'est pas
+      proposée et l'extraction est relancée » : « Une réponse au statut 408, 429 ou 5xx n'est pas une
+      sortie illisible mais un échec de transport : elle est gardée, et la source est reprise. »
+      Proposition au §5, dans la règle de la position qu'affirme une formulation orientée : « Un
+      état sans objet n'en affirme aucune, comme une question d'attribution. »
+- [ ] (D55, 2026-10-17) **Écrire D55 (4), (5) et (9) à la prochaine révision.** §7, test
+      contrefactuel : « Les permutations sont un dérangement des candidats interrogés au run » (au
+      lieu de « des candidats du run »). §7, juges : « Dans ce que reçoit le juge, chaque candidat est
+      désigné par un alias aveugle stable du run, jamais par son identifiant. » §6 : « Une réponse
+      reçue que le banc ne peut stocker est gardée telle quelle et n'est pas renvoyée : elle n'est
+      pas une tentative de l'outil, et la question attend l'opérateur. » Et, à la nouvelle version de
+      la table des liens (D55 (2)), la règle de relecture UTF-8 de `Location`.
 - [ ] **Fusionner #149 (renommage du dépôt) et #150 (relecture étendue, F ⇔ fictive)** : CI verte ;
       le contrôle de Claude Code refuse `gh pr merge`.
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine
