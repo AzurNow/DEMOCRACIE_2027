@@ -13,9 +13,9 @@
  * tentatives sous `<répertoire>/volume/`. `--run` et `--sortie` ensemble sont refusés.
  *
  * Jamais dans `runs/`, ni par défaut ni sur demande : un run simulé n'est pas un run, et `--sortie`
- * ou `--run` sous `runs/` est refusé (`exigerHorsDeRuns`) avant toute lecture ou écriture. Chaque
- * réponse est validée contre `schema/reponse.schema.json` au moment de son écriture ; le bilan
- * imprimé est relu du disque.
+ * ou `--run` sous `runs/` est refusé (`gardes-sortie.ts:exigerHorsDeRuns`) avant toute lecture ou
+ * écriture. Chaque réponse est validée contre `schema/reponse.schema.json` au moment de son
+ * écriture ; le bilan imprimé est relu du disque.
  */
 
 import { mkdtempSync } from "node:fs";
@@ -23,7 +23,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { LigneBilan } from "../pipeline/interrogation/bilan.ts";
 import { lancerRunGeleSimule, lancerRunSimule, type ResultatRunSimule } from "../pipeline/interrogation/run-simule.ts";
-import { exigerHorsDeRuns } from "../pipeline/notation/garde-simule.ts";
+import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");
 const PROFILS_RUN_GELE = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-gele/profils-simules.json");

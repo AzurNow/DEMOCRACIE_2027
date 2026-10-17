@@ -11,8 +11,8 @@
  * masquée dans tout message imprimé.
  *
  * Mode simulé : ni clé, ni configuration ; écrit sous `--sortie`, ou dans un répertoire temporaire
- * neuf, jamais sous le `staging/` du dépôt (une proposition simulée y serait relue comme une
- * vraie). `--plafond` y est facultatif.
+ * neuf, jamais sous `staging/`, `data/` ni `runs/` du dépôt (`gardes-sortie.ts`) — une proposition
+ * simulée y serait relue comme une vraie. `--plafond` y est facultatif.
  *
  * `--racine=<chemin>` (tests) : la racine où lire `data/`, `config/`, `validation/formulations/`,
  * et, en mode réel, où écrire `staging/formulations/`. Par défaut, le dépôt.
@@ -29,10 +29,10 @@
  *   proposition lisible et seront rappelées au prochain passage.
  */
 
-import { existsSync, realpathSync } from "node:fs";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { join, resolve } from "node:path";
 import { analyserArguments, drapeau, OptionsInconnues, texte } from "../../outils/arguments.ts";
 import type { Arguments } from "../../outils/arguments.ts";
+import { exigerHorsDesZonesProtegees, SimuleSousZoneProtegee } from "../gardes-sortie.ts";
 import type { Horloge } from "../interrogation/horloge.ts";
 import { lireConfiguration, ConfigurationRefusee } from "./configuration.ts";
 import type { DemandeReformulation } from "./demande.ts";
@@ -60,7 +60,7 @@ export interface Dependances {
   readonly imprimer: (texte: string) => void;
   /** Un répertoire temporaire neuf, pour la sortie par défaut du mode simulé. */
   readonly temporaire: () => string;
-  /** La racine du dépôt : racine par défaut, et `staging/` interdit au mode simulé. */
+  /** La racine du dépôt : racine par défaut, et `staging/`, `data/`, `runs/` interdits au mode simulé. */
   readonly depot: string;
 }
 
@@ -72,7 +72,15 @@ export class RefusDePartir extends Error {
   }
 }
 
-const REFUS_ATTENDUS = [RefusDePartir, EntreeAbsente, ConfigurationRefusee, OptionsInconnues, FormulationValideeIllisible, JournalRefusIllisible];
+const REFUS_ATTENDUS = [
+  RefusDePartir,
+  EntreeAbsente,
+  ConfigurationRefusee,
+  OptionsInconnues,
+  FormulationValideeIllisible,
+  JournalRefusIllisible,
+  SimuleSousZoneProtegee,
+];
 
 /* ------------------------------------------------------------------- modes */
 
@@ -109,27 +117,10 @@ function modeReel(table: Arguments, racine: string, dependances: Dependances): M
   };
 }
 
-/** Le chemin réel de la plus longue partie existante, suivi du reste tel quel. */
-function cheminReel(absolu: string): string {
-  if (existsSync(absolu)) return realpathSync(absolu);
-  const parent = dirname(absolu);
-  if (parent === absolu) return absolu;
-  return join(cheminReel(parent), basename(absolu));
-}
-
-/** Refuse une sortie simulée sous le `staging/` du dépôt ; repris par `pnpm extraire --simule`. */
-export function exigerHorsDuStagingDuDepot(sortie: string, depot: string): void {
-  const reel = cheminReel(sortie);
-  const interdit = cheminReel(join(depot, "staging"));
-  if (reel === interdit || reel.startsWith(`${interdit}${sep}`)) {
-    throw new RefusDePartir(`${sortie} est sous ${interdit} : une proposition simulée n'y est jamais écrite.`);
-  }
-}
-
 function modeSimule(table: Arguments, dependances: Dependances): Mode {
   const demandee = table.get("sortie");
   const staging = demandee === undefined ? dependances.temporaire() : resolve(demandee);
-  exigerHorsDuStagingDuDepot(staging, dependances.depot);
+  exigerHorsDesZonesProtegees(staging, dependances.depot);
   return {
     nom: "simulé",
     staging,

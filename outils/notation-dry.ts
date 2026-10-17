@@ -17,7 +17,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { MOTIFS_DU_BILAN, type BilanNotation } from "../pipeline/notation/bilan-notation.ts";
-import { exigerHorsDeRuns } from "../pipeline/notation/garde-simule.ts";
+import { exigerHorsDeRuns } from "../pipeline/gardes-sortie.ts";
 import { lancerNotationSimulee, lireParametresNotationSimulee } from "../pipeline/notation/notation-simulee.ts";
 
 const FIXTURES_INTERROGATION = resolve(import.meta.dirname, "../tests/interrogation/fixtures/run-simule");

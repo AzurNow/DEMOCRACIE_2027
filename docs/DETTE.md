@@ -13,6 +13,36 @@ visible, coûteuse à réparer · **basse** = friction.
 
 ---
 
+## 2026-10-17 — Lot 1, gardes de sortie (constats 6 et 32 de `docs/revues/2026-10-17.md`, branche `lots/gardes-de-sortie` : `pipeline/gardes-sortie.ts`, `pipeline/reformulation/commande.ts`, `pipeline/extraction/commande.ts`, `pipeline/gel/destination.ts`, `pipeline/notation/*`)
+
+### 1. La liste des zones protégées est figée dans le code, pas dérivée de l'arborescence — *basse*
+
+`exigerHorsDesZonesProtegees` refuse `staging/`, `data/` et `runs/` par une liste écrite en dur
+(`ZONES_PROTEGEES`). Si un futur répertoire de production voit le jour à la racine du dépôt (à la
+manière de `data/`), rien ne le protège d'une sortie simulée tant que la liste n'est pas éditée à la
+main.
+
+**Pourquoi ça casse.** Casse silencieuse : une sortie simulée vers le nouveau répertoire ne serait
+refusée par aucun test, puisqu'aucun test n'existe encore pour un répertoire qui n'existe pas.
+
+**Ce qu'il faut faire.** À la création d'un nouveau répertoire de production à la racine, relire
+`pipeline/gardes-sortie.ts` et ajouter le nom à `ZONES_PROTEGEES` si une commande peut y écrire en
+mode simulé.
+
+### 2. Toute commande qui gagnera un mode simulé devra appeler la garde partagée elle-même — *basse*
+
+`pnpm reformuler` et `pnpm extraire` appellent `exigerHorsDesZonesProtegees` explicitement ; rien
+dans `analyserArguments` ni dans le typage ne force une future commande simulée (ex. un lot qui
+ajouterait un mode simulé à une commande existante) à faire de même.
+
+**Pourquoi ça casse.** Casse silencieuse, seulement si une commande future ignore la convention : un
+item ou une proposition simulée s'écrirait sous `data/` sans qu'aucun refus n'apparaisse.
+
+**Ce qu'il faut faire.** Rien tant qu'aucune commande simulée de plus n'existe ; à la revue de code
+suivante, vérifier que toute nouvelle commande `--simule` appelle cette garde avant d'écrire.
+
+---
+
 ## 2026-10-16 — Refus `empreinte_incoherente` à la promotion des mesures (branche `lots/empreinte-mesure` : `validation/domaine/empreinte.ts`, `validation/io/data-mesures.ts`, `pipeline/extraction/assemblage.ts`, `tests/aides/fabriques.ts`)
 
 ### 1. Toute mesure éditée à la main en staging doit voir son empreinte recopiée à la main — *basse*

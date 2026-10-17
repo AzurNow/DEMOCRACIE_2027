@@ -3,7 +3,7 @@
  * refus avant tout appel, reprise, plafond, secret de la clé, déterminisme du mode simulé.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -51,6 +51,12 @@ function racine(options: Parameters<typeof racineDeTest>[0] = {}): string {
   repertoires.push(chemin);
   return chemin;
 }
+/** Un dépôt jetable, distinct du vrai dépôt : les tests d'acceptation des zones protégées y écrivent sans risque. */
+function depotJetable(): string {
+  const chemin = mkdtempSync(join(tmpdir(), "banc-reformuler-depot-"));
+  repertoires.push(chemin);
+  return chemin;
+}
 afterEach(() => {
   for (const chemin of repertoires.splice(0)) rmSync(chemin, { recursive: true, force: true });
 });
@@ -87,6 +93,7 @@ async function lancer(
   repondre: Repondeur = accepter,
   env: Record<string, string> = { MISTRAL_API_KEY: CLE },
   attendre: Dependances["attendre"] = jamaisEcoulee,
+  depot: string = DEPOT,
 ): Promise<Execution> {
   let sortie = "";
   let envois = 0;
@@ -105,7 +112,7 @@ async function lancer(
       sortie += texte;
     },
     temporaire,
-    depot: DEPOT,
+    depot,
   });
   return { code, sortie, envois };
 }
@@ -446,5 +453,55 @@ describe("mode simulé", () => {
     const execution = await lancer(["--simule", `--racine=${racine()}`], echouer, {});
     expect(execution.code).toBe(CODE_ECHECS_APPEL);
     expect(execution.sortie).toContain("banc-reformuler-cmd-");
+  });
+
+  describe("constat 6 : gardes de sortie, data/ et runs/ aussi (pipeline/gardes-sortie.ts)", () => {
+    it("refuse d'écrire sous data/ du dépôt", async () => {
+      const depot = depotJetable();
+      const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${join(depot, "data", "formulations")}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(1);
+      expect(execution.sortie).toMatch(/jamais écrite/u);
+    });
+
+    it("refuse d'écrire sous runs/ du dépôt", async () => {
+      const depot = depotJetable();
+      const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${join(depot, "runs", "2026-10-17")}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(1);
+      expect(execution.sortie).toMatch(/jamais écrite/u);
+    });
+
+    it("refuse le chemin de la zone protégée elle-même, sans sous-répertoire", async () => {
+      const depot = depotJetable();
+      const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${join(depot, "data")}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(1);
+      expect(execution.sortie).toMatch(/jamais écrite/u);
+    });
+
+    it("refuse un lien symbolique posé hors du dépôt qui mène dans data/", async () => {
+      const depot = depotJetable();
+      mkdirSync(join(depot, "data"), { recursive: true });
+      const lien = join(temporaire(), "raccourci-data");
+      symlinkSync(join(depot, "data"), lien);
+      const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${join(lien, "formulations")}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(1);
+      expect(execution.sortie).toMatch(/jamais écrite/u);
+    });
+
+    it("accepte un répertoire voisin au nom préfixé (data-bis/), hors de la zone protégée", async () => {
+      const depot = depotJetable();
+      const chemin = racine();
+      const sortie = join(depot, "data-bis");
+      const execution = await lancer(["--simule", `--racine=${chemin}`, `--sortie=${sortie}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(CODE_ECHECS_APPEL);
+      expect(sansIdNiDate(sortie)).toHaveLength(NOMBRE);
+    });
+
+    it("accepte une sortie temporaire hors du dépôt, même avec un dépôt jetable", async () => {
+      const depot = depotJetable();
+      const sortie = temporaire();
+      const execution = await lancer(["--simule", `--racine=${racine()}`, `--sortie=${sortie}`], echouer, {}, jamaisEcoulee, depot);
+      expect(execution.code).toBe(CODE_ECHECS_APPEL);
+      expect(sansIdNiDate(sortie)).toHaveLength(NOMBRE);
+    });
   });
 });

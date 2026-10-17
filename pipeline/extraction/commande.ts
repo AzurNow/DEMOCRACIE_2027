@@ -16,8 +16,9 @@
  *
  * Mode simulé : ni clé, ni configuration ; les deux éditeurs simulés (`editeur-simule.ts`), dans
  * l'ordre Anthropic puis Mistral, sans réseau ni délai. Écrit sous `--sortie`, ou dans un
- * répertoire temporaire neuf, jamais sous le `staging/` du dépôt (un item simulé y serait relu comme
- * un vrai). `--plafond` y est facultatif ; un arbre sale y est admis.
+ * répertoire temporaire neuf, jamais sous `staging/`, `data/` ni `runs/` du dépôt
+ * (`gardes-sortie.ts`) — un item simulé y serait relu comme un vrai. `--plafond` y est facultatif ;
+ * un arbre sale y est admis.
  *
  * `--racine=<chemin>` (tests) : où lire `config/` et `staging/`. Par défaut, le dépôt.
  *
@@ -33,7 +34,8 @@ import { resolve, join } from "node:path";
 import { analyserArguments, drapeau, OptionsInconnues, texte } from "../../outils/arguments.ts";
 import type { Arguments } from "../../outils/arguments.ts";
 import type { Horloge } from "../interrogation/horloge.ts";
-import { exigerHorsDuStagingDuDepot, masquer, RefusDePartir } from "../reformulation/commande.ts";
+import { exigerHorsDesZonesProtegees, SimuleSousZoneProtegee } from "../gardes-sortie.ts";
+import { masquer, RefusDePartir } from "../reformulation/commande.ts";
 import { transportFetch, type Envoi } from "../reformulation/transport-fetch.ts";
 import type { ConfigurationExtraction } from "./configuration.ts";
 import {
@@ -68,7 +70,7 @@ export interface Dependances {
   readonly imprimer: (texte: string) => void;
   /** Un répertoire temporaire neuf, pour la sortie par défaut du mode simulé. */
   readonly temporaire: () => string;
-  /** La racine du dépôt : racine par défaut, et `staging/` interdit au mode simulé. */
+  /** La racine du dépôt : racine par défaut, et `staging/`, `data/`, `runs/` interdits au mode simulé. */
   readonly depot: string;
   /** Le commit HEAD du code qui extrait. */
   readonly commit: () => string;
@@ -78,7 +80,7 @@ export interface Dependances {
   readonly choixSimule: (enveloppe: NomEditeur) => Choix;
 }
 
-const REFUS_ATTENDUS = [RefusDePartir, ConfigurationEditeursRefusee, OptionsInconnues];
+const REFUS_ATTENDUS = [RefusDePartir, ConfigurationEditeursRefusee, OptionsInconnues, SimuleSousZoneProtegee];
 
 /* ------------------------------------------------------------------- modes */
 
@@ -137,7 +139,7 @@ const ENVELOPPES_SIMULEES: readonly [NomEditeur, NomEditeur] = [EDITEURS[0], EDI
 function modeSimule(table: Arguments, dependances: Dependances): Mode {
   const demandee = table.get("sortie");
   const sortie = demandee === undefined ? dependances.temporaire() : resolve(demandee);
-  exigerHorsDuStagingDuDepot(sortie, dependances.depot);
+  exigerHorsDesZonesProtegees(sortie, dependances.depot);
   const [premiere, seconde] = ENVELOPPES_SIMULEES;
   const simule = (texte_prompt: string, enveloppe: NomEditeur, demande: VariablesExtraction): EditeurExtraction =>
     editeurSimule(enveloppe, texte_prompt, [demande], dependances.choixSimule(enveloppe));

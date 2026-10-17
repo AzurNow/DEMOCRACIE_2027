@@ -4,7 +4,7 @@
  * jamais un répertoire de `runs/` du dépôt — un run simulé n'est pas un run.
  *
  * Lecture, dans cet ordre, et rien n'est écrit tant qu'un contrôle peut échouer :
- *   1. le répertoire hors de `runs/` (`garde-simule.ts:exigerHorsDeRuns`), avant toute lecture ;
+ *   1. le répertoire hors de `runs/` (`gardes-sortie.ts:exigerHorsDeRuns`), avant toute lecture ;
  *   2. `run.json`, validé en entier contre `schema/run.schema.json` (`ErreurSchema` sinon) ;
  *   3. `tirage.json` et `questions.json`, leurs octets vérifiés contre les SHA-256 que `run.json`
  *      déclare, par la vérification du gel (`pipeline/gel/precedent.ts:lireFichiersDuRun`), la seule
@@ -25,7 +25,7 @@ import { basename, join } from "node:path";
 import { valider } from "../../outils/schemas/valider.ts";
 import { lireFichiersDuRun, PrecedentRefuse, runDeRuns } from "../gel/precedent.ts";
 import type { FichiersDuRun, MotifPrecedent } from "../gel/precedent.ts";
-import { exigerHorsDeRuns } from "../notation/garde-simule.ts";
+import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { OutilDeRun } from "../questions/charger-perimetre.ts";
 import type { Question } from "../questions/types.ts";
 import { ecrireParRenommage } from "../run/ecriture.ts";

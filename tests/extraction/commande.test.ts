@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { erreurDeSchema, valider } from "../../outils/schemas/valider.ts";
@@ -387,7 +387,56 @@ describe("cas 15 : mode simulé, rien sous le staging/ du dépôt", () => {
     const racine = racineDeTest();
     const execution = await lancer(simule(racine, join(racine, "staging", "essai")), { depot: racine });
     expect(execution.code).toBe(1);
-    expect(execution.sortie).toContain("une proposition simulée n'y est jamais écrite");
+    expect(execution.sortie).toContain("une sortie simulée n'y est jamais écrite");
+  });
+});
+
+describe("constat 6 : gardes de sortie, data/ et runs/ aussi (pipeline/gardes-sortie.ts)", () => {
+  it("--sortie sous data/ du dépôt ⇒ refus", async () => {
+    const racine = racineDeTest();
+    const execution = await lancer(simule(racine, join(racine, "data", "essai")), { depot: racine });
+    expect(execution.code).toBe(1);
+    expect(execution.sortie).toContain("une sortie simulée n'y est jamais écrite");
+  });
+
+  it("--sortie sous runs/ du dépôt ⇒ refus", async () => {
+    const racine = racineDeTest();
+    const execution = await lancer(simule(racine, join(racine, "runs", "2026-10-17")), { depot: racine });
+    expect(execution.code).toBe(1);
+    expect(execution.sortie).toContain("une sortie simulée n'y est jamais écrite");
+  });
+
+  it("--sortie égale à la zone protégée elle-même, sans sous-répertoire ⇒ refus", async () => {
+    const racine = racineDeTest();
+    const execution = await lancer(simule(racine, join(racine, "data")), { depot: racine });
+    expect(execution.code).toBe(1);
+    expect(execution.sortie).toContain("une sortie simulée n'y est jamais écrite");
+  });
+
+  it("un lien symbolique posé hors du dépôt qui mène dans data/ est refusé comme le chemin direct", async () => {
+    const racine = racineDeTest();
+    mkdirSync(join(racine, "data"), { recursive: true });
+    const lien = join(temporaire(), "raccourci-data");
+    symlinkSync(join(racine, "data"), lien);
+    const execution = await lancer(simule(racine, join(lien, "essai")), { depot: racine });
+    expect(execution.code).toBe(1);
+    expect(execution.sortie).toContain("une sortie simulée n'y est jamais écrite");
+  });
+
+  it("un répertoire voisin au nom préfixé (data-bis/) est accepté", async () => {
+    const racine = racineDeTest();
+    const sortie = join(racine, "data-bis");
+    const execution = await lancer(simule(racine, sortie), { depot: racine });
+    expect(execution.code).toBe(0);
+    expect(journal(sortie).issue.statut).toBe("extraite");
+  });
+
+  it("une sortie temporaire hors du dépôt est acceptée même avec --racine=<dépôt>", async () => {
+    const racine = racineDeTest();
+    const sortie = temporaire();
+    const execution = await lancer(simule(racine, sortie), { depot: racine });
+    expect(execution.code).toBe(0);
+    expect(journal(sortie).issue.statut).toBe("extraite");
   });
 });
 
