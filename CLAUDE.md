@@ -99,6 +99,11 @@ Le flux est à sens unique : `collecte → staging → validation humaine → da
 site`. Aucune flèche inverse. Si une tâche demande de court-circuiter une étape, c'est un bug de
 conception, pas un raccourci.
 
+Une exception d'import, voulue : des modules de `pipeline/` (`notation/`, `go-no-go/`, `gel/`,
+`run/`, `questions/`, `interrogation/`) importent des fonctions et des types de `analysis/`, pour
+qu'une règle de calcul ne vive qu'à un seul endroit (DETTE 2026-09-24 n° 1, revue du 2026-10-12
+n° 48). C'est une dépendance de code, pas une flèche de données dans le flux ci-dessus.
+
 ---
 
 ## Stack
@@ -156,13 +161,19 @@ Prérequis : Git, Node **22.23.3** (`.nvmrc` ; plancher `>=22.6.0`, car tous les
 **3.12** (`.python-version`) et uv **0.12.17**. Rien d'autre : pas de base de données, pas de
 Docker, pas de ffmpeg système (yt-dlp et `av` s'en passent).
 
+Sur une machine Linux neuve (Debian/Ubuntu), avant le bloc ci-dessous : `sudo apt install git
+python3-venv curl` ; nvm depuis https://github.com/nvm-sh/nvm (script d'installation du README) ;
+`git config --global user.name …` et `user.email …` ; GitHub CLI (https://cli.github.com) puis
+`gh auth login` pour pousser des branches et ouvrir des PR. uv télécharge lui-même Python 3.12 s'il manque.
+
 ```bash
 git clone https://github.com/AzurNow/DEMOCRATIE_2027.git && cd DEMOCRATIE_2027
 nvm install && nvm use          # ou fnm/volta : lit .nvmrc
 corepack enable                 # fournit pnpm à la version de packageManager
 pnpm install --frozen-lockfile
 pnpm check && pnpm test         # doit être vert avant toute chose
-python3 -m pip install --user uv==0.12.17   # si uv est absent
+python3 -m venv ~/.outils-uv && ~/.outils-uv/bin/pip install uv==0.12.17 \
+  && export PATH="$HOME/.outils-uv/bin:$PATH"  # si uv est absent (pip --user est refusé sur Debian/Ubuntu récents)
 uv sync --frozen                # crée .venv depuis uv.lock
 pnpm check:py && pnpm test:py
 pnpm build                      # clients navigateur (sortie dans */client/dist, ignorée)
@@ -190,6 +201,12 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
 
 ### Pièges connus
 
+- Pendant l'absence de l'auteur (octobre 2026) : lire `HANDOFF.md`. Une écriture dans une zone
+  d'arrêt (protocole, prompts de juge) s'y **propose** par une PR dédiée que l'auteur fusionne ;
+  elle n'est jamais poussée sur `main`.
+- La plupart des commandes exigent des arguments (`pnpm symmetry --tirage=… --mesures=…`, `pnpm
+  go-no-go <run>`…) ; leur usage est en tête de `outils/<nom>.ts`. Sans eux, certaines s'arrêtent
+  sur une pile d'erreur plutôt qu'un message.
 - Les tests Vitest créent des dépôts Git temporaires (`tests/aides/depot.ts`) : `git` doit être
   dans le PATH (l'identité de commit est passée par `-c`, rien à configurer).
 - Node 23+ marche en local mais la CI vérifie Node 22 ; ne pas utiliser d'API absente de la 22.
@@ -207,7 +224,9 @@ Aucun au runtime du site (règle 1). Le pipeline, lancé à la main par l'auteur
 
 - `archives/`, `modeles/`, `staging/textes/*.txt`, `staging/transcriptions/*.vtt`,
   `scratch/perimetre/preuves/` et les pages capturées de `scratch/perimetre/releves-*/` :
-  ignorés par Git par décision (droits d'autrui, volume). Tout se régénère par le pipeline.
+  ignorés par Git par décision (droits d'autrui, volume). Le pipeline les retélécharge ; le
+  contenu web a pu changer depuis, et ce sont les empreintes publiées qui font foi. Rien de tout
+  cela n'est nécessaire pour la mission en cours (code et protocole).
 - Les clés d'API et les identifiants SMTP (voir `.env.example`).
 - La mémoire de Claude Code (`~/.claude/projects/...`) : ses consignes durables sont recopiées dans
   `HANDOFF.md`, section « Façon de travailler ».

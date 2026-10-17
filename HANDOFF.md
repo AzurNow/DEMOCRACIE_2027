@@ -8,34 +8,50 @@ de l'auteur. Lire dans l'ordre : `CLAUDE.md` (règles et installation), ce fichi
 
 Deux choses seulement :
 
-1. **Rendre le code pleinement fonctionnel** : les lots de correction ci-dessous, puis ce qui
-   manque pour qu'une chaîne complète tourne en mode simulé.
-2. **Relire et mettre à jour le protocole, puis le code en conséquence.** Une modification de
-   `docs/PROTOCOLE.md` reste une zone d'arrêt de `CLAUDE.md` : elle se **propose** dans une PR
-   à part, qui ne touche que le protocole (et son journal des révisions en tête de fichier). La
-   fusion par l'auteur vaut accord. Le code qui applique cette révision part dans une PR suivante,
-   tirée de `main` une fois la révision fusionnée. Avant la 1.0, une modification est une
-   révision listée en tête du protocole, pas un amendement (§9). Ne jamais mélanger texte du
-   protocole et code dans une même PR.
+1. **Rendre le code pleinement fonctionnel** : les lots de correction ci-dessous, dans l'ordre.
+   Tout travail au-delà de cette liste (par exemple ce qui manque pour une chaîne simulée de bout
+   en bout) commence par un plan soumis à l'auteur (voir « Quand il faut l'auteur »), jamais par du
+   code.
+2. **Relire et mettre à jour le protocole, puis le code en conséquence.** `docs/PROTOCOLE.md` et
+   `prompts/judge-*` restent des zones d'arrêt de `CLAUDE.md` : une modification se **propose**
+   dans une PR à part, qui ne touche que ces fichiers (et le journal des révisions en tête du
+   protocole). La fusion par l'auteur vaut accord. Le code qui applique la révision part dans une
+   PR suivante, tirée de `main` une fois la révision fusionnée. Avant la 1.0, une modification est
+   une révision listée en tête du protocole, pas un amendement (§9). Ne jamais mélanger texte du
+   protocole et code dans une même PR. Après chaque révision fusionnée, repasser la compétence
+   `conformite-protocole` (rapport dans `docs/conformite/`), qui dit quel code doit suivre.
+   Première révision toute prête : les textes de D54 (2), (4) et D55 (4), (5), (9), déjà rédigés
+   dans `docs/TACHES-AUTEUR.md` (section 1, entrées datées du 2026-10-17).
 
-Hors mission : collecte réelle, appels d'API réels, données de `data/`, site, déploiement.
+Hors mission : collecte réelle, appels d'API réels, écriture dans `data/` ou dans
+`config/perimetre.yaml`, site, déploiement, signature et gel de la 1.0 (l'auteur seul).
 
 **Revue et fusion** : l'auteur relit et fusionne les PR lui-même depuis GitHub, en voyage. Donc :
-des PR petites, une par lot, avec une description qui se lit sur téléphone (ce qui change, ce qui
-pourrait casser, comment c'est testé, décision attendue s'il y en a une, en tête).
+des PR petites, une par lot, avec une description qui se lit sur téléphone, dans cet ordre :
+décision attendue (ou « aucune »), ce qui change, ce qui pourrait casser, comment c'est testé.
+
+**Accès** : l'assistant pousse ses branches sur `origin` et ouvre des PR ; il ne pousse **jamais**
+sur `main` et ne fusionne jamais, même si ses droits GitHub le permettent.
+
+## Quand il faut l'auteur
+
+Une décision métier, une ambiguïté du protocole, un plan qui dépasse un fichier : ne rien
+supposer. Ouvrir une issue GitHub (ou une PR en brouillon si du texte est proposé) qui pose la
+question **complètement** : contexte, options réelles, coût de chacune, recommandation en
+premier. Puis passer à un autre lot indépendant en attendant la réponse. Une question posée coûte
+un jour d'attente ; une hypothèse inventée dans un pipeline de mesure coûte la crédibilité du
+projet.
 
 ## Branche de départ
 
-**`wip/handoff-2026-10-17`** = `main` au 2026-10-17 (#155 fusionnée, CI verte) + ce fichier, le
-complément de `CLAUDE.md`, `.env.example`, `.nvmrc`, les scripts `dev` et `build`, et des
-brouillons jusqu'ici non suivis (`.claude/briefs/*`, `scratch/`). Aucune ligne de code de mesure
-n'y a changé.
+**`main`.** Ce fichier y arrive par la PR #156 (`wip/handoff-2026-10-17`, docs et configuration
+seulement). Vérifier d'abord : `gh pr view 156 --json state` doit dire `MERGED`. Si elle ne l'est
+pas encore, partir de `wip/handoff-2026-10-17` et le signaler dans chaque PR.
 
-Première tâche : si elle n'existe pas encore, ouvrir la PR `wip/handoff-2026-10-17` → `main`
-et attendre que l'auteur la fusionne. Ensuite, chaque lot part d'une branche neuve tirée de
-`main` à jour et vise `main`. Ne **jamais** baser une PR sur la branche d'une autre PR non
-fusionnée (c'est ainsi que #54 a manqué `main`, `LESSONS.md`) : si un lot dépend d'un autre,
-attendre la fusion du premier.
+Chaque lot part d'une branche neuve tirée de `main` à jour (`git switch main && git pull`) et
+vise `main`. Noms de branche : `lots/<sujet>` pour le code, `protocole/<sujet>` pour une
+révision. Ne **jamais** baser une PR sur la branche d'une autre PR non fusionnée (c'est ainsi que
+#54 a manqué `main`, `LESSONS.md`) : si un lot dépend d'un autre, attendre la fusion du premier.
 
 ## État actuel
 
@@ -46,11 +62,13 @@ attendre la fusion du premier.
   notation humaine, test des liens, analyse §8, contestation/notification, go/no-go, gel, mesures
   validées, reformulation. **Pas encore écrits** : le site statique (T0), `pnpm run:live`,
   `pnpm analyze`, `pnpm build:site`.
-- Aucune donnée réelle : `data/`, `staging/`, `site/` n'existent pas dans un clone. Aucun appel
-  d'API réel n'a encore été fait.
+- Aucune donnée réelle : `data/`, `staging/`, `site/` n'existent pas dans un clone. Le pipeline
+  n'a encore fait aucun appel d'API réel.
 - Vérifié le 2026-10-17 sur un clone neuf, Node 22.23.3 : `pnpm install --frozen-lockfile`,
   `pnpm check`, `pnpm test` (207 fichiers, 3 711 tests), `pnpm build`, `uv sync --frozen`, ruff,
-  `pytest` (607 tests) : tout vert. La CI Linux (ubuntu, Node 22) est verte sur `main` (82c8374).
+  `pytest` (607 tests) : tout vert. La CI Linux (ubuntu, Node 22) est verte sur `main` (82c8374)
+  et sur la PR #156. `pnpm dev`, `pnpm run:dry`, `pnpm notation:dry`, `pnpm proprete` et
+  `pnpm feuille-de-route` tournent sans argument ; les autres commandes exigent les leurs.
 - Toutes les décisions D1 à D55 sont tranchées ; aucune n'attend l'auteur dans la feuille de route.
 
 ## Ce qui était en cours
@@ -59,7 +77,8 @@ La revue de code du 2026-10-17 (`docs/revues/2026-10-17.md`) a relevé 44 consta
 tranché le même jour ses 8 décisions (**D54**) et les 11 restées de la revue du 2026-10-12
 (**D55**), option recommandée partout. Il restait à **coder les lots de correction**, une petite PR
 chacune, en commençant par les gardes de sortie. Le texte au protocole de D54 (2), (4) et
-D55 (4), (5), (9) est proposé dans `docs/TACHES-AUTEUR.md` : c'est à l'auteur de l'écrire.
+D55 (4), (5), (9) est rédigé dans `docs/TACHES-AUTEUR.md` mais pas encore reporté au protocole :
+c'est la première révision à proposer (voir « Mission », point 2).
 
 ## Prochaines tâches, par priorité
 
@@ -68,6 +87,9 @@ pnpm test:py` si du Python bouge) verts en local et en CI ; tests écrits **avan
 pour toute logique de mesure ; aucun écart aux huit règles ni écriture dans les zones d'arrêt de
 `CLAUDE.md` ; colonne « Statut » du constat passée à « corrigé (#PR) » dans
 `docs/revues/2026-10-17.md` ; entrée de dette ajoutée à la clôture (`cloture-de-session`).
+Les numéros « Lot n » sont ceux du rapport de revue ; l'ordre ci-dessous est celui à suivre. Le
+détail de chaque constat (fichier, ligne, scénario) est dans le rapport, section « Détail des
+constats hauts et moyens » et tableau « Constats ».
 
 1. **Lot 1 — gardes de sortie** (constats 6, 32). Acceptation : `pnpm reformuler --simule
    --sortie=data/...` et `pnpm extraire --simule` vers `data/` sont refusés par un refus nommé,
@@ -96,18 +118,19 @@ pour toute logique de mesure ; aucun écart aux huit règles ni écriture dans l
 9. **Lot 8** : repris de la revue du 2026-10-12 (liste en fin de section « Lots de correction
    proposés » du rapport du 2026-10-17).
 
-Le diff de `CLAUDE.md` demandé par D55 (11) est en partie fait sur cette branche (commandes
-réelles, dossiers manquants) : il reste à dire l'exception `pipeline/` → `analysis/` ; l'auteur
-relit et fusionne.
+Le diff de `CLAUDE.md` demandé par D55 (11) (commandes réelles, dossiers manquants, exception
+d'import `pipeline/` → `analysis/`) est fait dans la PR #156.
 
 ## Ce qu'il ne faut pas faire pendant l'absence
 
-- Écrire dans `data/`, `prompts/judge-*`, `config/perimetre.yaml` ; changer une métrique, un
-  seuil, une règle d'inclusion ou la grille de notation hors d'une révision du protocole proposée
-  dans sa propre PR ; ajouter une dépendance ou un appel réseau ; déployer ; lancer un appel d'API
-  réel. Proposer, documenter dans la PR, attendre l'auteur.
-- Fusionner soi-même, ou proposer à la fusion une PR à la CI rouge. Supprimer une branche autrement
-  que par `git branch -d`.
+- Écrire dans `data/` ou `config/perimetre.yaml`. Changer une métrique, un seuil, une règle
+  d'inclusion ou la grille de notation autrement que par une révision du protocole proposée dans
+  sa propre PR. Ajouter une dépendance ou un appel réseau ; déployer ; lancer un appel d'API réel.
+  Proposer, documenter dans une issue ou une PR, attendre l'auteur.
+- Pousser sur `main`, fusionner, réécrire l'historique (`push --force`, `rebase` d'une branche
+  déjà poussée et relue), proposer à la fusion une PR à la CI rouge. Supprimer une branche
+  autrement que par `git branch -d`.
+- Rendre un test vert en affaiblissant son assertion, ou le marquer `skip`/`todo`.
 
 ## Questions ouvertes
 
@@ -122,9 +145,11 @@ relit et fusionne.
 ## Façon de travailler (consignes durables de l'auteur)
 
 - Une décision qui revient à l'auteur se pose **complètement** : contexte, options réelles, coût
-  de chacune, recommandation en premier. Jamais une demi-ligne.
-- La session principale orchestre ; le code de mesure part aux agents `codeur-opus`, le code de
-  routine à `codeur-sonnet`, avec un brief autonome d'après `.claude/briefs/GABARIT.md`.
+  de chacune, recommandation en premier. Jamais une demi-ligne. Pendant l'absence, par une issue
+  ou une PR GitHub (voir « Quand il faut l'auteur »).
+- Avec Claude Code, la session principale orchestre ; le code de mesure part à l'agent
+  `codeur-opus`, le code de routine à `codeur-sonnet`, avec un brief autonome d'après
+  `.claude/briefs/GABARIT.md`. Un autre assistant suit les mêmes règles sans ces agents.
 - Qualité avant dates : un code propre et complet vaut mieux qu'un jalon tenu.
 - CI obligatoire sur `main`, administrateurs compris.
 - Ménage : branches fusionnées et worktrees d'agents supprimés avec `-d`, jamais `-D`.
