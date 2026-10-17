@@ -6,9 +6,11 @@
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.34.5",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.6.0"
   },
   "scripts": {
+    "dev": "BANC_DEMO=1 pnpm run validate",
+    "build": "pnpm run build:client && pnpm run build:client:notation",
     "check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p validation/client/tsconfig.json && tsc --noEmit -p notation-humaine/client/tsconfig.json && eslint . && node --experimental-strip-types outils/schemas.ts",
     "check:client": "tsc --noEmit -p validation/client/tsconfig.json",
     "lint": "eslint .",
