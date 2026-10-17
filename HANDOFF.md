@@ -4,6 +4,26 @@ Pour une personne ou un agent qui reprend le dépôt sans contexte, pendant deux
 de l'auteur. Lire dans l'ordre : `CLAUDE.md` (règles et installation), ce fichier,
 `docs/PROTOCOLE.md` (fait autorité sur tout), `docs/feuille-de-route.json` (état qui fait foi).
 
+## Mission pendant l'absence
+
+Deux choses seulement :
+
+1. **Rendre le code pleinement fonctionnel** : les lots de correction ci-dessous, puis ce qui
+   manque pour qu'une chaîne complète tourne en mode simulé.
+2. **Relire et mettre à jour le protocole, puis le code en conséquence.** Une modification de
+   `docs/PROTOCOLE.md` reste une zone d'arrêt de `CLAUDE.md` : elle se **propose** dans une PR
+   à part, qui ne touche que le protocole (et son journal des révisions en tête de fichier). La
+   fusion par l'auteur vaut accord. Le code qui applique cette révision part dans une PR suivante,
+   tirée de `main` une fois la révision fusionnée. Avant la 1.0, une modification est une
+   révision listée en tête du protocole, pas un amendement (§9). Ne jamais mélanger texte du
+   protocole et code dans une même PR.
+
+Hors mission : collecte réelle, appels d'API réels, données de `data/`, site, déploiement.
+
+**Revue et fusion** : l'auteur relit et fusionne les PR lui-même depuis GitHub, en voyage. Donc :
+des PR petites, une par lot, avec une description qui se lit sur téléphone (ce qui change, ce qui
+pourrait casser, comment c'est testé, décision attendue s'il y en a une, en tête).
+
 ## Branche de départ
 
 **`wip/handoff-2026-10-17`** = `main` au 2026-10-17 (#155 fusionnée, CI verte) + ce fichier, le
@@ -11,10 +31,11 @@ complément de `CLAUDE.md`, `.env.example`, `.nvmrc`, les scripts `dev` et `buil
 brouillons jusqu'ici non suivis (`.claude/briefs/*`, `scratch/`). Aucune ligne de code de mesure
 n'y a changé.
 
-Chaque lot part d'une branche neuve tirée de `wip/handoff-2026-10-17` et vise `main` dans sa PR.
-Tant que la branche de passation n'est pas fusionnée, ses commits apparaissent dans chaque PR ; ils
-disparaîtront du diff dès sa fusion. Ne **jamais** baser une PR sur la branche d'une autre PR non
-fusionnée (c'est ainsi que #54 a manqué `main`, `LESSONS.md`).
+Première tâche : si elle n'existe pas encore, ouvrir la PR `wip/handoff-2026-10-17` → `main`
+et attendre que l'auteur la fusionne. Ensuite, chaque lot part d'une branche neuve tirée de
+`main` à jour et vise `main`. Ne **jamais** baser une PR sur la branche d'une autre PR non
+fusionnée (c'est ainsi que #54 a manqué `main`, `LESSONS.md`) : si un lot dépend d'un autre,
+attendre la fusion du premier.
 
 ## État actuel
 
@@ -81,22 +102,21 @@ relit et fusionne.
 
 ## Ce qu'il ne faut pas faire pendant l'absence
 
-- Écrire dans `data/`, `docs/PROTOCOLE.md`, `prompts/judge-*`, `config/perimetre.yaml` ; changer
-  une métrique, un seuil, une règle d'inclusion ; ajouter une dépendance ou un appel réseau ;
-  déployer ; lancer un appel d'API réel. Proposer, documenter dans la PR, attendre l'auteur.
-- Fusionner sans CI verte. Supprimer une branche autrement que par `git branch -d`.
+- Écrire dans `data/`, `prompts/judge-*`, `config/perimetre.yaml` ; changer une métrique, un
+  seuil, une règle d'inclusion ou la grille de notation hors d'une révision du protocole proposée
+  dans sa propre PR ; ajouter une dépendance ou un appel réseau ; déployer ; lancer un appel d'API
+  réel. Proposer, documenter dans la PR, attendre l'auteur.
+- Fusionner soi-même, ou proposer à la fusion une PR à la CI rouge. Supprimer une branche autrement
+  que par `git branch -d`.
 
 ## Questions ouvertes
 
-1. **Qui fusionne pendant deux semaines ?** Le contrôle de Claude Code de l'auteur refusait
-   `gh pr merge`. Sans fusion, les PR s'empilent : les garder petites, indépendantes, toutes
-   tirées de la branche de passation.
-2. **Brouillons rendus publics.** Le dépôt est public : `scratch/protocole-0.16/`,
-   `scratch/prompts/judge-1.0.0*.md` et `scratch/perimetre/` (dossier des candidats, adresses de
-   contact de campagne) sont maintenant poussés. À confirmer ou retirer par l'auteur.
-3. **Gel du protocole 1.0** (J1) : signature, avocat, Zenodo, transmission aux institutions,
+1. **Brouillons rendus publics** (`scratch/protocole-0.16/`, `scratch/prompts/judge-1.0.0*.md`,
+   `scratch/perimetre/`) : acceptés pour l'instant, l'auteur les retirera de l'historique Git plus
+   tard. Ne pas les supprimer d'ici là, ne pas en ajouter d'autres du même genre.
+2. **Gel du protocole 1.0** (J1) : signature, avocat, Zenodo, transmission aux institutions,
    fournisseur SMTP — tâches de l'auteur seul (`docs/TACHES-AUTEUR.md` §1).
-4. **Linux** : vérifié par la CI ubuntu, pas sur une machine Linux interactive. La transcription
+3. **Linux** : vérifié par la CI ubuntu, pas sur une machine Linux interactive. La transcription
    (faster-whisper, 1,6 Go de poids) n'a pas été rejouée sur un clone neuf.
 
 ## Façon de travailler (consignes durables de l'auteur)
