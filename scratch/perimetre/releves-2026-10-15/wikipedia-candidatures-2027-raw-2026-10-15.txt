@@ -1,0 +1,718 @@
+{{Semi-protection longue}}
+{{Scrutin à venir}}{{Article général|Élection présidentielle française de 2027}}
+{{Infobox Élection
+ | pays                  = France
+ | date élection         = {{date|18|avril|2027|liens=oui}} <small>({{1er|tour}})</small><br/>{{date|2|mai|2027|liens=oui}} <small>({{2d|tour}})</small>
+ | élection précédente   = Candidatures à l'élection présidentielle française de 2022
+ | élection suivante     = Candidatures à l'élection présidentielle française de 2032
+ | nom élection          = Élection présidentielle française de 2027
+ | type                  = [[Élection présidentielle en France|Élection présidentielle]]<br />[[Scrutin uninominal majoritaire à deux tours]] 
+}}
+
+Cette page présente toutes les '''candidatures à l'élection présidentielle française de 2027''', abouties ou retirées, et relate leurs principales étapes ainsi que la [[Campagne électorale|campagne]] de chaque candidat.
+
+Le premier tour de l'élection a lieu le {{date|18|avril|2027|en France}} et le second le {{date|2|mai|2022-}} de la même année.
+
+== Candidats déclarés ==
+
+{{sticky header}}
+{| class="wikitable sortable sticky-header" width="100%" style="text-align:center"
+|+
+! colspan="3" width="30%" scope="col" | Candidat (nom et âge{{note|groupe=alpha|nom=age_candidats|Âge à la date du premier tour de l'élection le {{date|18|04|2027}}.}})<br>Parti politique
+! width="25%" scope="col" | Fonction(s) politique(s) lors de la campagne
+! width="15%" scope="col" | Campagne, slogan(s) et consigne de vote
+
+! width="30%" scope="col" | Commentaires / Anciens engagements politiques
+|-
+! {{TriNom|Nathalie|Arthaud}}<br>({{Âge|23|02|1970|18|04|2027}})<br>[[Lutte ouvrière]]
+| width="9%" | [[Fichier:Nathalie Arthaud (LO) 19-05-2024.jpg|80px|Nathalie Arthaud]]
+| width="1%" {{Infobox Parti politique français/couleurs|LO}} |
+|
+* Porte-parole de [[Lutte ouvrière]] <small>(depuis 2008)</small>
+| [[Fichier:Nathalie-arthaud-logo-leCampDesTravailleurs.svg|centré|sans_cadre|147x147px]]''Le camp des travailleurs''
+[[Nathalie Arthaud#Idéologie|Positions]]
+|
+* [[Conseil municipal (France)|Conseillère municipale]] de [[Vaulx-en-Velin]] <small>(2008-2014)</small>
+----
+Le {{date|8 décembre 2025}}, elle annonce sa candidature à la présidentielle pour Lutte ouvrière<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : qui est vraiment Nathalie Arthaud, la porte-parole de Lutte ouvrière ? |url=https://www.rtl.fr/actu/politique/presidentielle-2027-qui-est-vraiment-nathalie-arthaud-la-porte-parole-de-lutte-ouvriere-7900575536 |site=RTL.fr |date=2025-12-09 |consulté le=2026-06-11}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Présidentielle 2027 en France: Nathalie Arthaud (Lutte ouvrière) annonce sa candidature |url=https://www.rfi.fr/fr/en-bref/20251208-pr%C3%A9sidentielle-2027-en-france-nathalie-arthaud-lutte-ouvri%C3%A8re-annonce-sa-candidature |site=RFI |date=2025-12-08 |consulté le=2025-12-09}}.</ref>{{,}}<ref>{{Lien web |titre=Nathalie Arthaud, la porte-parole de Lutte ouvrière, annonce sa candidature à la présidentielle de 2027 |url=https://www.lemonde.fr/politique/article/2025/12/08/presidentielle-la-porte-parole-de-lutte-ouvriere-nathalie-arthaud-annonce-sa-candidature_6656468_823448.html |site=[[Le Monde]] |date=08/12/2025 |consulté le=09/12/2025}}.</ref>.
+----
+Candidate à l'[[Élection présidentielle française de 2012|élection présidentielle de 2012]] <small>({{9e}} - 0,56 %)</small>, [[Élection présidentielle française de 2017|2017]] <small>({{10e}} - 0,64 %)</small> et [[Élection présidentielle française de 2022|2022]] <small>({{12e}} - 0,56 %)</small>
+|-
+! {{TriNom|François|Asselineau}}<br>({{Âge|14|09|1957|18|04|2027}})<br>[[Union populaire républicaine (2007)|Union populaire républicaine]]
+| [[Fichier:François ASSELINEAU.jpg|80px|François Asselineau]]
+| {{Infobox Parti politique français/couleurs|UPR}} |
+| 
+* Président de l'[[Union populaire républicaine (2007)|Union populaire républicaine]] <small>(depuis 2007)</small>
+| [[Fichier:Asselineau2027-logo.png|centré|164x164px]]<br>''La France retrouvée''<br>[[François Asselineau#Prises de position|Positions]]
+|
+* [[Conseil de Paris|Conseiller de Paris]] <small>(2001-2008)</small>
+----
+Il annonce vouloir se présenter de nouveau en 2027 dans un entretien avec ''[[Le Dauphiné libéré]]'' le {{date|31 août 2023}}<ref>{{Lien web |langue=fr |titre=François Asselineau bientôt jugé pour agression et harcèlement sexuels |url=https://www.20minutes.fr/justice/4224280-20260519-candidat-presidentielle-2027-francois-asselineau-bientot-juge-agressions-harcelement-sexuels |site=20 Minutes |date=2026-05-19 |consulté le=2026-06-11}}.</ref>{{,}}<ref>{{Lien web |auteur1=Glenn Gillet |titre="Un peu de clarté ne nuit pas" : Édouard Philippe balaie les critiques sur le timing de sa candidature à l'élection présidentielle |url=https://www.bfmtv.com/politique/elections/un-peu-de-clarte-ne-nuit-pas-edouard-philippe-balaie-les-critiques-sur-le-timing-de-sa-candidature-a-l-election-presidentielle_AN-202409070142.html |site=[[BFM TV]] |date=07-09-2024 |consulté le=2025-01-26}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Agression et harcèlement sexuels : le candidat à la présidentielle 2027, François Asselineau, renvoyé en correctionnelle |url=https://www.cnews.fr/france/2026-05-19/agression-et-harcelement-sexuels-le-candidat-la-presidentielle-2027-francois |site=www.cnews.fr |date=2026-05-19 |consulté le=2026-06-11}}.</ref>.
+----
+Candidat à l'élection présidentielle en [[Élection présidentielle française de 2017|2017]] <small>({{9e}} - 0,92 %)</small>.
+|-
+! {{TriNom|Gabriel|Attal}}<br>({{Âge|16|3|1989|18|04|2027}})<br>[[Renaissance (parti)|Renaissance]]
+| width="9%" | [[Fichier:Gabriel_Attal_2025_(close_crop).jpg|80px|Gabriel Attal]]
+| width="1%" {{Infobox Parti politique français/couleurs|RE}} |
+| 
+* Secrétaire général de [[Renaissance (parti)|Renaissance]] <small>(depuis 2024)</small>
+* Président du [[Groupe Ensemble pour la République|groupe EPR]] à l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(depuis 2024)</small>
+* [[Député français|Député]] de la {{Circonscription fr|10|Hauts-de-Seine}} <small>(depuis 2017)</small>
+* [[Conseil municipal (France)|Conseiller municipal]] de [[Vanves]] <small>(depuis 2014)</small>
+| [[Fichier:Logo-attal-président-2027.png|centré|sans_cadre|151x151px]]''La force d'agir''
+|
+* [[Premier ministre français|Premier ministre]] <small>(2024)</small>
+* [[Ministre de l'Éducation nationale (France)|Ministre de l'Éducation nationale et de la Jeunesse]] <small>(2023-2024)</small>
+* [[Ministre chargé du Budget|Ministre délégué chargé des Comptes publics]] <small>(2022-2023)</small>
+* [[Liste des porte-parole du gouvernement français|Porte-parole du gouvernement]] <small>(2020-2022)</small>
+* [[Secrétaire d'État (France)|Secrétaire d'État]] auprès du [[Ministre de l'Éducation nationale (France)|ministre de l'Éducation nationale et de la Jeunesse]] <small>(2018-2020)</small>
+----
+Il annonce sa candidature le {{Date|22 mai 2026}} à l'occasion d'un déplacement à [[Mur-de-Barrez]], dans l'[[Aveyron (département)|Aveyron]]<ref>{{Lien web |auteur=Marine Langlois |auteur2=[[Agence France-Presse|AFP]] |titre=Présidentielle 2027 : Gabriel Attal officialise sa candidature à l'élection |url=https://www.rtl.fr/actu/politique/presidentielle-2027-gabriel-attal-officialise-sa-candidature-a-l-election-presidentielle-7900637844 |site=RTL.fr |date=2026-05-22 |consulté le=2026-05-22}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Marie Pouzadoux |titre=Présidentielle 2027 : Gabriel Attal officialise sa candidature en Aveyron en espérant s’éloigner de l’héritage d’Emmanuel Macron |url=https://www.lemonde.fr/politique/article/2026/05/22/presidentielle-2027-gabriel-attal-officialise-sa-candidature-en-aveyron-en-esperant-s-eloigner-de-l-heritage-d-emmanuel-macron_6692277_823448.html |accès url=payant |date=22/05/2026 |site=[[Le Monde]] |consulté le=22 mai 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Loris Boichot |titre=Présidentielle 2027 : «J’ai décidé d’être candidat», annonce Gabriel Attal |url=https://www.lefigaro.fr/politique/presidentielle-2027-j-ai-decide-d-etre-candidat-annonce-gabriel-attal-20260522 |accès url=libre |date=22/05/2026 |site=[[Le Figaro]] |consulté le=22 mai 2026}}.</ref>.
+|-
+! {{TriNom|Delphine|Batho}}<br>({{Âge|23|3|1973|18|04|2027}})<br>[[Génération écologie]]
+| [[Fichier:Delphine_Batho_(cropped-2).png|80px|Delphine Batho]]
+| {{Infobox Parti politique français/couleurs|GE}} |
+|
+* Présidente de [[Génération écologie]] <small>(depuis 2018)</small>
+* [[Député français|Députée]] de la {{Circonscription fr|2|Deux-Sèvres}} <small>(depuis 2013)</small>
+|[[Fichier:Delphine Batho - L'espérance (2027).svg|sans_cadre|150x150px]]<br>''L'espérance''
+|
+* [[Député français|Députée]] de la {{Circonscription fr|2|Deux-Sèvres}} <small>(2007-2012)</small>
+* [[Ministère de l'Écologie (France)|Ministre de l'Écologie, du Développement durable et de l'Énergie]] <small>(juin 2012-juillet 2013)</small>
+* [[Ministre délégué]]e auprès de la [[Ministre de la Justice (France)|Ministre de la Justice]] <small>(mai-juin 2012)</small>
+----
+Le {{date|25 novembre 2025}}, elle annonce sa candidature à la présidentielle de 2027 « pour reconstruire une écologie capable de gouverner »<ref>{{Lien web |langue=fr |titre=Delphine Batho : « Je suis candidate à l’élection présidentielle pour reconstruire une écologie capable de gouverner » |url=https://www.nouvelobs.com/politique/20251125.OBS110076/delphine-batho-je-suis-candidate-a-l-election-presidentielle-pour-reconstruire-une-ecologie-capable-de-gouverner.html |site=Le Nouvel Obs |date=2025-11-25 |consulté le=2025-11-25}}.</ref>. Elle se dit opposée à une [[Primaire de la gauche unitaire de 2026|primaire de la gauche unitaire]]<ref>{{Lien web |langue=Français |site=Ouest-France |date=25/11/2025 |titre=Delphine Batho, ancienne ministre de l’Écologie, annonce sa candidature à la présidentielle 2027 |url=https://www.ouest-france.fr/elections/presidentielle/delphine-batho-ancienne-ministre-de-lecologie-annonce-sa-candidature-a-la-presidentielle-2027-df964490-ca3e-11f0-a0e6-83b9718ad3c0}}.</ref>{{,}}<ref>{{Article|auteur1=Olivier Cuau|titre=Plus que jamais candidate à la présidentielle de 2027, la députée écologiste Delphine Batho se livre|périodique=[[Ouest-France]]|date=15/05/2026|lire en ligne=https://www.ouest-france.fr/politique/plus-que-jamais-candidate-a-la-presidentielle-de-2027-la-deputee-ecologiste-delphine-batho-se-livre-8318ebfe-5059-11f1-a581-dbcdabdf1915|accès url=payant}}.</ref>.
+|-
+!{{TriNom|Olivier|Becht}}<br>({{Âge|28|4|1976|18|04|2027}})<br>[[Renaissance (parti)|Renaissance]] / [[Agir]]
+|[[Fichier:Olivier Becht 2023 (cropped).jpg|alt=|centré|sans_cadre|114x114px]]
+| width="1%" {{Infobox Parti politique français/couleurs|RE}} |
+|
+* [[Député français|Député]] de la [[Cinquième circonscription du Haut-Rhin|5<sup>e</sup> circonscription du Haut-Rhin]] [[Apparentement|apparenté]] [[Renaissance (parti)|Renaissance]] <small>(depuis 2024)</small>
+
+|''Le projet France''
+|
+* Député de la [[Cinquième circonscription du Haut-Rhin|{{5e}} circonscription du Haut-Rhin]] <small>(2017-2022)</small>
+* [[Ministre chargé du Commerce extérieur (France)|Ministre délégué chargé du Commerce extérieur, de l'Attractivité et des Français de l'étranger]] <small>(2022-2024)</small>
+* Président du groupe [[Groupe Agir ensemble|Agir Ensemble]] à l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(2020-2022)</small>
+* Maire de [[Rixheim]] <small>(2008-2017)</small>
+* [[Conseiller départemental]] du [[Haut-Rhin]] <small>(2015-2017)</small>
+* Président délégué de [[Mulhouse Alsace Agglomération]] <small>(2010-2017)</small>
+* [[Conseiller municipal]] de [[Rixheim]] <small>(2001-2008)</small> à nouveau en fonction depuis le {{date|24 septembre 2017}}
+----
+Il se déclare candidat le {{Date|24 septembre 2026}} dans ''[[Paris Match]]''<ref>{{Article|langue=fr|auteur1=Florent Buisson|titre=EXCLUSIF - « Je suis candidat à la présidentielle » : un ancien ministre d’Élisabeth Borne sort du bois|périodique=[[Paris Match]]|date=24/09/2026|lire en ligne=https://www.parismatch.com/actu/politique/exclusif-je-suis-candidat-a-la-presidentielle-un-ancien-ministre-delisabeth-borne-sort-du-bois-276281|accès url=payant}}.</ref>.
+|-
+! {{TriNom|Xavier|Bertrand}}<br>({{Âge|21|03|1965|18|04|2027}})<br>[[Nous France]] / [[Les Républicains]]
+| [[Fichier:Xavier_Bertrand_-_2025_(cropped).jpg|80px|Xavier Bertrand]]
+| {{Infobox Parti politique français/couleurs|LR}} |
+|
+* Président du [[conseil régional des Hauts-de-France]] <small>(depuis 2016)</small>
+| [[Xavier Bertrand#Prises de position|Positions]]
+|
+* Président de la [[communauté d'agglomération du Saint-Quentinois]] <small>(2014-2020)</small>
+* Maire de [[Saint-Quentin]] <small>(2010-2016)</small>
+* [[Ministère du Travail (France)|Ministre du Travail, de l'Emploi]] et [[Ministère de la Santé (France)|de la Santé]] <small>(2010-2012)</small>
+* Secrétaire général de l'[[Union pour un mouvement populaire|UMP]] <small>(2008-2010)</small>
+* [[Ministère du Travail (France)|Ministre du Travail]], des [[Ministère de la Santé (France)|Relations sociales, de la Solidarité et de la Famille]] <small>(2007-2009)</small>
+* [[Ministère de la Santé (France)|Ministre de la Santé et des Solidarités]] <small>(2005-2007)</small>
+* [[Secrétaire d'État (France)|Secrétaire d'État]] auprès du [[Ministère de la Santé (France)|ministre des Solidarités, de la Santé et de la Famille]] chargé de l'[[Assurance maladie]] <small>(2004-2005)</small>
+* [[Député français|Député]] de la {{Circonscription fr|2|Aisne}} <small>(2002-2016)</small>
+* [[Conseil départemental|Conseiller départemental]] de l'[[Conseil départemental de l'Aisne|Aisne]] <small>(1998-2002)</small>
+----
+Il annonce sa candidature à l'élection présidentielle de 2027 dans un entretien avec ''[[Ouest-France]]'' le {{date|3 février 2024}}<ref>{{Article|titre=ENTRETIEN. Xavier Bertrand sur la présidentielle : « J’ai bien l’intention d’être candidat en 2027 »|périodique=[[Ouest-France]]|date=2024-02-03|langue=fr-FR|auteur1=Stéphane Vernay|lire en ligne=https://www.ouest-france.fr/elections/presidentielle/entretien-xavier-bertrand-a-ouest-france-jai-bien-lintention-detre-candidat-en-2027-d8f5b8a0-c29d-11ee-af40-0572f37cda9b|accès url=payant|consulté le=2024-08-06}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Xavier Bertrand : "J'ai été complètement dans la spirale du pouvoir" |url=https://www.radiofrance.fr/franceinfo/podcasts/dans-les-yeux-d-agathe/xavier-bertrand-j-ai-ete-completement-dans-la-spirale-du-pouvoir-8633670 |accès url=libre |site=[[France Info]] |date=2026-01-30 |consulté le=2026-06-11}}.</ref>{{,}}<ref>{{Article|titre=Le président LR des Hauts-de-France, Xavier Bertrand, confirme qu’il sera candidat à la présidentielle|périodique=[[Libération (journal)|Libération]]|date=2026-08-27|langue=fr-FR|lire en ligne=https://www.liberation.fr/politique/le-president-lr-des-hauts-de-france-xavier-bertrand-confirme-quil-sera-candidat-en-2027-20260827_PF5ERRL6GNEP7PWMY7GQ4SJDL4/|accès url=libre|consulté le=2026-08-27}}.</ref>.
+----
+Candidat à la [[Congrès des Républicains de 2021|primaire de la droite]] en vue de l'[[Élection présidentielle française de 2022|élection présidentielle de 2022]] <small>({{4e}} - 22,36 %)</small>
+|-
+! {{TriNom|Karim|Bouamrane}}<br>({{Âge|21|02|1973|18|04|2027}})<br>[[Parti socialiste (France)|Parti socialiste]]
+| [[Fichier:Karim Bouamrane en 2026 (cropped).jpg|80px]]
+| {{Infobox Parti politique français/couleurs|PS}} |
+|
+* Vice-président du [[Conseil départemental de la Seine-Saint-Denis]] <small>(depuis 2021)</small>
+* [[Conseiller départemental]] de la [[Seine-Saint-Denis]] <small>(depuis 2021)</small>
+* [[Maire]] de [[Saint-Ouen-sur-Seine]] <small>(depuis 2020)</small>
+|[[Fichier:Karim-Bouarane-2027-logo.png|centré|sans_cadre|158x158px]][[Karim Bouamrane#Positionnement politique au parti socialiste|Positions]]
+''La France humaine et forte''
+|
+* [[Conseil municipal|Conseiller municipal]] de [[Saint-Ouen-sur-Seine|Saint-Ouen]] <small>(1995-2014)</small>
+----
+Il annonce se présenter à l'élection présidentielle le {{Date|9 juin 2026}} au micro de [[France Inter]] : « Je suis candidat parce que depuis que je suis en responsabilité, j’ai pris conscience de notre force, j’ai pris conscience que nous étions majoritaires »<ref>{{Article|langue=fr|titre=Karim Bouamrane, maire socialiste de Saint-Ouen, se déclare candidat à l’élection présidentielle|périodique=Le Monde|date=09/06/2026|lire en ligne=https://www.lemonde.fr/politique/article/2026/06/09/karim-bouamrane-maire-socialiste-de-saint-ouen-se-declare-candidat-a-l-election-presidentielle_6700113_823448.html|accès url=libre}}.</ref>{{,}}<ref>{{Lien web |langue=fr |prénom=Anais |nom=Chaline |titre=Présidentielle 2027 : «Je suis candidat», annonce le maire socialiste de Saint-Ouen Karim Bouamrane |url=https://www.lefigaro.fr/politique/presidentielle-2027-je-suis-candidat-annonce-karim-bouamrane-ps-20260609 |site=Le Figaro |date=2026-06-09 |consulté le=2026-06-09}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre="Je suis la candidature qui fédère", annonce Karim Bouamrane maire PS de Saint-Ouen, qui se présente à la présidentielle |url=https://www.radiofrance.fr/franceinter/podcasts/l-invite-de-7h50/l-invite-de-7h50-du-mardi-09-juin-2026-9244175 |site=France Inter |date=2026-06-09 |consulté le=2026-06-11}}.</ref>.
+|-
+!{{TriNom|Bernard|Cazeneuve}}<br>({{Âge|2|6|1963|18|04|2027}})<br>[[La Convention]]
+|[[Fichier:Bernard Cazeneuve, (42399145362) (cropped).jpg|80px|Bernard Cazeneuve]]
+| {{Infobox Parti politique français/couleurs|DVG}} |
+|''Aucune''
+|[[Fichier:Logo-tenir-la-promesse-BC.png|centré|sans_cadre|154x154px]]''Tenir la promesse de la France''
+|
+* [[Premier ministre français|Premier ministre]] <small>(2016-2017)</small>
+* [[Ministre de l'Intérieur (France)|Ministre de l'Intérieur]] <small>(2014-2016)</small>
+* [[Ministre chargé du Budget|Ministre délégué au Budget]] <small>(2013-2014)</small>
+* [[Ministre chargé des Affaires européennes|Ministre délégué aux Affaires européennes]] <small>(2012-2013)</small>
+* [[Député français|Député]] de la {{Circonscription fr|5|Manche}} <small>(1997-2002 ; 2007-2012)</small>
+* Maire d'[[Octeville]] puis de [[Cherbourg-Octeville]] <small>(1995-2012)</small>
+* [[Conseil départemental|Conseiller général]] de la [[Conseil départemental de la Manche|Manche]] <small>(1994-1998)</small>
+----
+Le {{Date|16 juillet 2026}}, dans un entretien au ''[[Le Parisien|Parisien]]'', il annonce sa candidature à l'élection présidentielle sans passer par la [[Primaire présidentielle socialiste française de 2026|primaire socialiste]] mais par {{Citation|un contrat qui [l]e lie aux Français}}<ref>{{Article|langue=fr|titre=Présidentielle 2027 : Bernard Cazeneuve se déclare candidat dans un entretien au « Parisien » et décline la primaire socialiste|périodique=Le Monde|date=2026-07-16|issn=1950-6244|lire en ligne=https://www.lemonde.fr/politique/article/2026/07/16/presidentielle-2027-bernard-cazeneuve-se-declare-candidat-dans-un-entretien-au-parisien-et-decline-la-primaire-socialiste_6723827_823448.html|consulté le=2026-07-21}}</ref>.
+|-
+! {{TriNom|Nicolas|Dupont-Aignan}}<br>({{Âge|7|3|1961|18|04|2027}})<br>[[Debout la France]]
+| [[Fichier:Nicolas_Dupont-Aignan,_homme_politique_français.jpg|80px|Nicolas Dupont-Aignan]]
+| {{Infobox Parti politique français/couleurs|DLF}} |
+|
+* Président de [[Debout la France]] <small>(depuis 2008)</small>
+* [[Conseil municipal (France)|Conseiller municipal]] d'[[Yerres]] <small>(depuis 1995)</small>
+* Maire d'[[Yerres]] <small>(depuis mars 2026)</small>
+| [[Fichier:Logo-Priorité-France-NDA2027.svg|centré|sans_cadre|140x140px]][[Nicolas Dupont-Aignan#Prises de position et idées politiques|Positions]] • [[Nicolas Dupont-Aignan#Élection présidentielle de 2027|Campagne]]
+''Libérons la France !''
+|
+* [[Député français|Député]] de la {{Circonscription fr|8|Essonne}} <small>(1997-2024)</small>
+* Président de la [[communauté d'agglomération Val d'Yerres Val de Seine]] <small>(2016-2017)</small>
+* Président de la [[communauté d'agglomération du Val d'Yerres]] <small>(2002-2015)</small>
+* Maire d'[[Yerres]] <small>(1995-2017)</small>
+----
+Il annonce le {{Date|8 mars 2025}} lors d’une réunion publique devant des militants de son parti à [[Yerres]] avoir {{Citation|le devoir d'être candidat à l'élection présidentielle}}<ref>{{Lien web |titre=Nicolas Dupont-Aignan annonce pour la quatrième fois sa candidature à l’élection présidentielle |url=https://www.ouest-france.fr/politique/nicolas-dupont-aignan/nicolas-dupont-aignan-annonce-pour-la-quatrieme-fois-sa-candidature-a-lelection-presidentielle-18667068-fc38-11ef-84e6-97a4d0833d6d |périodique=[[Ouest-France]] |date=8/3/2025 |consulté le=9/3/2025}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : le souverainiste Nicolas Dupont-Aignan se lance pour la 4e fois dans la course à l'Elysée |url=https://www.francetvinfo.fr/politique/nicolas-dupont-aignan/le-souverainiste-nicolas-dupont-aignan-se-lance-pour-la-4e-fois-dans-la-course-a-l-elysee_7118136.html |site=[[Franceinfo]] |date=2025-03-08 |consulté le=2025-03-19}}.</ref>{{,}}<ref>{{Lien web |auteur1=Le Figaro avec [[Agence France-Presse|AFP]] |titre=Nicolas Dupont-Aignan se déclare candidat à la prochaine élection présidentielle |url=https://www.lefigaro.fr/politique/nicolas-dupont-aignan-se-declare-candidat-a-la-prochaine-election-presidentielle-20250308 |site=[[Le Figaro|lefigaro.fr]] |date=2025-03-08 |consulté le=2025-03-19}}.</ref> et officialise sa candidature le {{Date|19 septembre 2026}} dans un entretien au ''[[Le Journal du dimanche|Journal du dimanche]]''<ref>{{Article|titre=Présidentielle : Nicolas Dupont-Aignan officialise sa candidature et fait le pari du Frexit|périodique=[[Le Journal du dimanche]]|date=2026-09-19|langue=fr-FR|auteur1=Jules Torres|lire en ligne=https://www.lejdd.fr/politique/presidentielle-nicolas-dupont-aignan-officialise-sa-candidature-et-fait-le-pari-du-frexit-183876|accès url=payant|consulté le=2026-09-19}}.</ref>.
+----
+Candidat à l'[[Élection présidentielle française de 2012|élection présidentielle de 2012]] <small>({{7e}} - 1,79 %)</small>, [[Élection présidentielle française de 2017|2017]] <small>({{6e}} - 4,70 %)</small> et [[Élection présidentielle française de 2022|2022]] <small>({{9e}} - 2,06 %)</small>
+|-
+! {{TriNom|Sylvain|Durif}}<br>({{Âge|23|08|1969|18|04|2027}})<br>Elvita
+|[[File:Sylvain Durif.jpg|Sylvain Durif|80px]]
+| {{Infobox Parti politique français/couleurs|DIV}} | 
+|''Aucune''
+| [[Fichier:Logo Sylvain Durif.png|centré|sans_cadre|163x163px]]''L'union du ciel et de la terre''
+|Il annonce sa candidature le {{date|23/08/2026}}<ref>{{Lien web |langue=fr |titre=«Grand monarque» et doux cinglé complotiste : Sylvain Durif annonce sa candidature à la présidentielle 2027 |url=https://www.lefigaro.fr/politique/grand-monarque-et-doux-cingle-complotiste-sylvain-durif-annonce-sa-candidature-a-la-presidentielle-2027-20260825 |site=Le Figaro |date=2026-08-25 |consulté le=2026-08-26}}</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Christ cosmique, grand monarque et bientôt président de la République ? Le vidéaste complotiste Sylvain Durif se déclare candidat à l'élection de 2027 |url=https://www.rtl.fr/actu/politique/christ-cosmique-grand-monarque-et-bientot-president-de-la-republique-le-videaste-complotiste-sylvain-durif-se-declare-candidat-a-l-election-de-2027-7900664715 |site=RTL.fr |date=2026-08-25 |consulté le=2026-08-26}}</ref>{{,}}<ref>{{Lien web |langue=fr |titre=C’est qui ce « Christ cosmique » candidat à la présidentielle 2027 ? |url=https://www.20minutes.fr/politique/4241053-20260826-presidentielle-2027-sylvain-durif-christ-cosmique-veut-presenter |site=20 Minutes |date=2026-08-26 |consulté le=2026-08-26}}</ref>.
+|-
+![[Raphaël Glucksmann]]<br>({{Âge|15|10|1979|18|04|2027}})<br>[[Place publique (parti politique)|Place publique]]{{note|groupe=alpha|texte=Candidature soutenue par :
+* [[Parti socialiste (France)|Parti socialiste]]
+* [[Gauche républicaine et socialiste]]}}
+|[[Fichier:1720448398743_20240708_GLUCKSMANN_Raphael_FR_006.jpg|120x120px|Raphaël Glucksmann]]
+| {{Infobox Parti politique français/couleurs|PP}} |
+|
+* Co-président de [[Place publique (parti politique)|Place publique]] <small>(depuis 2022)</small>
+* [[Député européen]] <small>(depuis 2019)</small>
+|[[Fichier:Logo-Réveiller_la_France-Glucksmann-2027.svg|centré|sans_cadre|183x183px]]''Refonder la gauche, réveiller la France''
+|Il annonce sa candidature à la [[Primaire présidentielle socialiste française de 2026]] le 23 août 2026<ref>{{Lien web |langue=fr |titre="Oui, je suis candidat à l'élection présidentielle", confirme Raphaël Glucksmann sur TF1 {{!}} TF1 Info |url=https://www.tf1info.fr/politique/oui-je-suis-candidat-a-l-election-presidentielle-2027-confirme-raphael-glucksmann-place-publique-sur-tf1-2459966.html |site=www.tf1info.fr |date=2026-08-23 |consulté le=2026-10-12}}</ref>{{,}}<ref>{{Article|langue=fr|prénom1=Sandrine|nom1=Cassini|titre=Raphaël Glucksmann annonce être candidat à l’élection présidentielle de 2027 dans le cadre de la primaire organisée avec le PS|périodique=Le Monde|date=2026-08-28|issn=1950-6244|lire en ligne=https://www.lemonde.fr/politique/article/2026/08/23/raphael-glucksmann-annonce-etre-candidat-a-l-election-presidentielle-dans-le-cadre-de-la-primaire-organisee-avec-le-parti-socialiste_6754507_823448.html|consulté le=2026-10-12}}</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Raphaël Glucksmann annonce sa candidature à la présidentielle (via la primaire du PS) |url=https://www.huffingtonpost.fr/politique/article/presidentielle-2027-raphael-glucksmann-annonce-sa-candidature-via-la-primaire-du-parti-socialiste_308981.html |site=Le HuffPost |date=2026-08-23 |consulté le=2026-10-12}}</ref>, et l'emporte le 11 octobre<ref>{{Article|langue=fr|titre=Résultats de la primaire socialiste : Raphaël Glucksmann élu dès le premier tour et propulsé vers la présidentielle|périodique=Libération|date=2026-10-11|lire en ligne=https://www.liberation.fr/politique/elections/resultats-de-la-primaire-socialiste-raphael-glucksmann-elu-des-le-premier-tour-et-propulse-vers-la-presidentielle-20261011_HSXHVD45NJFOHG7JCKCGCYDVDY/|consulté le=2026-10-12}}</ref>. 
+|-
+! {{TriNom|Anasse|Kazib}}<br>({{Âge|02|01|1987|18|04|2027}})<br>[[Révolution permanente (parti politique)|Révolution permanente]]
+|[[Fichier:Anasse Kazib, décembre 2021.jpg|80px|Anasse Kazib]]
+| {{Infobox Parti politique français/couleurs|EXG}} | 
+|
+* Porte-parole de [[Révolution permanente (parti politique)|Révolution permanente]] <small>(depuis 2022)</small>
+|[[Fichier:Logo-anasse2027.png|centré|sans_cadre|165x165px]]''Faire entendre la voix de notre classe''
+|Il annonce sa candidature le {{date|01/06/2026}}<ref>{{Lien web |langue=fr-FR |titre=Le cheminot Anasse Kazib annonce sa candidature à la présidentielle 2027 |url=https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-le-cheminot-anasse-kazib-annonce-sa-candidature_8040020.html |site=franceinfo |date=2026-06-01 |consulté le=2026-06-01}}.</ref>{{,}}<ref>https://www.leparisien.fr/elections/presidentielle/presidentielle-2027-anasse-kazib-annonce-sa-candidature-01-06-2026-PUBVNE5K75CABMNWIQE4HR2ZJ4.php</ref>{{,}}<ref>{{Article|titre=Présidentielle 2027 : Anasse Kazib annonce sa candidature pour le parti d’extrême gauche Révolution permanente|périodique=[[Ouest-France]]|date=01/06/2026|lire en ligne=https://www.ouest-france.fr/elections/presidentielle/presidentielle-2027-anasse-kazib-annonce-sa-candidature-pour-le-parti-dextreme-gauche-revolution-permanente-42940816-5de7-11f1-b3f0-aacb0ffa8bfb}}.</ref>.
+|-
+!{{TriNom|Selma|Labib|nolink=oui}}<br>({{Âge|25|08|1995|18|04|2027}})<br>[[Nouveau Parti anticapitaliste|NPA – Révolutionnaires]]
+|[[Fichier:Silver - replace this image female.svg|80px]]
+|{{Infobox Parti politique français/couleurs|NPA}}|
+|
+* Porte-parole du [[Nouveau Parti anticapitaliste|NPA – Révolutionnaires]]
+|[[Fichier:Presidentielles-2027-Selma-LABIB.png|centré|sans_cadre|162x162px]]
+|Le NPA-R annonce sa candidature le {{date|17 juin 2026}}<ref>{{Lien web |langue=fr |titre=Présidentielle 2027: le NPA-Révolutionnaires annonce présenter la candidature de sa porte-parole Selma Labib |url=https://www.bfmtv.com/politique/elections/presidentielle/presidentielle-2027-le-npa-revolutionnaires-annonce-presenter-la-candidature-de-sa-porte-parole-selma-labib_AD-202606170500.html |site=BFM |date=2026-06-17 |consulté le=2026-06-17}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : Selma Labib officiellement candidate pour le NPA-Révolutionnaires |url=https://www.rtl.fr/actu/politique/presidentielle-2027-selma-labib-officiellement-candidate-pour-le-npa-revolutionnaires-7900647117 |site=RTL.fr |date=2026-06-17 |consulté le=2026-06-17}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : Selma Labib, conductrice de bus, sera la candidate du parti d’extrême gauche NPA-Révolutionnaires |url=https://www.letelegramme.fr/elections/presidentielle-2027-selma-labib-conductrice-de-bus-sera-la-candidate-du-parti-dextreme-gauche-npa-revolutionnaires-7065610.php |site=Le Télégramme |date=2026-06-17 |consulté le=2026-06-17}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : le NPA-Révolutionnaires annonce présenter une candidature avec Selma Labib, conductrice de bus de 30 ans |url=https://www.sudouest.fr/politique/presidentielle-2027-le-npa-revolutionnaires-annonce-presenter-une-candidature-avec-selma-labib-conductrice-de-bus-de-30-ans-29528483.php |site=SudOuest.fr |date=2026-06-17 |consulté le=2026-06-17}}.</ref>.
+|-
+! {{TriNom|Francis|Lalanne}}<br>({{Âge|08|08|1958|18|04|2027}})<br>France Libre
+|[[Fichier:Lalanne 2021 (cropped).jpg|80px|Francis Lalanne]]
+| {{Infobox Parti politique français/couleurs|EXD}} | 
+|
+''Aucune''
+|[[Fichier:Dieudo lalanne 2027 logo PNG.png|centré|sans_cadre|158x158px]]''Pour une France Libre, Souveraine et Solaire''
+|Il annonce sa candidature le {{date|19/08/2026}}<ref>{{Article|titre=Présidentielle 2027 : Francis Lalanne officiellement candidat, son premier meeting de campagne annoncé à Paris|périodique=[[Le Parisien]]|date=2026-08-19|langue=fr-FR|auteur1=Camille Ducrocq|lire en ligne=https://www.leparisien.fr/elections/presidentielle/presidentielle-2027-francis-lalanne-officiellement-candidat-son-premier-meeting-de-campagne-annonce-a-paris-19-08-2026-2VLEW57SFZDZFP6AQ34HPMAZJM.php|accès url=libre|consulté le=2026-08-19}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : le chanteur Francis Lalanne annonce être candidat, premier meeting vendredi à Paris |url=https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-le-chanteur-francis-lalanne-officiellement-candidat-premier-meeting-vendredi-a-paris_8153588.html |langue=fr-FR |accès url=libre |site=[[France Info]] |date=2026-08-19 |consulté le=2026-08-19}}.</ref>{{,}}<ref>{{Article|titre=Le duo Dieudonné-Francis Lalanne candidats, Israël en conflit avec Ben & Jerry's : mieux vaut en rire|périodique=[[Marianne]]|date=2026-07-02|langue=fr-FR|lire en ligne=https://www.marianne.net/societe/le-duo-dieudonne-francis-lalanne-candidats-israel-en-conflit-avec-ben-and-jerrys-mieux-vaut-en-rire|accès url=payant|consulté le=2026-08-19}}.</ref>{{,}}.
+|-
+! {{TriNom|Marine|Le Pen}}<br>({{Âge|05|08|1968|18|04|2027}})<br>[[Rassemblement national]]{{note|groupe=alpha|texte=Candidature soutenue par l'[[Union des droites pour la République]] et [[Identité-Libertés]].}}
+| [[Fichier:Marine Le Pen 2025 (cropped).jpg|80px|Marine Le Pen]]
+| {{Infobox Parti politique français/couleurs|RN}} |
+|
+* Présidente du [[Groupe Rassemblement national (Assemblée nationale)|groupe RN]] à l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(depuis 2022)</small>
+* [[Député français|Députée]] de la {{Circonscription fr|11|Pas-de-Calais}} <small>(depuis 2017)</small>
+| [[Marine Le Pen#Ligne politique|Positions]]
+|
+* [[Conseil départemental|Conseillère départementale]] du [[Conseil départemental du Pas-de-Calais|Pas-de-Calais]] <small>(2021-2025)</small>
+* Co-présidente du [[Patriotes pour l'Europe|groupe ENL]] au [[Parlement européen]] <small>(2015-2017)</small>
+* Présidente du [[Rassemblement national]] <small>(2011-2021)</small>
+* [[Député européen|Députée européenne]] <small>(2004-2017)</small>
+* [[Conseil régional (France)|Conseillère régionale]] des [[Conseil régional des Hauts-de-France|Hauts-de-France]] <small>(1998-2004 ; 2010-2021)</small>
+* [[Conseil régional (France)|Conseillère régionale]] d'[[Île-de-France]] <small>(2004-2010)</small>
+----
+Elle se présente en {{date|septembre 2023}} comme la « candidate naturelle » de son camp<ref>{{Article |titre=Marine Le Pen : « Je suis la candidate naturelle de mon camp à la présidentielle » de 2027 |périodique=[[Le Monde]] |date=18 septembre 2023 |lire en ligne=https://www.lemonde.fr/elections/article/2023/09/18/marine-le-pen-je-suis-la-candidate-naturelle-de-mon-camp-a-la-presidentielle-de-2027_6189935_5001134.html |consulté le=6 août 2026}}.</ref>, réaffirme sa candidature lors d’un déplacement en [[Nouvelle-Calédonie]] en {{date|mai 2025}}, après sa condamnation dans l'affaire des assistants parlementaires<ref>{{Article |titre=Marine Le Pen recadre Jordan Bardella sur sa connaissance de la Nouvelle-Calédonie et réaffirme son statut de « candidate à la présidentielle » |périodique=[[Le Monde]] |date=29 mai 2025 |lire en ligne=https://www.lemonde.fr/politique/article/2025/05/29/marine-le-pen-en-visite-en-nouvelle-caledonie-recadre-jordan-bardella-sur-sa-connaissance-de-l-archipel-et-reaffirme-son-statut-de-candidate-a-la-presidentielle_6609126_823448.html |consulté le=6 août 2026}}.</ref>, puis la confirme le {{date|7 juillet 2026}}, après la décision rendue en appel dans cette affaire<ref>{{Lien web |auteur=Olivier Tolachides |titre=« Je suis candidate à l’élection présidentielle », annonce Marine Le Pen sur TF1 |url=https://fr.euronews.com/my-europe/2026/07/07/je-suis-candidate-a-lelection-presidentielle-annonce-marine-le-pen-sur-tf1 |site=[[Euronews]] |date=2026-07-07 |consulté le=2026-08-06}}.</ref>.
+----
+Candidate à l'élection présidentielle en [[Élection présidentielle française de 2012|2012]] <small>({{3e}} - 17,90 %)</small>, [[Élection présidentielle française de 2017|2017]] <small>({{1er|tour}} : {{2e}} - 21,30 % // {{2d|tour}} : {{2e}} - 33,90 %)</small> et [[Élection présidentielle française de 2022|2022]] <small>({{1er|tour}} : {{2e}} - 23,15 % // {{2d|tour}} : {{2e}} - 41,45 %)</small>
+|-
+! {{TriNom|Mira|Markovic|nolink=oui}}<br>[[Parti animaliste]]
+| [[Fichier:Silver - replace this image female.svg|80px]]
+| {{Infobox Parti politique français/couleurs|PA}} |
+| 
+* Cofondatrice du [[Parti animaliste]] en 2016
+|
+|Elle annonce sa candidature le {{date|2|10|2026}}<ref>[https://www.lemonde.fr/politique/article/2026/10/02/presidentielle-2027-le-parti-animaliste-annonce-la-candidature-de-mira-markovic_6787208_823448.html Présidentielle 2027 : le Parti animaliste annonce la candidature de Mira Markovic], Le Monde, 2 octobre 2026</ref>{{,}}<ref>https://www.leparisien.fr/elections/presidentielle/presidentielle-2027-qui-est-mira-markovic-candidate-du-parti-animaliste-02-10-2026-RJSPJSR3BNCCLC22YRC7VDAPMU.php</ref>{{,}}<ref>https://www.cnews.fr/france/2026-10-02/presidentielle-2027-si-nous-ne-sommes-pas-la-personne-ne-parle-des-animaux</ref>{{,}}<ref>https://www.ouest-france.fr/elections/presidentielle/presidentielle-2027-le-parti-animaliste-annonce-la-candidature-de-mira-markovic-c82c7bca-be8b-11f1-b7db-555e86a524f6</ref>.
+|-
+! {{TriNom|Benoît|Mathieu|nolink=oui}}<br>(27 ans)<br>[[Indépendant (politique)|Sans étiquette]]
+| [[Fichier:Silver - replace this image male.svg|80px]]
+| {{Infobox Parti politique français/couleurs|SE}} |
+| ''Aucune''
+| 
+| Il se déclare candidat le 30 mars 2026 en sillonnant les routes de France à la rencontre de maires afin d'avoir les 500 parrainages nécessaires<ref>{{Lien web |langue=fr |auteur=Pierre Boitel |titre=Présidentielle 2027 : à vélo sur les routes de France, la campagne décalée d’un candidat « citoyen » |url=https://www.lemonde.fr/politique/article/2026/06/14/presidentielle-2027-a-velo-sur-les-routes-de-france-la-campagne-decalee-d-un-candidat-citoyen_6702744_823448.html |accès url=payant |date=14 juin 2026 |site=[[Le Monde]] |consulté le=31 août 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Thomas Nougaillon |titre=Benoît Mathieu aimerait bien chanter le ban bourguignon à l'Elysée, il veut se présenter aux élections Présidentielles |url=https://www.radiofrance.fr/francebleu/podcasts/l-info-d-ici-7h30-ici-bourgogne/benoit-mathieu-aimerait-bien-chanter-le-ban-bourguignon-a-l-elysee-il-veut-se-presenter-aux-elections-presidentielles-7722626 |accès url=libre |date=25 avril 2026 |site=[[Radio France]] |consulté le=31 août 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Présidentielle 2027: à 27 ans, il sillonne la France à vélo en quête des 500 parrainages |url=https://rmc.bfmtv.com/actualites/politique/presidentielle-2027-a-27-ans-il-sillonne-la-france-a-velo-en-quete-des-500-parrainages_AV-202605030128.html |accès url=libre |date=03/05/2026 |site=[[RMC BFM (entreprise)|RMC BFM]] |consulté le=31 août 2026}}.</ref>{{,}}<ref name="Présidentielle 2027 : à vélo ou en van, le tour de France des candidats de moins de 30 ans">{{Lien web |langue=fr |prénom=Kiara |nom=Carrière |titre=Présidentielle 2027 : à vélo ou en van, le tour de France des candidats de moins de 30 ans |url=https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-a-velo-ou-en-van-le-tour-de-france-des-candidats-de-moins-de-30-ans-20260805 |site=Le Figaro |date=2026-08-05 |consulté le=2026-09-29}}.</ref>.
+|-
+! {{TriNom|Jean-Luc|Mélenchon}}<br>({{Âge|19|8|1951|18|04|2027}})<br>[[La France insoumise]]{{note|groupe=alpha|texte=Candidature soutenue par :
+* Les Verts Populaires<ref name="20avril2026_www.sudouest.fr">{{Lien web |titre=Présidentielle : déçus par leur parti, des Écologistes créent le mouvement dissident « Les Verts populaires »|url=https://www.sudouest.fr/politique/presidentielle-decus-par-leur-parti-des-ecologistes-creent-le-mouvement-dissident-les-verts-populaires-28764701.php|périodique=[[Sud Ouest]]|date=2026-04-20|consulté le=2026-05-05}}.</ref>{{,}}<ref>{{Lien web |titre=Les Verts Populaires soutiennent la candidature de Mélenchon |url=https://tendanceclaire.org/breve.php?id=46830 |site=tendanceclaire.org |consulté le=2026-06-30}}</ref>
+* [[Pour une écologie populaire et sociale]]<ref>{{Lien web |titre=Soutenir les Verts Populaires et préserver l’identité politique de PEPS : pour une écologie communaliste, écoféministe et réflexive |url=https://confpeps.org/soutenir-les-verts-populaires-et-preserver-lidentite-politique-de-peps-pour-une-ecologie-communaliste-ecofeministe-et-reflexive/ |site=confpeps.org |consulté le=2026-07-13}}</ref>
+* [[Nouveau Parti anticapitaliste|NPA – L'Anticapitaliste]]<ref>{{Lien web |langue=fr-FR|titre=Le NPA-l'Anticapitaliste soutiendra Jean-Luc Mélenchon à l'élection présidentielle de 2027|url=https://www.franceinfo.fr/elections/presidentielle/le-npa-anticapitaliste-renonce-a-presenter-un-candidat-a-l-election-presidentielle-2027-et-annonce-soutenir-jean-luc-melenchon_8084936.html|site=franceinfo|date=2026-06-29|consulté le=2026-06-29}}</ref>[[Nouveau Parti anticapitaliste|{{,}}]]<ref>{{Lien web |langue=fr|titre=Présidentielle 2027 : le NPA-Anticapitaliste ne présente pas de candidat et soutient Mélenchon|url=https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-le-npa-anticapitaliste-ne-presente-pas-de-candidat-et-soutient-melenchon-20260629|site=Le Figaro|date=2026-06-29|consulté le=2026-06-29}}</ref>{{,}}<ref>{{Lien web |langue=fr|titre=Poutou et le NPA renoncent à la présidentielle pour se ranger derrière un candidat|url=https://www.huffingtonpost.fr/politique/article/philippe-poutou-et-le-npa-renoncent-a-la-presidentielle-et-se-rangent-derriere-jean-luc-melenchon_279809.html|site=Le HuffPost|date=2026-06-29|consulté le=2026-06-29}}</ref>
+* [[Révolution écologique pour le vivant]]<ref>{{Article|titre=TRIBUNE. « Nous, écologistes de la REV, soutenons Mélenchon pour 2027 »|périodique=regards.fr|date=16 mai 2026|lire en ligne=https://regards.fr/nous-ecologistes-de-la-rev-soutenons-jean-luc-melenchon-pour-2027/}}</ref>
+* [[Parti de gauche (France)|Parti de gauche]]<ref>{{Lien web |titre=PG / MELENCHON : Sans surprise, le Conseil national du Parti de Gauche (PG), parti fondateur de La France Insoumise, a apporté le week-end dernier son soutien à M. Jean-Luc MELENCHON pour l'élection présidentielle 2027 |url=https://www.bulletinquotidien.fr/article/QB20260707a043 |site=bulletinquotidien.fr |consulté le=2026-07-13}}</ref>{{,}}<ref>{{Lien web |titre=Face à l’impunité de l’extrême droite, l’urgence de la 6e République |url=https://www.lepartidegauche.fr/?p=8078 |site=lepartidegauche.fr |consulté le=2026-07-13}}</ref>
+* Alternative Communiste<ref>{{Lien web |langue=fr |titre=Communistes, engageons-nous pour faire gagner la gauche |url=https://communistes2027.fr/ |site=communistes2027.fr |consulté le=2026-10-02 |archive-url=http://web.archive.org/web/20260706134330/https://communistes2027.fr/ |archive-date=2026-07-06}}</ref>
+* [[Primaire populaire|Victoires Populaires (ex-Primaire populaire)]]<ref>{{Lien web |langue=fr-FR |prénom=Prune |nom=Pontbenoit |titre=Victoires Populaires soutient la candidature de Jean-Luc Mélenchon pour l'élection présidentielle de 2027 |url=https://www.victoirespopulaires.fr/annonce-presidentielle2027/ |site=Victoires Populaires |date=2026-10-08 |consulté le=2026-10-12}}</ref>
+* L'[[union calédonienne]]<ref>{{Lien web |langue=fr-FR |titre=Mélenchon, nickel, loi organique : les principales positions de l’UC après son comité directeur - Outre-mer La 1ère |url=https://la1ere.franceinfo.fr/nouvellecaledonie/melenchon-nickel-loi-organique-les-positions-de-l-uc-avant-son-congres-de-novembre-1747971.html |site=Nouvelle-Calédonie La 1ère |consulté le=2026-10-14}}</ref>}}
+| [[Fichier:Jean Luc Mélenchon en mai 2026- 55261894422 (cropped).jpg|Jean-Luc Mélenchon en 2026|109x109px]]
+| {{Infobox Parti politique français/couleurs|LFI}} |
+| ''Aucune''
+| [[Fichier:Logo Melenchon2027.fr.svg|sans_cadre|150x150px]]<br>[[Jean-Luc Mélenchon#Prises de position|Positions]]<br>La force de tout changer
+|
+* [[Député français|Député]] de la {{Circonscription fr|4|Bouches-du-Rhône}} <small>(2017-2022)</small>
+* Président du [[Groupe La France insoumise|groupe LFI]] à l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(2017-2021)</small>
+* [[Député européen]] <small>(2009-2017)</small>
+* Président du [[Parti de gauche (France)|Parti de gauche]] <small>(2009-2014)</small>
+* [[Ministre de l'Éducation nationale (France)|Ministre délégué à l'Enseignement professionnel]] <small>(2000-2002)</small>
+* [[Sénateur français|Sénateur]] de l'[[Essonne (département)|Essonne]] <small>(1986-2000 ; 2004-2010)</small>
+* Président délégué du [[Conseil départemental de l'Essonne|conseil général de l'Essonne]] <small>(1998-2004)</small>
+* [[Conseil départemental (France)|Conseiller général]] de l'[[Conseil départemental de l'Essonne|Essonne]] <small>(1985-1992 ; 1998-2004)</small>
+* Adjoint au maire de [[Massy (Essonne)|Massy]] <small>(1989-1995)</small>
+----
+Il annonce sa candidature le 3 mai 2026 lors du ''[[Journal de 20 heures (TF1)|Journal de 20 heures]]'' de [[TF1]]<ref>{{Lien web |langue=fr |auteur=Olivier Pérou |titre=Jean-Luc Mélenchon annonce être candidat à l’élection présidentielle pour la quatrième fois, sur une ligne toujours plus « antisystème » |url=https://www.lemonde.fr/politique/article/2026/05/03/jean-luc-melenchon-annonce-etre-candidat-a-l-election-presidentielle-pour-la-quatrieme-fois-sur-une-ligne-toujours-plus-antisysteme_6685247_823448.html |accès url=payant |date=03/05/2026 |site=[[Le Monde]] |consulté le=3 mai 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Anthony Berthelier |titre=Jean-Luc Mélenchon officiellement candidat à la présidentielle 2027, sa quatrième tentative |url=https://www.huffingtonpost.fr/politique/article/jean-luc-melenchon-officiellement-candidat-a-la-presidentielle-2027-sa-quatrieme-tentative_263337.html |accès url=libre |date=03/05/2026 |site=[[Le HuffPost]] |consulté le=3 mai 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Marie-Pierre Haddad |titre=Présidentielle 2027 : Jean-Luc Mélenchon officialise sa candidature, à un an du scrutin |url=https://www.rtl.fr/actu/politique/presidentielle-2027-jean-luc-melenchon-officialise-sa-candidature-a-un-an-du-scrutin-7900630247 |accès url=libre |date=03/05/2026 |site=[[RTL]] |consulté le=3 mai 2026}}.</ref>.
+----
+Candidat à l'élection présidentielle en [[Élection présidentielle française de 2012|2012]] <small>({{4e}} - 11,10 %)</small>, [[Élection présidentielle française de 2017|2017]] <small>({{4e}} - 19,58 %)</small> et [[Élection présidentielle française de 2022|2022]] <small>({{3e}} - 21,95 %)</small>
+|-
+! {{TriNom|Antoine|Mikolajczak|nolink=oui}}<br>(28 ans)<br>Équinoxe
+|[[Fichier:Antoine Mikolajczak.jpg|alt=Antoine Mikolajczak|94x94px]]
+|{{Infobox Parti politique français/couleurs|ECO}}|
+|''Aucune''
+|[[Fichier:Renouer.jpg|alt=Renouer avec notre avenir|203x203px]]<br>[https://parti-equinoxe.fr/presidentielle-2027/ Positions]
+* Décider collectivement
+* Produire en France
+* Vivre en bonne santé
+|Désigné le 27 juin 2026 par son parti, en trinôme avec Alexia de Montgolfier et Louis Brémaud, il sillonne depuis la France pour collecter des parrainages. 
+Ingénieur originaire de l'Oise<ref>{{Article|langue=fr|auteur1=Cécile Moine|titre=Monsieur Tout-le-Monde » candidat à la présidentielle 2027 ? Antoine Mikolajczak et Équinoxe face au défi des 500 parrainages|périodique=Le Parisien|date=12/08/2026|lire en ligne=https://www.leparisien.fr/oise-60/monsieur-tout-le-monde-candidat-a-la-presidentielle-2027-antoine-mikolajczak-et-equinoxe-face-au-defi-des-500-parrainages-12-08-2026-CN5YEZHLCJGF7CSTOWAQUMI4PY.php|accès url=payant}}</ref>, ce «candidat de moins de 30 ans» parcourt la France en quête de parrainages, parfois avec des moyens originaux, comme le vélo<ref>{{Lien web |langue=fr |prénom=Kiara |nom=Carrière |titre=Présidentielle 2027 : à vélo ou en van, le tour de France des candidats de moins de 30 ans |url=https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-a-velo-ou-en-van-le-tour-de-france-des-candidats-de-moins-de-30-ans-20260805 |site=Le Figaro |date=2026-08-05 |consulté le=2026-10-14}}</ref> dont il est fan, avec le foot. 
+
+Le programme est dévoilé à Mulhouse lors de l'université d'automne du parti<ref>{{Lien web |langue=FR-fr |titre=Présidentielle 2027. Antoine Mikolajczak, candidat attaché « aux faits » et à « la nuance » de passage à Mulhouse |url=https://www.lalsace.fr/elections/2026/10/03/antoine-mikolajczak-candidat-attache-aux-faits-et-a-la-nuance |site=www.lalsace.fr |date=2026-10-03 |consulté le=2026-10-14}}</ref>, «en mettant les idées avant les ambitions personnelles».
+|-
+! {{TriNom|Manolo|Mlekuz|nolink=oui}}<br>(20 ans)<br>Trajectoire
+| [[Fichier:Silver - replace this image male.svg|80px]]
+| {{Infobox Parti politique français/couleurs|SE}} |
+| ''Aucune''
+| 
+| Il présente sa candidature début 2026 en sillonant la France à travers un van afin de recevoir les 500 parrainages<ref>{{Lien web |langue=fr |auteur=Lucas del Castillo |titre=Candidat à la Présidentielle… à 20 ANS ! Manolo Mlekuz est Face aux jeunes |url=https://vl-media.fr/candidat-a-la-presidentielle-a-20-ans-manolo-mlekuz-est-face-aux-jeunes/ |accès url=libre |date=11/08/2026 |site=[[VL Média]] |consulté le=8 septembre 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Alexis Pinto |titre=Présidentielle 2027 : un candidat anti-système de 20 ans sillonne la France en van pour obtenir ses parrainages |url=https://www.valeursactuelles.com/politique/presidentielle-2027-un-candidat-anti-systeme-de-20-ans-sillonne-la-france-en-van-pour-obtenir-ses-parrainages |accès url=libre |date=28/05/2026 |site=[[Valeurs actuelles]] |consulté le=8 septembre 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Léo Manson |titre="Si j'arrive à l'Elysée...": ce candidat pour 2027, âgé de 20 ans, veut être un président "sans pouvoir" |url=https://rmc.bfmtv.com/actualites/politique/si-j-arrive-a-l-elysee-ce-candidat-pour-2027-age-de-20-ans-veut-etre-un-president-sans-pouvoir_AV-202607030571.html |accès url=libre |date=03/07/2026 |site=[[RMC BFM (entreprise)|RMC BFM]] |consulté le=8 septembre 2026}}.</ref>{{,}}<ref name="Présidentielle 2027 : à vélo ou en van, le tour de France des candidats de moins de 30 ans" />.
+|-
+! {{TriNom|Édouard|Philippe}}<br>({{Âge|28|11|1970|18|04|2027}})<br>[[Horizons]]
+| [[Fichier:Edouard Philippe 3x4 crop.jpg|130x130px|Édouard Philippe]]
+| {{Infobox Parti politique français/couleurs|HOR}} |
+| 
+* Président d'[[Horizons]] <small>(depuis octobre 2021)</small>
+* Maire du [[Le Havre|Havre]] <small>(depuis juillet 2020)</small>
+* Président de [[Le Havre Seine Métropole]] <small>(depuis 2020)</small>
+| [[Fichier:Avec-edouard-2027.svg|centré|sans_cadre|160x160px]]''Croire en nous''
+[[Édouard Philippe#Élections municipales de 2026 et présidentielle de 2027|Campagne]] • [[Édouard Philippe#Prises de position|Positions]]
+|
+* [[Premier ministre français|Premier ministre]] <small>(2017-2020)</small>
+* [[Député français|Député]] de la {{Circonscription fr|7|Seine-Maritime}} <small>(2012-2017)</small>
+* Maire du [[Le Havre|Havre]] <small>(octobre 2010-mai 2017)</small>
+* Président de la [[communauté de l'agglomération havraise]] <small>(2010-2017)</small>
+* [[Conseil départemental|conseiller départemental]] de la [[Conseil départemental de la Seine-Maritime|Seine-Maritime]] <small>(2008-2012)</small>
+* [[Conseil régional (France)|Conseiller régional]] de [[Conseil régional de Haute-Normandie|Haute-Normandie]] <small>(2004-2008)</small>
+----
+Il annonce se présenter dans un entretien au ''[[Le Point|Point]]'' le {{date|3 septembre 2024}}<ref>{{Lien web |auteur=Mathilde Siraud |auteur2=Valérie Toranian |titre=EXCLUSIF. Édouard Philippe : « Je serai candidat à la prochaine élection présidentielle » |url=https://www.lepoint.fr/politique/exclusif-edouard-philippe-je-serai-candidat-a-la-prochaine-election-presidentielle-03-09-2024-2569359_20.php |accès url=payant |périodique=[[Le Point]] |date=2024-09-03 |consulté le=2024-09-03}}.</ref>{{,}}<ref>{{Lien web |auteur=Loris Boichot |titre=«Je n’ai pas peur du match» : Édouard Philippe, le début d’une longue campagne vers la présidentielle 2027 |url=https://www.lefigaro.fr/politique/je-n-ai-pas-peur-du-match-edouard-philippe-le-debut-d-une-longue-campagne-vers-la-presidentielle-2027-20241102 |accès url=payant |périodique=[[Le Figaro]] |date=2024-11-02 |consulté le=2025-01-26}}.</ref>{{,}}<ref>{{Lien web |auteur=Anthony Berthelier |titre=Édouard Philippe au défi de faire tourner une machine à vide jusqu’en 2027 |url=https://www.huffingtonpost.fr/politique/article/presidentielle-edouard-philippe-au-defi-de-faire-tourner-une-machine-a-vide-jusqu-en-2027_245234.html |site=[[Le HuffPost]] |date=2025-01-26 |consulté le=2025-01-26}}.</ref>.
+|-
+! {{TriNom|Florian|Philippot}}<br>({{Âge|24|10|1981|18|04|2027}})<br>[[Les Patriotes (parti politique)|Les Patriotes]]
+| [[Fichier:2022-04-16_16-49-26_MAM-Paris_02.jpg|80px|Florian Philippot]]
+| {{Infobox Parti politique français/couleurs|LP}} |
+|
+* Président des [[Les Patriotes (parti politique)|Patriotes]] <small>(depuis 2017)</small>
+|[[Florian Philippot#Prises de position|Positions]]
+|
+* [[Conseil régional (France)|Conseiller régional]] du [[Grand Est]] <small>(2016-2021)</small>
+* [[Député européen]] <small>(2014-2019)</small>
+* [[Rassemblement_national#Bureau_exécutif|Vice-président du Front national]] chargé de la stratégie de la communication <small>(2012-2017)</small>
+* [[Conseil municipal (France)|Conseiller municipal]] de [[Forbach]] <small>(2014-2016)</small>
+----
+Il annonce sa candidature à l'élection présidentielle le {{date|9 mai 2026}} sur [[France 2]]. Il affirme être prêt à se retirer si une autre candidature de droite souverainiste {{Citation|plus rassembleuse}} comme celle de [[Philippe de Villiers]] venait à émerger<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : le souverainiste Florian Philippot annonce sa candidature à l'Elysée |url=https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-le-souverainiste-florian-philippot-annonce-sa-candidature-a-l-elysee_7993346.html |site=franceinfo |date=2026-05-09 |consulté le=2026-05-09}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Présidentielle 2027: le président des Patriotes Florian Philippot annonce être candidat à l'Élysée |url=https://www.bfmtv.com/politique/elections/presidentielle/presidentielle-2027-le-president-des-patriotes-florian-philippot-annonce-etre-candidat-a-l-elysee_AN-202605090155.html |site=BFM |date=2026-05-09 |consulté le=2026-05-09}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Présidentielle 2027 : Florian Philippot annonce sa candidature |url=https://www.cnews.fr/france/2026-05-09/presidentielle-2027-florian-philippot-annonce-sa-candidature-1859336 |site=www.cnews.fr |date=2026-05-09 |consulté le=2026-05-09}}.</ref>.
+|-
+! {{TriNom|Gilles|Platret|nolink=oui}}<br>({{Âge|19|04|1973|18|04|2027}})<br>[[Divers droite]]
+| [[Fichier:GPlatret.jpg|80px|Gilles Platret]]
+| {{Infobox Parti politique français/couleurs|DVD}} |
+| 
+* [[Conseil régional de Bourgogne-Franche-Comté|Conseiller régional]] de [[Bourgogne-Franche-Comté]] <small>(depuis 2015)</small>
+* [[Maire (France)|Maire]] de [[Chalon-sur-Saône]] <small>(depuis 2014)</small>
+* [[Conseil communautaire|Conseiller communautaire]] du [[Le Grand Chalon|Grand Chalon]] <small>(depuis 2014)</small>
+| 
+| 
+* Vice-président des [[Les Républicains|Républicains]] <small>(?-2023)</small>
+----
+Il annonce sa candidature le {{date|8 octobre 2026}} lors d'un meeting organisé à [[Chalon-sur-Saône]]<ref>{{Lien web |langue=fr |auteur=Ariel Guez |titre=Présidentielle 2027 : « La guerre civile a déjà commencé », le maire divers droite de Chalon-sur-Saône Gilles Platret annonce sa candidature |url=https://www.leparisien.fr/elections/presidentielle/presidentielle-2027-la-guerre-civile-a-deja-commence-le-maire-divers-droite-de-chalon-sur-saone-gilles-platret-annonce-sa-candidature-09-10-2026-7Z4HG62GOJHTNOFLHDN7J7HZLQ.php |accès url=libre |date=09/10/2026 |site=[[Le Parisien]] |consulté le=10 octobre 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |auteur=Astrid Bergere |titre=Présidentielle 2027: le maire divers droite de Chalon-sur-Saône Gilles Platret annonce sa candidature |url=https://www.bfmtv.com/politique/elections/presidentielle/presidentielle-2027-le-maire-divers-droite-de-chalon-sur-saone-gilles-platret-annonce-sa-candidature_AN-202610090630.html |accès url=libre |date=09/10/2026 |site=[[BFM TV]] |consulté le=10 octobre 2026}}.</ref>{{,}}<ref>{{Lien web |langue=fr |titre=Présidentielle 2027 : le très droitier Gilles Platret présente sa candidature et embouteille son espace politique |url=https://www.liberation.fr/politique/elections/presidentielle-2027-le-tres-droitier-gilles-platret-presente-sa-candidature-et-embouteille-son-espace-politique-20261009_AKT3J6HRJJFFBJK6I7QQ6TSJ4Q/ |accès url=libre |date=09/10/2026 |site=[[Libération (journal)|Libération]] |consulté le=10 octobre 2026}}.</ref>.
+|-
+![[Natacha Polony]]<br>({{Âge|15|04|1975|18|04|2027}})<br>[[Indépendant (politique)|Sans étiquette]]{{Note|texte=Candidature soutenue par :
+* [[République souveraine]]<ref name="8octobre2026_www.republique-souveraine.fr">{{Lien web |titre=Présidentielle : République Souveraine soutient Natacha Polony|url=https://www.republique-souveraine.fr/republique-souveraine-soutient-natacha-polony/|site=[[République Souveraine]]|date=2026-10-08|consulté le=2026-10-08}}.</ref>|url=|groupe=alpha}}
+|[[Fichier:Natacha Polony Cannes 2015.jpg|80px|Natacha Polony]]
+| {{Infobox Parti politique français/couleurs|SE}} |
+|''Aucune''
+|''Nous sommes la France''
+|Elle a annonce sa candidature le 14 octobre 2026 sur [[France Inter]]<ref>https://www.leparisien.fr/elections/presidentielle/presidentielle-2027-la-situation-moblige-natacha-polony-annonce-etre-candidate-14-10-2026-MT4CBZFHHVBCXNNMCHAJ6XWTNA.php</ref>{{,}}<ref>{{Lien web |langue=fr |prénom=Anais |nom=Chaline |titre=Présidentielle 2027 : «Je suis candidate», annonce la journaliste Natacha Polony |url=https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-je-suis-candidate-annonce-la-journaliste-natacha-polony-20261014 |site=Le Figaro |date=2026-10-14 |consulté le=2026-10-14}}</ref>{{,}}<ref>https://www.lemonde.fr/politique/article/2026/10/14/presidentielle-2027-natacha-polony-se-declare-candidate_6793497_823448.html</ref>.
+|-
+! {{TriNom|Bruno|Retailleau}}<br>({{Âge|20|11|1960|18|04|2027}})<br>[[Les Républicains]]
+| [[Fichier: Bruno Retailleau - Ministre de l'Intérieur français (cropped).jpg |80px|Bruno Retailleau]]
+| {{Infobox Parti politique français/couleurs|LR}} |
+|
+* Président des [[Les Républicains|Républicains]] <small>(depuis 2025)</small>
+* [[Sénateur français|Sénateur]] de la [[Vendée (département)|Vendée]] <small>(depuis 2025)</small>
+* [[Conseil régional (France)|Conseiller régional]] des [[Pays de la Loire]] <small>(depuis 2015)</small>
+|[[Fichier:Logo-Reteailleau-PNG.png|centré|sans_cadre|164x164px]]''Ne plus subir.''
+[[Bruno Retailleau#Président des Républicains|Campagne]] • [[Bruno Retailleau#Positionnement idéologique|Positions]]
+|
+* [[Ministre d'État (France)|Ministre d’État]], [[Ministre de l'Intérieur (France)|Ministre de l'Intérieur]] <small>(2024-2025)</small>
+* Président du [[Groupe Les Républicains (Sénat)|groupe LR]] au [[Sénat (France)|Sénat]] <small>(2014-2024)</small>
+* [[Sénateur français|Sénateur]] de la [[Vendée (département)|Vendée]] <small>(2004-2024)</small>
+* Président du [[conseil régional des Pays de la Loire]] <small>(2016-2017)</small>
+* Président du [[Conseil départemental de la Vendée|conseil général de la Vendée]] <small>(2010-2015)</small>
+* Vice-président du [[conseil régional des Pays de la Loire]] <small>(1998-2004)</small>
+* [[Député français|Député]] de la {{Circonscription fr|4|Vendée}} <small>(1994-1997)</small>
+* [[Conseil départemental de la Vendée|Conseiller général]] de la [[Vendée (département)|Vendée]] <small>(1988-2005)</small>
+----
+Il est désigné candidat par son parti [[Les Républicains]] le {{date|19 avril 2026}} lors d'une consultation interne<ref>{{Lien web |langue=fr |titre=Bruno Retailleau désigné candidat de LR pour l’élection présidentielle 2027 par les adhérents du parti au cours d’une consultation |url=https://www.lemonde.fr/politique/article/2026/04/19/presidentielle-2027-bruno-retailleau-designe-candidat-des-republicains-par-les-adherents-du-parti-au-cours-d-une-consultation_6681477_823448.html |site=[[Le Monde]] |date=2026-02-12 |consulté le=2026-04-19}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |auteur1= Alexandre Sulzer |auteur2= Quentin Laurent |titre=La « radicalité raisonnable » : officiellement candidat de LR, Bruno Retailleau au pied de la colline présidentielle |url=https://www.leparisien.fr/elections/presidentielle/la-radicalite-raisonnable-officiellement-candidat-de-lr-bruno-retailleau-au-pied-de-la-colline-presidentielle-19-04-2026-6V7M4VIWHRBVFNOVW2TDSC3DG4.php |site=leparisien.fr |date=2026-04-19 |consulté le=2026-04-19}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : Bruno Retailleau largement désigné candidat par les adhérents du parti Les Républicains |url=https://www.franceinfo.fr/politique/les-republicains/presidentielle-2027-bruno-retailleau-largement-designe-candidat-par-les-adherents-du-parti-les-republicains_7949957.html |site=franceinfo |date=2026-04-19 |consulté le=2026-04-19}}.</ref>.
+|-
+! {{TriNom|Fabien|Roussel}}<br>({{Âge|16|4|1969|18|04|2027}})<br>[[Parti communiste français]]
+| [[Fichier:Roussel Fabien 1.jpg|80px|Fabien Roussel]]
+| {{Infobox Parti politique français/couleurs|PCF}} |
+| 
+* Maire de [[Saint-Amand-les-Eaux]] <small>(depuis 2025)</small>
+* [[Parti communiste français#Dirigeants|Secrétaire national]] du [[Parti communiste français]] <small>(depuis 2018)</small>
+|[[Fichier:Candidat-election-2027-pcf-Fabien-Roussel.png|centré|sans_cadre|157x157px]]Vivre !
+|
+* [[Député français|Député]] de la {{Circonscription fr|20|Nord}} <small>(2017-2024)</small>
+----
+Candidat à l'élection présidentielle en [[Élection présidentielle française de 2022|2022]] <small>({{8e}} - 2,28 %)</small>
+----
+Il est désigné candidat par son parti le [[Parti communiste français|PCF]] lors d'une consultation interne le {{Date|6 septembre 2026}}<ref>{{Lien web |langue=fr |prénom=Célestine |nom=Gentilhomme |titre=Présidentielle 2027 : adoubé par ses militants, le communiste Fabien Roussel officialise sa candidature en solitaire |url=https://www.lefigaro.fr/elections/presidentielles/candidats/presidentielle-2027-adoube-par-ses-militants-le-communiste-fabien-roussel-officialise-sa-candidature-en-solitaire-20260906 |site=Le Figaro |date=2026-09-06 |consulté le=2026-09-06}}</ref>{{,}}<ref>{{Article|langue=fr|auteur1=Arthur Louis|titre=Présidentielle 2027 : Fabien Roussel repart en campagne|périodique=Libération|date=6 septembre 2026|lire en ligne=https://www.liberation.fr/politique/presidentielle-2027-fabien-roussel-repart-en-campagne-20260906_LNP67N3RFJGH5AWISUMBPUHHO4/|accès url=libre}}</ref>{{,}}<ref name="5septembre2026_www.ouest-france.fr">{{Article|langue=fr|titre=Présidentielle 2027 : le communiste Fabien Roussel officialise sa candidature|périodique=Ouest-France|date=6 septembre 2026|lire en ligne=https://www.ouest-france.fr/elections/presidentielle/presidentielle-2027-le-communiste-fabien-roussel-officialise-sa-candidature-2dfbe50a-aa12-11f1-a3f7-c4f38a0eaa1c|accès url=libre}}</ref>.
+|-
+! {{TriNom|François|Ruffin}}<br>({{Âge|18|10|1975|18|04|2027}})<br>[[Debout (parti politique)|Debout !]]
+| [[File:François Ruffin (cropped).jpg|alt=François Ruffin|103x103px|François Ruffin]]
+| {{Infobox Parti politique français/couleurs|DVG}} |
+| 
+* Président de [[Debout (parti politique)|Debout !]] <small>(depuis 2025)</small>
+* [[Député français|Député]] de la {{Circonscription fr|1|Somme}} <small>(depuis 2017)</small>
+| [[Fichier:Nous-président!-Ruffin-rouge.png|centré|sans_cadre|206x206px]][[François Ruffin#Positions politiques|Positions]]<br>''Nous président !''
+|
+* Documentariste
+* Porte-parole de [[Debout (parti politique)|Picardie debout !]] <small>(2017-2025)</small>
+----
+Il annonce sa candidature lors d'un meeting à [[Montreuil (Seine-Saint-Denis)|Montreuil]] le {{Date|01|04|2025}} dans le cadre d'une candidature unique à gauche<ref>{{Lien web |auteur1=Anthony Berthelier |titre=Ruffin s’élance vers 2027 avec un meeting contre « les trop mous et les trop fous » |url=https://www.huffingtonpost.fr/politique/article/presidentielle-2027-francois-ruffin-lance-sa-campagne-avec-un-meeting-contre-les-trop-mous-et-les-trop-fous_248275.html |site=[[Le HuffPost]] |date=2025-04-02 |consulté le=2025-04-03}}.</ref>{{,}}<ref>{{Lien web |auteur=P. Gratian |titre=François Ruffin repart en campagne pour se lancer dans la course à la présidentielle de 2027 |url=https://www.ouest-france.fr/elections/presidentielle/francois-ruffin-repart-en-campagne-pour-se-lancer-dans-la-course-a-la-presidentielle-de-2027-bb8ef44c-0f8c-11f0-a359-3785f88c9270 |périodique=[[Ouest France]] |date=1 avril 2025 |consulté le=3 avril 2025}}.</ref>{{,}}<ref>{{Lien web |auteur=[[Le Monde]] avec [[Agence France Presse|AFP]] |titre=François Ruffin estime avoir « la légitimité pour représenter la gauche » à la présidentielle de 2027 |url=https://www.lemonde.fr/politique/article/2025/04/06/francois-ruffin-se-dit-pret-a-representer-la-gauche-a-la-prochaine-presidentielle_6591779_823448.html |périodique=[[Le Monde]] |date=06 avril 2025 |consulté le=7 avril 2025}}.</ref> Il annonce qu’il restera candidat si la primaire n’a pas lieu<ref>{{Lien web |langue=fr |titre=Présidentielle 2027 : "S'il n'y a pas de primaire, moi j'y vais", annonce François Ruffin |url=https://lcp.fr/actualites/presidentielle-2027-s-il-n-y-a-pas-de-primaire-moi-j-y-vais-annonce-francois-ruffin |site=LCP |date=2026-05-12 |consulté le=2026-05-12}}</ref>.
+|-
+! {{TriNom|Marine|Tondelier}}<br>({{Âge|23|août|1986|18|04|2027}})<br>[[Les Écologistes]]
+| [[Fichier:20210819 tondelier.m-cr3.jpg|80px|Marine Tondelier]]
+| {{Infobox Parti politique français/couleurs|LE}} | 
+|
+* [[Secrétaire national des Écologistes|Secrétaire nationale des Écologistes]] <small>(depuis 2022)</small>
+* [[Conseil régional (France)|Conseillère régionale]] des [[Hauts-de-France]] <small>(depuis 2021)</small>
+| [[Fichier:Log-Tenez-bon-nous-arrivons!-Tondelier.webp|centré|sans_cadre|171x171px]][[Marine Tondelier#Prises de position|Positions]]<br>''Tenez bon, nous arrivons !''
+|
+* [[Conseil municipal (France)|Conseillère municipale]] d'[[Hénin-Beaumont]] <small>(2014-2026)</small>
+* [[Conseil communautaire|Conseillère communautaire]] d'[[Communauté d'agglomération Hénin-Carvin|Hénin-Carvin]] <small>(2014-2026)</small>
+----Elle annonce sa candidature le {{date|22 octobre 2025}} dans le cadre d'une nomination par son parti et d'une primaire à gauche<ref>{{Lien web |langue=fr-FR |titre=La patronne des Ecologistes, Marine Tondelier, se déclare candidate à l'élection présidentielle de 2027 |url=https://www.franceinfo.fr/elections/presidentielle/la-patronne-des-ecologistes-marine-tondelier-se-declare-candidate-a-l-election-presidentielle-de-2027_7568824.html |site=[[Franceinfo]] |date=2025-10-22 |consulté le=2025-10-22}}.</ref>{{,}}<ref>{{Lien web |auteur1=Rémy Dodet |auteur2=Maël Thierry |titre=Marine Tondelier : "Pourquoi je suis candidate à l'élection présidentielle" |url=https://www.nouvelobs.com/politique/20251022.OBS109023/marine-tondelier-pourquoi-je-suis-candidate-a-l-election-presidentielle.html |accès url=payant |périodique=[[Le Nouvel Obs]] |date=22 octobre 2025}}.</ref>{{,}}<ref>{{Lien web |auteur=Pierre Lepelletier |titre="Un acte d’amour pour la France" : Marine Tondelier annonce sa "candidature à l'élection présidentielle" |url=https://www.lefigaro.fr/politique/un-acte-d-amour-pour-la-france-marine-tondelier-annonce-sa-candidature-a-l-election-presidentielle-20251022 |site=[[Le Figaro|lefigaro.fr]] |date=22 octobre 2025}}.</ref>. Le {{Date|8 décembre 2025}}, elle est désignée candidate des Écologistes pour la [[primaire de la gauche unitaire de 2026]] avec 86 % des voix<ref>{{Lien web |langue=fr |prénom=Sacha |nom=Nelken 
+|titre=Présidentielle : Marine Tondelier désignée candidate des Ecologistes à l’hypothétique primaire de la gauche |url=https://www.liberation.fr/politique/presidentielle-marine-tondelier-designee-candidate-des-ecologistes-a-lhypothetique-primaire-de-la-gauche-20251208_3HYXDY7Y7VE7BCZ2DRLHT4BEBI/ |périodique=[[Libération (journal)|Libération]] |date=2025-12-08 |consulté le=2025-12-08}}</ref>. Cette primaire ayant été avortée, Marine Tondelier est désignée candidate à l'élection présidentielle par Les Écologiste le {{date|21 septembre 2026}}<ref>{{Article|langue=fr|titre=Marine Tondelier, candidate des Ecologistes à l’élection présidentielle, annonce avoir donné naissance à son deuxième enfant|périodique=Le Monde|date=2026-09-23|issn=1950-6244|lire en ligne=https://www.lemonde.fr/politique/article/2026/09/23/marine-tondelier-candidate-des-ecologistes-a-l-election-presidentielle-annonce-avoir-donne-naissance-a-son-deuxieme-enfant_6780790_823448.html|consulté le=2026-10-12}}</ref>.
+|-
+! {{TriNom|Éric|Zemmour}}<br>({{Âge|31|8|1958|18|04|2027}})<br>[[Reconquête (parti politique)|Reconquête]]
+| [[Fichier:Portrait Éric Zemmour, avril 2022 cropped.jpg|80px|Éric Zemmour]]
+| {{Infobox Parti politique français/couleurs|REC}} |
+| 
+* Président de [[Reconquête (parti politique)|Reconquête]] <small>(depuis 2021)</small>
+|
+|
+Candidat à l'élection présidentielle en [[Élection présidentielle française de 2022|2022]] <small>({{4e}} - 7,07 %)</small>
+----
+Il confirme sa candidature sur [[BFM TV]] le {{Date|17 septembre 2026}}<ref>{{Lien web |titre="Je serai candidat": Éric Zemmour annonce sur BFMTV qu'il se présentera à l'élection présidentielle |url=https://www.bfmtv.com/politique/elections/presidentielle/je-serai-candidat-eric-zemmour-annonce-sur-bfmtv-qu-il-se-presentera-a-l-election-presidentielle_AV-202609170947.html |langue=fr-FR |auteur=Amélie Com |accès url=libre |site=[[BFM TV]] |date=2026-09-17 |consulté le=2026-09-19}}.</ref>{{,}}<ref>{{Lien web |titre=Eric Zemmour, président du parti d’extrême droite Reconquête, annonce qu'il sera candidat à l'élection présidentielle |url=https://www.franceinfo.fr/politique/eric-zemmour/eric-zemmour-president-du-parti-d-extreme-droite-reconquete-annonce-sa-candidature-a-l-election-presidentielle_8198141.html |langue=fr-FR |accès url=libre |site=[[France Info (offre globale)|France Info]] |date=2026-09-17 |consulté le=2026-09-19}}.</ref>{{,}}<ref>{{Article|titre=Présidentielle 2027 : Eric Zemmour confirme sa candidature et dresse la liste des étrangers qu’il veut « renvoyer »|périodique=[[Le Monde]]|date=2026-09-18|langue=fr-FR|lire en ligne=https://www.lemonde.fr/politique/article/2026/09/18/presidentielle-2027-eric-zemmour-confirme-sa-candidature-et-durcit-son-discours-sur-l-immigration_6776761_823448.html|accès url=libre|consulté le=2026-09-19}}.</ref>.
+|}
+
+=== Candidats déclarés dans le cadre d'une primaire ===
+{| class="wikitable sortable" width="100%" style="text-align:center"
+|+
+! colspan="3" width="30%" scope="col" | Candidat (nom et âge{{note|groupe=alpha|nom=age_candidats}}) et parti politique
+! width="25%" scope="col" | Fonction(s) politique(s) lors de la campagne
+! width="15%" scope="col" | Campagne, slogan(s) et consigne de vote
+! width="30%" scope="col" | Commentaires
+|-
+! {{TriNom|David|Lisnard}}<br>({{Âge|2|02|1969|18|04|2027}})<br>[[Nouvelle Énergie]]
+| width="9%" | [[Fichier:David Lisnard - 2013.jpg|80px|David Lisnard]]
+| width="1%" {{Infobox Parti politique français/couleurs|DVD}} |
+| 
+* Président de l'[[Association des maires de France]] <small>(depuis novembre 2021)</small>
+* Président de la [[communauté d'agglomération Cannes Pays de Lérins]] <small>(depuis 2017)</small>
+* Maire de [[Cannes]] <small>(depuis 2014)</small>
+* [[Conseil départemental|Conseiller départemental]] des [[Conseil départemental des Alpes-Maritimes|Alpes-Maritimes]] <small>(depuis 2008)</small>
+| [[David Lisnard#Parcours politique|Positions]]
+|
+Il annonce lors de ses vœux à la presse le {{date|17 janvier 2025}} sa volonté d'être candidat à l'[[Palais de l'Élysée|Élysée]], dans le cadre d'une hypothétique primaire de la droite<ref>{{Lien web |prénom=Quentin|nom=Laurent |titre=David Lisnard sort du bois pour la présidentielle de 2027 : « Je serai de la compétition » |url=https://www.leparisien.fr/politique/david-lisnard-sort-du-bois-pour-la-presidentielle-de-2027-je-serai-de-la-competition-17-01-2025-37ZNNHHB35HMRIH45QPRIA76AQ.php |périodique=[[Le Parisien]] |date=2025-01-17 |consulté le=2025-01-19}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : David Lisnard appelle à une primaire de la droite et se porte candidat |url=https://www.bfmtv.com/politique/presidentielle-2027-david-lisnard-appelle-a-une-primaire-de-la-droite-et-se-porte-candidat_AN-202501170372.html |site=[[BFM TV]] |consulté le=2025-01-26}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : David Lisnard, maire de Cannes, annonce sa candidature {{!}} RCF Nice Côte d'Azur |url=https://www.rcf.fr/articles/actualite/presidentielle-2027-david-lisnard-maire-de-cannes-annonce-sa-candidature |site=[[Radio chrétienne francophone]] |consulté le=2025-01-26}}.</ref>.
+----
+Il déclare sa candidature pour la présidentielle le {{date|31 mars 2026}} en même temps que son départ du parti [[Les Républicains]]. Il maintient sa volonté d'une primaire de la droite<ref>{{Lien web |titre=Le maire de Cannes, David Lisnard, annonce sa candidature à l'élection présidentielle et officialise son départ des Républicains |url=https://www.franceinfo.fr/elections/presidentielle/le-maire-de-cannes-david-lisnard-annonce-sa-candidature-a-l-election-presidentielle-et-officialise-son-depart-des-republicains_7907063.html |site=Franceinfo.fr |date=31/03/2026 |consulté le=31/03/2026}}.</ref>.
+|-
+|}
+
+== Candidats pressentis ==
+{{sticky header}}
+{| class="wikitable sticky-header" width="100%" style="text-align:center"
+|+
+! colspan="3" width="30%" |Candidat (nom et âge{{note|groupe=alpha|nom=age_candidats}}) et parti politique
+! width="40%" | Fonction(s) politique(s) lors de la campagne
+! width="30%" | Commentaires / Anciens engagements politiques
+|-
+![[Jean-Noël Barrot]]<ref>{{Article|titre=« Ce n’est pas parce qu’on est pas candidat à la présidentielle qu’on doit garder sa langue dans sa poche » : Jean-Noël Barrot veut peser au centre|périodique=[[Le Télégramme]]|date=2026-06-28|langue=fr-FR|auteur1=Baptiste Pace|lire en ligne=https://www.letelegramme.fr/politique/ce-nest-pas-parce-quon-est-pas-candidat-a-la-presidentielle-quon-doit-garder-sa-langue-dans-sa-poche-jean-noel-barrot-veut-peser-au-centre-7073544.php|accès url=libre|consulté le=2026-07-17}}</ref>{{,}}<ref>{{Article|titre=Présidentielle 2027 : «Je pense que Jean-Noël Barrot sera candidat», avance le député MoDem Richard Ramos|périodique=[[Le Figaro]]|date=2026-06-29|langue=fr-FR|auteur1=Anaïs Chaline|lire en ligne=https://www.lefigaro.fr/politique/presidentielle-2027-je-pense-que-jean-noel-barrot-sera-candidat-avance-le-depute-modem-richard-ramos-20260629|accès url=libre|consulté le=2026-07-17}}</ref>{{,}}<ref>{{Article|titre=« Il s’est pris au jeu politique » : pour la présidentielle de 2027, Jean-Noël Barrot ne veut pas rester à quai|périodique=[[Le Parisien]]|date=2026-07-13|langue=fr-FR|auteur1=Thomas Soulié|lire en ligne=https://www.leparisien.fr/elections/presidentielle/il-sest-pris-au-jeu-politique-pour-la-presidentielle-de-2027-jean-noel-barrot-ne-veut-pas-rester-a-quai-13-07-2026-OEW6NNT6IFA45PLU52KBVTNCMU.php|accès url=payant|consulté le=2026-07-17}}</ref><br>({{Âge|13|05|1983|18|04|2027}})<br>[[Mouvement démocrate (France)|Mouvement démocrate]]
+|[[Fichier:Jean-Noël Barrot 2024 (cropped).jpg|centré|sans_cadre|80px|Jean-Noël Barrot]]
+| {{Infobox Parti politique français/couleurs|MoDem}} |
+|
+*[[Ministère de l'Europe et des Affaires étrangères|Ministre de l'Europe et des Affaires étrangères]] <small>(depuis 2024)</small>
+*[[Conseil régional d'Île-de-France|Conseiller régional d'Île-de-France]] <small>(depuis 2021)</small>
+|
+*Président de la [[Commission des Affaires étrangères (Assemblée nationale)|commission des Affaires étrangères]] de l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(2024)</small>
+*[[Député français|Député]] de la {{Circonscription fr|2|Yvelines}} <small>(2017-2022 ; 2022 ; 2024)</small>
+*[[Ministre chargé des Affaires européennes|Ministre délégué chargé de l'Europe]] <small>(2024)</small>
+*[[Conseiller départemental]] de la [[Conseil départemental de la Haute-Loire|Haute-Loire]] <small>(2015-2017)</small>
+|-
+! [[Aurore Bergé]]<ref>{{Article|titre=Présidentielle 2027 : Aurore Bergé assume son ambition et défend l’héritage Macron|périodique=[[Le Journal du dimanche]]|date=2025-06-29|langue=fr-FR|auteur1=Antonin André|lire en ligne=https://www.lejdd.fr/politique/presidentielle-2027-aurore-berge-assume-son-ambition-et-defend-lheritage-macron-159668|accès url=payant|auteur2=Hélène Roué|consulté le=2026-08-28}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : «Je ne ferme pas la porte», prévient la ministre Aurore Bergé |url=https://www.cnews.fr/france/2025-07-01/presidentielle-2027-je-ne-ferme-pas-la-porte-previent-la-ministre-aurore-berge |langue=fr-FR |accès url=libre |site=[[CNews]] |date=2025-07-01 |consulté le=2026-08-28}}.</ref>{{,}}<ref>{{Lien web |titre=Pourquoi Aurore Bergé ne veut pas de LR dans la primaire qu’elle réclame pour la présidentielle 2027 |url=https://www.huffingtonpost.fr/politique/article/pourquoi-aurore-berge-ne-veut-pas-de-lr-dans-la-primaire-qu-elle-reclame-pour-la-presidentielle-2027_253889.html |langue=fr-FR |auteur=Maxime Birken |accès url=libre |site=[[Le HuffPost]] |date=2025-08-22 |consulté le=2026-08-28}}.</ref><br>({{Âge|13|11|1986|18|04|2027}})<br>[[Renaissance (parti)|Renaissance]]
+| [[Fichier:AURORE BERGÉ 04 (cropped).jpg|80px|Aurore Bergé]]
+| {{Infobox Parti politique français/couleurs|RE}} |
+|
+* [[Ministre chargé des Droits des femmes|Ministre déléguée chargée de l’Égalité entre les femmes et les hommes et de la Lutte contre les discriminations]] <small>(depuis décembre 2024)</small>
+* [[Conseil régional (France)|Conseillère régionale]] d'[[Île-de-France]] <small>(depuis 2021)</small>
+|
+* [[Député français|Députée]] de la {{Circonscription fr|10|Yvelines}} <small>(2017-2023 ; 2024-2025)</small>
+* [[Ministre chargé des Droits des femmes|Ministre déléguée chargée de l’Égalité entre les femmes et les hommes et de la Lutte contre les discriminations]] <small>(2024)</small>
+* [[Ministère de la Santé (France)|Ministre des Solidarités]] [[Liste des ministres français chargés de la Famille|et des Familles]]
+* Présidente du [[Groupe Ensemble pour la République|groupe Renaissance]] à l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(2022-2023)</small>
+*Présidente déléguée du [[Groupe Ensemble pour la République|groupe LREM]] à l'[[Assemblée nationale (France)|Assemblée nationale]] <small>(2020-2022)</small>
+* Porte-parole de [[Renaissance (parti)|La République en marche]] <small>(2019-2020)</small>
+|-
+! [[François Hollande]]<ref>{{Article|titre=Tourné vers la présidentielle de 2027, François Hollande veut reprendre la main sur la gauche|périodique=[[Le Figaro]]|date=2025-01-21|langue=fr-FR|auteur1=Richard Flurin|lire en ligne=https://www.lefigaro.fr/politique/tourne-vers-la-presidentielle-de-2027-francois-hollande-veut-reprendre-la-main-sur-la-gauche-20250121|accès url=payant|auteur2=Pierre Lepelletier|auteur3=Tristan Quinault-Maupoil}}.</ref>{{,}}<ref>{{Article|titre=Présidentielle 2027 : le bilan de François Hollande pèse-t-il face à ses rivaux ?|périodique=[[Marianne (magazine)|Marianne]]|date=2026-05-15|langue=fr-FR|auteur1=Aurore Malval|lire en ligne=https://www.marianne.net/politique/gauche/presidentielle-2027-le-bilan-de-francois-hollande-pese-t-il-face-a-ses-rivaux|accès url=payant|consulté le=2026-06-11}}.</ref>{{,}}<ref>{{Article|titre=Présidentielle : en marge de la primaire, François Hollande continue de jouer la carte du recours|périodique=[[Libération (journal)|Libération]]|date=2026-08-28|langue=fr-FR|auteur1=Sacha Nelken|lire en ligne=https://www.liberation.fr/politique/presidentielle-en-marge-de-la-primaire-francois-hollande-continue-de-jouer-la-carte-du-recours-20260828_V7CIHEPWP5E5ZA72AI7E5J4V3E/|accès url=payant|consulté le=2026-08-28}}.</ref><br>({{Âge|12|8|1954|18|04|2027}})<br>[[Parti socialiste (France)|Parti socialiste]]
+| [[Fichier:François Hollande - 2017 (27869823159) (cropped 2).jpg|80px|François Hollande]]
+| {{Infobox Parti politique français/couleurs|PS}} |
+| 
+* [[Député français|Député]] de la {{Circonscription fr|1|Corrèze}} <small>(depuis 2024)</small>
+* [[Liste des membres du Conseil constitutionnel français|Membre]] de droit du [[Conseil constitutionnel (France)|Conseil constitutionnel]] <small>(depuis 2017)</small>
+|
+* [[Président de la République française|Président de la République]] <small>(2012-2017)</small>
+* Président du [[Conseil départemental de la Corrèze|conseil général de la Corrèze]] <small>(2008-2012)</small>
+* Maire de [[Tulle]] <small>(2001-2008)</small>
+* [[Premier secrétaire du Parti socialiste]] <small>(1997-2008)</small>
+* [[Député européen]] <small>(1999)</small>
+----
+Candidat à l'élection présidentielle en [[Élection présidentielle française de 2012|2012]] <small>({{1er|tour}} : {{1er}} - 28,63 % // {{2d|tour}} : {{1er}} - 51,64 %)</small>
+|-
+![[Jean Lassalle]]<ref>{{Lien web |langue=fr |titre=Présidentielle 2027: Jean Lassalle annonce lancer une cagnotte pour pouvoir être candidat, un objectif de 100.000 euros fixé |url=https://www.bfmtv.com/politique/elections/presidentielle/presidentielle-2027-jean-lassalle-annonce-lancer-une-cagnotte-pour-pouvoir-etre-candidat-un-objectif-de-100-000-euros-fixe_AN-202607100464.html |site=[[BFM TV]] |date=2026-07-10 |consulté le=2026-07-19}}</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027 : Jean Lassalle lance une cagnotte pour pouvoir être de nouveau candidat à l'élection |url=https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-jean-lassalle-lance-une-cagnotte-pour-pouvoir-etre-de-nouveau-candidat-a-l-election_8102522.html |site=[[France Info (offre globale)|France Info]] |date=2026-07-15 |consulté le=2026-07-19}}</ref>{{,}}<ref>{{Article|titre=Présidentielle 2027 : Jean Lassalle lance une cagnotte pour financer sa troisième campagne|périodique=[[Le Figaro]]|date=2026-07-15|langue=fr-FR|auteur1=Le Figaro avec AFP|lire en ligne=https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-jean-lassalle-lance-une-cagnotte-pour-financer-sa-troisieme-campagne-20260715|accès url=libre|consulté le=2026-07-15}}</ref><br>({{Âge|3|5|1955|18|04|2027}})<br>[[Résistons]]
+|[[Fichier:Jean Lassalle 04 (cropped).jpg|centré|sans_cadre|80px|Jean Lassalle]]
+| {{Infobox Parti politique français/couleurs|RES}} |
+|
+Président de [[Résistons]] <small>(depuis 2016)</small>
+|
+*[[Député français|Député]] de la {{Circonscription fr|4|Pyrénées-Atlantiques}} <small>(2002-2022)</small>
+*[[Conseil départemental|Vice-président]] du [[conseil général des Pyrénées-Atlantiques]] <small>(1991-2001)</small>
+*[[Conseiller général (France)|Conseiller général]] des [[Pyrénées-Atlantiques]] <small>(1982-2015)</small>
+*[[Maire (France)|Maire]] de [[Lourdios-Ichère]] <small>(1977-2017)</small>
+|-
+![[Bruno Le Maire]]<ref>{{Article|titre=« Je ne compte rester ni muet ni inactif » : Bruno Le Maire ne ferme pas la porte à une candidature en 2027|périodique=[[Le Figaro]]|date=2026-06-04|langue=fr-FR|auteur1=Marie-Cécile Renault|lire en ligne=https://www.lefigaro.fr/politique/je-ne-compte-rester-ni-muet-ni-inactif-bruno-le-maire-ne-ferme-pas-la-porte-a-une-candidature-en-2027-20260602|accès url=payant|consulté le=2026-07-13}}</ref>{{,}}<ref>{{Article|titre=Présidentielle 2027 : la nouvelle radicalité de Bruno Le Maire|périodique=[[Les Échos]]|date=2026-06-23|langue=fr-FR|auteur1=Grégoire Poussielgue|lire en ligne=https://www.lesechos.fr/elections/presidentielle/presidentielle-2027-la-nouvelle-radicalite-de-bruno-le-maire-2238758|accès url=libre|consulté le=2026-07-13}}</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : Bruno Le Maire candidat ? "Bien sûr que j'y réfléchis", déclare-t-il sur LCI |url=https://www.tf1info.fr/politique/en-direct-election-presidentielle-2027-rentree-politique-marine-le-pen-discours-retailleau-les-dernieres-informations-samedi-12-septembre-2026-2463778.html |langue=fr-FR |accès url=libre |site=[[TF1 Info]] |date=2026-09-12 |consulté le=2026-10-09}}.</ref><br>({{Âge|15|4|1969|18|04|2027}})<br>[[Renaissance (parti)|Renaissance]]
+|[[Fichier:EU2024BE 240223 Informal meeting of economic and financial affairs ministers Gent JNZT 0040 (53545889372).jpg|centré|sans_cadre|80px|Bruno Le Maire]]
+| {{Infobox Parti politique français/couleurs|RE}} |
+|
+''Aucune''
+|
+*[[Ministre d'État (France)|Ministre d'État]], [[Ministère des Armées|Ministre des Armées]] et [[Liste des ministres français des Anciens Combattants|des Anciens Combattants]] <small>(2026)</small>
+*[[Ministère de l'Économie et des Finances (France)|Ministre de l'Économie, des Finances et de la Souveraineté industrielle et numérique]]<small> (2017-2024)</small>
+*[[Député français|Député]] de la {{Circonscription fr|1|Eure}} <small>(2007-2009, 2012-2017, 2017)</small>
+*[[Conseil régional (France)|Conseiller régional]] du [[Conseil régional de Haute-Normandie|Haute-Normandie]] <small>(2010-2015)</small>
+*[[Ministère de l'Agriculture (France)|Ministre de l'Agriculture, de l'Alimentation, de la Pêche, de la Ruralité et de l'Aménagement du territoire]] <small>(2009-2012)</small>
+*[[Ministre chargé des Affaires européennes|Secrétaire d'État aux Affaires européennes]] <small>(2008-2009)</small>
+*[[Liste des directeurs de cabinet du Premier ministre français|Directeur de cabinet du Premier ministre]] <small>(2006-2007)</small>
+|-
+! [[Matthieu Pigasse]]<ref>{{Lien web |titre="Je n'exclus jamais rien": le patron de presse Matthieu Pigasse veut "peser" sur la présidentielle 2027 |url=https://www.bfmtv.com/politique/elections/presidentielle/je-n-exclus-jamais-rien-le-patron-de-presse-matthieu-pigasse-veut-peser-sur-la-presidentielle-2027_AD-202601140323.html |langue=fr-FR |accès url=libre |site=[[BFM TV]] |date=2026-01-14 |consulté le=2026-01-14}}.</ref>{{,}}<ref>{{Article|titre=« Je serai président » : Matthieu Pigasse, ce banquier de la gauche radicale qui rêve d’une revanche sur Emmanuel Macron|périodique=[[Le Figaro]]|date=2026-05-31|langue=fr-FR|auteur1=Paul Sugy|lire en ligne=https://www.lefigaro.fr/actualite-france/je-serai-president-matthieu-pigasse-ce-banquier-de-la-gauche-radicale-qui-reve-d-une-revanche-sur-emmanuel-macron-20260531|accès url=payant|consulté le=2026-08-30}}.</ref>{{,}}<ref>{{Article|titre=Matthieu Pigasse, le (presque) candidat crypto-mélenchonien|périodique=[[Le Point]]|date=2026-06-08|langue=fr-FR|auteur1=Sophie Coignard|lire en ligne=https://www.lepoint.fr/debats/matthieu-pigasse-le-presque-candidat-crypto-melenchonien-M2RLA7O5R5DHHPBQRCHFJA2MRY/|accès url=libre|consulté le=2026-08-30}}.</ref><br>({{Âge|25|05|1968|18|04|2027}})<br>[[Indépendant (politique)|Sans étiquette]]
+| [[Fichier:Matthieu Pigasse aux JDE 2026.jpg|80px|Matthieu Pigasse]]
+| {{Infobox Parti politique français/couleurs|SE}} |
+|''Aucune''
+|''Aucune''
+|-
+! [[Teddy Riner]]<ref>{{Lien web |titre=Teddy Riner ne dit pas non à la politique, mais le ministère des Sports n’est pas celui qui l’intéresse le plus |url=https://www.huffingtonpost.fr/politique/article/teddy-riner-ne-dit-pas-non-a-la-politique-mais-le-ministere-des-sports-n-est-pas-celui-qui-l-interesse-le-plus_250214.html |langue=fr-FR |accès url=libre |site=[[Le HuffPost]] |date=2025-05-19 |consulté le=2025-05-19}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : Teddy Riner pourrait-il sérieusement avoir sa chance, comme l’indique un surprenant sondage ? |url=https://www.20minutes.fr/sport/jo_2024/4160530-20250626-presidentielle-2027-teddy-riner-pourrait-serieusement-avoir-chance-comme-indique-surprenant-sondage |langue=fr-FR |accès url=libre |site=[[20 Minutes]] |date=2025-06-26 |consulté le=2025-06-26}}.</ref>{{,}}<ref>{{Lien web |titre=Teddy Riner président? L’étonnant sondage pour 2027 qui rend crédible son avenir en politique |url=https://rmcsport.bfmtv.com/judo/teddy-riner-president-l-etonnant-sondage-pour-2027-qui-rend-credible-son-avenir-en-politique_AV-202506260307.html |langue=fr-FR |accès url=libre |site=[[RMC Sport]] |date=2025-06-26 |consulté le=2025-06-26}}.</ref><br>({{Âge|07|04|1989|18|04|2027}})<br>[[Indépendant (politique)|Sans étiquette]]
+| [[Fichier:Teddy Riner Cannes 2016.jpg|80px|Teddy Riner]]
+| {{Infobox Parti politique français/couleurs|SE}} |
+| ''Aucune''
+| ''Aucune''
+|-
+! [[Sandrine Rousseau]]<ref>{{Article|titre=Sandrine Rousseau, rencontre avec celle par qui le scandale arrive|périodique=[[Paris Match]]|date=2022-10-06|langue=fr-FR|auteur1=Laurence Ferrari|lire en ligne=https://www.parismatch.com/actu/politique/sandrine-rousseau-rencontre-avec-celle-par-qui-le-scandale-arrive-217112|accès url=libre|consulté le=2026-05-26}}.</ref>{{,}}<ref>{{Lien web |titre="Je pense que j'y réfléchirai": Sandrine Rousseau prête à participer à une primaire "la plus ouverte possible" |url=https://www.bfmtv.com/politique/elections/presidentielle/je-pense-que-j-y-reflechirai-sandrine-rousseau-prete-a-participer-a-une-primaire-la-plus-ouverte-possible_AN-202505260858.html |langue=fr-FR |auteur=Matthieu Heyman |accès url=libre |site=[[BFM TV]] |date=2025-05-26 |consulté le=2025-05-26}}.</ref>{{,}}<ref>{{Lien web |titre=Loi "Duplomb" : Sandrine Rousseau dénonce "la pression" qu'exerce la FNSEA sur le travail parlementaire |url=https://lcp.fr/actualites/loi-duplomb-sandrine-rousseau-denonce-la-pression-qu-exerce-la-fnsea-sur-le-travail |langue=fr-FR |auteur=Soizic Bonvarlet |accès url=libre |site=[[La Chaîne parlementaire|LCP]] |date=2025-05-26 |consulté le=2025-05-26}}.</ref><br>({{Âge|8|3|1972|18|04|2027}})<br>[[Les Écologistes]]
+| [[Fichier:Sandrine Rousseau 20210819 (cropped).jpg|80px|Sandrine Rousseau]]
+| {{Infobox Parti politique français/couleurs|LÉ}} |
+| 
+* [[Député français|Députée]] de la {{Circonscription fr|9|Paris}} <small>(depuis 2022)</small>
+| 
+* Secrétaire nationale adjointe d'[[Les Écologistes|Europe Écologie Les Verts]] <small>(2016-2017)</small>
+* Porte-parole d'[[Les Écologistes|Europe Écologie Les Verts]] <small>(2013-2016)</small>
+* Vice-présidente du [[conseil régional du Nord-Pas-de-Calais]] <small>(2010-2015)</small>
+* [[Conseil régional (France)|Conseillère régionale]] du [[Conseil régional du Nord-Pas-de-Calais|Nord-Pas-de-Calais]] <small>(2010-2015)</small>
+----
+Candidate à l'élection présidentielle en [[Élection présidentielle française de 2022|2022]] dans le cadre de la [[Primaire présidentielle française de l'écologie de 2021|primaire de l'écologie]], perdue face à [[Yannick Jadot]] <small>({{1er}} tour {{2e}} - 25,14 % // {{2d}} tour {{2e}} - 48,97 %)</small>
+|-
+! [[Manuel Valls]]<ref>{{Article|titre=Présidentielle 2027 : face aux «extrêmes», Manuel Valls appelle «les républicains à se rassembler»|périodique=[[Le Figaro]]|date=2025-04-27|langue=fr-FR|auteur1=John Timsit|lire en ligne=https://www.lefigaro.fr/politique/presidentielle-2027-face-aux-extremes-manuel-valls-appelle-les-republicains-a-se-rassembler-20250427|accès url=libre|consulté le=2025-05-24}}.</ref>{{,}}<ref>{{Article|titre=Manuel Valls : « Je ne peux pas me désintéresser de 2027 »|périodique=[[Le Parisien]]|date=2025-05-23|langue=fr-FR|auteur1=Marcelo Wesfreid|lire en ligne=https://www.leparisien.fr/politique/manuel-valls-je-ne-peux-pas-me-desinteresser-de-2027-23-05-2025-5ORQGZFUMVHJDEIT7OQOVV5GWA.php|accès url=payant|auteur2=Pierre Maurer|auteur3=Pauline Théveniaud|consulté le=2025-05-24}}.</ref>{{,}}<ref>{{Article|titre=Manuel Valls candidat à la présidentielle 2027 ? Il laisse planer le doute...|périodique=[[Gala (magazine)|Gala]]|date=2025-05-24|langue=fr-FR|auteur1=Nina Siahpoush-Royoux|lire en ligne=https://www.gala.fr/l_actu/news_de_stars/manuel-valls-candidat-a-la-presidentielle-2027-il-laisse-planer-le-doute-20250524|accès url=libre|consulté le=2025-05-24}}.</ref><br>({{Âge|13|08|1962|18|04|2027}})<br>[[Renaissance (parti)|Renaissance]]
+| [[Fichier:Manuel Valls 2025 (cropped).jpg|80px|Manuel Valls]]
+| {{Infobox Parti politique français/couleurs|RE}} |
+| ''Aucune''
+|
+* [[Ministre d'État (France)|Ministre d’État]], Ministre des Outre-mer <small>(2024-2025)</small>
+* [[Mairie de Barcelone|Conseiller municipal]] de [[Barcelone]] <small>(2019-2021)</small>
+* [[Député français|Député]] de la {{Circonscription fr|1|Essonne}} <small>(2002-2012 ; 2017-2018)</small>
+* [[Premier ministre français|Premier ministre]] <small>(2014-2016)</small>
+* [[Ministre de l'Intérieur (France)|Ministre de l'Intérieur]] <small>(2012-2014)</small>
+* Maire d'[[Évry]] <small>(2001-2012)</small>
+* Premier vice-président du [[conseil régional d'Île-de-France]] <small>(1998-2002)</small>
+* [[Conseil régional (France)|Conseiller régional]] d'[[Conseil régional d'Île-de-France|Île-de-France]] <small>(1986-2002)</small>
+|-
+![[Dominique de Villepin]]<ref>{{Lien web |titre=Pourquoi Villepin ne croit pas que sa candidature à la présidentielle 2027 se heurtera au même mur qu’en 2012 |url=https://www.huffingtonpost.fr/politique/article/pourquoi-villepin-ne-croit-pas-que-sa-candidature-a-la-presidentielle-2027-se-heurtera-au-meme-mur-qu-en-2012_262038.html |langue=fr-FR |auteur=Jade Toussay |accès url=libre |site=[[Le HuffPost]] |date=2026-03-29 |consulté le=2026-06-11}}.</ref>{{,}}<ref>{{Article|titre=Présidentielle : Dominique de Villepin se veut le « candidat du rassemblement » en 2027|périodique=[[Le Monde]]|date=2026-04-10|langue=fr-FR|lire en ligne=https://www.lemonde.fr/politique/article/2026/04/10/presidentielle-dominique-de-villepin-se-veut-le-candidat-du-rassemblement-en-2027_6679080_823448.html|accès url=libre|consulté le=2026-08-30}}.</ref>{{,}}<ref>{{Article|titre=« En septembre, tout sera prêt » : Dominique de Villepin, la campagne avant la candidature à la présidentielle de 2027|périodique=[[Le Figaro]]|date=2026-08-17|langue=fr-FR|auteur1=Kiara Carrière|lire en ligne=https://www.lefigaro.fr/elections/presidentielles/en-septembre-tout-sera-pret-dominique-de-villepin-la-campagne-avant-la-candidature-20260817|accès url=payant|consulté le=2026-08-30}}.</ref><br>({{Âge|14|11|1953|18|04|2027}})<br>[[Dominique de Villepin#Retour médiatique depuis 2024 et lancement du mouvement La France humaniste|La France humaniste]]
+| [[Fichier:Dominique de Villepin 20100330 Salon du livre de Paris 2 cropped.jpg|80px|Dominique de Villepin]]
+| width="1%" {{Infobox Parti politique français/couleurs|DVD}} |
+|
+* Président d'honneur de [[Dominique de Villepin#Retour médiatique depuis 2024 et lancement du mouvement La France humaniste|La France humaniste]] <small>(depuis 2025)</small>
+|
+*[[Premier ministre français|Premier ministre]] <small>(2005-2007)</small>
+* [[Ministre de l'Intérieur (France)|Ministre de l'Intérieur, de la Sécurité intérieure et des Libertés locales]] <small>(2004-2005)</small>
+* [[Ministère de l'Europe et des Affaires étrangères|Ministre des Affaires étrangères]] <small>(2002-2004)</small>
+* [[Cabinet du président de la République française|Secrétaire général]] de la [[Président de la République française|présidence de la République]] <small>(1995-2002) </small>
+----
+Il indique sa volonté d’être « ''un candidat du rassemblement'' » en marge du forum « [[Normandie pour la Paix]] » à Caen le {{Date|10/04/2026}}.
+----
+Candidat à la candidature à l'[[Élection présidentielle française de 2012|élection présidentielle de 2012]], il échoue à obtenir le nombre de [[Présentation des candidats à l'élection présidentielle française|parrainages]] nécessaire.
+|-
+! [[Philippe de Villiers]]<ref>{{Article|titre=Philippe de Villiers, l’aiguillon de Vincent Bolloré en vue de 2027|périodique=[[Le Monde]]|date=2025-10-12|langue=fr-FR|auteur1=Clément Guillou|lire en ligne=https://www.lemonde.fr/politique/article/2025/10/12/philippe-de-villiers-l-aiguillon-de-vincent-bollore-en-vue-de-2027_6645890_823448.html|accès url=payant|consulté le=2026-01-24}}.</ref>{{,}}<ref>{{Lien web |titre=Souveraineté, Ukraine, présidentielle 2027… Ce qu’il faut retenir de l’interview de Philippe de Villiers dans «La France en Face» |url=https://www.europe1.fr/politique/en-direct-philippe-de-villiers-invite-de-la-france-en-face-sur-europe-1-874342 |langue=fr-FR |accès url=libre |site=[[Europe 1]] |date=2025-12-08 |consulté le=2026-01-24}}.</ref>{{,}}<ref>{{Article|titre=Philippe de Villiers : «2027 sera la dernière chance de la France»|périodique=[[Le Journal du dimanche]]|date=2025-12-24|langue=fr-FR|auteur1=Geoffroy Lejeune|lire en ligne=https://www.lejdd.fr/politique/philippe-de-villiers-2027-sera-la-derniere-chance-de-la-france-165294|accès url=payant|auteur2=Jules Torres|consulté le=2026-01-24}}.</ref><br>({{Âge|25|03|1949|18|04|2027}})<br>[[Droite souverainiste]]
+| [[Fichier:DE VILLIERS Philippe MEP.jpg|116x116px|Philippe de Villiers]]
+| {{Infobox Parti politique français/couleurs|DSV}} |
+| ''Aucune''
+|
+* Président du [[Mouvement pour la France]] <small>(1994-2018)</small>
+* [[Député européen]] <small>(1994-1997 ; 1999 ; 2004-2014)</small>
+* [[Liste des présidents du conseil départemental de la Vendée|Président]] du [[Conseil départemental de la Vendée|conseil général de la Vendée]] <small>(1988-2010)</small>
+* [[Conseiller départemental|Conseiller général]] de la [[Vendée (département)|Vendée]] <small>(1987-2010)</small>
+* [[Député français|Député]] de la {{Circonscription fr|4|Vendée}} <small>(1987-1988 ; 1988-1994 ; 1994-2004) </small>
+* [[Liste des ministres français de la Culture et de la Communication|Secrétaire d'État à la Culture]] <small>(1986-1987) </small>
+----
+Candidat à l'élection présidentielle en [[Élection présidentielle française de 1995|1995]] <small>({{7e}} - 4,74 %)</small> et [[Élection présidentielle française de 2007|2007]] <small>({{6e}} - 2,23 %)</small>
+|}
+
+== Élection primaire ==
+=== Primaire socialiste ===
+{{Article détaillé|Primaire présidentielle socialiste française de 2026}}
+Une primaire est organisée conjointement par le [[Parti socialiste (France)|Parti socialiste]] (PS), [[Place publique (parti politique)|Place Publique]] (PP) et la [[Gauche républicaine et socialiste]] (GRS). Elle vise à rassembler l'espace politique social-démocrate autour d'une candidature commune. [[Raphaël Glucksmann]] (PP) est désigné dès le premier tour de la primaire le {{date|11/10/2026}}. À l'issue de cette primaire, les autres candidats en lice ([[Olivier Faure]] (PS), [[Ségolène Royal]] (PS), [[Emmanuel Maurel]] (GRS) et [[Jérôme Guedj]] (PS)) retirent leur candidature<ref>{{Article|langue=fr|prénom1=Sandrine|nom1=Cassini|prénom2=Robin|nom2=Richardot|titre=Présidentielle 2027 : Raphaël Glucksmann, vainqueur de la primaire à gauche, doit désormais mettre la famille sociale-démocrate en ordre de bataille|périodique=Le Monde|date=2026-10-12|issn=1950-6244|lire en ligne=https://www.lemonde.fr/election-presidentielle-2027/article/2026/10/12/presidentielle-2027-raphael-glucksmann-vainqueur-de-la-primaire-a-gauche-au-defi-de-mettre-la-famille-sociale-democrate-en-ordre-de-bataille_6792381_6205049.html|consulté le=2026-10-12}}</ref>.
+
+{|class="wikitable centre" style="text-align:right"
+|+ Résultats définitifs validés par la Haute Autorité<ref>{{Lien web |langue=fr |titre=EN DIRECT, primaire à gauche : Raphaël Glucksmann désigné candidat à l’élection présidentielle dès le premier tour, avec 66 % des voix |url=https://www.lemonde.fr/election-presidentielle-2027/live/2026/10/11/en-direct-primaire-a-gauche-qui-de-raphael-glucksmann-olivier-faure-segolene-royal-emmanuel-maurel-ou-jerome-guedj-va-se-qualifier-pour-le-second-tour-suivez-les-resultats-du-premier-tour_6791926_6205049.html |site=lemonde.fr |date=2026-10-11 |consulté le=2026-10-11}}</ref>
+! rowspan=2 colspan=2 scope=col | Candidat
+! rowspan=2 scope=col | Parti
+! colspan=2 scope=col | Premier tour
+|-
+! scope=col | Voix
+! scope=col | %
+|-
+| {{Infobox Parti politique français/couleurs|PP}} |
+| align=left | '''[[Raphaël Glucksmann]]'''
+| align=center | [[Place publique (parti politique)|PP]]
+| '''{{formatnum:79613}}'''
+|'''66,17'''
+|-
+| {{Infobox Parti politique français/couleurs|PS}} |
+| align=left | [[Olivier Faure]]
+| align=center | [[Parti socialiste (France)|PS]]
+| {{formatnum:17398}}
+| 14,46
+|-
+| {{Infobox Parti politique français/couleurs|PS}} |
+| align=left | [[Ségolène Royal]]
+| align=center | [[Parti socialiste (France)|PS]]
+| {{formatnum:9165}}
+| 7,62
+|-
+| {{Infobox Parti politique français/couleurs|GRS}} |
+| align=left | [[Emmanuel Maurel]]
+| align=center | [[Gauche républicaine et socialiste|GRS]]
+| {{formatnum:7119}}
+| 5,92
+|-
+| {{Infobox Parti politique français/couleurs|PS}} |
+| align=left | [[Jérôme Guedj]]
+| align=center | [[Parti socialiste (France)|PS]]
+| {{formatnum:7012}}
+| 5,83
+|- {{ligne blanche}}
+| colspan=5 |
+|-
+| align=left colspan=3 | Votes valides
+| {{formatnum:120307}}
+| 99,60
+|-
+| align=left colspan=3 | Votes blancs et nuls
+| 480
+| 0,40
+|- style=font-weight:bold
+| align=left colspan=3 | Total
+| 120 787
+| 100
+|-
+|align=left colspan=3 | Abstentions
+| 13 669
+| 10,17
+|-
+| align=left colspan=3 | Inscrits / participation
+| 134 456
+| 89,83
+|}
+
+== Candidatures retirées ==
+* [[Clémentine Autain]] ([[L'Après]]), députée de la {{Circonscription fr|11|Seine-Saint-Denis}}. Après avoir annoncé sa candidature en mars 2025 à la [[Primaire de la gauche unitaire de 2026|primaire de la gauche unitaire]]<ref>{{Article |auteur1=Sandrine Cassini|titre=Élection présidentielle : Clémentine Autain se place en vue d’une primaire à gauche|périodique=[[Le Monde]]|date=2025-03-07|lire en ligne=https://www.lemonde.fr/politique/article/2025/03/07/election-presidentielle-clementine-autain-se-place-en-vue-d-une-primaire-a-gauche_6577075_823448.html|consulté le=2025-03-09|accès url=payant}}.</ref>, elle la retire le 11 juillet 2026<ref>{{Article|langue=fr-FR|auteur1=Le Monde avec AFP|titre=Présidentielle 2027 : Clémentine Autain prend acte de l’échec de la « primaire unitaire » de la gauche et renonce à être candidate|périodique=[[Le Monde]]|date=2026-07-11|lire en ligne=https://www.lemonde.fr/politique/article/2026/07/11/presidentielle-2027-clementine-autain-prend-acte-de-l-echec-de-la-primaire-unitaire-de-la-gauche-et-renonce-a-etre-candidate_6722715_823448.html?lmd_medium=al&lmd_campaign=envoye-par-appli&lmd_creation=android&lmd_source=default|accès url=libre|consulté le=2026-07-11}}.</ref>.
+* [[Benjamin Lucas-Lundy]] ([[Génération.s|G·s]]), député de la {{Circonscription fr|8|Yvelines}}. Après avoir annoncé le 15 mai 2026 être candidat à la [[Primaire de la gauche unitaire de 2026|primaire de la gauche unitaire]]<ref>{{Lien web |langue=fr |titre=Présidentielle 2027 : Benjamin Lucas-Lundy dit sur TF1 "souhaiter être candidat" à la primaire de la gauche |url=https://www.tf1info.fr/politique/election-presidentielle-2027-le-depute-ecologiste-benjamin-lucas-lundy-dit-sur-tf1-souhaiter-etre-candidat-a-la-primaire-de-la-gauche-2441454.html |site=[[TF1 Info]] |date=2026-05-14 |accès url=libre |consulté le=2026-05-14}}.</ref>, il la retire le 7 juillet<ref>{{Article|titre=Le député Benjamin Lucas-Landy retire sa candidature à la primaire unitaire de la gauche|périodique=[[Le Monde]]|date=2026-07-07|langue=fr-FR|auteur1=Le Monde avec AFP|lire en ligne=https://www.lemonde.fr/politique/article/2026/07/07/le-depute-benjamin-lucas-landy-retire-sa-candidature-a-la-primaire-unitaire-de-la-gauche_6721467_823448.html|accès url=libre|consulté le=2026-07-07}}.</ref>.
+* [[Lydie Massard]] ([[Union démocratique bretonne|UDB]]), co-porte-parole de [[Régions et peuples solidaires]]. Après avoir annoncée en avril 2026 être candidate à la [[Primaire de la gauche unitaire de 2026|primaire de la gauche unitaire]]<ref>{{Lien web |langue=fr |auteur=Aurélie Dupuy |titre=La Pontivyenne Lydie Massard, ex-députée européenne, candidate à la primaire de la gauche pour la présidentielle |url=https://www.ouest-france.fr/elections/presidentielle/la-pontivyenne-lydie-massard-ex-deputee-europeenne-candidate-a-la-primaire-de-la-gauche-pour-la-presidentielle-0cd197e2-2e77-11f1-9aaf-bfbe7938d313 |accès url=libre |date=02/04/2026 |site=[[Ouest France]] |consulté le=26 septembre 2026}}.</ref>, elle la retire le 9 septembre<ref>{{Article|auteur1=Théo Leclerc|titre="Porter ça d’une autre manière" : à Pontivy, Lydie Massard renonce à la primaire de la gauche pour la présidentielle|périodique=[[Ouest-France]]|date=09/09/2026|lire en ligne=https://www.ouest-france.fr/elections/presidentielle/porter-ca-dune-autre-maniere-a-pontivy-lydie-massard-renonce-a-la-primaire-de-la-gauche-pour-la-presidentielle-1fe99272-ac6b-11f1-8346-c9d5c99462af?token=1285e966e86a8632cb94676663e6f6b63d17a3d0c4ed7b08b1b4c3da07d15c4ef991c07f2c7d2ca9d961ffabcd2665c1adda62}}</ref>.
+
+== Candidats pressentis ayant décliné ==
+=== Extrême gauche ===
+* [[Philippe Poutou]] ([[Nouveau Parti anticapitaliste|NPA-A]]), porte-parole du [[Nouveau Parti anticapitaliste|Nouveau Parti anticapitaliste – L'Anticapitaliste]], candidat aux présidentielles en [[Élection présidentielle française de 2012|2012]], [[Élection présidentielle française de 2017|2017]] et [[Élection présidentielle française de 2022|2022]] (soutient [[Jean-Luc Mélenchon]])<ref>{{Lien web |titre=Les voeux de Philippe Poutou pour la gauche en 2027 |url=https://www.huffingtonpost.fr/politique/article/en-2027-philippe-poutou-aimerait-bien-une-candidature-large-a-gauche_212437.html |site=[[Le HuffPost]] |date=2023-01-07 |consulté le=2025-02-17}}.</ref>{{,}}<ref>{{Lien web |titre=Présidentielle 2027 : pas de candidat pour le NPA-Anticapitaliste, qui veut se rallier à Jean-Luc Mélenchon |url=https://www.tf1info.fr/politique/presidentielle-2027-pas-de-candidat-pour-le-npa-qui-veut-discuter-d-un-ralliement-a-jean-luc-melenchon-2450028.html |site=[[TF1 Info]] |date=2026-06-28 |consulté le=2026-06-29}}.</ref>.
+
+=== Gauche ===
+* [[Lucie Castets]] ([[Divers gauche|DVG]]), [[Maire d'arrondissement (France)|maire]] du {{12e arrondissement de Paris}} depuis 2026, co-fondatrice de la [[primaire de la gauche unitaire de 2026|primaire de la gauche unitaire]]<ref>{{Lien web |titre="On ne peut pas être joueur et arbitre": Lucie Castets assure qu'elle ne sera pas candidate à la présidentielle en 2027 |url=https://www.bfmtv.com/politique/elections/presidentielle/on-ne-peut-pas-etre-joueur-et-arbitre-lucie-castets-assure-qu-elle-ne-sera-pas-candidate-a-la-presidentielle-en-2027_AV-202601310175.html |site=[[BFM TV]] |date=2026-01-31 |consulté le=2026-06-29}}.</ref>.
+* [[Carole Delga]] ([[Parti socialiste (France)|PS]]), présidente du [[conseil régional d'Occitanie]] depuis 2016 (soutient [[Raphaël Glucksmann]]<ref>{{Lien web |langue=fr |titre="Le meilleur candidat à gauche pour gagner": Carole Delga confirme son soutien pour Raphaël Glucksmann |url=https://www.bfmtv.com/politique/elections/presidentielle/le-meilleur-candidat-a-gauche-pour-gagner-carole-delga-confirme-son-soutien-pour-raphael-glucksmann_AN-202608270244.html |site=BFM |date=2026-08-27 |consulté le=2026-08-27}}</ref>).
+* [[Boris Vallaud]] ([[Parti socialiste (France)|PS]]), député de la [[Troisième circonscription des Landes|3<sup>ème</sup> circonscription des Landes]] depuis 2017, président du [[Groupe socialiste (Assemblée nationale, France)|groupe SOC]] depuis 2022 (soutient [[Raphaël Glucksmann]]<ref>{{Article|langue=fr|titre=Présidentielle 2027 : Boris Vallaud, chef du PS à l’Assemblée nationale, annonce son soutien à Raphaël Glucksmann|périodique=Le Monde|date=2026-08-27|issn=1950-6244|lire en ligne=https://www.lemonde.fr/politique/article/2026/08/27/presidentielle-boris-vallaud-chef-du-ps-a-l-assemblee-nationale-annonce-son-soutien-a-raphael-glucksmann_6758454_823448.html|consulté le=2026-08-27}}</ref>).
+* [[Yannick Jadot]] ([[Les Écologistes|LE]] {{Abréviation discrète|diss.|dissident}}), sénateur de [[Liste des sénateurs de Paris|Paris]] depuis 2023, candidat à la [[Élection présidentielle française de 2022|présidentielle de 2022]] (soutient [[Raphaël Glucksmann]]<ref>{{Lien web |langue=fr |titre=L’écologiste Yannick Jadot annonce son ralliement à Raphaël Glucksmann |url=https://www.20minutes.fr/politique/4240560-20260824-presidentielle-2027-ecologiste-yannick-jadot-annonce-ralliement-raphael-glucksmann |site=20 Minutes |date=2026-08-24 |consulté le=2026-08-24}}</ref>{{,}}<ref>{{Article|langue=fr|titre=Présidentielle 2027 : Yannick Jadot se range derrière Raphaël Glucksmann et sera chargé de préparer « la mise en place d’un état d’urgence écologique »|périodique=Le Monde|date=2026-08-24|issn=1950-6244|lire en ligne=https://www.lemonde.fr/politique/article/2026/08/24/presidentielle-2027-yannick-jadot-apporte-son-soutien-a-raphael-glucksmann_6755022_823448.html|consulté le=2026-08-24}}</ref>).
+* [[Christiane Taubira]] ([[Divers gauche|DVG]]), [[Ministre de la Justice (France)|ministre de la Justice]] de 2012 à 2016, candidate à la [[Élection présidentielle française de 2002|présidentielle de 2002]]<ref>{{Article|titre=Présidentielle 2027 : Christiane Taubira adoube Clémentine Autain|périodique=[[Libération (journal)|Libération]]|date=2024-03-26|langue=fr-FR|auteur1=Benjamin Delille|lire en ligne=https://www.liberation.fr/politique/presidentielle-2027-christiane-taubira-adoube-clementine-autain-20240326_7PK46KP2ERGNLBOICGXDBKGDX4/|accès url=payant|consulté le=2026-07-14}}</ref>.
+
+=== Centre ===
+* [[François Bayrou]] ([[Mouvement démocrate (France)|MoDem]]), [[Premier ministre français|Premier ministre]] de 2024 à 2025, candidat aux présidentielles en [[Élection présidentielle française de 2002|2002]], [[Élection présidentielle française de 2007|2007]] et [[Élection présidentielle française de 2012|2012]]<ref>{{Lien web |langue=fr-FR |auteur=Franceinfo avec AFP |titre=L'ancien Premier ministre François Bayrou n'est "pas candidat" à l'élection présidentielle de 2027 |url=https://www.franceinfo.fr/elections/presidentielle/l-ancien-premier-ministre-francois-bayrou-n-est-pas-candidat-a-l-election-presidentielle-de-2027_8054486.html |site=[[France Info (offre globale)|franceinfo.fr]] |date=10/06/2026 |consulté le=20/06/2026}}.</ref>{{,}}<ref name=":Bayrou Marseille Borne">{{Lien web |langue=fr |titre=Présidentielle 2027: François Bayrou, Hervé Marseille et Élisabeth Borne choisiront ensemble quel candidat soutenir |url=https://www.bfmtv.com/politique/elections/presidentielle/presidentielle-2027-francois-bayrou-herve-marseille-et-elisabeth-borne-choisiront-ensemble-quel-candidat-soutenir_AD-202607100386.html |site=BFM |date=2026-07-10 |consulté le=2026-08-31}}</ref>.
+* [[Élisabeth Borne]] ([[Renaissance (parti)|RE]]), Première ministre de 2022 à 2024<ref name=":Bayrou Marseille Borne" />.
+* [[Yaël Braun-Pivet]] ([[Renaissance (parti)|RE]]), [[Président de l'Assemblée nationale (France)|présidente de l'Assemblée nationale]] depuis 2022, [[Député français|députée]] des [[Cinquième circonscription des Yvelines|Yvelines]] depuis 2017<ref>{{Article|titre=Présidentielle 2027 : Yaël Braun-Pivet écarte sa candidature, mais reste « disponible pour parler du fond »|périodique=[[Le Monde]]|date=2026-05-02|langue=fr-FR|lire en ligne=https://www.lemonde.fr/election-presidentielle-2027/article/2026/05/02/presidentielle-2027-yael-braun-pivet-ecarte-sa-candidature-mais-reste-disponible-pour-parler-du-fond_6684890_6205049.html|accès url=libre}}.</ref>.
+* [[Gérald Darmanin]] ([[Renaissance (parti)|RE]]), [[Ministre de la Justice (France)|garde des Sceaux, ministre de la Justice]] depuis 2024 (soutient [[Édouard Philippe]])<ref>{{Article|langue=fr|titre=Présidentielle : Gérald Darmanin ne sera pas candidat et apporte son soutien à Edouard Philippe|périodique=Le Monde|date=2026-08-17|issn=1950-6244|lire en ligne=https://www.lemonde.fr/politique/article/2026/08/17/presidentielle-gerald-darmanin-ne-sera-pas-candidat-et-apporte-son-soutien-a-edouard-philippe_6748404_823448.html|consulté le=2026-08-17}}</ref>.
+* [[Sébastien Lecornu]] ([[Renaissance (parti)|RE]]), [[Premier ministre français|Premier ministre]] depuis 2025<ref>{{Article|titre=Présidentielle 2027 : «Je ne suis pas candidat à l’élection», martèle Sébastien Lecornu, qui esquisse ses pistes budgétaires|périodique=[[Le Figaro]]|date=2026-08-29|langue=fr-FR|lire en ligne=https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-je-ne-suis-pas-candidat-a-l-election-martele-sebastien-lecornu-20260829|accès url=libre}}.</ref>.
+
+=== Droite ===
+* [[Michel Barnier]] ([[Les Républicains|LR]]), [[Député français|député]] de la {{Circonscription fr|2|Paris}} depuis 2025, [[Premier ministre français|Premier ministre]] en 2024 (soutient [[Bruno Retailleau]]<ref>{{Lien web |titre=«Bâtir ensemble 2027» : Michel Barnier poursuit son projet de plate-forme en marge de la présidentielle et des législatives |url=https://www.cnews.fr/france/2026-06-17/batir-ensemble-2027-michel-barnier-poursuit-son-projet-de-plate-forme-en-marge-de |langue=fr-FR |auteur=Antoine Delplanque |accès url=libre |site=[[CNews]] |date=2026-06-17 |consulté le=2026-08-28 |extrait=Alors que la rumeur d’une candidature de Michel Barnier a un temps été évoquée, le principal intéressé a réfuté cette option. «Aujourd’hui, je soutiens évidemment Bruno Retailleau. [...]».}}.</ref>).
+* [[François Baroin]] ([[Les Républicains|LR]]), maire de [[Troyes]] depuis 1995 (soutient [[Bruno Retailleau]]<ref>{{Lien web |titre=En déplacement à Troyes, Bruno Retailleau reçoit l'appui de François Baroin |url=https://www.bfmtv.com/politique/elections/presidentielle/en-deplacement-a-troyes-bruno-retailleau-recoit-l-appui-de-francois-baroin_AD-202610090583.html |langue=fr-FR |accès url=libre |site=[[BFM TV]] |date=2026-10-09 |consulté le=2026-10-09}}.</ref>).
+* [[Jean Castex]] ([[Divers droite|DVD]]), [[Liste des présidents de la SNCF|président]] de la [[Société nationale des chemins de fer français|SNCF]] depuis 2025, [[Premier ministre français|Premier ministre]] de 2020 à 2022<ref>{{Lien web |langue=fr-FR |titre="Ni à l'ordre du jour, ni dans mon horizon": Jean Castex assure qu'il n'est pas candidat à l'élection présidentielle de 2027 |url=https://www.bfmtv.com/politique/elections/presidentielle/ni-a-l-ordre-du-jour-ni-dans-mon-horizon-jean-castex-assure-qu-il-n-est-pas-candidat-a-l-election-presidentielle-de-2027_AN-202607010391.html |site=[[BFM TV]] |date=2026-07-01 |consulté le=2026-07-25|auteur=Lara Clerc|accès url=libre}}</ref>.
+* [[Christine Lagarde]] ([[Divers droite|DVD]]), [[Président de la Banque centrale européenne|présidente de la BCE]] depuis 2019<ref>{{Lien web |titre="Ça ne serait pas du tout une bonne idée" : Christine Lagarde écarte l'hypothèse d'une candidature à l'élection présidentielle |url=https://www.franceinfo.fr/elections/presidentielle/ca-ne-serait-pas-du-tout-une-bonne-idee-christine-lagarde-ecarte-l-hypothese-d-une-candidature-a-l-election-presidentielle_8216920.html |langue=fr-FR |auteur= |accès url=libre |site=[[France Info (offre globale)|France Info]] |date=2026-09-30 |consulté le=2026-10-04}}.</ref>.
+* [[Robert Ménard]] ([[Divers droite|DVD]]), [[Maire (France)|maire]] de [[Béziers]] depuis 2014, président de [[Béziers Méditerranée]] depuis 2020 (soutient [[Bruno Retailleau]]<ref>{{Article|titre=Présidentielle 2027 : Robert Ménard appelle Bruno Retailleau à se «débarrasser» des «boulets» de son parti|périodique=[[Le Figaro]]|date=2026-07-09|langue=fr-FR|auteur1=Anais Chaline|lire en ligne=https://www.lefigaro.fr/politique/presidentielle-2027-robert-menard-appelle-bruno-retailleau-a-se-debarrasser-des-boulets-de-son-parti-20260709|accès url=libre|consulté le=2026-08-28}}.</ref>).
+* [[Valérie Pécresse]] ([[Les Républicains|LR]]), [[Liste des présidents des assemblées des régions de France|présidente]] du [[conseil régional d'Île-de-France]] depuis 2015, candidate à la [[Élection présidentielle française de 2022|présidentielle de 2022]] (soutient [[Bruno Retailleau]]<ref>{{Article|titre=«Les programmes sont en train de converger» : Pécresse appelle Philippe et Retailleau à «un rassemblement de la droite et du centre»|périodique=[[Le Figaro]]|date=2026-08-24|langue=fr-FR|auteur1=Anais Chaline|lire en ligne=https://www.lefigaro.fr/elections/presidentielles/les-programmes-sont-en-train-de-converger-pecresse-appelle-philippe-et-retailleau-a-un-rassemblement-de-la-droite-et-du-centre-20260824|accès url=libre|consulté le=2026-08-31|extrait=Les louanges passées, elle a tenu à rappeler son soutien au candidat sa famille politique, Bruno Retailleau. «Il a la légitimité pour porter son projet. C’est quelqu’un qui est sincère, qui a des convictions», a-t-elle vanté.}}.</ref>).
+* [[Laurent Wauquiez]] ([[Les Républicains|LR]]), président du [[groupe parlementaire|groupe]] [[groupe Droite républicaine|Droite républicaine]] à l'[[Assemblée nationale (France)|Assemblée nationale]] depuis 2024, [[Député français|député]] de la {{Circonscription fr|1|Haute-Loire}} depuis 2024, de 2004 à 2007 et de 2012 à 2017 (soutient [[Bruno Retailleau]]<ref>{{Lien web |titre=Présidentielle 2027: Laurent Wauquiez assure que Bruno Retailleau est "le candidat légitime des Républicains" et laisse "de côté toute candidature" |url=https://www.bfmtv.com/politique/les-republicains/presidentielle-2027-laurent-wauquiez-assure-que-bruno-retailleau-est-le-candidat-legitime-des-republicains-et-laisse-de-cote-toute-candidature_AN-202605120449.html |langue=fr-FR |auteur=Juliette Moreau Alvarez |accès url=libre |site=[[BFM TV]] |date=12/05/2026}}.</ref> puis [[Édouard Philippe]]<ref>{{Lien web |titre=Présidentielle 2027 : Laurent Wauquiez estime que Bruno Retailleau doit "savoir se retirer" et tend la main à Édouard Philippe |url=https://www.rtl.fr/actu/politique/edouard-philippe-peut-incarner-l-ordre-et-le-serieux-laurent-wauquiez-soutient-le-candidat-horizons-et-invite-bruno-retailleau-a-se-retirer-7900651585 |langue=fr-FR |auteur=Marie-Pierre Haddad |accès url=libre |site=[[RTL]] |date=2026-07-01 |consulté le=2026-07-02}}</ref>{{,}}<ref>{{Lien web |titre="Le candidat LR est en dessous de 10%": Laurent Wauquiez juge que Bruno Retailleau doit "savoir se retirer si c'est nécessaire" et tend la main à Édouard Philippe pour la présidentielle |url=https://www.bfmtv.com/politique/elections/presidentielle/le-candidat-lr-est-en-dessous-de-10-laurent-wauquiez-juge-que-bruno-retailleau-doit-savoir-se-retirer-si-c-est-necessaire-et-tend-la-main-a-edouard-philippe-pour-la-presidentielle_AN-202607010735.html |langue=fr-FR |auteur=Lara Clerc |accès url=libre |site=[[BFM TV]] |date=2026-07-01 |consulté le=2026-07-02}}</ref>).
+
+=== Extrême droite ===
+* [[Jordan Bardella]] ([[Rassemblement national|RN]]), président du [[Rassemblement national]] depuis 2022, [[député européen]] depuis 2019 (soutient [[Marine Le Pen]]<ref>{{Article|langue=fr-FR|auteur1=Paul Laubacher|titre=Jordan Bardella au Figaro : «Ma responsabilité est de bâtir le programme, former un gouvernement et conquérir une majorité»|périodique=[[Le Figaro]]|date=2026-07-12|lire en ligne=https://www.lefigaro.fr/politique/jordan-bardella-au-figaro-ma-responsabilite-est-de-batir-le-programme-former-un-gouvernement-et-conquerir-une-majorite-20260712|accès url=libre|consulté le=2026-07-12}}.</ref>).
+* [[Éric Ciotti]] ([[Union des droites pour la République|UDR]]), président de l'[[Union des droites pour la République]] depuis 2024, maire de [[Nice]] depuis 2026, candidat au [[congrès des Républicains de 2021]] (soutient [[Marine Le Pen]]<ref>{{Lien web |titre=Présidentielle 2027 : pour Eric Ciotti, "la droite ne peut pas gagner sans une alliance avec le Rassemblement national" |url=https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-pour-eric-ciotti-la-droite-ne-peut-pas-gagner-sans-une-alliance-avec-le-rassemblement-national_7277532.html |site=[[France Info]] |date=2025-05-28 |consulté le=2025-05-30}}.</ref>).
+* [[Sarah Knafo]] ([[Reconquête (parti politique)|REC]]), [[Député européen|députée européenne]] depuis 2024, conseillère d'[[Éric Zemmour]] lors de l'[[élection présidentielle française de 2022]] (soutient [[Éric Zemmour]]<ref>{{Article|titre=Sarah Knafo estime qu’elle « pourrait travailler avec Bruno Retailleau »|périodique=[[Valeurs actuelles]]|date=2025-05-23|langue=fr-FR|lire en ligne=https://www.valeursactuelles.com/politique/sarah-knafo-estime-quelle-pourrait-travailler-avec-bruno-retailleau|accès url=libre|consulté le=2025-06-26|extrait=Questionnée sur une possible candidature à la présidentielle de 2027, Sarah Knafo écarte toute ambition présidentielle personnelle : « Non, Éric Zemmour sera candidat en 2027 », affirme-t-elle, balayant les rumeurs à son sujet.}}.</ref>{{,}}<ref>{{Lien web |langue=fr-FR |titre="Pas candidate à l'élection présidentielle" de 2027, Sarah Knafo lance "une grande consultation des Français" |url=https://www.franceinfo.fr/politique/pas-candidate-a-l-election-presidentielle-de-2027-sarah-knafo-lance-une-grande-consultation-des-francais_7970540.html |site=[[France Info (offre globale)|France Info]] |date=2026-04-29 |consulté le=2026-05-07}}.</ref>).
+* [[Marion Maréchal]] ([[Identité-Libertés|IDL]]), [[Député européen|députée européenne]] depuis 2024, présidente du parti [[Identité-Libertés]] depuis 2024, tête de liste de [[Reconquête (parti politique)|Reconquête]] aux [[Élections européennes de 2024 en France|élections européennes de 2024]] (soutient [[Marine Le Pen]]<ref>{{Lien web |titre="Nous serons à ses côtés jusqu'au bout": Marion Maréchal réitère son soutien à Marine Le Pen pour 2027 |url=https://www.bfmtv.com/politique/front-national/nous-serons-a-ses-cotes-jusqu-au-bout-marion-marechal-reitere-son-soutien-a-marine-le-pen-pour-2027_AV-202505260784.html |site=[[BFM TV]] |date=2025-05-26 |consulté le=2025-06-01}}.</ref>).
+
+=== Autres ===
+* [[Laurent Berger]] ([[Indépendant (politique)|SE]]), ancien [[secrétaire général]] de la [[Confédération française démocratique du travail|CFDT]] de 2012 à 2023<ref>{{Lien web |langue=fr-FR |titre=Présidentielle 2027: "Je ne veux pas être candidat", assure Laurent Berger, ancien secrétaire général de la CFDT |url=https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-je-ne-veux-pas-etre-candidat-assure-laurent-berger-ancien-secretaire-general-de-la-cfdt_8049995.html |site=franceinfo |date=2026-06-08 |consulté le=2026-07-16}}</ref>.
+* [[Cyril Hanouna]] ([[Indépendant (politique)|SE]]), animateur et producteur de télévision et de radio, chef d'entreprise<ref>{{Lien web |titre= "Je ne me présenterai pas en 2027": Cyril Hanouna dément les rumeurs d’une candidature |url= https://rmc.bfmtv.com/actualites/politique/je-ne-me-presenterai-pas-en-2027-cyril-hanouna-dement-les-rumeurs-d-une-candidature_AD-202504290712.html |site=[[RMC]] |date= 29 avril 2025 |consulté le= 29 avril 2025}}.</ref>.
+* [[Michel-Édouard Leclerc]] ([[Indépendant (politique)|SE]]), président d'[[E.Leclerc]]<ref>{{Article|langue=fr-FR|auteur1=Cyril Petit|titre=Présidentielle 2027. Michel-Édouard Leclerc : « Je suis coté à la Bourse des présidentiables, mais… »|périodique=[[Ouest-France]]|date=2026-07-11|lire en ligne=https://www.ouest-france.fr/elections/presidentielle/presidentielle-2027-michel-edouard-leclerc-je-suis-cote-a-la-bourse-des-presidentiables-mais-je-ne-postule-pas-0d1cc60a-7c9b-11f1-a3cc-61ee167b6bba|consulté le=2026-07-25|accès url=libre}}</ref>.
+
+== Notes et références ==
+{{Crédit d'auteurs|interne|Élection présidentielle française de 2027|238765860}}
+=== Notes ===
+{{Références|groupe="alpha"}}
+
+=== Références ===
+{{Références}}
+
+== Voir aussi ==
+* [[Présentation des candidats à l'élection présidentielle française]]
+* [[Liste de sondages sur l'élection présidentielle française de 2027]]
+* [[Présidentiabilité en France sous la Cinquième République]]
+
+{{Palette|Élection présidentielle française de 2027|Scrutins en France sous la Cinquième République}}
+{{Portail|politique française|années 2020|Cinquième République}}
+
+[[Catégorie:Élection présidentielle française de 2027]]

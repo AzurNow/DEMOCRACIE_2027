@@ -1,0 +1,397 @@
+# URL à archiver — dossier de périmètre FINAL, date de référence (gel) 2026-10-15 (relevés du 2026-10-15)
+# Une URL par ligne, précédée d'un commentaire. Les URL http ont été écrites en https
+# (normalisation-url-v1), sauf les copies Wayback citées telles quelles.
+# Cette liste reprend celle du 2026-10-09 (urls-a-archiver.txt) et la complète. Rien n'a été archivé
+# par l'agent. Les entrées marquées [NOUVEAU 15/10] ne figuraient pas dans la liste du 9.
+
+# ======================= AJOUTS DU 2026-10-15 =======================
+
+# --- sondages : nouvelles notices d'intention de vote dans la fenêtre (10-15 octobre) [NOUVEAU 15/10]
+# sondage 2321 : Toluna Harris Interactive / M6 & RTL, publication 12 octobre (terrain 5-8 octobre)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10305-pres-iv-toluna-harris-interactive-12-octobre.pdf
+# sondage 2325 : Odoxa / Backbone, Public Sénat, presse régionale, Le Nouvel Obs, publication 14 octobre 18 h
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10310-pres-iv-odoxa-14-octobre.pdf
+# sondage 2327 : Ifop-Fiducial / LCI, Sud Radio, « climat politique après la victoire de Raphaël Glucksmann », publication 14 octobre
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10314-pres-climat-politique-post-primaire-ps-pp-ifop-lci-14-octobre.pdf
+
+# --- sondages : notices du 8 au 15 octobre lues et écartées [NOUVEAU 15/10]
+# 2317 Toluna HI / L'Opinion, suivi du potentiel électoral (pas d'intention de vote)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10300-pres-suivi-potentiel-electoral-toluna-harris-interactive-l-opinion-8-octobre.pdf
+# 2320 Toluna HI, primaire PS (intention de vote à la primaire, pas présidentielle)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10304-pres-primaire-ps-toluna-harris-interactive-9-octobre.pdf
+# 2319 CSA / CNews, 10 octobre (noms seulement dans la reconstitution du vote 2022)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10301-pres-csa-cnews-10-octobre.pdf
+# 2322 Ipsos BVA / La Tribune Dimanche, baromètre (pas d'intention de vote)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10303-pres-barometre-ipsos-bva-la-tribune-dimanche-10-octobre.pdf
+# 2324 Verian / L'Hémicycle, IA et élection (pas d'intention de vote)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10308-pres-ia-et-election-verian-lhemcicycle-14-octobre.pdf
+# 2326 Ifop, 14 octobre (pas d'intention de vote)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10309-pres-ifop-14-octobre.pdf
+# 2257 / 2258 OpinionWay POLLITICS (terrains de mars 2026 et septembre 2024), désormais dans la liste thématique, hors fenêtre
+https://www.commission-des-sondages.fr/notices/medias/fichiers/add/2257
+https://www.commission-des-sondages.fr/notices/medias/fichiers/add/2258
+
+# --- instituts [NOUVEAU 15/10]
+# Odoxa : page d'accueil (aucune mention d'association professionnelle trouvée)
+https://www.odoxa.fr/
+# Cluster17, YouGov : pages lues sans mention d'association
+https://cluster17.com/
+https://fr.yougov.com/
+# Annuaire ESOMAR (rendu en JavaScript, non interrogeable sans navigateur)
+https://directory.esomar.org/
+
+# --- primaire PS - Place publique - GRS : résultat [NOUVEAU 15/10]
+# choisir2027.fr : le domaine affiche le 2026-10-15 une page de parking Gandi (« choisir2027.fr is unavailable ») ; HTTPS refusé
+https://choisir2027.fr/
+# copie Wayback existante la plus récente (2026-10-10 17:31 UTC), sans résultat
+https://web.archive.org/web/20261010173102/https://choisir2027.fr/
+# Place publique (parti co-organisateur) : « Raphaël Glucksmann remporte la primaire ! » (66,17 %, 79 613 votants)
+https://place-publique.eu/
+# Glucksmann : site de campagne, « Cette victoire est un début. »
+https://glucks2027.fr/
+# presse : Touteleurope, 2026-10-11 (66,13 % dans le corps du texte ; Royal 7,62 %, Maurel 5,92 %, Guedj 5,80 %)
+https://www.touteleurope.eu/vie-politique-des-etats-membres/presidentielle-2027-l-eurodepute-raphael-glucksmann-remporte-largement-la-primaire-de-la-gauche-sociale-democrate/
+# presse : CNews, 2026-10-11 (403 pour l'agent)
+https://www.cnews.fr/france/2026-10-11/primaire-de-la-gauche-derriere-la-victoire-de-raphael-glucksmann-comment-se-sont
+
+# --- primaire de la gauche unitaire (11 octobre) [NOUVEAU 15/10]
+# Wikipédia EN : « Cancelled » (avec « Citation needed ») ; Wikipédia FR : « projet non abouti »
+https://en.wikipedia.org/wiki/2026_United_Left_primary
+# Ruffin : « Je suis candidat à la présidence de la République française » (relu le 15 octobre)
+https://francoisruffin.fr/
+# Tondelier : « Marine Tondelier – Candidate à l’élection présidentielle » (titre de page, relu le 15 octobre)
+https://marinetondelier.fr/
+
+# --- déclarations nouvelles ou consolidées [NOUVEAU 15/10]
+# Dupont-Aignan : titre « Nicolas Dupont-Aignan - Candidat à l'élection présidentielle 2027 ! » et « Je serai le candidat en 2027… »
+https://www.nicolasdupontaignan.fr/
+# Natacha Polony, déclarée le 2026-10-14 (aucun sondage) : presse
+https://www.lefigaro.fr/elections/presidentielles/presidentielle-2027-je-suis-candidate-annonce-la-journaliste-natacha-polony-20261014
+# Gilles Platret, déclaré le 2026-10-08 (aucun sondage) : presse
+https://www.leparisien.fr/elections/presidentielle/presidentielle-2027-la-guerre-civile-a-deja-commence-le-maire-divers-droite-de-chalon-sur-saone-gilles-platret-annonce-sa-candidature-09-10-2026-7Z4HG62GOJHTNOFLHDN7J7HZLQ.php
+# Wikipédia FR, liste des candidatures (secondaire), état du 2026-10-15
+https://fr.wikipedia.org/wiki/Candidatures_%C3%A0_l%27%C3%A9lection_pr%C3%A9sidentielle_fran%C3%A7aise_de_2027
+
+# --- outils [NOUVEAU 15/10]
+# Perplexity : la page « search control » redirige le 15 octobre vers « Migrate from Sonar to the Agent API »
+https://docs.perplexity.ai/docs/grounded-llm/chat-completions/filters/search-control
+https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview
+
+# --- comparateurs [NOUVEAU 15/10]
+# MonChoix 2027 : « Données en cours de constitution (mise à jour du 2026-10-13) »
+https://www.monchoix2027.com/
+
+# ======================= LISTE DU 2026-10-09 (reprise) =======================
+# Les URL des stores sont à archiver à nouveau à la date du 15 (le contenu a changé).
+
+# --- sondages : liste de la Commission des sondages
+# liste thématique 2027 - Présidentielle (index des notices)
+https://www.commission-des-sondages.fr/notices/medias/fichiers/bytag/14/2027-Presidentielle
+# communiqué / page d'accueil (rapport d'activité, communiqué du 14 septembre 2026)
+https://www.commission-des-sondages.fr/
+
+# --- sondages : notices d'intention de vote dans la fenêtre (preuves d'inclusion)
+# sondage 2248 : Toluna Harris Interactive / M6 & RTL, août 2026
+https://www.commission-des-sondages.fr/notices/files/notices/2026/aout/10239-pres-toluna-harris-interactive-rtl-24-aout.pdf
+# sondage 2250 : Ifop-Fiducial / LCI, Le Figaro, Sud Radio, baromètre V5
+https://www.commission-des-sondages.fr/notices/files/notices/2026/aout/10242-pres-barometre-election-pres-iv-v5-ifop-26-aout.pdf
+# sondage 2253 : Elabe / BFMTV, La Tribune Dimanche, 29 août
+https://www.commission-des-sondages.fr/notices/files/notices/2026/aout/10245-pres-iv-elabe-29-aout.pdf
+# sondage 2256 : Cluster17 / Le Grand Continent
+https://www.commission-des-sondages.fr/notices/files/notices/2026/aout/10246-pres-cluster17-le-grand-continent-31-aout.pdf
+# sondage 2262 : Ipsos BVA / Le Parisien, 5 septembre
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10250-pres-iv-ipsos-bva-le-parisien-5-septembre.pdf
+# sondage 2263 : Cluster17 / Le Point
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10251-pres-iv-cluster-17-le-point-5-septembre.pdf
+# sondage 2264 : OpinionWay / JDD
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10252-pres-iv-opinionway-jdd-7-septembre.pdf
+# sondage 2270 : OpinionWay / Les Echos - Radio Classique (Presitrack V2)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10259-pres-presitrack-v2-opinionway-les-echos-10-septembre.pdf
+# sondage 2273 : OpinionWay / CNews
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10260-pres-iv-opinionway-cnews-11-septembre.pdf
+# sondage 2275 : Ipsos BVA / CEVIPOF - Le Monde - FJJ - Institut Montaigne (enquête électorale)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10262-pres-enquete-electorale-ipsos-bva-le-monde-13-septembre.pdf
+# sondage 2276 : Toluna Harris Interactive / M6 & RTL, 14 septembre
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10263-pres-iv-toluna-harris-interactive-rtl-14-septembre.pdf
+# sondage 2277 : OpinionWay / Sébastien Bonnal
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10264-pres-opinionway-facebook-15-septembre.pdf
+# sondage 2286 : Cluster17 / Politico
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10273-pres-iv-cluster17-politico-24-septembre.pdf
+# sondage 2293 : YouGov / Le HuffPost
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10270-pres-iv-yougov-huffpost-23-septembre.pdf
+# sondage 2290 : Toluna Harris Interactive / M6 & RTL, 28 septembre
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10277-pres-toluna-harris-interactive-rtl-28-septembre.pdf
+# sondage 2308 : Ifop-Fiducial / LCI, Le Figaro, Sud Radio, baromètre V6
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10284-pres-barometre-election-v6-ifop-30-septembre.pdf
+# sondage 2310 : Ifop / Parti du vote blanc
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10292-pres-vote-blanc-ifop-6-octobre.pdf
+
+# --- sondages : notices lues et écartées (traçabilité de l'exclusion)
+# 2249 Toluna HI potentiel électoral (pas d'intention de vote)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/aout/10240-pres-suivi-potentiel-electoral-v8-toluna-harris-interactive-26-aout.pdf
+# 2272 Odoxa primaire droite centre (pas d'intention de vote présidentielle)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/septembre/10257-pres-primaire-droite-centre-odoxa-9-septembre.pdf
+# 2306 Elabe primaire à gauche (pas d'intention de vote présidentielle)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10289-pres-primaire-a-gauche-elabe-3-octobre.pdf
+# 2315 Verian stature présidentielle (pas d'intention de vote)
+https://www.commission-des-sondages.fr/notices/files/notices/2026/octobre/10297-pres-stature-presidentielle-v6-verian-le-figaro-magazine-8-octobre.pdf
+
+# --- instituts : adhésion à une association professionnelle
+# Syntec Conseil, Études : liste des membres (Elabe, Harris Interactive, Ifop, Ipsos BVA, Toluna, Verian)
+https://syntec-conseil.fr/expertises/etudes/
+# Syntec Conseil : nos membres
+https://syntec-conseil.fr/nos-membres/
+# OpinionWay : « Membre actif d'Esomar » (déclaration de l'institut)
+https://www.opinion-way.com/fr/
+
+# --- primaire PS - Place publique - GRS (déclarations par les partis, calendrier)
+# choisir2027 : liste des 5 candidats et calendrier (1er tour 9-10 oct., 2nd tour 16-17 oct.)
+https://choisir2027.fr/
+# règlement / processus de désignation (PS)
+https://parti-socialiste.fr/actualites/choisir-2027-le-processus-de-designation-du-ou-de-la-candidat-e-socialiste-a-lelection-presidentielle-est-lance/
+
+# candidat-arthaud : declaration (vidéo « Nathalie Arthaud, candidate Lutte ouvrière », 26/08/2026)
+https://lutte-ouvriere.org/
+# candidat-arthaud : declaration (presse, 2025-12-08)
+https://www.rfi.fr/fr/en-bref/20251208-pr%C3%A9sidentielle-2027-en-france-nathalie-arthaud-lutte-ouvri%C3%A8re-annonce-sa-candidature
+# candidat-arthaud : contact (formulaire seulement)
+https://lutte-ouvriere.org/contact
+
+# candidat-roussel : declaration (presse, 2026-09-06)
+https://www.lefigaro.fr/elections/presidentielles/candidats/presidentielle-2027-adoube-par-ses-militants-le-communiste-fabien-roussel-officialise-sa-candidature-en-solitaire-20260906
+https://lcp.fr/actualites/fabien-roussel-officiellement-candidat-du-pcf-a-l-election-presidentielle-de-2027-441389
+# candidat-roussel : site de campagne
+https://fabienroussel2027.fr/
+# candidat-roussel : contact (formulaire PCF)
+https://www.pcf.fr/contact
+
+# candidat-melenchon : declaration (site de campagne)
+https://melenchon2027.fr/
+# candidat-melenchon : declaration (presse, 2026-05-03)
+https://www.lemonde.fr/politique/article/2026/05/03/jean-luc-melenchon-annonce-etre-candidat-a-l-election-presidentielle-pour-la-quatrieme-fois-sur-une-ligne-toujours-plus-antisysteme_6685247_823448.html
+# candidat-melenchon : contact
+https://lafranceinsoumise.fr/contact/
+
+# candidat-ruffin : declaration (site : « Je suis candidat à la présidence de la République française »)
+https://francoisruffin.fr/
+# candidat-ruffin : declaration (presse, 2026-09-12, copie Wayback)
+http://web.archive.org/web/20260913024943/https://www.courrier-picard.fr/id744597/article/2026-09-12/ne-sentetera-pas-la-fete-de-lhuma-ruffin-abandonne-la-primaire-du-ps-et-appelle
+# candidat-ruffin : contact (permanences)
+https://francoisruffin.fr/contact/
+
+# candidat-tondelier : declaration (presse, 2025-10-22)
+https://www.franceinfo.fr/elections/presidentielle/la-patronne-des-ecologistes-marine-tondelier-se-declare-candidate-a-l-election-presidentielle-de-2027_7568824.html
+# candidat-tondelier : declaration (parti, désignation du 2025-12-08 — 403 pour moi)
+https://lesecologistes.fr/posts/4DGpyusxBAU4xQPexfncsx/marine-tondelier-designee-pour-representer-les-ecologistes-a-l-election-presidentielle
+# candidat-tondelier : contact (contact@marinetondelier.fr)
+https://marinetondelier.fr/
+# candidat-tondelier : statut de la primaire de la gauche unitaire (secondaire)
+https://fr.wikipedia.org/wiki/Primaire_de_la_gauche_unitaire_de_2026
+
+# candidat-glucksmann : declaration (presse, 2026-08-23)
+https://www.tf1info.fr/politique/oui-je-suis-candidat-a-l-election-presidentielle-2027-confirme-raphael-glucksmann-place-publique-sur-tf1-2459966.html
+# candidat-glucksmann : declaration (fiche primaire)
+https://choisir2027.fr/candidat/raphael-glucksmann/
+# candidat-glucksmann : site de campagne (aucune adresse trouvée)
+https://glucks2027.fr/
+
+# candidat-faure : declaration (presse, 2026-08-30)
+https://www.tf1info.fr/politique/oui-je-suis-candidat-a-la-presidence-de-la-republique-confirme-olivier-faure-sur-tf1-2461307.html
+# candidat-faure : declaration (fiche primaire)
+https://choisir2027.fr/candidat/olivier-faure/
+# candidat-faure : contact (contact@avecfaure2027.fr)
+https://avecfaure2027.fr/
+
+# candidat-royal : declaration (presse, 2026-07-10)
+https://www.franceinfo.fr/elections/presidentielle/segolene-royal-annonce-qu-elle-participera-a-la-primaire-socialiste-en-vue-de-l-election-presidentielle_8102696.html
+# candidat-royal : declaration (fiche primaire)
+https://choisir2027.fr/candidat/segolene-royal/
+# candidat-royal : site de campagne (aucune adresse trouvée)
+https://segolene-ordrejuste.fr/
+
+# candidat-attal : declaration (presse, 2026-05-22)
+https://www.rtl.fr/actu/politique/presidentielle-2027-gabriel-attal-officialise-sa-candidature-a-l-election-presidentielle-7900637844
+# candidat-attal : contact (formulaire Renaissance)
+https://parti-renaissance.fr/nous-contacter
+
+# candidat-philippe : declaration (site : « Édouard Philippe est candidat à la prochaine élection présidentielle »)
+https://www.edouardphilippe.fr/
+# candidat-philippe : declaration (presse, 2024-09-03)
+https://www.lepoint.fr/politique/exclusif-edouard-philippe-je-serai-candidat-a-la-prochaine-election-presidentielle-03-09-2024-2569359_20.php
+# candidat-philippe : contact (page anti-robot, non vérifiée)
+https://www.edouardphilippe.fr/contact
+
+# candidat-retailleau : declaration (parti, 2026-02-12)
+https://republicains.fr/actualites/2026/02/12/je-suis-candidat-a-lelection-presidentielle/
+# candidat-retailleau : declaration (parti, 2026-04-21)
+https://republicains.fr/actualites/2026/04/21/candidat-a-la-presidentielle-jirai-jusquau-bout/
+# candidat-retailleau : désignation par les adhérents (presse, 2026-04-19)
+https://www.lemonde.fr/politique/article/2026/04/19/presidentielle-2027-bruno-retailleau-designe-candidat-des-republicains-par-les-adherents-du-parti-au-cours-d-une-consultation_6681477_823448.html
+# candidat-retailleau : contact (formulaire, adresse postale)
+https://republicains.fr/contact/
+
+# candidat-lisnard : declaration (site de campagne)
+https://lisnard2027.fr/
+# candidat-lisnard : declaration (presse, 2026-03-31)
+https://www.franceinfo.fr/elections/presidentielle/le-maire-de-cannes-david-lisnard-annonce-sa-candidature-a-l-election-presidentielle-et-officialise-son-depart-des-republicains_7907063.html
+
+# candidat-dupont-aignan : declaration (presse, 2026-09-19)
+https://www.cnews.fr/france/2026-09-19/presidentielle-2027-depuis-son-fief-de-yerres-nicolas-dupont-aignan-se-lance-dans
+https://www.titrespresse.com/21945702603/votez-nicolas-dupont
+# candidat-dupont-aignan : declaration (presse, 2025-03-08, non lue)
+https://www.ouest-france.fr/politique/nicolas-dupont-aignan/nicolas-dupont-aignan-annonce-pour-la-quatrieme-fois-sa-candidature-a-lelection-presidentielle-18667068-fc38-11ef-84e6-97a4d0833d6d
+# candidat-dupont-aignan : sites (message « cagnotte présidentielle », projet présidentiel 2027)
+https://www.nicolasdupontaignan.fr/
+https://www.debout-la-france.fr/
+# candidat-dupont-aignan : contact (formulaire, BP 80479 75327 Paris Cedex 07)
+https://www.debout-la-france.fr/nous-contacter/
+
+# candidat-le-pen : declaration (presse, 2026-07-07)
+https://fr.euronews.com/my-europe/2026/07/07/je-suis-candidate-a-lelection-presidentielle-annonce-marine-le-pen-sur-tf1
+# candidat-le-pen : declaration (parti, lettre du 07/09/2026 signée « Candidate à l'élection présidentielle de 2027 »)
+https://rassemblementnational.fr/lettre-ouverte/lettre-ouverte-de-marine-le-pen-aux-buralistes-de-france
+
+# candidat-zemmour : declaration (presse, 2026-09-17)
+https://www.bfmtv.com/politique/elections/presidentielle/je-serai-candidat-eric-zemmour-annonce-sur-bfmtv-qu-il-se-presentera-a-l-election-presidentielle_AV-202609170947.html
+https://www.franceinfo.fr/politique/eric-zemmour/eric-zemmour-president-du-parti-d-extreme-droite-reconquete-annonce-sa-candidature-a-l-election-presidentielle_8198141.html
+# candidat-zemmour : contact (formulaire)
+https://www.parti-reconquete.fr/contact
+
+# candidat-villepin (incertain) : declaration ambiguë (presse, 2026-08-30)
+https://www.franceinfo.fr/elections/presidentielle/presidentielle-2027-je-me-bats-pour-etre-candidat-declare-dominique-de-villepin-qui-revendique-plusieurs-centaines-de-parrainages_8169629.html
+# candidat-villepin : contact (contact@lafrancehumaniste.fr)
+https://lafrancehumaniste.fr/
+
+# candidat-le-maire (incertain) : non déclaré, décision annoncée « en octobre »
+https://lcp.fr/actualites/presidentielle-2027-bruno-le-maire-dira-en-octobre-s-il-est-candidat-437967
+
+# candidat-hollande (exclu) : non déclaré, rendez-vous en décembre
+https://france3-regions.franceinfo.fr/nouvelle-aquitaine/correze/brive/interview-francois-hollande-veut-rassembler-plus-largement-au-lendemain-de-la-primaire-socialiste-et-donne-rendez-vous-en-decembre-3427488.html
+
+# candidat-guedj (exclu, 1 sondage) : declaration
+https://www.radiofrance.fr/franceinter/podcasts/l-invite-de-7h50/l-invite-de-7h50-du-jeudi-05-fevrier-2026-7548548
+https://choisir2027.fr/candidat/jerome-guedj/
+# candidat-guedj : contact (contact@jeromeguedj2027.fr)
+https://www.jeromeguedj2027.fr/
+
+# candidat-maurel (exclu, 1 sondage) : declaration
+https://www.franceinfo.fr/politique/ps/primaire-socialiste/le-depute-emmanuel-maurel-annonce-sa-candidature-a-la-primaire-socialiste-pour-l-election-presidentielle_8176532.html
+https://choisir2027.fr/candidat/emmanuel-maurel/
+https://emmanuel-maurel.fr/
+
+# candidat-bouamrane (exclu, 1 sondage) : declaration
+https://www.radiofrance.fr/franceinter/podcasts/l-invite-de-7h50/l-invite-de-7h50-du-mardi-09-juin-2026-9244175
+https://www.lefigaro.fr/politique/presidentielle-2027-je-suis-candidat-annonce-karim-bouamrane-ps-20260609
+
+# candidats déclarés sans sondage (exclus) : liste secondaire
+https://fr.wikipedia.org/wiki/Candidatures_%C3%A0_l%27%C3%A9lection_pr%C3%A9sidentielle_fran%C3%A7aise_de_2027
+
+# --- outils : classements des stores (à refaire le 2026-10-15)
+# App Store FR, top gratuit Productivité (flux officiel Apple)
+https://itunes.apple.com/fr/rss/topfreeapplications/limit=100/genre=6007/json
+# App Store FR, lookup des applications (prix, langues)
+https://itunes.apple.com/lookup?id=6448311069,6473753684,6477489729,1558240027,541164041,6670324846,6740410176,1668000334,6737597349,1658377526,6737527615,6794501026&country=fr
+# Google Play FR, top gratuit Productivité (tiers AppBrain)
+https://www.appbrain.com/stats/google-play-rankings/top_free/productivity/fr
+
+# --- outils : fiches des applications dans le store (App Store FR)
+# outil-chatgpt : fiche App Store
+https://apps.apple.com/fr/app/chatgpt/id6448311069
+# outil-claude : fiche App Store
+https://apps.apple.com/fr/app/claude-by-anthropic/id6473753684
+# outil-gemini : fiche App Store
+https://apps.apple.com/fr/app/google-gemini/id6477489729
+# outil-le-chat : fiche App Store (Vibe by Mistral, ex-Le Chat)
+https://apps.apple.com/fr/app/vibe-by-mistral-ex-le-chat/id6740410176
+# outil-grok : fiche App Store
+https://apps.apple.com/fr/app/grok-assistant-ia/id6670324846
+# outil-perplexity : fiche App Store
+https://apps.apple.com/fr/app/perplexity-vos-questions/id1668000334
+# outil-deepseek : fiche App Store
+https://apps.apple.com/fr/app/deepseek-assistant-ia/id6737597349
+
+# --- outils : API, recherche web, modèles
+# outil-chatgpt : doc recherche web (API Responses)
+https://developers.openai.com/api/docs/guides/tools-web-search
+# outil-chatgpt : release notes ChatGPT (403 pour moi)
+https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+# outil-claude : doc recherche web
+https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool
+# outil-claude : notes de version (lancements de modèles)
+https://support.claude.com/en/articles/12138966-release-notes
+# outil-gemini : doc Grounding with Google Search
+https://ai.google.dev/gemini-api/docs/google-search
+# outil-le-chat : doc web search (Agents / Conversations)
+https://docs.mistral.ai/agents/connectors/websearch/
+# outil-le-chat : modèles
+https://docs.mistral.ai/getting-started/models/
+# outil-grok : doc recherche web
+https://docs.x.ai/docs/guides/live-search
+# outil-perplexity : modèles Sonar
+https://docs.perplexity.ai/getting-started/models
+# outil-deepseek : doc API
+https://api-docs.deepseek.com/
+# outil-meta-ai (incertain) : Meta Model API
+https://dev.meta.ai/docs/overview
+
+# --- outils : CGU / conditions d'API
+# outil-chatgpt : CGU (OpenAI Services Agreement ; 403 en direct, lu via Wayback 2026-10-06)
+https://openai.com/policies/services-agreement/
+# outil-claude : CGU (Commercial Terms)
+https://www.anthropic.com/legal/commercial-terms
+# outil-claude : CGU consommateur
+https://www.anthropic.com/legal/consumer-terms
+# outil-gemini : CGU (Gemini API Additional Terms — clause Grounding restrictive)
+https://ai.google.dev/gemini-api/terms
+# outil-le-chat : CGU (Commercial Terms of Service, effective 2026-09-25)
+https://legal.mistral.ai/terms/commercial-terms-of-service
+# outil-grok : CGU (Terms of Service — Enterprise ; 403 en direct, lu via Wayback 2026-10-07)
+https://x.ai/legal/terms-of-service-enterprise
+# outil-perplexity : CGU API (403 en direct, lu via Wayback 2026-09-30)
+https://www.perplexity.ai/hub/legal/perplexity-api-terms-of-service
+# outil-deepseek : CGU plateforme
+https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html
+# outil-deepseek : CGU utilisateur
+https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html
+# outil-copilot (exclu) : Microsoft Services Agreement
+https://www.microsoft.com/en-us/servicesagreement
+
+# --- outils : SDK (registres)
+# outil-chatgpt : sdk
+https://registry.npmjs.org/openai
+# outil-claude : sdk
+https://registry.npmjs.org/@anthropic-ai%2Fsdk
+# outil-gemini : sdk
+https://registry.npmjs.org/@google%2Fgenai
+# outil-le-chat : sdk
+https://registry.npmjs.org/@mistralai%2Fmistralai
+# outil-grok : sdk (Python)
+https://pypi.org/pypi/xai-sdk/json
+# outil-perplexity : sdk
+https://registry.npmjs.org/@perplexity-ai%2Fperplexity_ai
+
+# --- comparateurs
+# comparateur-ifrap
+https://www.ifrap.org/comparateurs/presidentielles-2027
+# comparateur-france-vote
+https://www.france-vote.fr/comparateur
+https://www.france-vote.fr/comparateur/jean-luc-melenchon-vs-marine-le-pen
+# comparateur-isoloir-2027
+https://isoloir2027.fr/positions
+https://isoloir2027.fr/positions/retraite-62
+# comparateur-comparateurpresident (sous réserve)
+https://comparateurpresident.com/
+# comparateur-quizz-du-berger (incertain)
+https://www.quizz-du-berger.com/comparer
+https://www.quizz-du-berger.com/partis
+# comparateur-candidator (incertain)
+https://www.candidator.fr/presidentielle2027/candidats.html
+# comparateur-votons-2027 (incertain)
+https://votons-2027.fr/
+# comparateur-solution-democratique (incertain, partisan)
+https://solutiondemocratique.fr/comparatif-candidats-programme-elections-presidentielles-france-2027/
+# comparateur-sp2027 (limite)
+https://sondages-presidentielle2027.fr/comparateur.html
+https://sondages-presidentielle2027.fr/themes.html
+# comparateur-monvote2027 (exclu : contenu JS)
+https://monvote2027.fr/comparer

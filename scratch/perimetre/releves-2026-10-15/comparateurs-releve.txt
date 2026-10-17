@@ -1,0 +1,93 @@
+# Comparateurs citoyens, relevé du 2026-10-15 vers 10:45 UTC. Méthode : curl sans JavaScript, texte extrait hors <script>/<style>, recherche de 20 noms (13 inclus au 15 octobre + 7 personnalités suivies), domaines des <script src> tiers, un extrait. Fichiers HTML non conservés ici (taille) ; SHA-256 donnés.
+== ifrap sha256=fc9031996d48e9ca0c16815ba4e0044ed229ed9c1353663931207acebf94f6d2
+== francevote sha256=ab9588e82265c88b68fdd68537a7691f9423e89e877a76ef505ee100ff2a1238
+== francevote-duel sha256=9d636d9b0d05492b61c0b0794deb2b7d068da691974b24491ea861527a659297
+== isoloir sha256=1f83309494bc939e7ffdc83ee7eb0facf4185ab955b4941f0e58405e9fc60932
+== quizz sha256=d73b6534bdb67429a03c6b324dd56e13de0bffa7e53bc97fc5bc3fcc442f94c7
+== candidator sha256=0c85269f4f8091a66773b35ad7b6c0743df359d1555a9d3bff5c055a8021a6a0
+== votons sha256=1c0b244bf6192b1884e2bedd5fe38f5168c800b36ac10ebbf9f13fedbcb76d13
+== soldem sha256=b4177af1ebae0740a22b14bd6e5a902d0c54903b92b01fd847887711c260b5b2
+== comppres sha256=454cc34b1d117381e29c70bbad49313d056caf0fed1a4141f45d86fba95e7047
+== sp2027 sha256=e6515dd556ba6e1473e04618e401986a0f4f1548d1d42c36055bf3e58046629b
+== elyseescope sha256=85badc6e289b418f8ef9bf10876b7e57fc934a763945303eb6289986124d91bd
+== politiquement sha256=a307ed84028482c29d88a5fb1b746a923f3f34145b8ba4cdef357dadeacbfff8
+== boussole sha256=a478e1db4b1318167aa5f729031b8fd54381afe1000723a50b34b107fe6d3d6f
+== testpol sha256=038743a18fcc5ab9e2dbdb222d837566773d3a0f1233679bfd2587cce1695cfc
+== lespresai sha256=807af5a1400a2c075fd053db639cc9ccf0951a4eb4ff2732dbc539714edc50da
+== monvote sha256=58521ef3cc032e7245c961a50d50f35b369942f803442fecb5a411d7878d283c
+== compare2027 sha256=13964d7fc4c4b9234a7488e6618c674e116580f52b3324166bf3f5225e23bdb7
+== monchoix sha256=d4c7bffa9011cf2652b9dc1ce1c4e4a899f706f7104c1e57a4282e51f5faecb4
+== scoly sha256=70d613e3acfba24fd2876fcbacaf639e1e111ef4d54baf70761c47673f37d6a3
+-- ifrap
+13 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour
+   tiers: []
+   extrait: interieure outre-mer social & solidarite allocations & prestations sociales sante culture logement transports travail & retraites emploi & travail systeme de retraite industrie & relocalisation economie et entreprises environnement energie ecologie
+-- francevote
+20 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Faure,Royal,Villepin,Le Maire,Guedj,Maurel,Hollande
+   tiers: []
+   extrait: ace : qui pense quoi ? mesurez le taux d'accord entre les candidats de la presidentielle 2027 : 32 personnalites, 40 propositions, 10 themes. choisissez deux pretendants a l'elysee : nous calculons leur taux d'accord, ce qui les rapproche et ce qui
+-- francevote-duel
+20 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Faure,Royal,Villepin,Le Maire,Guedj,Maurel,Hollande
+   tiers: []
+   extrait: ielle 2027 jean-luc melenchon ou marine le pen ? jean-luc melenchon et marine le pen s’opposent sur l’essentiel : leurs positions ne convergent que sur 39 % des propositions comparees. leur terrain d’entente le plus large est « europe » (100 % d’ac
+-- isoloir
+14 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Villepin
+   tiers: ['pagead2.googlesyndication.com']
+   extrait:  retraite a 62 ans : qui est pour, qui est contre ? | isoloir 2027 isoloir 2027 le test candidats programmes positions comparer sondages actu blog faire le test accueil / positions / retraite a 62 ans retraites retraite a 62 ans : qui es
+-- quizz
+19 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Faure,Royal,Villepin,Guedj,Maurel,Hollande
+   tiers: []
+   extrait: -
+-- candidator
+20 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Faure,Royal,Villepin,Le Maire,Guedj,Maurel,Hollande
+   tiers: ['ajax.googleapis.com', 'pagead2.googlesyndication.com', 'platform-api.sharethis.com', 'www.googletagmanager.com']
+   extrait: efend le rayonnement de la france a l'international et la competitivite des entreprises. pour l'echeance de 2027, sa proposition s'articule autour de la stabilite institutionnelle, de l'attractivite economique et d'une gestion moderne tournee vers 
+-- votons
+14 / 20 present: Arthaud,Roussel,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Villepin
+   tiers: []
+   extrait: -
+-- soldem
+15 / 20 present: Arthaud,Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Lisnard,Dupont-Aignan,Le Pen,Zemmour,Royal,Villepin,Guedj
+   tiers: ['static.addtoany.com', 'www.googletagmanager.com']
+   extrait: angement durable, realiste, qui s’appuie sur l’experience des pays fonctionnant mieux que le notre ? ce comparatif vous propose de regarder au-dela des annonces pour vous concentrer sur un critere souvent sous-estime : la qualite democratique des 
+-- comppres
+8 / 20 present: Mélenchon,Ruffin,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Le Pen
+   tiers: []
+   extrait: ndidats comparer 1er tour : 11 avril 2027 comparez les programmes de la presidentielle 2027 analysez et comparez les propositions des candidats declares par thematique. un outil neutre et objectif pour vous aider a faire votre choix. commencer la c
+-- sp2027
+0 / 20 present: 
+   tiers: []
+   extrait: -
+-- elyseescope
+3 / 20 present: Mélenchon,Attal,Philippe
+   tiers: ['www.googletagmanager.com']
+   extrait:  au zenith : le paysage politique francais n'a jamais ete aussi incertain. ce dossier compile et compare les grandes propositions des principaux candidats sur les themes qui structureront la campagne. les candidats en lice six a huit candidats devr
+-- politiquement
+6 / 20 present: Mélenchon,Glucksmann,Attal,Philippe,Retailleau,Le Pen
+   tiers: []
+   extrait: . le parcours se fait en quelques minutes. question 1 sur 30 1 / 31 etapes comparaison directe reponses confrontees aux positions codees resultat explicable accords, desaccords et themes detailles controle de robustesse recalcul sans priorites et s
+-- boussole
+8 / 20 present: Roussel,Mélenchon,Tondelier,Glucksmann,Philippe,Lisnard,Le Pen,Zemmour
+   tiers: ['pagead2.googlesyndication.com']
+   extrait: ets. indiquez votre degre d'accord sur une echelle de 1 a 5. 2 decouvrez votre candidat vos reponses sont comparees aux positions de 11 personnalites politiques pour trouver votre meilleur match. 3 comparez et partagez partagez votre resultat sur l
+-- testpol
+6 / 20 present: Mélenchon,Tondelier,Glucksmann,Attal,Philippe,Le Pen
+   tiers: ['pagead2.googlesyndication.com', 'www.googletagmanager.com']
+   extrait: itique 🔥 plus de 300 000 tests realises test politique 2026-2027 : le plus complet et gratuit de france decouvrez votre positionnement politique en quelques minutes. gauche, droite, centre, extremes : notre test politique gratuit en 10 questions vo
+-- lespresai
+8 / 20 present: Arthaud,Roussel,Attal,Philippe,Dupont-Aignan,Le Pen,Guedj,Hollande
+   tiers: ['www.googletagmanager.com']
+   extrait: rancais voir la fiche → 2022 2027 lespresidentielles.ai / chat live 2027 presidentielle 2027 — en direct interrogez les positions des candidats. posez une question sur un theme : chaque reponse s'appuie sur les positions officielles declarees et le
+-- monvote
+0 / 20 present: 
+   tiers: []
+   extrait: programmes des candidats a la presidentielle 2027 ce comparateur met deux candidats face a face sur l'ensemble de leurs positions connues : vous voyez d'un coup d'œil leur taux de concordance global , leurs convergences et leurs divergences theme p
+-- compare2027
+0 / 20 present: 
+   tiers: []
+   extrait: 027. posez une question en langage naturel et obtenez une comparaison structuree entre candidats, partis, programmes et positions publiques, avec une methode explicite. lancer une comparaison pouvoir d’achat education sante ecologie institutions eu
+-- monchoix
+11 / 20 present: Mélenchon,Tondelier,Glucksmann,Attal,Philippe,Retailleau,Le Pen,Faure,Royal,Guedj,Maurel
+   tiers: []
+   extrait: les de collecte des donnees. votre resultat pourrait ressembler a ca classes populaires classes moyennes classes aisees retraites et inactifs exemple illustratif — pas une mesure reelle donnees en cours de constitution (mise a jour du 2026-10-13 ) 
+-- sp2027 : HTTP 406 « Not Acceptable » (deux User-Agent essayés) ; scoly-oss : HTTP 404 ; bellef.tech : connexion impossible (curl code 000)
