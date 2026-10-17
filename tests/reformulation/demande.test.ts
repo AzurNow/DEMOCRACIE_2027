@@ -49,12 +49,12 @@ describe("demande de reformulation et variables du prompt", () => {
     });
   });
 
-  it("question d'attribution sur une mesure fictive (item F principal) : type F, position pour, libellé AUCUN", () => {
+  it("question d'attribution sur une mesure fictive (item F principal) : type F, position AUCUNE, libellé AUCUN", () => {
     const substitutions = { formulation_mesure: "le budget" };
     const texte_neutre = remplirTexteNeutre(gabaritParCode("Q-ATT"), substitutions);
     const item = itemF({ cle: "f", candidat_id: "demo-alpha", mesure: MESURE });
     const variables = variablesDuPrompt(demandeDe({ gabarit: "Q-ATT", item_principal: item, texte_neutre, substitutions }));
-    expect([variables.type_item, variables.libelle_candidat, variables.position_affirmee]).toEqual(["F", "AUCUN", "pour"]);
+    expect([variables.type_item, variables.libelle_candidat, variables.position_affirmee]).toEqual(["F", "AUCUN", "AUCUNE"]);
   });
 
   it("question nommant un candidat sans item principal ⇒ QuestionSansItemPrincipal, jamais AUCUN", () => {

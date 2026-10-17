@@ -269,6 +269,7 @@ function violationDeVersion(
 
 export interface PorteurDePremisse {
   readonly id: string;
+  readonly gabarit: CodeGabarit;
   readonly items: readonly {
     readonly reference: { readonly item_id: string };
     readonly role: string;
@@ -325,7 +326,7 @@ function refusDePremisse(
   const affirmee = positionAffirmee(question);
   for (const en_vigueur of positions) {
     try {
-      verdictDePremisse(question.id, item, affirmee, en_vigueur);
+      verdictDePremisse(question, item, affirmee, en_vigueur);
     } catch (erreur) {
       if (erreur instanceof PremisseHorsEnsemble || erreur instanceof PremisseNonNotee) return violation(erreur.message);
       throw erreur;

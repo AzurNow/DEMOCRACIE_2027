@@ -198,6 +198,7 @@ export class PremisseNonNotee extends Error {
 /** Ce que la résolution de la prémisse lit d'une question : ses items et ses formulations. */
 export interface QuestionAPremisse {
   readonly id: string;
+  readonly gabarit: CodeGabarit;
   readonly items: readonly { readonly reference: { readonly item_id: string }; readonly role: string }[];
   readonly formulations: readonly { readonly registre: string; readonly position_affirmee?: Position }[];
 }
@@ -206,26 +207,41 @@ export interface QuestionAPremisse {
  * La règle, écrite une fois pour la résolution au gel et pour l'invariant indépendant de la date
  * (`invariants.ts`). `en_vigueur` : la position de l'item à l'instant considéré. Item F : fausse par
  * construction. Item O : fausse si la position affirmée diffère de la position en vigueur. Item P :
- * vraie par construction, une position affirmée contraire est refusée. Item A, ou question sans item
- * principal : aucune prémisse, une position affirmée est refusée.
+ * vraie par construction, une position affirmée contraire est refusée. Item A, question sans item
+ * principal ou question d'attribution, mesure fictive comprise (§5 : « sur une question
+ * d'attribution, elle n'affirme aucune position », confirmé par l'auteur le 2026-10-17) : aucune
+ * prémisse, une position affirmée est refusée.
  */
 export function verdictDePremisse(
-  question_id: string,
+  question: Pick<QuestionAPremisse, "id" | "gabarit">,
   item: Pick<Item, "id" | "type"> | undefined,
   affirmee: Position | undefined,
   en_vigueur: Position | undefined,
 ): boolean {
-  if (item?.type === "F") return true;
-  if (item === undefined || item.type === "A") {
-    if (affirmee === undefined) return false;
-    const porteur = item === undefined ? "question sans item principal" : `item A ${item.id}`;
-    throw new PremisseHorsEnsemble(question_id, `position « ${affirmee} » affirmée sur une ${porteur}`);
-  }
+  const attribution = !gabaritParCode(question.gabarit).nomme_candidat;
+  if (attribution || item === undefined || item.type === "A") return aucunePremisse(question.id, attribution, item, affirmee);
+  if (item.type === "F") return true;
   if (affirmee === undefined) {
-    if (item.type === "O") throw new PremisseNonNotee(question_id, item.id);
+    if (item.type === "O") throw new PremisseNonNotee(question.id, item.id);
     return false;
   }
-  return premisseSurPosition(question_id, item, affirmee, en_vigueur);
+  return premisseSurPosition(question.id, item, affirmee, en_vigueur);
+}
+
+/** Question sans prémisse : fausse jamais, refusée si sa formulation orientée affirme une position. */
+function aucunePremisse(
+  question_id: string,
+  attribution: boolean,
+  item: Pick<Item, "id" | "type"> | undefined,
+  affirmee: Position | undefined,
+): false {
+  if (affirmee === undefined) return false;
+  throw new PremisseHorsEnsemble(question_id, `position « ${affirmee} » affirmée sur une ${porteurSansPremisse(attribution, item)}`);
+}
+
+function porteurSansPremisse(attribution: boolean, item: Pick<Item, "id" | "type"> | undefined): string {
+  if (attribution) return "question d'attribution";
+  return item === undefined ? "question sans item principal" : `item A ${item.id}`;
 }
 
 function premisseSurPosition(
@@ -278,7 +294,7 @@ export function premisseFausseAuGel(question: QuestionAPremisse, items: readonly
   const parId = new Map(items.map((item) => [item.id, item]));
   const item = itemPrincipal(question, parId);
   const en_vigueur = item === undefined ? undefined : positionEnVigueur(item, date_gel);
-  return verdictDePremisse(question.id, item, positionAffirmee(question), en_vigueur);
+  return verdictDePremisse(question, item, positionAffirmee(question), en_vigueur);
 }
 
 /* ------------------------------------------------ liste d'une attribution */

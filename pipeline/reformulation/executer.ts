@@ -3,7 +3,7 @@
  * chaque réponse HTTP reçue, une proposition écrite dans `staging/formulations/` (D39, D42).
  *
  * Par appel :
- * 1. le prompt est rendu depuis `prompts/reformulation-1.0.0.md` (règle 6, `prompt.ts`) ;
+ * 1. le prompt est rendu depuis `prompts/reformulation-1.0.1.md` (règle 6, `prompt.ts`) ;
  * 2. le transport envoie la requête, sous le délai d'abandon de la configuration
  *    (`delai_abandon_ms`) : l'envoi et la minuterie courent ensemble, le premier arrivé l'emporte
  *    et l'autre est annulé. Un échec de transport, ou un délai écoulé sans réponse (l'envoi est

@@ -250,10 +250,11 @@ describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5,
   const items = [p, f, o, a];
 
   /** Question minimale dont la formulation orientée affirme la position demandée, ou aucune. */
-  function questionSur(item: Item, position_affirmee: Position | undefined): PorteurDePremisse {
+  function questionSur(item: Item, position_affirmee: Position | undefined, gabarit: CodeGabarit = "Q-ORI"): PorteurDePremisse {
     const orientee = { id: `f-${item.id}-oriente`, registre: "oriente" };
     return {
-      id: `q-${item.id}-${String(position_affirmee)}`,
+      id: `q-${item.id}-${gabarit}-${String(position_affirmee)}`,
+      gabarit,
       items: [{ reference: { item_id: item.id }, role: "principal" }],
       formulations: [
         { id: `f-${item.id}-neutre`, registre: "neutre" },
@@ -294,6 +295,13 @@ describe("invariant : une prémisse fausse ne porte que sur un item F ou O (§5,
   it("nomme la question sur un item A dont la prémisse affirme une position", () => {
     const violations = premisseFausseSurItemFOuO([questionSur(a, "pour"), questionSur(a, undefined)], items);
     expect(violations.map((violation) => violation.objet)).toEqual([questionSur(a, "pour").id]);
+  });
+
+  it("nomme la question d'attribution sur une mesure fictive dont la prémisse affirme une position (D42 (3))", () => {
+    const affirmante = questionSur(f, "pour", "Q-ATT");
+    const violations = premisseFausseSurItemFOuO([affirmante, questionSur(f, undefined, "Q-ATT")], items);
+    expect(violations.map((violation) => violation.objet)).toEqual([affirmante.id]);
+    expect(violations[0]?.detail).toMatch(/question d'attribution/);
   });
 
   it("nomme la question dont l'item principal est introuvable", () => {

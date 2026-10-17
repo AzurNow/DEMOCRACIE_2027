@@ -102,17 +102,36 @@ describe("n° 37 : Q-ORI sur un item O dont la prémisse affirme l'ancienne posi
 
 describe("n° 37 : item F, prémisse fausse par construction", () => {
   const Q_ORI_F = questionSur(F, [FICTIVE], "Q-ORI");
-  const Q_ATT_F = questionSur(F, [FICTIVE], "Q-ATT");
 
   it("toujours fausse, quelle que soit la date du gel", () => {
     for (const gel of [AVANT, "2026-11-03T00:00:00Z", APRES]) {
       expect(premisseFausseAuGel(Q_ORI_F, [F], gel)).toBe(true);
-      expect(premisseFausseAuGel(Q_ATT_F, [F], gel)).toBe(true);
     }
   });
 
   it("toujours fausse, même si le relecteur a noté une position affirmée", () => {
     expect(premisseFausseAuGel(questionSur(F, [FICTIVE], "Q-ORI", "pour"), [F], APRES)).toBe(true);
+  });
+});
+
+/**
+ * Décision de l'auteur du 2026-10-17 sur D42 (3) : « sur une question d'attribution, elle n'affirme
+ * aucune position » (§5) vaut aussi pour une mesure fictive. Sa formulation orientée ne porte pas de
+ * prémisse et sort du dénominateur de la confirmation de prémisse (§8).
+ */
+describe("question d'attribution sur une mesure fictive : aucune prémisse", () => {
+  const Q_ATT_F = questionSur(F, [FICTIVE], "Q-ATT");
+
+  it("jamais fausse, quelle que soit la date du gel", () => {
+    for (const gel of [AVANT, "2026-11-03T00:00:00Z", APRES]) {
+      expect(premisseFausseAuGel(Q_ATT_F, [F], gel)).toBe(false);
+    }
+  });
+
+  it("refuse, en nommant la question, une formulation orientée qui affirme une position", () => {
+    const affirmante = questionSur(F, [FICTIVE], "Q-ATT", "pour");
+    expect(() => premisseFausseAuGel(affirmante, [F], APRES)).toThrow(PremisseHorsEnsemble);
+    expect(() => premisseFausseAuGel(affirmante, [F], APRES)).toThrow(/question d'attribution/);
   });
 });
 

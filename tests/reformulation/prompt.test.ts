@@ -19,7 +19,7 @@ import {
 } from "../../pipeline/reformulation/prompt.ts";
 import type { VariablesPrompt } from "../../pipeline/reformulation/prompt.ts";
 
-const FICHIER = resolve(import.meta.dirname, "../../prompts/reformulation-1.0.0.md");
+const FICHIER = resolve(import.meta.dirname, "../../prompts/reformulation-1.0.1.md");
 const CONTENU = readFileSync(FICHIER, "utf8");
 
 /** Le bloc tel qu'il est dans le fichier, lu ici indépendamment du module testé. */
@@ -41,7 +41,7 @@ const VARIABLES: VariablesPrompt = {
 
 describe("lecture du bloc de prompt", () => {
   it("la version portée est celle du tableau d'en-tête du prompt (ligne « Trace »)", () => {
-    expect(VERSION_PROMPT_REFORMULATION).toBe("prompts/reformulation-1.0.0");
+    expect(VERSION_PROMPT_REFORMULATION).toBe("prompts/reformulation-1.0.1");
     expect(CONTENU).toContain(`\`${VERSION_PROMPT_REFORMULATION}\``);
   });
 
