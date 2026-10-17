@@ -208,6 +208,10 @@ Aucune décision en attente.
 
 **Décision du 2026-10-17 :** Option 1 sur les huit points. (2) précise D53 (2) et (4) amende D42 (3) : à écrire au §4 et au §5 à la prochaine révision (TACHES-AUTEUR). (7) avant le premier appel réel. Le reste est du code, sans amendement.
 
+### D55 — Onze décisions laissées par la revue de code du 2026-10-12 (docs/revues/2026-10-12.md, constats 1, 2, 4, 5, 6, 13, 17, 20, 24, 42, 54), reprises par la revue du 2026-10-17 : normalisation dans la charge du juge ; décodage de Location ; schéma du manifeste de lot ; interroges sous permutation d'une Q-ATT ; réponse reçue non stockée ; retrait d'un item contesté sur un GET ; qui écrit par_mode ; plomberie HTTP partagée ; opacité de candidat_id ; amorce « attribution » ; mise à jour de CLAUDE.md.
+
+**Décision du 2026-10-17 :** Option 1 sur les onze points. (4) précise le §7 (« un dérangement des candidats interrogés au run »), (5) le §6, (9) le §7 (alias aveugles des candidats dans la charge du juge) : à écrire à la prochaine révision (TACHES-AUTEUR). (1), (2), (9) et (10) avant le premier appel réel ou le premier tirage réel ; (7) avant le premier run publié.
+
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
 **Décision du 2026-09-20 :** Option 1 sur les six points : tronquées incluses dans les métriques primaires plus un quatrième recalcul de robustesse « hors tronquées » ; texte du dénominateur gardé et premisse_fausse interdite sur un item P dès l'engendrement ; Holm retiré de la famille des effets de condition, intervalles et qualificatif seuls publiés ; trois paires pour la famille des formulations ; exactitude globale dans la permutation ; comparateurs alignés sur les assistants.
