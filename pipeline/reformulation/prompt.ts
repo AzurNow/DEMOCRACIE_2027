@@ -1,5 +1,5 @@
 /**
- * Rendu du prompt de reformulation, lu depuis `prompts/reformulation-1.0.0.md` (règle 6 : aucun
+ * Rendu du prompt de reformulation, lu depuis `prompts/reformulation-1.0.1.md` (règle 6 : aucun
  * prompt en dur ; le texte n'est jamais recopié dans le code).
  *
  * Le texte envoyé au modèle est exactement le contenu du bloc ```text qui suit le titre
@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /** Version portée par les formulations produites (`production.version_prompt`, ligne « Trace » du prompt). */
-export const VERSION_PROMPT_REFORMULATION = "prompts/reformulation-1.0.0";
+export const VERSION_PROMPT_REFORMULATION = "prompts/reformulation-1.0.1";
 const FICHIER_PROMPT = new URL(`../../${VERSION_PROMPT_REFORMULATION}.md`, import.meta.url);
 
 const TITRE = "## Texte du prompt";

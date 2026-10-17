@@ -1,7 +1,7 @@
 /**
  * Contrôle de la sortie du modèle de reformulation, avant toute relecture humaine.
  *
- * Contrat : `prompts/reformulation-1.0.0`, section « Sortie attendue » : un seul objet JSON, sans
+ * Contrat : `prompts/reformulation-1.0.1`, section « Sortie attendue » : un seul objet JSON, sans
  * texte autour ni bloc de code, exactement `{"familier": {"texte"}, "oriente": {"texte",
  * "position_affirmee"?}}`. Chaque contrôle est une comparaison de chaînes (règle 5), jamais un
  * jugement de modèle :

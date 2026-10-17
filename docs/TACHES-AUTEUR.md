@@ -673,6 +673,11 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
 
 ---
 
+- [ ] **Relire `prompts/reformulation-1.0.1.md`** avant tout appel réel. Elle remplace la 1.0.0 :
+      ses tableaux suivent D42 (3) (position fixée par type d'item, état antérieur pour un item O,
+      aucune position sur une Q-ATT, mesure fictive comprise, décision du 2026-10-17). Le texte
+      envoyé au modèle ne change qu'à deux endroits : « ou l'a abandonnée » est retiré de la
+      consigne « contre », et la parenthèse sur Q-ATT est retirée de la consigne « pour ».
 - [ ] **Remplir `config/reformulation.json`** (PR #123) : identifiant épinglé de Mistral Large,
       `temperature`, `max_tokens`, `random_seed`, et `delai_abandon_ms` (délai d'abandon d'un
       appel, jamais envoyé à l'API ; ajouté le 2026-10-16). Puis `pnpm reformuler --simule`, et seulement

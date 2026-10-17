@@ -3,7 +3,7 @@
  * (`prompt.ts`) et ce contre quoi la sortie du modèle est contrôlée (`controle.ts`). Une seule
  * construction pour les deux usages : le contrôle vérifie exactement ce qui a été demandé.
  *
- * Contrat du prompt `prompts/reformulation-1.0.0` : `{type_item}` vaut `AUCUN` pour une question
+ * Contrat du prompt `prompts/reformulation-1.0.1` : `{type_item}` vaut `AUCUN` pour une question
  * sans item principal (attribution d'une mesure réelle), `{libelle_candidat}` vaut `AUCUN` pour un
  * gabarit qui ne nomme personne (Q-ATT), `{position_affirmee}` vaut `AUCUNE` quand la règle de
  * D42 (3) n'affirme rien. Ces valeurs ne servent jamais de repli : une question qui nomme un
@@ -75,7 +75,7 @@ export function demandeDe(entree: EntreeDemande): DemandeReformulation {
     texte_neutre: entree.texte_neutre,
     libelle_candidat,
     formulation_mesure: entree.substitutions.formulation_mesure,
-    position_affirmee: positionAffirmeeDemandee(item),
+    position_affirmee: positionAffirmeeDemandee(gabarit.code, item),
   };
 }
 
