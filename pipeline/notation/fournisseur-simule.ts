@@ -10,7 +10,7 @@
  *
  * **Simulé, et dit.** Le schéma d'un lien n'a aucun champ libre où le dire : le caractère simulé de
  * ces verdicts est porté par le run lui-même (ses juges `simule://`) et par le refus de tout
- * répertoire sous `runs/` (`garde-simule.ts`). Les URL de la table de référence sont sous `.invalid`.
+ * répertoire sous `runs/` (`gardes-sortie.ts`). Les URL de la table de référence sont sous `.invalid`.
  *
  * **Textes des copies (D27 (E)).** Une seconde table donne, par empreinte de copie
  * (`sha256_contenu`), le texte extrait ou le refus d'extraction. Une copie absente de cette table n'a
@@ -20,8 +20,8 @@
 
 import { createHash } from "node:crypto";
 import { validerFragment } from "../../outils/schemas/valider.ts";
+import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { FournisseurExistences } from "./fournisseur-existences.ts";
-import { exigerHorsDeRuns } from "./garde-simule.ts";
 import type { TexteDeCopie } from "./pages-citees.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";
 

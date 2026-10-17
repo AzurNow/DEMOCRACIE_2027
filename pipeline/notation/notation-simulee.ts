@@ -6,7 +6,7 @@
  *
  * Étapes :
  *
- * 1. **Garde-fou.** Une sortie sous `runs/` est refusée avant toute écriture (`garde-simule.ts`).
+ * 1. **Garde-fou.** Une sortie sous `runs/` est refusée avant toute écriture (`gardes-sortie.ts`).
  * 2. **Interrogation simulée.** `lancerRunSimule` (celle de `pnpm run:dry`) écrit le run, ou le
  *    reprend sans rien réécrire s'il est déjà là : `pnpm run:dry --sortie X` puis
  *    `pnpm notation:dry --sortie X` notent le même run.
@@ -43,7 +43,7 @@ import { bilanNotation, type BilanNotation } from "./bilan-notation.ts";
 import { noterRun, type EnvironnementChaine, type ReponseANoter, type ResultatChaine } from "./chaine.ts";
 import { resolusAuGel, type ResoluAuGel } from "./charge-juge.ts";
 import { fournisseurSimule, type TexteSimule } from "./fournisseur-simule.ts";
-import { exigerHorsDeRuns } from "./garde-simule.ts";
+import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import { CHAMPS_DU_TEST } from "./inscription-contrefactuel.ts";
 import { jugesSimules, type BiaisSimule, type JugeSimuleDeclare, type ParametresJugeSimule } from "./juge-simule.ts";
 import type { ExistenceEtablie } from "./vue-annotateur.ts";

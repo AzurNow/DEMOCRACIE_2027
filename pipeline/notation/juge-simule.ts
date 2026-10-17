@@ -47,7 +47,7 @@
  * **Prompt.** Le juge simulé n'a pas de prompt (règle 6) : sa référence `simule://juge-simule`
  * dit qu'il est simulé, et ne désigne aucun fichier de `prompts/`.
  *
- * **Garde-fou.** `jugesSimules` refuse un répertoire de run sous `runs/` (`garde-simule.ts`).
+ * **Garde-fou.** `jugesSimules` refuse un répertoire de run sous `runs/` (`gardes-sortie.ts`).
  */
 
 import { graineDerivee } from "../../analysis/graines.ts";
@@ -56,7 +56,7 @@ import { canoniser } from "../../validation/domaine/empreinte.ts";
 import { generateur } from "../../validation/domaine/alea.ts";
 import type { ChargeJuge } from "./charge-juge.ts";
 import { comparerChaines } from "./echantillons.ts";
-import { exigerHorsDeRuns } from "./garde-simule.ts";
+import { exigerHorsDeRuns } from "../gardes-sortie.ts";
 import type { Juge, SortieJuge } from "./juge.ts";
 import type { MotifInexactitude } from "./types.ts";
 

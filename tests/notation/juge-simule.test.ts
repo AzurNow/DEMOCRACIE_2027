@@ -12,7 +12,7 @@ import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 import { construireCharge, type ChargeJuge } from "../../pipeline/notation/charge-juge.ts";
 import { citationsDeReference } from "../../pipeline/notation/extrait.ts";
 import { fournisseurSimule, TableExistencesInvalide } from "../../pipeline/notation/fournisseur-simule.ts";
-import { estSousRuns, RUNS_DU_DEPOT, SimuleSousRuns } from "../../pipeline/notation/garde-simule.ts";
+import { estSousRuns, RUNS_DU_DEPOT, SimuleSousRuns } from "../../pipeline/gardes-sortie.ts";
 import { notationDeJuge, type Juge, type SortieJuge } from "../../pipeline/notation/juge.ts";
 import { jugesSimules, JugeSimuleMalRegle, REGLES_JUGE_SIMULE, type ParametresJugeSimule } from "../../pipeline/notation/juge-simule.ts";
 import { preparerNotationSimulee } from "../../pipeline/notation/notation-simulee.ts";

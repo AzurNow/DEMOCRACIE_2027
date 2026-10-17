@@ -8,12 +8,14 @@
  *   gèle toujours ailleurs ;
  * - un répertoire de run qui existe déjà, même vide : un gel s'invalide, il ne se refait pas.
  *
- * Le chemin est comparé après résolution des liens symboliques de sa plus longue partie existante :
- * un lien posé hors de `runs/` qui y mène est refusé comme le chemin direct.
+ * Le chemin est comparé après résolution des liens symboliques de sa plus longue partie existante
+ * (`gardes-sortie.ts:estSous`) : un lien posé hors de `runs/` qui y mène est refusé comme le chemin
+ * direct.
  */
 
-import { existsSync, realpathSync } from "node:fs";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { estSous } from "../gardes-sortie.ts";
 
 export interface Destination {
   /** Le répertoire qui reçoit le répertoire du run (`runs/` ou la sortie demandée). */
@@ -38,20 +40,6 @@ export class RunDejaGele extends Error {
     super(`${chemin} existe déjà : un gel s'invalide, il ne se refait pas (décision D41). Rien n'est écrit.`);
     this.name = "RunDejaGele";
   }
-}
-
-/** Le chemin réel de la plus longue partie existante, suivi du reste tel quel. */
-function cheminReel(absolu: string): string {
-  if (existsSync(absolu)) return realpathSync(absolu);
-  const parent = dirname(absolu);
-  if (parent === absolu) return absolu;
-  return join(cheminReel(parent), basename(absolu));
-}
-
-function estSous(chemin: string, repertoire: string): boolean {
-  const reel = cheminReel(resolve(chemin));
-  const reference = cheminReel(resolve(repertoire));
-  return reel === reference || reel.startsWith(`${reference}${sep}`);
 }
 
 function parentDemande(racine: string, sortie: string | undefined): string {
