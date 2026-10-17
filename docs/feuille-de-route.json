@@ -1,6 +1,6 @@
 {
   "$commentaire": "Source unique de la feuille de route. Seul fichier lu et modifié par la session principale. docs/FEUILLE-DE-ROUTE.md est GÉNÉRÉ depuis ce fichier par `pnpm feuille-de-route` : ne jamais l'éditer à la main.",
-  "date_maj": "2026-10-16",
+  "date_maj": "2026-10-17",
   "echelle": {
     "T0": "absent : rien n'existe",
     "T1": "écrit, sans vérification automatique",
@@ -738,6 +738,19 @@
       "recommandation": "Option 1 sur les quatre points.",
       "retenu": "Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52. Écrit au §4 par la 0.17 (#148) ; (1) livré par #146, #147 et #150.",
       "date_decision": "2026-10-16"
+    },
+    {
+      "id": "D54",
+      "statut": "tranchee",
+      "question": "Huit points laissés par la revue de code du 2026-10-17 (docs/revues/2026-10-17.md, constats 1, 2, 4, 5, 8, 16, 17, 23) : précédence des décisions de thème ; erreur HTTP passagère à l'extraction ; entrée d'extraction après montée de version de l'extracteur de texte ; position affirmée par l'orientée d'un état « sans_objet » ; relance de run:invalider ; description du thème dans commun.schema.json ; modèle servi par l'API d'extraction ; fichiers parasites en staging.",
+      "contexte": "(1) derniereDecision retient la plus grande date tapée dans --date, contrôlée par un motif seulement. (2) lectureDe rend « illisible » toute réponse hors 2xx : une 429 refuse la source pour toujours, code de sortie 0. (3) pnpm extraire lit une entrée dont l'épinglage n'est plus celui du code, contre D52 (4). (4) D42 (3) ne dit pas ce qu'affirme l'orientée d'une Q-DIR sur un état « sans_objet » : tachesDe lève et bloque reformulation, relecture et gel. (5) La date à la milliseconde rend toute relance différente : « non enregistrée » affiché à tort. (6) La description contredit le §3 depuis la 0.11. (7) Le champ model de la réponse n'est jamais comparé à l'identifiant épinglé que l'item inscrit. (8) Un .DS_Store dans staging/formulations/<id>/ bloque pnpm reformuler et l'écran (409).",
+      "options": [
+        "(1) précédence par l'ordre du registre, date contrôlée comme vraie date civile ; (2) 408, 429 et 5xx traités comme un échec de transport : réponse gardée, pas de journal, source reprise à la relance ; (3) pnpm extraire refuse, par un refus nommé, une entrée dont l'épinglage n'est plus celui du code ; (4) AUCUNE position pour un état « sans_objet », comme pour une Q-ATT ; (5) même motif déjà inscrit ⇒ « déjà inscrite », code 0, quelle que soit la date ; (6) description corrigée selon le §3, texte seul ; (7) réponse au model différent gardée, extraction de la source refusée (modele_different) ; (8) .DS_Store seul ignoré, liste fermée en données, tout autre fichier reste un refus nommé.",
+        "Variantes : (1) date avec refus d'antidatation, ou date seule contrôlée ; (2) refus maintenu avec code non nul, ou les deux ; (3) entrée nommée par épinglage, ou réécriture admise ; (4) pas d'orientée, ou Q-DIR exclue ; (5) refus strict mieux dit ; (6) laisser ; (7) relever sans refuser ; (8) .DS_Store et .tmp ignorés, ou rien."
+      ],
+      "recommandation": "Option 1 sur les huit points.",
+      "retenu": "Option 1 sur les huit points. (2) précise D53 (2) et (4) amende D42 (3) : à écrire au §4 et au §5 à la prochaine révision (TACHES-AUTEUR). (7) avant le premier appel réel. Le reste est du code, sans amendement.",
+      "date_decision": "2026-10-17"
     }
   ],
   "lots": [

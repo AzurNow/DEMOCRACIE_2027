@@ -644,6 +644,12 @@ les règles du §3 à la date du jour, archive les preuves, et révise la liste 
       contient le dernier, à la seconde supérieure. » Et (D53 (1)) : « Un item extrait n'est promu
       qu'une fois rattaché par la validation à une mesure, existante ou nouvelle, dont la
       formulation canonique a été relue. »
+- [ ] (D54, 2026-10-17) **Écrire D54 (2) au §4 et D54 (4) au §5 à la prochaine révision.**
+      Proposition au §4, après « Si l'une des deux sorties est illisible, la source n'est pas
+      proposée et l'extraction est relancée » : « Une réponse au statut 408, 429 ou 5xx n'est pas une
+      sortie illisible mais un échec de transport : elle est gardée, et la source est reprise. »
+      Proposition au §5, dans la règle de la position qu'affirme une formulation orientée : « Un
+      état sans objet n'en affirme aucune, comme une question d'attribution. »
 - [ ] **Fusionner #149 (renommage du dépôt) et #150 (relecture étendue, F ⇔ fictive)** : CI verte ;
       le contrôle de Claude Code refuse `gh pr merge`.
 - [ ] **Avant chaque gel (D46)** : pousser le commit à geler, puis demander à la Wayback Machine

@@ -1,6 +1,6 @@
 # Feuille de route — Banc d'essai 2027
 
-> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-16.
+> Fichier généré par `pnpm feuille-de-route` depuis `docs/feuille-de-route.json`. Ne pas éditer à la main. Mis à jour le 2026-10-17.
 
 ## Décisions en attente
 
@@ -203,6 +203,10 @@ Aucune décision en attente.
 ### D53 — Quatre points laissés par la PR 1 du lot extraction : mesure d'un item extrait ; une des deux sorties illisible ; citation présente plusieurs fois dans le texte ; extrait minuté d'une source T2.
 
 **Décision du 2026-10-16 :** Option 1 sur les quatre points. (2) à (4) dans la PR 1 du lot extraction ; (1) demande une PR de l'interface de validation avant toute promotion d'un item extrait. (2) à (4) à écrire au §4 avec D52. Écrit au §4 par la 0.17 (#148) ; (1) livré par #146, #147 et #150.
+
+### D54 — Huit points laissés par la revue de code du 2026-10-17 (docs/revues/2026-10-17.md, constats 1, 2, 4, 5, 8, 16, 17, 23) : précédence des décisions de thème ; erreur HTTP passagère à l'extraction ; entrée d'extraction après montée de version de l'extracteur de texte ; position affirmée par l'orientée d'un état « sans_objet » ; relance de run:invalider ; description du thème dans commun.schema.json ; modèle servi par l'API d'extraction ; fichiers parasites en staging.
+
+**Décision du 2026-10-17 :** Option 1 sur les huit points. (2) précise D53 (2) et (4) amende D42 (3) : à écrire au §4 et au §5 à la prochaine révision (TACHES-AUTEUR). (7) avant le premier appel réel. Le reste est du code, sans amendement.
 
 ### D6 — Six précisions du §8 remontées par le lot analyse, à écrire dans le protocole avant gel.
 
